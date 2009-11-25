@@ -62,7 +62,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     private final Deque<Texture> mLoadOutputQueue = new Deque<Texture>();
     private final Deque<MotionEvent> mTouchEventQueue = new Deque<MotionEvent>();
     private final DirectLinkedList<TextureReference> mActiveTextureList = new DirectLinkedList<TextureReference>();
-    private final ReferenceQueue<Texture> mUnreferencedTextureQueue = new ReferenceQueue<Texture>();
+    private final ReferenceQueue mUnreferencedTextureQueue = new ReferenceQueue();
     private final TextureLoadThread[] mTextureLoadThreads = new TextureLoadThread[NUM_TEXTURE_LOAD_THREADS];
     private TextureLoadThread mCachedTextureLoadThread = null;
     private TextureLoadThread mVideoTextureLoadThread = null;
