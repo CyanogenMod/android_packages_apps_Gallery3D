@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore.Images;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -19,14 +20,16 @@ import android.widget.Toast;
 import android.media.MediaScannerConnection;
 
 import com.cooliris.cache.CacheService;
+import com.cooliris.wallpaper.RandomDataSource;
+import com.cooliris.wallpaper.Slideshow;
 
 public final class Gallery extends Activity {
     public static final TimeZone CURRENT_TIME_ZONE = TimeZone.getDefault();
-    public static float PIXEL_DENSITY = 1.0f;
-    public static int DENSITY_DPI = DisplayMetrics.DENSITY_DEFAULT;
+    public static float PIXEL_DENSITY = 0.0f;
     public static boolean NEEDS_REFRESH = true;
-    public static final int CROP_MSG_INTERNAL = 100;
+
     private static final String TAG = "Gallery";
+    public static final int CROP_MSG_INTERNAL = 100;
     private static final int CROP_MSG = 10;
     private RenderView mRenderView = null;
     private GridLayer mGridLayer;
@@ -34,16 +37,25 @@ public final class Gallery extends Activity {
     private ReverseGeocoder mReverseGeocoder;
     private boolean mPause;
     private MediaScannerConnection mConnection;
+    private static final boolean TEST_WALLPAPER = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (TEST_WALLPAPER || (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI))) {
+            Slideshow slideshow = new Slideshow(this);
+            slideshow.setDataSource(new RandomDataSource());
+            setContentView(slideshow);
+            return;
+        }
         boolean isCacheReady = CacheService.isCacheReady(false);
         CacheService.startCache(this, false);
+        if (PIXEL_DENSITY == 0.0f) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            PIXEL_DENSITY = metrics.density;
+        }
         mReverseGeocoder = new ReverseGeocoder(this);
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        PIXEL_DENSITY = metrics.density;
         mRenderView = new RenderView(this);
         mGridLayer = new GridLayer(this, (int) (96.0f * PIXEL_DENSITY), (int) (72.0f * PIXEL_DENSITY), new GridLayoutInterface(4),
                 mRenderView);
@@ -99,7 +111,9 @@ public final class Gallery extends Activity {
             Uri uri = getIntent().getData();
             boolean slideshow = getIntent().getBooleanExtra("slideshow", false);
             SingleDataSource localDataSource = new SingleDataSource(this, uri.toString(), slideshow);
-            mGridLayer.setDataSource(localDataSource);
+            PicasaDataSource picasaDataSource = new PicasaDataSource(this);
+            ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(localDataSource, picasaDataSource);
+            mGridLayer.setDataSource(combinedDataSource);
             mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
             if (SingleDataSource.isSingleImageMode(uri.toString())) {
                 mGridLayer.setSingleImage(false);
@@ -133,7 +147,8 @@ public final class Gallery extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        mRenderView.onResume();
+        if (mRenderView != null)
+            mRenderView.onResume();
         if (NEEDS_REFRESH) {
             NEEDS_REFRESH = false;
             CacheService.markDirtyImmediate(LocalDataSource.CAMERA_BUCKET_ID);
@@ -146,7 +161,8 @@ public final class Gallery extends Activity {
     @Override
     public void onPause() {
         super.onPause();
-        mRenderView.onPause();
+        if (mRenderView != null)
+            mRenderView.onPause();
         mPause = true;
     }
 
@@ -172,8 +188,8 @@ public final class Gallery extends Activity {
     public void onDestroy() {
         // Force GLThread to exit.
         setContentView(R.layout.main);
-        DataSource dataSource = mGridLayer.getDataSource();
         if (mGridLayer != null) {
+            DataSource dataSource = mGridLayer.getDataSource();
             if (dataSource != null) {
                 dataSource.shutdown();
             }
@@ -181,8 +197,10 @@ public final class Gallery extends Activity {
         }
         if (mReverseGeocoder != null)
             mReverseGeocoder.shutdown();
-        mRenderView.shutdown();
-        mRenderView = null;
+        if (mRenderView != null) {
+            mRenderView.shutdown();
+            mRenderView = null;
+        }
         mGridLayer = null;
         super.onDestroy();
         Log.i(TAG, "onDestroy");
@@ -194,13 +212,18 @@ public final class Gallery extends Activity {
         if (mGridLayer != null) {
             mGridLayer.markDirty(30);
         }
-        mRenderView.requestRender();
+        if (mRenderView != null)
+            mRenderView.requestRender();
         Log.i(TAG, "onConfigurationChanged");
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        return mRenderView.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event);
+        if (mRenderView != null) {
+            return mRenderView.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event);
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
     }
 
     private boolean isPickIntent() {
@@ -293,7 +316,7 @@ public final class Gallery extends Activity {
                         public void onScanCompleted(String path, Uri uri) {
                             shutdown(uri.toString());
                         }
-                        
+
                         public void shutdown(String uri) {
                             dialog.dismiss();
                             performReturn(myExtras, uri.toString());
@@ -319,7 +342,7 @@ public final class Gallery extends Activity {
             Bitmap bitmap = null;
             try {
                 bitmap = UriTexture.createFromUri(this, contentUri, 1024, 1024, 0, null);
-            } catch (IOException e) { 
+            } catch (IOException e) {
                 ;
             } catch (URISyntaxException e) {
                 ;

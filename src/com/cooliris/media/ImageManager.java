@@ -280,9 +280,9 @@ public class ImageManager {
         return false;
     }
 
-    private static Cursor query(ContentResolver resolver, Uri uri,
-            String[] projection, String selection, String[] selectionArgs,
-            String sortOrder) {
+    private static final Cursor query(final ContentResolver resolver, final Uri uri,
+            final String[] projection, final String selection, final String[] selectionArgs,
+            final String sortOrder) {
         try {
             if (resolver == null) {
                 return null;
@@ -295,9 +295,9 @@ public class ImageManager {
 
     }
 
-    public static boolean isMediaScannerScanning(ContentResolver cr) {
+    public static final boolean isMediaScannerScanning(final ContentResolver cr) {
         boolean result = false;
-        Cursor cursor = query(cr, MediaStore.getMediaScannerUri(),
+        final Cursor cursor = query(cr, MediaStore.getMediaScannerUri(),
                 new String [] {MediaStore.MEDIA_SCANNER_VOLUME},
                 null, null, null);
         if (cursor != null) {

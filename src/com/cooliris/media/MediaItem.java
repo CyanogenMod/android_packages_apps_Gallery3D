@@ -91,11 +91,13 @@ public final class MediaItem {
     public boolean isPicassaItem() {
         return (mParentMediaSet != null && mParentMediaSet.isPicassaAlbum());
     }
+    
+    private static final String VIDEO = "video/";
 
     public int getMediaType() {
         if (mMediaType == -1) {
             // Default to image if mMimetype is null or not video.
-            mMediaType = (mMimeType != null && mMimeType.startsWith("video/")) ? MediaItem.MEDIA_TYPE_VIDEO : MediaItem.MEDIA_TYPE_IMAGE;
+            mMediaType = (mMimeType != null && mMimeType.startsWith(VIDEO)) ? MediaItem.MEDIA_TYPE_VIDEO : MediaItem.MEDIA_TYPE_IMAGE;
         }
         return mMediaType;
     }

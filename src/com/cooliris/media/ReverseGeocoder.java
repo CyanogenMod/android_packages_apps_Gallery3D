@@ -20,25 +20,21 @@ public final class ReverseGeocoder extends Thread {
     // If two points are within 50 miles of each other, use "Around Palo Alto, CA" or "Around Mountain View, CA".
     // instead of directly jumping to the next level and saying "California, US".
     private static final int MAX_LOCALITY_MILE_RANGE = 50;
-
+    private static final Deque<MediaSet> sQueue = new Deque<MediaSet>();
+    private static final DiskCache sGeoCache = new DiskCache("geocoder-cache");
     private static final String TAG = "ReverseGeocoder";
 
-    private final Geocoder mGeocoder;
+    private Geocoder mGeocoder;
     private final Context mContext;
-    private final Deque<MediaSet> mQueue = new Deque<MediaSet>();
-    private final DiskCache mGeoCache = new DiskCache("geocoder-cache");
 
     public ReverseGeocoder(Context context) {
         super(TAG);
         mContext = context;
-        mGeocoder = new Geocoder(mContext);
-        // Loading the addresses in the GeoCache.
-        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         start();
     }
 
     public void enqueue(MediaSet set) {
-        Deque<MediaSet> inQueue = mQueue;
+        Deque<MediaSet> inQueue = sQueue;
         synchronized (inQueue) {
             inQueue.addLast(set);
             inQueue.notify();
@@ -47,7 +43,10 @@ public final class ReverseGeocoder extends Thread {
 
     @Override
     public void run() {
-        Deque<MediaSet> queue = mQueue;
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+        Deque<MediaSet> queue = sQueue;
+        mGeocoder = new Geocoder(mContext);
+        queue.clear();
         try {
             for (;;) {
                 // Wait for the next request.
@@ -66,12 +65,11 @@ public final class ReverseGeocoder extends Thread {
     }
 
     public void flushCache() {
-        mGeoCache.flush();
+        sGeoCache.flush();
     }
 
     public void shutdown() {
         flushCache();
-        mGeoCache.close();
         this.interrupt();
     }
 
@@ -134,8 +132,8 @@ public final class ReverseGeocoder extends Thread {
         }
 
         // Just choose one of the localities if within a 50 mile radius.
-        int distance = (int) LocationMediaFilter.toMile(
-                LocationMediaFilter.distanceBetween(setMinLatitude, setMinLongitude, setMaxLatitude, setMaxLongitude));
+        int distance = (int) LocationMediaFilter.toMile(LocationMediaFilter.distanceBetween(setMinLatitude, setMinLongitude,
+                setMaxLatitude, setMaxLongitude));
         if (distance < MAX_LOCALITY_MILE_RANGE) {
             // Try each of the points and just return the first one to have a valid address.
             Address minLatAddress = lookupAddress(setMinLatitude, set.mMinLatLongitude);
@@ -207,11 +205,11 @@ public final class ReverseGeocoder extends Thread {
                     }
                 }
             }
-    
+
             if (numDetails == desiredNumDetails) {
                 return location;
             }
-    
+
             String locality = addr.getLocality();
             if (locality != null && !("null".equals(locality))) {
                 if (location != null && location.length() > 0) {
@@ -221,11 +219,11 @@ public final class ReverseGeocoder extends Thread {
                 }
                 numDetails++;
             }
-    
+
             if (numDetails == desiredNumDetails) {
                 return location;
             }
-    
+
             String adminArea = addr.getAdminArea();
             if (adminArea != null && !("null".equals(adminArea))) {
                 if (location != null && location.length() > 0) {
@@ -274,7 +272,7 @@ public final class ReverseGeocoder extends Thread {
     private Address lookupAddress(final double latitude, final double longitude) {
         try {
             long locationKey = (long) (((latitude + LocationMediaFilter.LAT_MAX) * 2 * LocationMediaFilter.LAT_MAX + (longitude + LocationMediaFilter.LON_MAX)) * LocationMediaFilter.EARTH_RADIUS_METERS);
-            byte[] cachedLocation = mGeoCache.get(locationKey, 0);
+            byte[] cachedLocation = sGeoCache.get(locationKey, 0);
             Address address = null;
             if (cachedLocation == null || cachedLocation.length == 0) {
                 List<Address> addresses = mGeocoder.getFromLocation(latitude, longitude, 1);
@@ -305,7 +303,7 @@ public final class ReverseGeocoder extends Thread {
                     Utils.writeUTF(dos, address.getUrl());
 
                     dos.flush();
-                    mGeoCache.put(locationKey, bos.toByteArray());
+                    sGeoCache.put(locationKey, bos.toByteArray());
                     dos.close();
                 }
             } else {
@@ -325,7 +323,7 @@ public final class ReverseGeocoder extends Thread {
                     }
                 }
                 if (!locale.getLanguage().equals(Locale.getDefault().getLanguage())) {
-                    mGeoCache.delete(locationKey);
+                    sGeoCache.delete(locationKey);
                     dis.close();
                     return lookupAddress(latitude, longitude);
                 }

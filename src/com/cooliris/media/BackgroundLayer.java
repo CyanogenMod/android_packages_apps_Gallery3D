@@ -9,7 +9,7 @@ public class BackgroundLayer extends Layer {
     private static final String TAG = "AdaptiveBackground";
     private final GridLayer mGridLayer;
     private CrossFadingTexture mBackground;
-    private static final int MAX_ADAPTIVES_TO_KEEP_IN_MEMORY = 8;
+    private static final int MAX_ADAPTIVES_TO_KEEP_IN_MEMORY = 16;
 
     private final HashMap<Texture, AdaptiveBackgroundTexture> mCacheAdaptiveTexture = new HashMap<Texture, AdaptiveBackgroundTexture>();
     private int mCount;
@@ -43,7 +43,7 @@ public class BackgroundLayer extends Layer {
         int cameraPosition = (int) mGridLayer.getScrollPosition();
         final int backgroundSpacing = mBackgroundBlitWidth - mBackgroundOverlap;
         cameraPosition = (int) ((cameraPosition / backgroundSpacing) * backgroundSpacing);
-        final DisplayItem displayItem = mGridLayer.getDisplayItemForScrollPosition(cameraPosition);
+        final DisplayItem displayItem = mGridLayer.getRepresentativeDisplayItem();
         if (displayItem != null) {
             mBackground.setTexture(getAdaptive(view, displayItem));
         }
@@ -76,13 +76,15 @@ public class BackgroundLayer extends Layer {
     @Override
     public void renderOpaque(RenderView view, GL11 gl) {
         gl.glClear(GL11.GL_COLOR_BUFFER_BIT);
-        mFallbackBackground = view.getResource(R.drawable.default_background, false);
-        view.loadTexture(mFallbackBackground);
+        if (mFallbackBackground == null) {
+            mFallbackBackground = view.getResource(R.drawable.default_background, false);
+            view.loadTexture(mFallbackBackground);
+        }
     }
 
     @Override
     public void renderBlended(RenderView view, GL11 gl) {
-        if (mBackground == null)
+        if (mBackground == null || mFallbackBackground == null)
             return;
         gl.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
@@ -90,6 +92,11 @@ public class BackgroundLayer extends Layer {
         boolean bind = anchorTexture.bind(view, gl);
         if (!bind) {
             view.bind(mFallbackBackground);
+        } else {
+            Texture texture = anchorTexture.getTexture();
+            if (texture.isLoaded()) {
+                mFallbackBackground = texture;
+            }
         }
         
         // We stitch this crossfading texture, and to cover all cases of overlap we need to perform 3 draws.
@@ -122,6 +129,7 @@ public class BackgroundLayer extends Layer {
     public void clear() {
         clearCache();
         mBackground = null;
+        mFallbackBackground = null;
     }
 
     public void clearCache() {

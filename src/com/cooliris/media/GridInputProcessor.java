@@ -438,14 +438,6 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         }
     }
 
-    public int getSelectedSlot() {
-        return mCurrentSelectedSlot;
-    }
-
-    public int getFocusSlot() {
-        return mCurrentFocusSlot;
-    }
-
     public void clearSelection() {
         mCurrentSelectedSlot = Shared.INVALID;
     }
@@ -489,10 +481,10 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     slotsToSkip = maxSlots;
                 if (slotsToSkip < -maxSlots)
                     slotsToSkip = -maxSlots;
-                if (slotsToSkip <= 1) {
+                if (Math.abs(slotsToSkip) <= 1) {
                     if (velocityX > 0)
                         slotsToSkip = -2;
-                    else
+                    else if (velocityX < 0)
                         slotsToSkip = 2;
                 }
                 int slotToGetTo = mLayer.getAnchorSlotIndex(GridLayer.ANCHOR_CENTER) + slotsToSkip;

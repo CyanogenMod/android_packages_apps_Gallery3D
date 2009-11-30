@@ -10,11 +10,11 @@ import android.net.Uri;
 import android.util.Log;
 
 public class BootReceiver extends BroadcastReceiver {
-    private final String TAG = "BootReceiver"; 
+    private static final String TAG = "BootReceiver"; 
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        String action = intent.getAction();
+        final String action = intent.getAction();
         Log.i(TAG, "Got intent with action " + action);
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)) {
             CacheService.markDirty(context);
@@ -23,8 +23,8 @@ public class BootReceiver extends BroadcastReceiver {
             // Do nothing, wait for the mediascanner to be done after mounting.
             ;
         } else if (action.equals(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)) {
-            Uri fileUri = intent.getData();
-            long bucketId = SingleDataSource.parseBucketIdFromFileUri(fileUri.toString());
+            final Uri fileUri = intent.getData();
+            final long bucketId = SingleDataSource.parseBucketIdFromFileUri(fileUri.toString());
             if (!CacheService.isPresentInCache(bucketId)) {
                 CacheService.markDirty(context);
             }

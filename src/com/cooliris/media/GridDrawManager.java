@@ -21,16 +21,16 @@ public final class GridDrawManager {
     public static final int PASS_LOCATION_LABEL = 8;
     public static final int PASS_MEDIASET_SOURCE_LABEL = 9;
 
-    private MediaItemTexture.Config mThumbnailConfig = new MediaItemTexture.Config();
-    private DisplayItem[] mDisplayItems;
-    private DisplaySlot[] mDisplaySlots;
-    private DisplayList mDisplayList;
-    private GridCamera mCamera;
+    private static final MediaItemTexture.Config sThumbnailConfig = new MediaItemTexture.Config();
+    private final DisplayItem[] mDisplayItems;
+    private final DisplaySlot[] mDisplaySlots;
+    private final DisplayList mDisplayList;
+    private final GridCamera mCamera;
+    private final GridDrawables mDrawables;
     private IndexRange mBufferedVisibleRange;
     private IndexRange mVisibleRange;
     private int mSelectedSlot;
     private int mCurrentFocusSlot;
-    private GridDrawables mDrawables;
     private DisplayItem[] mItemsDrawn;
     private int mDrawnCounter;
     private float mTargetFocusMixRatio = 0.0f;
@@ -41,7 +41,7 @@ public final class GridDrawManager {
     private boolean mCurrentFocusIsPressed;
     private final Texture mNoItemsTexture;
 
-    private Comparator<DisplayItem> mDisplayItemComparator = new Comparator<DisplayItem>() {
+    private static final Comparator<DisplayItem> sDisplayItemComparator = new Comparator<DisplayItem>() {
         public int compare(DisplayItem a, DisplayItem b) {
             if (a == null || b == null) {
                 return 0;
@@ -59,8 +59,8 @@ public final class GridDrawManager {
 
     public GridDrawManager(Context context, GridCamera camera, GridDrawables drawables, DisplayList displayList,
             DisplayItem[] displayItems, DisplaySlot[] displaySlots) {
-        mThumbnailConfig.thumbnailWidth = 128;
-        mThumbnailConfig.thumbnailHeight = 96;
+        sThumbnailConfig.thumbnailWidth = 128;
+        sThumbnailConfig.thumbnailHeight = 96;
         mDisplayItems = displayItems;
         mDisplaySlots = displaySlots;
         mDisplayList = displayList;
@@ -96,21 +96,22 @@ public final class GridDrawManager {
     }
 
     public void drawThumbnails(RenderView view, GL11 gl, int state) {
-        GridDrawables drawables = mDrawables;
-        DisplayList displayList = mDisplayList;
-        DisplayItem[] displayItems = mDisplayItems;
-        int firstBufferedVisibleSlot = mBufferedVisibleRange.begin;
-        int lastBufferedVisibleSlot = mBufferedVisibleRange.end;
-        int firstVisibleSlot = mVisibleRange.begin;
-        int lastVisibleSlot = mVisibleRange.end;
-        int selectedSlotIndex = mSelectedSlot;
-        int currentFocusSlot = mCurrentFocusSlot;
-        DisplayItem[] itemsDrawn = mItemsDrawn;
+        final GridDrawables drawables = mDrawables;
+        final DisplayList displayList = mDisplayList;
+        final DisplayItem[] displayItems = mDisplayItems;
+        final int firstBufferedVisibleSlot = mBufferedVisibleRange.begin;
+        final int lastBufferedVisibleSlot = mBufferedVisibleRange.end;
+        final int firstVisibleSlot = mVisibleRange.begin;
+        final int lastVisibleSlot = mVisibleRange.end;
+        final int selectedSlotIndex = mSelectedSlot;
+        final int currentFocusSlot = mCurrentFocusSlot;
+        final DisplayItem[] itemsDrawn = mItemsDrawn;
         itemsDrawn[0] = null; // No items drawn yet.
         int drawnCounter = 0;
-        GridQuad grid = drawables.mGrid;
+        final GridQuad grid = GridDrawables.sGrid;
         grid.bindArrays(gl);
         int numTexturesQueued = 0;
+        Context context = view.getContext();
         for (int itrSlotIndex = firstBufferedVisibleSlot; itrSlotIndex <= lastBufferedVisibleSlot; ++itrSlotIndex) {
             int index = itrSlotIndex;
             boolean priority = !(index < firstVisibleSlot || index > lastVisibleSlot);
@@ -120,7 +121,7 @@ public final class GridDrawManager {
                 if (displayItem == null) {
                     continue;
                 } else {
-                    Texture texture = displayItem.getThumbnailImage(view.getContext(), mThumbnailConfig);
+                    Texture texture = displayItem.getThumbnailImage(context, sThumbnailConfig);
                     if (texture != null && texture.isLoaded() == false) {
                         startSlotIndex = j;
                         break;
@@ -136,13 +137,13 @@ public final class GridDrawManager {
                     if (selectedSlotIndex != Shared.INVALID && (index <= selectedSlotIndex - 2 || index >= selectedSlotIndex + 2)) {
                         displayItem.clearScreennailImage();
                     }
-                    Texture texture = displayItem.getThumbnailImage(view.getContext(), mThumbnailConfig);
+                    Texture texture = displayItem.getThumbnailImage(context, sThumbnailConfig);
                     if (texture != null && !texture.isLoaded() && numTexturesQueued <= 6) {
-                        boolean isUncachedVideo = texture.isUncachedVideo();
-                        if (!isUncachedVideo)
+                        boolean isCached = texture.isCached();
+                        if (isCached)
                             view.prime(texture, priority);
                         view.bind(texture);
-                        if (priority && !isUncachedVideo)
+                        if (priority && isCached && texture.mState != Texture.STATE_ERROR)
                             ++numTexturesQueued;
                     }
                 }
@@ -164,7 +165,7 @@ public final class GridDrawManager {
                     } else {
                         displayList.setHasFocus(displayItem, false, pushDown);
                     }
-                    Texture texture = displayItem.getThumbnailImage(view.getContext(), mThumbnailConfig);
+                    Texture texture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
                     if (texture != null) {
                         if ((!displayItem.isAnimating() || !texture.isLoaded())
                                 && displayItem.getStackIndex() > GridLayer.MAX_ITEMS_PER_SLOT) {
@@ -194,7 +195,6 @@ public final class GridDrawManager {
         }
         mDrawnCounter = drawnCounter;
         grid.unbindArrays(gl);
-        drawables.swapGridQuads(gl);
     }
 
     public float getFocusQuadWidth() {
@@ -255,7 +255,7 @@ public final class GridDrawManager {
                     }
                     DisplayItem displayItem = displayItems[indexInDrawnArray];
                     MediaItem item = displayItem.mItemRef;
-                    final Texture thumbnailTexture = displayItem.getThumbnailImage(view.getContext(), mThumbnailConfig);
+                    final Texture thumbnailTexture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
                     Texture texture = displayItem.getScreennailImage(view.getContext());
                     if (isCameraZAnimating && (texture == null || !texture.isLoaded())) {
                         texture = thumbnailTexture;
@@ -296,11 +296,13 @@ public final class GridDrawManager {
                             mSelectedMixRatio.animateValue(1f, 0.75f, view.getFrameTime());
                         }
                     }
-                    if (!slideshowMode && skipPrevious && i == -1) {
-                        continue;
-                    }
-                    if (!skipPrevious && i == 1) {
-                        continue;
+                    if (mCamera.isAnimating()) {
+                        if (!slideshowMode && skipPrevious && i == -1) {
+                            continue;
+                        }
+                        if (!skipPrevious && i == 1) {
+                            continue;
+                        }
                     }
                     int theta = (int) displayItem.getImageTheta();
                     // If it is in slideshow mode, we draw the previous item in
@@ -332,7 +334,7 @@ public final class GridDrawManager {
                             texture = thumbnailTexture;
                             view.setAlpha(alpha * (1.0f - selectedMixRatio));
                         }
-                        GridQuad quad = drawables.mFullscreenGrid[vboIndex];
+                        GridQuad quad = GridDrawables.sFullscreenGrid[vboIndex];
                         float u = texture.getNormalizedWidth();
                         float v = texture.getNormalizedHeight();
                         float imageWidth = texture.getWidth();
@@ -373,9 +375,9 @@ public final class GridDrawManager {
                         view.setAlpha(alpha);
                         if (item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO) {
                             // The play graphic overlay.
-                            drawables.mVideoGrid.bindArrays(gl);
+                            GridDrawables.sVideoGrid.bindArrays(gl);
                             drawDisplayItem(view, gl, displayItem, drawables.mTextureVideo, PASS_VIDEO_LABEL, null, 0);
-                            drawables.mVideoGrid.unbindArrays(gl);
+                            GridDrawables.sVideoGrid.unbindArrays(gl);
                         }
                     }
                 }
@@ -395,7 +397,7 @@ public final class GridDrawManager {
         // We draw the frames around the drawn items.
         boolean currentFocusIsPressed = mCurrentFocusIsPressed;
         if (state != GridLayer.STATE_FULL_SCREEN) {
-            drawables.mFrame.bindArrays(gl);
+            GridDrawables.sFrame.bindArrays(gl);
             Texture texturePlaceHolder = (state == GridLayer.STATE_GRID_VIEW) ? drawables.mTextureGridFrame
                     : drawables.mTextureFrame;
             for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
@@ -427,7 +429,7 @@ public final class GridDrawManager {
             DisplayItem[] itemsDrawn = mItemsDrawn;
             if (texture != null) {
                 if (drawnCounter > 0) {
-                    Arrays.sort(itemsDrawn, 0, drawnCounter, mDisplayItemComparator);
+                    Arrays.sort(itemsDrawn, 0, drawnCounter, sDisplayItemComparator);
                     float timeElapsedSinceGridView = gridMixRatio;
                     float timeElapsedSinceStackView = stackMixRatio;
                     for (int i = drawnCounter - 1; i >= 0; --i) {
@@ -457,14 +459,14 @@ public final class GridDrawManager {
                     }
                 }
             }
-            drawables.mFrame.unbindArrays(gl);
+            GridDrawables.sFrame.unbindArrays(gl);
             gl.glDepthFunc(GL10.GL_ALWAYS);
             if (state == GridLayer.STATE_MEDIA_SETS || state == GridLayer.STATE_TIMELINE) {
                 DisplaySlot[] displaySlots = mDisplaySlots;
-                drawables.mTextGrid.bindArrays(gl);
+                GridDrawables.sTextGrid.bindArrays(gl);
                 final float textOffsetY = 0.82f;
                 gl.glTranslatef(0.0f, -textOffsetY, 0.0f);
-                HashMap<String, StringTexture> stringTextureTable = drawables.mStringTextureTable;
+                HashMap<String, StringTexture> stringTextureTable = GridDrawables.sStringTextureTable;
                 ReverseGeocoder reverseGeocoder = ((Gallery) view.getContext()).getReverseGeocoder();
 
                 boolean itemsPresent = false;
@@ -512,7 +514,7 @@ public final class GridDrawManager {
                     }
                 }
                 if (state == GridLayer.STATE_TIMELINE) {
-                    drawables.mLocationGrid.bindArrays(gl);
+                    GridDrawables.sLocationGrid.bindArrays(gl);
                     Texture locationTexture = drawables.mTextureLocation;
                     final float yLocationLabelOffset = 0.19f;
                     for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
@@ -536,9 +538,9 @@ public final class GridDrawManager {
                         }
                     }
 
-                    drawables.mLocationGrid.unbindArrays(gl);
+                    GridDrawables.sLocationGrid.unbindArrays(gl);
                 } else if (state == GridLayer.STATE_MEDIA_SETS && stackMixRatio > 0.0f) {
-                    drawables.mSourceIconGrid.bindArrays(gl);
+                    GridDrawables.sSourceIconGrid.bindArrays(gl);
                     Texture transparentTexture = drawables.mTextureTransparent;
                     for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                         DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
@@ -556,18 +558,18 @@ public final class GridDrawManager {
                             }
                         }
                     }
-                    drawables.mSourceIconGrid.unbindArrays(gl);
+                    GridDrawables.sSourceIconGrid.unbindArrays(gl);
                 }
                 gl.glTranslatef(0.0f, yLocOffset, 0.0f);
                 gl.glTranslatef(0.0f, textOffsetY, 0.0f);
-                drawables.mTextGrid.unbindArrays(gl);
+                GridDrawables.sTextGrid.unbindArrays(gl);
             }
             if (hudMode == HudLayer.MODE_SELECT && state != GridLayer.STATE_FULL_SCREEN) {
                 Texture textureSelectedOn = drawables.mTextureCheckmarkOn;
                 Texture textureSelectedOff = drawables.mTextureCheckmarkOff;
                 view.prime(textureSelectedOn, true);
                 view.prime(textureSelectedOff, true);
-                drawables.mSelectedGrid.bindArrays(gl);
+                GridDrawables.sSelectedGrid.bindArrays(gl);
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {
@@ -575,9 +577,9 @@ public final class GridDrawManager {
                         drawDisplayItem(view, gl, displayItem, textureToUse, PASS_SELECTION_LABEL, null, 0);
                     }
                 }
-                drawables.mSelectedGrid.unbindArrays(gl);
+                GridDrawables.sSelectedGrid.unbindArrays(gl);
             }
-            drawables.mVideoGrid.bindArrays(gl);
+            GridDrawables.sVideoGrid.bindArrays(gl);
             Texture videoTexture = drawables.mTextureVideo;
             for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                 DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
@@ -587,7 +589,7 @@ public final class GridDrawManager {
                     }
                 }
             }
-            drawables.mVideoGrid.unbindArrays(gl);
+            GridDrawables.sVideoGrid.unbindArrays(gl);
             gl.glDepthFunc(GL10.GL_LEQUAL);
         }
     }
@@ -656,7 +658,9 @@ public final class GridDrawManager {
         gl.glTranslatef(-translateXf, -translateYf, -translateZf);
         float theta = (pass == PASS_FOCUS_CONTENT) ? displayItem.mAnimatedImageTheta + displayItem.mAnimatedTheta
                 : displayItem.mAnimatedTheta;
-        gl.glRotatef(theta, 0.0f, 0.0f, 1.0f);
+        if (theta != 0.0f) {
+            gl.glRotatef(theta, 0.0f, 0.0f, 1.0f);
+        }
         float orientation = 0.0f;
         if (pass == PASS_THUMBNAIL_CONTENT && displayItem.mAnimatedImageTheta != 0.0f) {
             orientation = displayItem.mAnimatedImageTheta;
@@ -666,7 +670,9 @@ public final class GridDrawManager {
         } else {
             GridQuad.draw(gl, orientation);
         }
-        gl.glRotatef(-theta, 0.0f, 0.0f, 1.0f);
+        if (theta != 0.0f) {
+            gl.glRotatef(-theta, 0.0f, 0.0f, 1.0f);
+        }
         gl.glTranslatef(translateXf, translateYf, translateZf);
         if (usingMixedTextures) {
             view.unbindMixed();

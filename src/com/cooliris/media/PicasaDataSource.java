@@ -189,7 +189,6 @@ public final class PicasaDataSource implements DataSource {
                         for (int j = 0, numItems = items.size(); j != numItems; ++j) {
                             MediaItem item = items.get(j);
                             if (item != null) {
-                                Log.i(TAG, "Deleting picasa photo " + item.mContentUri);
                                 String itemUri = PicasaContentProvider.PHOTOS_URI + "/" + item.mId; 
                                 client.delete(Uri.parse(itemUri), null, null);
                             }

@@ -31,7 +31,7 @@ import android.view.SurfaceHolder;
 public final class RenderView extends GLSurfaceView implements GLSurfaceView.Renderer, SensorEventListener {
     private static final String TAG = "RenderView";
     private static final int NUM_TEXTURE_LOAD_THREADS = 4;
-    private static final int MAX_LOADING_COUNT = 8;
+    private static final int MAX_LOADING_COUNT = 128;
 
     private static final int EVENT_NONE = 0;
     // private static final int EVENT_TOUCH = 1;
@@ -46,7 +46,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     private RootLayer mRootLayer = null;
     private boolean mListsDirty = false;
-    private final Lists mLists = new Lists();
+    private static final Lists sLists = new Lists();
 
     private Layer mTouchEventTarget = null;
 
@@ -56,16 +56,18 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     private volatile boolean mPendingSensorEvent = false;
 
     private int mLoadingCount = 0;
-    private final Deque<Texture> mLoadInputQueue = new Deque<Texture>();
-    private final Deque<Texture> mLoadInputQueueCached = new Deque<Texture>();
-    private final Deque<Texture> mLoadInputQueueVideo = new Deque<Texture>();
-    private final Deque<Texture> mLoadOutputQueue = new Deque<Texture>();
+    private static final Deque<Texture> sLoadInputQueue = new Deque<Texture>();
+    private static final Deque<Texture> sLoadInputQueueCached = new Deque<Texture>();
+    private static final Deque<Texture> sLoadInputQueueVideo = new Deque<Texture>();
+    private static final Deque<Texture> sLoadOutputQueue = new Deque<Texture>();
+    private static TextureLoadThread sCachedTextureLoadThread = null;
+    private static TextureLoadThread sVideoTextureLoadThread = null;
+    private static final TextureLoadThread[] sTextureLoadThreads = new TextureLoadThread[NUM_TEXTURE_LOAD_THREADS];
+
     private final Deque<MotionEvent> mTouchEventQueue = new Deque<MotionEvent>();
     private final DirectLinkedList<TextureReference> mActiveTextureList = new DirectLinkedList<TextureReference>();
+    @SuppressWarnings("unchecked")
     private final ReferenceQueue mUnreferencedTextureQueue = new ReferenceQueue();
-    private final TextureLoadThread[] mTextureLoadThreads = new TextureLoadThread[NUM_TEXTURE_LOAD_THREADS];
-    private TextureLoadThread mCachedTextureLoadThread = null;
-    private TextureLoadThread mVideoTextureLoadThread = null;
 
     // Frame time in milliseconds and delta since last frame in seconds. Uses SystemClock.getUptimeMillis().
     private long mFrameTime = 0;
@@ -77,10 +79,14 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     private final SparseArray<ResourceTexture> sCacheUnscaled = new SparseArray<ResourceTexture>();
 
     private boolean mFirstDraw;
+    // The cached texture that is bound to Texture Unit 0.
+    // We need to reset this to null whenever the active texture unit changes.
+    private Texture mBoundTexture;
 
     // Weak reference to a texture that stores the associated texture ID.
     private static final class TextureReference extends WeakReference<Texture> {
-        public TextureReference(Texture texture, GL11 gl, ReferenceQueue<Texture> referenceQueue, int textureId) {
+        @SuppressWarnings("unchecked")
+        public TextureReference(Texture texture, GL11 gl, ReferenceQueue referenceQueue, int textureId) {
             super(texture, referenceQueue);
             this.textureId = textureId;
             this.gl = gl;
@@ -107,24 +113,25 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         }
     }
 
-    public RenderView(Context context) {
+    public RenderView(final Context context) {
         super(context);
         setBackgroundDrawable(null);
         setFocusable(true);
         setEGLConfigChooser(true);
         setRenderer(this);
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-
-        for (int i = 0; i != NUM_TEXTURE_LOAD_THREADS; ++i) {
-            TextureLoadThread thread = new TextureLoadThread();
-            if (i == 0) {
-                mCachedTextureLoadThread = thread;
+        if (sCachedTextureLoadThread == null) {
+            for (int i = 0; i != NUM_TEXTURE_LOAD_THREADS; ++i) {
+                TextureLoadThread thread = new TextureLoadThread();
+                if (i == 0) {
+                    sCachedTextureLoadThread = thread;
+                }
+                if (i == 1) {
+                    sVideoTextureLoadThread = thread;
+                }
+                sTextureLoadThreads[i] = thread;
+                thread.start();
             }
-            if (i == 1) {
-                mVideoTextureLoadThread = thread;
-            }
-            mTextureLoadThreads[i] = thread;
-            thread.start();
         }
     }
 
@@ -241,11 +248,13 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     public boolean bind(Texture texture) {
         if (texture != null) {
+            if (texture == mBoundTexture)
+                return true;
             switch (texture.mState) {
             case Texture.STATE_UNLOADED:
                 if (texture.getClass().equals(ResourceTexture.class)) {
                     loadTexture(texture);
-                    return true;
+                    return false;
                 }
                 if (mLoadingCount < MAX_LOADING_COUNT) {
                     queueLoad(texture, false);
@@ -253,6 +262,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                 break;
             case Texture.STATE_LOADED:
                 mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.mId);
+                mBoundTexture = texture;
                 return true;
             default:
                 break;
@@ -308,8 +318,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         texture.mState = Texture.STATE_LOADING;
 
         // Push the texture onto the load input queue.
-        Deque<Texture> inputQueue = (texture.isCached()) ? mLoadInputQueueCached : mLoadInputQueue;
-        inputQueue = (texture.isUncachedVideo()) ? mLoadInputQueueVideo : mLoadInputQueue;
+        Deque<Texture> inputQueue = (texture.isUncachedVideo()) ? sLoadInputQueueVideo : (texture.isCached()) ? sLoadInputQueueCached : sLoadInputQueue;;
         synchronized (inputQueue) {
             if (highPriority) {
                 inputQueue.addFirst(texture);
@@ -351,6 +360,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         boolean bind = true;
         bind &= bind(from);
         gl.glActiveTexture(GL11.GL_TEXTURE1);
+        mBoundTexture = null;
         bind &= bind(to);
         if (!bind) {
             return false;
@@ -385,6 +395,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
         // Switch back to the default texture unit.
         gl.glActiveTexture(GL11.GL_TEXTURE0);
+        mBoundTexture = null;
     }
 
     public void drawMixed2D(Texture from, Texture to, float ratio, float x, float y, float z, float width, float height) {
@@ -393,6 +404,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         // Bind "from" and "to" to TEXTURE0 and TEXTURE1, respectively.
         if (bind(from)) {
             gl.glActiveTexture(GL11.GL_TEXTURE1);
+            mBoundTexture = null;
             if (bind(to)) {
                 // Enable TEXTURE1.
                 gl.glEnable(GL11.GL_TEXTURE_2D);
@@ -423,6 +435,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
             // Switch back to the default texture unit.
             gl.glActiveTexture(GL11.GL_TEXTURE0);
+            mBoundTexture = null;
         }
     }
 
@@ -445,7 +458,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             }
             mActiveTextureList.remove(textureReference.activeListEntry);
         }
-        Deque<Texture> outputQueue = mLoadOutputQueue;
+        Deque<Texture> outputQueue = sLoadOutputQueue;
         Texture texture;
         do {
             // Upload loaded textures to the GPU one frame at a time.
@@ -467,6 +480,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     private void uploadTexture(Texture texture, int[] textureId) {
         Bitmap bitmap = texture.mBitmap;
         GL11 gl = mGL;
+        int glError = GL11.GL_NO_ERROR;
         if (bitmap != null) {
             final int width = texture.mWidth;
             final int height = texture.mHeight;
@@ -474,41 +488,38 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             // Define a vertically flipped crop rectangle for OES_draw_texture.
             int[] cropRect = { 0, height, width, -height };
 
-            // Handle texture upload failures
-            int numTextureFails = 0;
-            boolean textureFail = false;
-            do {
-                textureFail = false;
-                // Upload the bitmap to a new texture.
-                gl.glGenTextures(1, textureId, 0);
-                gl.glBindTexture(GL11.GL_TEXTURE_2D, textureId[0]);
-                gl.glTexParameteriv(GL11.GL_TEXTURE_2D, GL11Ext.GL_TEXTURE_CROP_RECT_OES, cropRect, 0);
-                gl.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP_TO_EDGE);
-                gl.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP_TO_EDGE);
-                gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-                gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                GLUtils.texImage2D(GL11.GL_TEXTURE_2D, 0, bitmap, 0);
-                int glError = gl.glGetError();
-                if (glError == GL11.GL_OUT_OF_MEMORY) {
-                    Log.i(TAG, "Texture creation fail, glError " + glError + " retry id " + numTextureFails);
-                    ++numTextureFails;
-                    textureFail = true;
-                    handleLowMemory();
-                    // TODO: Retry logic
-                    numTextureFails = 3;
-                }
-            } while (textureFail && numTextureFails < 3);
+            // Upload the bitmap to a new texture.
+            gl.glGenTextures(1, textureId, 0);
+            gl.glBindTexture(GL11.GL_TEXTURE_2D, textureId[0]);
+            gl.glTexParameteriv(GL11.GL_TEXTURE_2D, GL11Ext.GL_TEXTURE_CROP_RECT_OES, cropRect, 0);
+            gl.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP_TO_EDGE);
+            gl.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP_TO_EDGE);
+            gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            GLUtils.texImage2D(GL11.GL_TEXTURE_2D, 0, bitmap, 0);
+            glError = gl.glGetError();
+            
             bitmap.recycle();
+            if (glError == GL11.GL_OUT_OF_MEMORY) {
+                handleLowMemory();
+            }
+            if (glError != GL11.GL_NO_ERROR) {
+                // There was an error, we need to retry this texture at some later time
+                Log.i(TAG, "Texture creation fail, glError " + glError);
+                texture.mId = 0;
+                texture.mBitmap = null;
+                texture.mState = Texture.STATE_UNLOADED;
+            } else {
+                // Update texture state.
+                texture.mBitmap = null;
+                texture.mId = textureId[0];
+                texture.mState = Texture.STATE_LOADED;
 
-            // Update texture state.
-            texture.mBitmap = null;
-            texture.mId = textureId[0];
-            texture.mState = Texture.STATE_LOADED;
-
-            // Add to the active list.
-            final TextureReference textureRef = new TextureReference(texture, gl, mUnreferencedTextureQueue, textureId[0]);
-            mActiveTextureList.add(textureRef.activeListEntry);
-            requestRender();
+                // Add to the active list.
+                final TextureReference textureRef = new TextureReference(texture, gl, mUnreferencedTextureQueue, textureId[0]);
+                mActiveTextureList.add(textureRef.activeListEntry);
+                requestRender();
+            }
         } else {
             texture.mState = Texture.STATE_ERROR;
         }
@@ -551,9 +562,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
         boolean wasLoadingExpensiveTextures = isLoadingExpensiveTextures();
         boolean loadingExpensiveTextures = false;
-        int numTextureThreads = mTextureLoadThreads.length;
+        int numTextureThreads = sTextureLoadThreads.length;
         for (int i = 2; i < numTextureThreads; ++i) {
-            if (mTextureLoadThreads[i].mIsLoading) {
+            if (sTextureLoadThreads[i].mIsLoading) {
                 loadingExpensiveTextures = true;
                 break;
             }
@@ -566,7 +577,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         processTextures(false);
 
         // Update the current time and frame time interval.
-        final long now = SystemClock.uptimeMillis();
+        long now = SystemClock.uptimeMillis();
         final float dt = 0.001f * Math.min(50, now - mFrameTime);
         mFrameInterval = dt;
         mFrameTime = now;
@@ -575,7 +586,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         processCurrentEvent();
         processTouchEvent();
         // Run the update pass.
-        final Lists lists = mLists;
+        final Lists lists = sLists;
         synchronized (lists) {
             final ArrayList<Layer> updateList = lists.updateList;
             boolean isDirty = false;
@@ -586,7 +597,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             if (isDirty) {
                 requestRender();
             }
-
+        
             // Clear the depth buffer.
             gl.glClear(GL11.GL_DEPTH_BUFFER_BIT);
             gl.glEnable(GL11.GL_SCISSOR_TEST);
@@ -601,7 +612,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                     layer.renderOpaque(this, gl);
                 }
             }
-
+            
             // Run the blended pass.
             gl.glEnable(GL11.GL_BLEND);
             final ArrayList<Layer> blendedList = lists.blendedList;
@@ -611,10 +622,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                     layer.renderBlended(this, gl);
                 }
             }
-        }
-        int priority = Process.getThreadPriority(Process.myTid());
-        if (priority != Process.THREAD_PRIORITY_URGENT_DISPLAY) {
-            Log.e(TAG, "The display thread should never be lowered to priority level " + priority);
+            gl.glDisable(GL11.GL_BLEND);
         }
     }
 
@@ -638,6 +646,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     private void processTouchEvent() {
         MotionEvent event = null;
+        int numEvents = mTouchEventQueue.size();
+        int i = 0;
         do {
             // We look at the touch event queue and process one event at a time
             synchronized (mTouchEventQueue) {
@@ -666,7 +676,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                 mTouchEventTarget = null;
             }
             event.recycle();
-        } while (event != null);
+            ++i;
+        } while (event != null && i < numEvents);
         synchronized (this) {
             this.notify();
         }
@@ -697,7 +708,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     }
 
     private Layer hitTest(float x, float y) {
-        final ArrayList<Layer> hitTestList = mLists.hitTestList;
+        final ArrayList<Layer> hitTestList = sLists.hitTestList;
         for (int i = hitTestList.size() - 1; i >= 0; --i) {
             final Layer layer = hitTestList.get(i);
             if (layer != null && !layer.mHidden) {
@@ -714,9 +725,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     private void updateLists() {
         if (mRootLayer != null) {
-            synchronized (mLists) {
-                mLists.clear();
-                mRootLayer.generate(this, mLists);
+            synchronized (sLists) {
+                sLists.clear();
+                mRootLayer.generate(this, sLists);
             }
         }
     }
@@ -759,7 +770,6 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         // Clear the resource texture cache.
         clearCache();
 
-        // Log.i(TAG, "Surface Created for " + this);
         GL11 gl = (GL11) gl1;
         if (mGL == null) {
             mGL = gl;
@@ -770,14 +780,14 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         }
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         // Increase the priority of the render thread.
-        Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY);
+        Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
 
         // Disable unused state.
         gl.glEnable(GL11.GL_DITHER);
         gl.glDisable(GL11.GL_LIGHTING);
 
         // Set global state.
-        gl.glHint(GL11.GL_PERSPECTIVE_CORRECTION_HINT, GL11.GL_NICEST);
+        // gl.glHint(GL11.GL_PERSPECTIVE_CORRECTION_HINT, GL11.GL_NICEST);
 
         // Enable textures.
         gl.glEnable(GL11.GL_TEXTURE_2D);
@@ -821,8 +831,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         if (mRootLayer != null) {
             mRootLayer.onSurfaceCreated(this, gl);
         }
-        synchronized (mLists) {
-            ArrayList<Layer> systemList = mLists.systemList;
+        synchronized (sLists) {
+            ArrayList<Layer> systemList = sLists.systemList;
             for (int i = systemList.size() - 1; i >= 0; --i) {
                 systemList.get(i).onSurfaceCreated(this, gl);
             }
@@ -915,19 +925,16 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         super.surfaceDestroyed(holder);
-        // Log.i(TAG, "Surface destroyed for " + this);
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        // Log.i(TAG, "Attaching to window for " + this);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        // Log.i(TAG, "Detaching from Window for " + this);
     }
 
     private final class TextureLoadThread extends Thread {
@@ -935,14 +942,12 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
         public TextureLoadThread() {
             super("TextureLoad");
-            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         }
 
         public void run() {
-            RenderView view = RenderView.this;
-            Deque<Texture> inputQueue = (mCachedTextureLoadThread == this) ? view.mLoadInputQueueCached : view.mLoadInputQueue;
-            inputQueue = (mVideoTextureLoadThread == this) ? view.mLoadInputQueueVideo : view.mLoadInputQueue;
-            Deque<Texture> outputQueue = view.mLoadOutputQueue;
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+            Deque<Texture> inputQueue = (sVideoTextureLoadThread == this) ? sLoadInputQueueVideo : ((sCachedTextureLoadThread == this) ? sLoadInputQueueCached : sLoadInputQueue);
+            Deque<Texture> outputQueue = sLoadOutputQueue;
             try {
                 for (;;) {
                     // Pop the next texture from the input queue.
@@ -952,7 +957,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                             inputQueue.wait();
                         }
                     }
-                    if (mCachedTextureLoadThread != this)
+                    if (sCachedTextureLoadThread != this)
                         mIsLoading = true;
                     // Load the texture bitmap.
                     load(texture);
@@ -977,14 +982,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     }
 
     public void shutdown() {
-        // stop all the threads
-        for (int i = 0; i < NUM_TEXTURE_LOAD_THREADS; ++i) {
-            mTextureLoadThreads[i].interrupt();
-        }
-        ArrayUtils.clear(mTextureLoadThreads);
         mRootLayer = null;
-        synchronized (mLists) {
-            mLists.clear();
+        synchronized (sLists) {
+            sLists.clear();
         }
     }
 
@@ -996,6 +996,6 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     }
 
     public Lists getLists() {
-        return mLists;
+        return sLists;
     }
 }

@@ -76,8 +76,8 @@ public final class AdaptiveBackgroundTexture extends Texture {
         int sourceHeight = source.getHeight();
         int destWidth = mWidth;
         int destHeight = mHeight;
-        float fitX = (float) sourceWidth / destWidth;  // CR: cast destWidth to float as well to be clean; no space after the cast.
-        float fitY = (float) sourceHeight / destHeight;
+        float fitX = (float)sourceWidth / (float)destWidth;
+        float fitY = (float)sourceHeight / (float)destHeight;
         float scale;
         int cropX;
         int cropY;
@@ -86,10 +86,10 @@ public final class AdaptiveBackgroundTexture extends Texture {
         if (fitX < fitY) {
             // Full width, partial height.
             cropWidth = sourceWidth;
-            cropHeight = (int) (destHeight * fitX);  // CR: no space after the cast.
+            cropHeight = (int)(destHeight * fitX);
             cropX = 0;
             cropY = (sourceHeight - cropHeight) / 2;
-            scale = 1f / fitX;  // CR: i think 1.0f is clearer than 1f.
+            scale = 1.0f / fitX;
         } else {
             // Full height, partial or full width.
             cropWidth = (int) (destHeight * fitY);

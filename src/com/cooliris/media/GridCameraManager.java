@@ -1,23 +1,25 @@
 package com.cooliris.media;
 
 public final class GridCameraManager {
-    private GridCamera mCamera;
-    private ConcurrentPool<Vector3f> mPool;
-
-    public GridCameraManager(GridCamera camera) {
-        mCamera = camera;
-        Vector3f[] vectorPool = new Vector3f[128];
+    private final GridCamera mCamera;
+    private static final Pool<Vector3f> sPool;
+    static {
+        final Vector3f[] vectorPool = new Vector3f[128];
         int length = vectorPool.length;
         for (int i = 0; i < length; ++i) {
             vectorPool[i] = new Vector3f();
         }
-        mPool = new ConcurrentPool<Vector3f>(vectorPool);
+        sPool = new Pool<Vector3f>(vectorPool);
+    }
+
+    public GridCameraManager(final GridCamera camera) {
+        mCamera = camera;
     }
 
     public void centerCameraForSlot(LayoutInterface layout, int slotIndex, float baseConvergence, Vector3f deltaAnchorPositionIn,
             int selectedSlotIndex, float zoomValue, float imageTheta, int state) {
         final GridCamera camera = mCamera;
-        final ConcurrentPool<Vector3f> pool = mPool;
+        final Pool<Vector3f> pool = sPool;
         synchronized (camera) {
             final boolean zoomin = (selectedSlotIndex != Shared.INVALID);
             final int theta = (int) imageTheta;
@@ -61,16 +63,16 @@ public final class GridCameraManager {
      */
     public boolean constrainCameraForSlot(LayoutInterface layout, int slotIndex, Vector3f deltaAnchorPositionIn,
             float currentFocusItemWidth, float currentFocusItemHeight) {
-        GridCamera camera = mCamera;
-        ConcurrentPool<Vector3f> pool = mPool;
+        final GridCamera camera = mCamera;
+        final Pool<Vector3f> pool = sPool;
         boolean retVal = false;
         synchronized (camera) {
-            Vector3f position = pool.create();
-            Vector3f deltaAnchorPosition = pool.create();
-            Vector3f topLeft = pool.create();
-            Vector3f bottomRight = pool.create();
-            Vector3f imgTopLeft = pool.create();
-            Vector3f imgBottomRight = pool.create();
+            final Vector3f position = pool.create();
+            final Vector3f deltaAnchorPosition = pool.create();
+            final Vector3f topLeft = pool.create();
+            final Vector3f bottomRight = pool.create();
+            final Vector3f imgTopLeft = pool.create();
+            final Vector3f imgBottomRight = pool.create();
 
             try {
                 if (slotIndex >= 0) {
@@ -120,7 +122,7 @@ public final class GridCameraManager {
     public void computeVisibleRange(MediaFeed feed, LayoutInterface layout, Vector3f deltaAnchorPositionIn,
             IndexRange outVisibleRange, IndexRange outBufferedVisibleRange, IndexRange outCompleteRange, int state) {
         GridCamera camera = mCamera;
-        ConcurrentPool<Vector3f> pool = mPool;
+        Pool<Vector3f> pool = sPool;
         float offset = (camera.mLookAtX * camera.mScale);
         int itemWidth = camera.mItemWidth;
         float maxIncrement = camera.mWidth * 0.5f + itemWidth;
@@ -223,8 +225,8 @@ public final class GridCameraManager {
 
     public static final float getFillScreenZoomValue(GridCamera camera, Pool<Vector3f> pool, float currentFocusItemWidth,
             float currentFocusItemHeight) {
-        Vector3f topLeft = pool.create();
-        Vector3f bottomRight = pool.create();
+        final Vector3f topLeft = pool.create();
+        final Vector3f bottomRight = pool.create();
         float potentialZoomValue = 1.0f;
         try {
             camera.convertToCameraSpace(0, 0, 0, topLeft);

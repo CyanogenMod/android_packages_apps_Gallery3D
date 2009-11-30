@@ -15,6 +15,7 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.util.FloatMath;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import com.cooliris.media.MenuBar.Menu;
@@ -24,13 +25,13 @@ public final class HudLayer extends Layer {
     public static final int MODE_NORMAL = 0;
     public static final int MODE_SELECT = 1;
 
-    private final Context mContext;
+    private Context mContext;
     private GridLayer mGridLayer;
     private final ImageButton mTopRightButton = new ImageButton();
     private final ImageButton mZoomInButton = new ImageButton();
     private final ImageButton mZoomOutButton = new ImageButton();
-    private final PathBarLayer mPathBar;
-    private final TimeBar mTimeBar;
+    private static PathBarLayer sPathBar;
+    private static TimeBar sTimeBar;
     private MenuBar.Menu[] mNormalBottomMenu = null;
     private MenuBar.Menu[] mSingleViewIntentBottomMenu = null;
     private final MenuBar mSelectionMenuBottom;
@@ -103,9 +104,10 @@ public final class HudLayer extends Layer {
 
     HudLayer(Context context) {
         mAlpha = 1.0f;
-        mContext = context;
-        mTimeBar = new TimeBar(context);
-        mPathBar = new PathBarLayer();
+        if (sTimeBar == null) {
+            sTimeBar = new TimeBar(context);
+            sPathBar = new PathBarLayer();
+        }
         mTopRightButton.setSize((int) (100 * Gallery.PIXEL_DENSITY), (int) (94 * Gallery.PIXEL_DENSITY));
 
         mZoomInButton.setSize(43 * Gallery.PIXEL_DENSITY, 43 * Gallery.PIXEL_DENSITY);
@@ -118,13 +120,13 @@ public final class HudLayer extends Layer {
         // The Share submenu is populated dynamically when opened.
         Resources resources = context.getResources();
         PopupMenu.Option[] deleteOptions = {
-                new PopupMenu.Option(mContext.getResources().getString(R.string.confirm_delete), resources
+                new PopupMenu.Option(context.getResources().getString(R.string.confirm_delete), resources
                         .getDrawable(R.drawable.icon_delete), new Runnable() {
                     public void run() {
                         deleteSelection();
                     }
                 }),
-                new PopupMenu.Option(mContext.getResources().getString(R.string.cancel), resources
+                new PopupMenu.Option(context.getResources().getString(R.string.cancel), resources
                         .getDrawable(R.drawable.icon_cancel), new Runnable() {
                     public void run() {
 
@@ -132,17 +134,17 @@ public final class HudLayer extends Layer {
                 }), };
         mSelectionMenuBottom = new MenuBar(context);
 
-        MenuBar.Menu shareMenu = new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.share)).icon(
+        MenuBar.Menu shareMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.share)).icon(
                 R.drawable.icon_share).onSelect(new Runnable() {
             public void run() {
                 updateShareMenu();
             }
         }).build();
 
-        MenuBar.Menu deleteMenu = new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.delete)).icon(
+        MenuBar.Menu deleteMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.delete)).icon(
                 R.drawable.icon_delete).options(deleteOptions).build();
 
-        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.more)).icon(
+        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.more)).icon(
                 R.drawable.icon_more).onSelect(new Runnable() {
             public void run() {
                 buildMoreOptions();
@@ -155,19 +157,19 @@ public final class HudLayer extends Layer {
         mSelectionMenuBottom.setMenus(mNormalBottomMenu);
         mSelectionMenuTop = new MenuBar(context);
         mSelectionMenuTop.setMenus(new MenuBar.Menu[] {
-                new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.select_all)).onSelect(new Runnable() {
+                new MenuBar.Menu.Builder(context.getResources().getString(R.string.select_all)).onSelect(new Runnable() {
                     public void run() {
                         mGridLayer.selectAll();
                     }
                 }).build(), new MenuBar.Menu.Builder("").build(),
-                new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.deselect_all)).onSelect(new Runnable() {
+                new MenuBar.Menu.Builder(context.getResources().getString(R.string.deselect_all)).onSelect(new Runnable() {
                     public void run() {
                         mGridLayer.deselectOrCancelSelectMode();
                     }
                 }).build() });
         mFullscreenMenu = new MenuBar(context);
         mFullscreenMenu.setMenus(new MenuBar.Menu[] {
-                new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.slideshow)).icon(R.drawable.icon_play)
+                new MenuBar.Menu.Builder(context.getResources().getString(R.string.slideshow)).icon(R.drawable.icon_play)
                         .onSingleTapUp(new Runnable() {
                             public void run() {
                                 if (getAlpha() == 1.0f)
@@ -176,7 +178,7 @@ public final class HudLayer extends Layer {
                                     setAlpha(1.0f);
                             }
                         }).build(), /* new MenuBar.Menu.Builder("").build(), */
-                new MenuBar.Menu.Builder(mContext.getResources().getString(R.string.menu)).icon(R.drawable.icon_more)
+                new MenuBar.Menu.Builder(context.getResources().getString(R.string.menu)).icon(R.drawable.icon_more)
                         .onSingleTapUp(new Runnable() {
                             public void run() {
                                 if (getAlpha() == 1.0f)
@@ -185,6 +187,13 @@ public final class HudLayer extends Layer {
                                     setAlpha(1.0f);
                             }
                         }).build() });
+    }
+    
+    public void setContext(Context context) {
+        if (mContext != context) {
+            mContext = context;
+            sTimeBar.regenerateStringsForContext(context);
+        }
     }
 
     private void buildMoreOptions() {
@@ -407,8 +416,8 @@ public final class HudLayer extends Layer {
         final float height = mHeight;
         closeSelectionMenu();
 
-        mTimeBar.setPosition(0f, height - TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
-        mTimeBar.setSize(width, TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        sTimeBar.setPosition(0f, height - TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        sTimeBar.setSize(width, TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
         mSelectionMenuTop.setPosition(0f, 0);
         mSelectionMenuTop.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
         mSelectionMenuBottom.setPosition(0f, height - MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
@@ -417,7 +426,7 @@ public final class HudLayer extends Layer {
         mFullscreenMenu.setPosition(0f, height - MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
         mFullscreenMenu.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
 
-        mPathBar.setPosition(0f, -4f * Gallery.PIXEL_DENSITY);
+        sPathBar.setPosition(0f, -4f * Gallery.PIXEL_DENSITY);
         computeSizeForPathbar();
 
         mTopRightButton.setPosition(width - mTopRightButton.getWidth(), 0f);
@@ -429,12 +438,12 @@ public final class HudLayer extends Layer {
         float pathBarWidth = mWidth
                 - ((mGridLayer.getState() == GridLayer.STATE_FULL_SCREEN) ? 32 * Gallery.PIXEL_DENSITY
                         : 120 * Gallery.PIXEL_DENSITY);
-        mPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * Gallery.PIXEL_DENSITY));
-        mPathBar.recomputeComponents();
+        sPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * Gallery.PIXEL_DENSITY));
+        sPathBar.recomputeComponents();
     }
 
     public void setFeed(MediaFeed feed, int state, boolean needsLayout) {
-        mTimeBar.setFeed(feed, state, needsLayout);
+        sTimeBar.setFeed(feed, state, needsLayout);
     }
 
     public void onGridStateChanged() {
@@ -442,8 +451,9 @@ public final class HudLayer extends Layer {
     }
 
     private void updateViews() {
+        if (mGridLayer == null)
+            return;
         final int state = mGridLayer.getState();
-
         // Show the selection menu in selection mode.
         final boolean selectionMode = mMode == MODE_SELECT;
         final boolean fullscreenMode = state == GridLayer.STATE_FULL_SCREEN;
@@ -455,11 +465,11 @@ public final class HudLayer extends Layer {
         mZoomOutButton.setHidden(mFullscreenMenu.isHidden());
 
         // Show the time bar in stack and grid states, except in selection mode.
-        mTimeBar.setHidden(fullscreenMode || selectionMode || stackMode);
+        sTimeBar.setHidden(fullscreenMode || selectionMode || stackMode);
         // mTimeBar.setHidden(selectionMode || (state != GridLayer.STATE_TIMELINE && state != GridLayer.STATE_GRID_VIEW));
 
         // Hide the path bar and top-right button in selection mode.
-        mPathBar.setHidden(selectionMode);
+        sPathBar.setHidden(selectionMode);
         mTopRightButton.setHidden(selectionMode || fullscreenMode);
         computeSizeForPathbar();
 
@@ -495,11 +505,11 @@ public final class HudLayer extends Layer {
     }
 
     public TimeBar getTimeBar() {
-        return mTimeBar;
+        return sTimeBar;
     }
 
     public PathBarLayer getPathBar() {
-        return mPathBar;
+        return sPathBar;
     }
 
     public GridLayer getGridLayer() {
@@ -566,12 +576,12 @@ public final class HudLayer extends Layer {
         mTopRightButton.generate(view, lists);
         mZoomInButton.generate(view, lists);
         mZoomOutButton.generate(view, lists);
-        mTimeBar.generate(view, lists);
+        sTimeBar.generate(view, lists);
         mSelectionMenuTop.generate(view, lists);
         mSelectionMenuBottom.generate(view, lists);
         mFullscreenMenu.generate(view, lists);
-        mPathBar.generate(view, lists);
-        //mLoadingLayer.generate(view, lists);
+        sPathBar.generate(view, lists);
+        // mLoadingLayer.generate(view, lists);
         mView = view;
     }
 
@@ -609,6 +619,7 @@ public final class HudLayer extends Layer {
 
     void reset() {
         mLoadingLayer.reset();
+        sTimeBar.regenerateStringsForContext(mContext);
     }
 
     public void fullscreenSelectionChanged(MediaItem item, int index, int count) {
@@ -622,12 +633,7 @@ public final class HudLayer extends Layer {
         mCachedCaption = item.mCaption;
         mCachedPosition = location;
         mCachedCurrentLabel = location;
-        mPathBar.changeLabel(location);
-        // String displayString = DateFormat.format("h:mmaa MMM dd yyyy", item.dateTaken).toString();
-        // Menu menu = new
-        // MenuBar.Menu.Builder(displayString).StringTexture.Config(MenuBar.MENU_TITLE_STYLE_TEXT).resizeToAccomodate()
-        // .build();
-        // mFullscreenMenu.updateMenu(menu, 1);
+        sPathBar.changeLabel(location);
     }
 
     private void updateShareMenu() {
@@ -739,7 +745,7 @@ public final class HudLayer extends Layer {
 
     public void swapFullscreenLabel() {
         mCachedCurrentLabel = (mCachedCurrentLabel == mCachedCaption || mCachedCaption == null) ? mCachedPosition : mCachedCaption;
-        mPathBar.changeLabel(mCachedCurrentLabel);
+        sPathBar.changeLabel(mCachedCurrentLabel);
     }
 
     public void clear() {
@@ -747,7 +753,7 @@ public final class HudLayer extends Layer {
     }
 
     public void shutDown() {
-        mGridLayer = null;
+        
     }
 
     public void enterSelectionMode() {

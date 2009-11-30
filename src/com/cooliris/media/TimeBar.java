@@ -25,7 +25,6 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     private static final int MARKER_SPACING_PIXELS = 50;
     private static final float AUTO_SCROLL_MARGIN = 100f;
     private static final Paint SRC_PAINT = new Paint();
-    private final Context mContext;
     private Listener mListener = null;
     private MediaFeed mFeed = null;
     private float mTotalWidth = 0f;
@@ -44,7 +43,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     private final StringTexture.Config mMonthYearFormat = new StringTexture.Config();
     private final StringTexture.Config mDayFormat = new StringTexture.Config();
     private final SparseArray<StringTexture> mYearLabels = new SparseArray<StringTexture>();
-    private final StringTexture mDateUnknown;
+    private StringTexture mDateUnknown;
     private final StringTexture[] mMonthLabels = new StringTexture[12];
     private final StringTexture[] mDayLabels = new StringTexture[32];
     private final StringTexture[] mOpaqueDayLabels = new StringTexture[32];
@@ -63,18 +62,22 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     }
 
     TimeBar(Context context) {
-        // Save the context.
-        mContext = context;
-
         // Setup formatting for text labels.
         mMonthYearFormat.fontSize = 17f * Gallery.PIXEL_DENSITY;
         mMonthYearFormat.bold = true;
         mMonthYearFormat.a = 0.85f;
         mDayFormat.fontSize = 17f * Gallery.PIXEL_DENSITY;
         mDayFormat.a = 0.61f;
-
+        regenerateStringsForContext(context);
+        Bitmap background = BitmapFactory.decodeResource(context.getResources(), R.drawable.popup);
+        mBackground = new NinePatch(background, background.getNinePatchChunk(), null);
+        mBackgroundRect = new Rect();
+        SRC_PAINT.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+    }
+    
+    public void regenerateStringsForContext(Context context) {
         // Create textures for month names.
-        String[] months = mContext.getResources().getStringArray(R.array.months_abbreviated);
+        String[] months = context.getResources().getStringArray(R.array.months_abbreviated);
         for (int i = 0; i < months.length; ++i) {
             mMonthLabels[i] = new StringTexture(months[i], mMonthYearFormat);
         }
@@ -84,10 +87,6 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
             mOpaqueDayLabels[i] = new StringTexture(Integer.toString(i), mMonthYearFormat);
         }
         mDateUnknown = new StringTexture(context.getResources().getString(R.string.date_unknown), mMonthYearFormat);
-        Bitmap background = BitmapFactory.decodeResource(context.getResources(), R.drawable.popup);
-        mBackground = new NinePatch(background, background.getNinePatchChunk(), null);
-        mBackgroundRect = new Rect();
-        SRC_PAINT.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
     }
 
     public void setListener(Listener listener) {
@@ -108,30 +107,6 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     protected void onSizeChanged() {
         mScroll = getScrollForPosition(mPosition);
     }
-
-    // public long getTime() {
-    // final float x = mPosition * mTotalWidth;
-    // for (int i = 0, size = mMarkers.size(); i < size; ++i) {
-    // Marker marker = mMarkers.get(i);
-    // if (x <= marker.x) {
-    // return marker.time;
-    // }
-    // }
-    // return 0;
-    // }
-    //
-    // public void setTime(long time) {
-    // synchronized (mMarkers) {
-    // for (int i = 0, size = mMarkers.size(); i < size; ++i) {
-    // Marker marker = mMarkers.get(i);
-    // if (time <= marker.time) {
-    // mPosition = Math.max(0.0f, Math.min(1.0f, marker.x / mTotalWidth));
-    // mScroll = getScrollForPosition(mPosition);
-    // break;
-    // }
-    // }
-    // }
-    // }
 
     public MediaItem getItem() {
         synchronized (mMarkers) {
@@ -257,18 +232,18 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
                         if (month != lastMonth) {
                             lastMonth = month;
                             lastDayBlock = -1;
-                            marker = new Marker(mMonthLabels[month], dx, time.getTimeInMillis(), year, month, dayBlock,
+                            marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock,
                                     Marker.TYPE_MONTH, increment);
                             dx = addMarker(marker);
                         } else if (dayBlock != lastDayBlock) {
                             lastDayBlock = dayBlock;
                             if (dayBlock != 0) {
-                                marker = new Marker(mDayLabels[dayBlock], dx, time.getTimeInMillis(), year, month, dayBlock,
+                                marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock,
                                         Marker.TYPE_DAY, increment);
                                 dx = addMarker(marker);
                             }
                         } else {
-                            marker = new Marker(mDot, dx, time.getTimeInMillis(), year, month, dayBlock, Marker.TYPE_DOT, increment);
+                            marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock, Marker.TYPE_DOT, increment);
                             dx = addMarker(marker);
                         }
                         for (int k = 0; k < increment; ++k) {
@@ -496,7 +471,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     }
 
     private static final class Marker {
-        Marker(StringTexture texture, float x, long time, int year, int month, int day, int type, int expectedCapacity) {
+        Marker(float x, long time, int year, int month, int day, int type, int expectedCapacity) {
             this.x = x;
             this.year = year;
             this.month = month;

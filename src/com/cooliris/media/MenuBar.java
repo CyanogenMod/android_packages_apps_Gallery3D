@@ -142,7 +142,6 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
                 view.draw2D(icon, menu.x + offset, iconY);
             }
             float titleY = y + (height - MENU_TITLE_STYLE.height) / 2 + 1;
-            //Log.i("MENUBAR", "Drawing label (" + title.getWidth() + ", " + title.getHeight() + ", " + title.mNormalizedWidth + ")");
             view.draw2D(titleTexture, menu.x + offset + iconWidth, titleY);
         }
     }

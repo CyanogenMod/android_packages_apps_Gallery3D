@@ -23,6 +23,7 @@ public final class MediaFeed implements Runnable {
     private Listener mListener;
     private DataSource mDataSource;
     private boolean mListenerNeedsUpdate = false;
+    private boolean mMediaFeedNeedsToRun = false;
     private MediaSet mSingleWrapper = new MediaSet();
     private boolean mInClusteringMode = false;
     private HashMap<MediaSet, MediaClustering> mClusterSets = new HashMap<MediaSet, MediaClustering>(32);
@@ -50,7 +51,7 @@ public final class MediaFeed implements Runnable {
         mSingleWrapper.setNumExpectedItems(1);
         mLoading = true;
     }
-    
+
     public void shutdown() {
         if (mDataSourceThread != null) {
             mDataSource.shutdown();
@@ -83,13 +84,16 @@ public final class MediaFeed implements Runnable {
     }
 
     public void setVisibleRange(int begin, int end) {
-        mVisibleRange.begin = begin;
-        mVisibleRange.end = end;
-        int numItems = 96;
-        int numItemsBy2 = numItems / 2;
-        int numItemsBy4 = numItems / 4;
-        mBufferedRange.begin = (begin / numItemsBy2) * numItemsBy2 - numItemsBy4;
-        mBufferedRange.end = mBufferedRange.begin + numItems;
+        if (begin != mVisibleRange.begin || end != mVisibleRange.end) {
+            mVisibleRange.begin = begin;
+            mVisibleRange.end = end;
+            int numItems = 96;
+            int numItemsBy2 = numItems / 2;
+            int numItemsBy4 = numItems / 4;
+            mBufferedRange.begin = (begin / numItemsBy2) * numItemsBy2 - numItemsBy4;
+            mBufferedRange.end = mBufferedRange.begin + numItems;
+            mMediaFeedNeedsToRun = true;
+        }
     }
 
     public void setFilter(MediaFilter filter) {
@@ -98,6 +102,7 @@ public final class MediaFeed implements Runnable {
         if (mListener != null) {
             mListener.onFeedAboutToChange(this);
         }
+        mMediaFeedNeedsToRun = true;
     }
 
     public void removeFilter() {
@@ -107,19 +112,24 @@ public final class MediaFeed implements Runnable {
             mListener.onFeedAboutToChange(this);
             updateListener(true);
         }
+        mMediaFeedNeedsToRun = true;
     }
 
     public ArrayList<MediaSet> getMediaSets() {
         return mMediaSets;
     }
 
-    public synchronized MediaSet getMediaSet(final long setId) {
+    public MediaSet getMediaSet(final long setId) {
         if (setId != Shared.INVALID) {
-            int mMediaSetsSize = mMediaSets.size();
-            for (int i = 0; i < mMediaSetsSize; i++) {
-                if (mMediaSets.get(i).mId == setId) {
-                    return mMediaSets.get(i);
+            try {
+                int mMediaSetsSize = mMediaSets.size();
+                for (int i = 0; i < mMediaSetsSize; i++) {
+                    if (mMediaSets.get(i).mId == setId) {
+                        return mMediaSets.get(i);
+                    }
                 }
+            } catch (Exception e) {
+                return null;
             }
         }
         return null;
@@ -133,6 +143,10 @@ public final class MediaFeed implements Runnable {
         MediaSet mediaSet = new MediaSet(dataSource);
         mediaSet.mId = setId;
         mMediaSets.add(mediaSet);
+        if (mDataSourceThread != null && !mDataSourceThread.isAlive()) {
+            mDataSourceThread.start();
+        }
+        mMediaFeedNeedsToRun = true;
         return mediaSet;
     }
 
@@ -161,7 +175,7 @@ public final class MediaFeed implements Runnable {
     public void addItemToMediaSet(MediaItem item, MediaSet mediaSet) {
         item.mParentMediaSet = mediaSet;
         mediaSet.addItem(item);
-        synchronized (this) {
+        synchronized (mClusterSets) {
             if (item.mClusteringState == MediaItem.NOT_CLUSTERED) {
                 MediaClustering clustering = mClusterSets.get(mediaSet);
                 if (clustering == null) {
@@ -173,6 +187,7 @@ public final class MediaFeed implements Runnable {
                 item.mClusteringState = MediaItem.CLUSTERED;
             }
         }
+        mMediaFeedNeedsToRun = true;
     }
 
     public void performOperation(final int operation, final ArrayList<MediaBucket> mediaBuckets, final Object data) {
@@ -183,7 +198,6 @@ public final class MediaFeed implements Runnable {
         }
         if (operation == OPERATION_DELETE && mListener != null) {
             mListener.onFeedAboutToChange(this);
-
         }
         Thread operationThread = new Thread(new Runnable() {
             public void run() {
@@ -214,6 +228,7 @@ public final class MediaFeed implements Runnable {
                         }
                     }
                     updateListener(true);
+                    mMediaFeedNeedsToRun = true;
                     if (mDataSource != null) {
                         mDataSource.performOperation(OPERATION_DELETE, mediaBuckets, null);
                     }
@@ -228,16 +243,18 @@ public final class MediaFeed implements Runnable {
 
     public void removeMediaSet(MediaSet set) {
         mMediaSets.remove(set);
+        mMediaFeedNeedsToRun = true;
     }
 
     private void removeItemFromMediaSet(MediaItem item, MediaSet mediaSet) {
         mediaSet.removeItem(item);
-        synchronized (this) {
+        synchronized (mClusterSets) {
             MediaClustering clustering = mClusterSets.get(mediaSet);
             if (clustering != null) {
                 clustering.removeItemFromClustering(item);
             }
         }
+        mMediaFeedNeedsToRun = true;
     }
 
     public void updateListener(boolean needsLayout) {
@@ -311,7 +328,7 @@ public final class MediaFeed implements Runnable {
     public boolean getWaitingForMediaScanner() {
         return mWaitingForMediaScanner;
     }
-    
+
     public boolean isLoading() {
         return mLoading;
     }
@@ -319,6 +336,8 @@ public final class MediaFeed implements Runnable {
     public void start() {
         final MediaFeed feed = this;
         mLoading = true;
+        mDataSourceThread = new Thread(this);
+        mDataSourceThread.setName("MediaFeed");
         mAlbumSourceThread = new Thread(new Runnable() {
             public void run() {
                 if (mContext == null)
@@ -326,6 +345,9 @@ public final class MediaFeed implements Runnable {
                 Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 DataSource dataSource = mDataSource;
                 // We must wait while the SD card is mounted or the MediaScanner is running.
+                if (dataSource != null) {
+                    dataSource.loadMediaSets(feed);
+                }
                 mWaitingForMediaScanner = false;
                 while (ImageManager.isMediaScannerScanning(mContext.getContentResolver())) {
                     // MediaScanner is still running, wait
@@ -341,19 +363,16 @@ public final class MediaFeed implements Runnable {
                 }
                 if (mWaitingForMediaScanner) {
                     showToast(mContext.getResources().getString(R.string.loading_new), Toast.LENGTH_LONG);
-                }
-                mWaitingForMediaScanner = false;
-                if (dataSource != null) {
-                    dataSource.loadMediaSets(feed);
+                    mWaitingForMediaScanner = false;
+                    if (dataSource != null) {
+                        dataSource.loadMediaSets(feed);
+                    }
                 }
                 mLoading = false;
             }
         });
         mAlbumSourceThread.setName("MediaSets");
         mAlbumSourceThread.start();
-        mDataSourceThread = new Thread(this);
-        mDataSourceThread.setName("MediaFeed");
-        mDataSourceThread.start();
     }
 
     private void showToast(final String string, final int duration) {
@@ -361,7 +380,7 @@ public final class MediaFeed implements Runnable {
     }
 
     private void showToast(final String string, final int duration, final boolean centered) {
-        if (mContext != null && !((Gallery)mContext).isPaused()) {
+        if (mContext != null && !((Gallery) mContext).isPaused()) {
             ((Gallery) mContext).getHandler().post(new Runnable() {
                 public void run() {
                     if (mContext != null) {
@@ -378,10 +397,10 @@ public final class MediaFeed implements Runnable {
 
     public void run() {
         DataSource dataSource = mDataSource;
-        int sleepMs = 100;
+        int sleepMs = 10;
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         if (dataSource != null) {
-            while (Thread.interrupted() == false) {
+            while (!Thread.interrupted()) {
                 if (mListenerNeedsUpdate) {
                     mListenerNeedsUpdate = false;
                     if (mListener != null)
@@ -392,13 +411,21 @@ public final class MediaFeed implements Runnable {
                         return;
                     }
                 } else {
+                    if (mWaitingForMediaScanner) {
+                        synchronized (mMediaSets) {
+                            mMediaSets.clear();
+                        }
+                    }
                     try {
                         Thread.sleep(sleepMs);
                     } catch (InterruptedException e) {
                         return;
                     }
                 }
-                sleepMs = 100;
+                sleepMs = 300;
+                if (!mMediaFeedNeedsToRun)
+                    continue;
+                mMediaFeedNeedsToRun = false;
                 ArrayList<MediaSet> mediaSets = mMediaSets;
                 synchronized (mediaSets) {
                     int expandedSetIndex = mExpandedMediaSetIndex;
@@ -415,13 +442,6 @@ public final class MediaFeed implements Runnable {
                             if (i >= visibleRange.begin && i <= visibleRange.end && scanMediaSets) {
                                 MediaSet set = mediaSets.get(i);
                                 int numItemsLoaded = set.mNumItemsLoaded;
-                                if (!set.setContainsValidItems()) {
-                                    mediaSets.remove(set);
-                                    if (mListener != null) {
-                                        mListener.onFeedChanged(this, false);
-                                    }
-                                    break;
-                                }
                                 if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
                                     dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
                                     if (set.getNumExpectedItems() == 0) {
@@ -433,6 +453,13 @@ public final class MediaFeed implements Runnable {
                                     }
                                     sleepMs = 100;
                                     scanMediaSets = false;
+                                }
+                                if (!set.setContainsValidItems()) {
+                                    mediaSets.remove(set);
+                                    if (mListener != null) {
+                                        mListener.onFeedChanged(this, false);
+                                    }
+                                    break;
                                 }
                             }
                         }
@@ -455,7 +482,7 @@ public final class MediaFeed implements Runnable {
                                         scanMediaSets = false;
                                     }
                                 }
-                            } else if (i < bufferedRange.begin || i > bufferedRange.end){
+                            } else if (i < bufferedRange.begin || i > bufferedRange.end) {
                                 // Purge this set to its initial status.
                                 MediaClustering clustering = mClusterSets.get(set);
                                 if (clustering != null) {
@@ -555,6 +582,7 @@ public final class MediaFeed implements Runnable {
             // PicasaService.requestSync(mContext, PicasaService.TYPE_ALBUM_PHOTOS, set.mPicasaAlbumId);
         }
         updateListener(true);
+        mMediaFeedNeedsToRun = true;
     }
 
     public boolean canExpandSet(int slotIndex) {
@@ -583,6 +611,7 @@ public final class MediaFeed implements Runnable {
                 mListener.onFeedAboutToChange(this);
             }
             updateListener(true);
+            mMediaFeedNeedsToRun = true;
         }
         return retVal;
     }
@@ -591,6 +620,7 @@ public final class MediaFeed implements Runnable {
         if (mInClusteringMode) {
             // Disable clustering.
             mInClusteringMode = false;
+            mMediaFeedNeedsToRun = true;
             return true;
         }
         return false;
@@ -617,7 +647,7 @@ public final class MediaFeed implements Runnable {
         }
         if (setToUse != null) {
             MediaClustering clustering = null;
-            synchronized (this) {
+            synchronized (mClusterSets) {
                 // Make sure the computation is completed to the end.
                 clustering = mClusterSets.get(setToUse);
                 if (clustering != null) {
@@ -627,6 +657,7 @@ public final class MediaFeed implements Runnable {
                 }
             }
             mInClusteringMode = true;
+            mMediaFeedNeedsToRun = true;
             updateListener(true);
         }
     }
@@ -660,6 +691,7 @@ public final class MediaFeed implements Runnable {
                 mediaSets.set(i - 1, setEnd);
             }
         }
+        mMediaFeedNeedsToRun = true;
     }
 
     public MediaSet replaceMediaSet(long setId, DataSource dataSource) {
@@ -675,9 +707,10 @@ public final class MediaFeed implements Runnable {
                 break;
             }
         }
+        mMediaFeedNeedsToRun = true;
         return mediaSet;
     }
-    
+
     public void setSingleImageMode(boolean singleImageMode) {
         mSingleImageMode = singleImageMode;
     }

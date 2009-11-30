@@ -45,10 +45,6 @@ public final class DiskCache {
         shutdown();
     }
 
-    public void load() {
-        loadIndex();
-    }
-
     public byte[] get(long key, long timestamp) {
         // Look up the record for the given key.
         Record record = null;
@@ -58,7 +54,6 @@ public final class DiskCache {
         if (record != null) {
             // Read the chunk from the file.
             if (record.timestamp < timestamp && timestamp < System.currentTimeMillis()) {
-                Log.i(TAG, "Old copy: CacheTimestamp " + record.timestamp + " new timestamp " + timestamp);
                 return null;
             }
             try {
@@ -85,9 +80,10 @@ public final class DiskCache {
             return false;
         }
         if (record.timestamp < timestamp && timestamp < System.currentTimeMillis()) {
-            Log.i(TAG, "Old copy: CacheTimestamp " + record.timestamp + " new timestamp " + timestamp);
             return false;
         }
+        if (record.size == 0)
+            return false;
         return true;
     }
 

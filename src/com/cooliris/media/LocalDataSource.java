@@ -94,6 +94,9 @@ public final class LocalDataSource implements DataSource {
     }
 
     public void shutdown() {
+        if (ImageManager.isMediaScannerScanning(mContext.getContentResolver())) {
+            stopListeners();
+        }
     }
     
     private void stopListeners() {
@@ -113,7 +116,6 @@ public final class LocalDataSource implements DataSource {
         Log.i(TAG, "Refreshing local data source");
         Gallery.NEEDS_REFRESH = true;
         if (feed.getMediaSet(setIdToUse) == null) {
-            Log.i(TAG, "We check to see if there are any items with this bucket id in the database.");
             if (!CacheService.setHasItems(mContext.getContentResolver(), setIdToUse))
                 return;
             MediaSet mediaSet = feed.addMediaSet(setIdToUse, this);

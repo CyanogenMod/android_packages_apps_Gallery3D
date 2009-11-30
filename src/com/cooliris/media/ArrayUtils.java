@@ -21,7 +21,7 @@ public final class ArrayUtils {
         int firstListSize = firstList.size();
         for (int i = 0; i < firstListSize; ++i) {
             MediaItem firstListItem = firstList.get(i);
-            MediaItem hashItem = hash[firstListItem.hashCode() & mask];
+            MediaItem hashItem = (hash != null) ? hash[firstListItem.hashCode() & mask] : null;
             if (hashItem != null && ((hashItem.mId != Shared.INVALID && hashItem.mId == firstListItem.mId) || contains(secondList, firstListItem))) {
                 intersectionList.add(firstListItem);
                 if (--maxSize == 0) {

@@ -260,4 +260,8 @@ public final class PathBarLayer extends Layer {
     public int getNumLevels() {
         return mComponents.size();
     }
+
+    public void clear() {
+        mComponents.clear();
+    }
 }

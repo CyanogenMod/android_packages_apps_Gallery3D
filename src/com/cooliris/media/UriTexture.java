@@ -85,7 +85,7 @@ public class UriTexture extends Texture {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
-        options.inDither = true;
+        options.inDither = false;
         long crc64 = 0;
         Bitmap bitmap = null;
         if (uri.startsWith(ContentResolver.SCHEME_CONTENT)) {
@@ -121,7 +121,7 @@ public class UriTexture extends Texture {
             int ratio = Math.max(ratioX, ratioY);
             ratio = Shared.nextPowerOf2(ratio);
             sampleSize = ratio;
-            options.inDither = true;
+            options.inDither = false;
             options.inJustDecodeBounds = false;
             options.inSampleSize = ratio;
             Thread timeoutThread = new Thread("BitmapTimeoutThread") {
@@ -207,7 +207,7 @@ public class UriTexture extends Texture {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
-        options.inDither = true;
+        options.inDither = false;
         if (crc64 != 0) {
             file = createFilePathFromCrc64(crc64, maxResolution);
             try {
@@ -227,7 +227,7 @@ public class UriTexture extends Texture {
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             options.inPreferredConfig = Bitmap.Config.RGB_565;
-            options.inDither = true;
+            options.inDither = false;
             if (crc64 != 0) {
                 file = createFilePathFromCrc64(crc64, maxResolution);
                 bitmap = BitmapFactory.decodeFile(file, options);

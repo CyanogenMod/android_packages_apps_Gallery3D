@@ -24,6 +24,7 @@ public final class MediaItemTexture extends Texture {
     private final MediaItem mItem;
     private Context mContext;
     private boolean mIsRetrying;
+    private boolean mCached;
 
     public static final class Config {
         public int thumbnailWidth;
@@ -34,8 +35,31 @@ public final class MediaItemTexture extends Texture {
         mConfig = config;
         mContext = context;
         mItem = item;
+        mCached = computeCache();
     }
     
+    private boolean computeCache() {
+        final Config config = mConfig;
+        final MediaItem item = mItem;
+        DiskCache cache = null;
+        MediaSet parentMediaSet = item.mParentMediaSet;
+        if (config != null && parentMediaSet != null && parentMediaSet.mDataSource != null) {
+            cache = parentMediaSet.mDataSource.getThumbnailCache();
+            if (cache == LocalDataSource.sThumbnailCache) {
+                if (item.mMimeType.contains("video")) {
+                    cache = LocalDataSource.sThumbnailCacheVideo;
+                }
+            }
+        }
+        if (cache == null) {
+            return false;
+        }
+        synchronized (cache) {
+            long id = parentMediaSet.mPicasaAlbumId == Shared.INVALID ? Utils.Crc64Long(item.mFilePath) : item.mId;
+            return cache.isDataAvailable(id, item.mDateModifiedInSec * 1000);
+        }
+    }
+
     @Override
     public boolean isUncachedVideo() {
         if (isCached())
@@ -51,25 +75,7 @@ public final class MediaItemTexture extends Texture {
 
     @Override
     public boolean isCached() {
-        final Config config = mConfig;
-        final MediaItem item = mItem;
-        DiskCache cache = null;
-        MediaSet parentMediaSet = item.mParentMediaSet;
-        if (config != null && parentMediaSet != null && parentMediaSet.mDataSource != null) {
-            cache = parentMediaSet.mDataSource.getThumbnailCache();
-            if (cache == LocalDataSource.sThumbnailCache) {
-                if (item.mMimeType.contains("video")) {
-                    cache = LocalDataSource.sThumbnailCacheVideo;
-                }
-            } 
-        }
-        if (cache == null) {
-            return false;
-        }
-        synchronized (cache) {
-            long id = parentMediaSet.mPicasaAlbumId == Shared.INVALID ? Utils.Crc64Long(item.mFilePath) : item.mId;
-            return cache.isDataAvailable(id, item.mDateModifiedInSec * 1000);
-        }
+        return mCached;
     }
 
     protected Bitmap load(RenderView view) {
@@ -112,11 +118,15 @@ public final class MediaItemTexture extends Texture {
                     new Thread() {
                         public void run() {
                             try {
-                            Thread.sleep(5000);
+                                Thread.sleep(5000);
                             } catch (InterruptedException e) {
                                 ;
                             }
-                            MediaStore.Video.Thumbnails.cancelThumbnailRequest(mContext.getContentResolver(), mItem.mId);
+                            try {
+                                MediaStore.Video.Thumbnails.cancelThumbnailRequest(mContext.getContentResolver(), mItem.mId);
+                            } catch (Exception e) {
+                                ;
+                            }
                         }
                     }.start();
                     retVal = MediaStore.Video.Thumbnails.getThumbnail(mContext.getContentResolver(), mItem.mId,
@@ -169,7 +179,7 @@ public final class MediaItemTexture extends Texture {
                     item.mThumbnailFocusY = dataInput.readShort();
                     // Decode the thumbnail.
                     final BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inDither = true;
+                    options.inDither = false;
                     options.inScaled = false;
                     options.inPreferredConfig = Bitmap.Config.RGB_565;
                     final Bitmap bitmap = BitmapFactory.decodeByteArray(data, CACHE_HEADER_SIZE, data.length - CACHE_HEADER_SIZE,

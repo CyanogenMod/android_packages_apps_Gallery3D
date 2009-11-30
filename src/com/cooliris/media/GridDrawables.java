@@ -3,19 +3,17 @@ package com.cooliris.media;
 import java.util.HashMap;
 
 import javax.microedition.khronos.opengles.GL11;
-import android.os.Process;
 
 public final class GridDrawables {
     // The display primitives.
-    public GridQuad mGrid;
-    public final GridQuadFrame mFrame;
-    public final GridQuad mTextGrid;
-    public final GridQuad mSelectedGrid;
-    public final GridQuad mVideoGrid;
-    public final GridQuad mLocationGrid;
-    public final GridQuad mSourceIconGrid;
-    public final GridQuad[] mFullscreenGrid = new GridQuad[3];
-    private GridQuad mGridNew;
+    public static GridQuad sGrid;
+    public static GridQuadFrame sFrame;
+    public static GridQuad sTextGrid;
+    public static GridQuad sSelectedGrid;
+    public static GridQuad sVideoGrid;
+    public static GridQuad sLocationGrid;
+    public static GridQuad sSourceIconGrid;
+    public static final GridQuad[] sFullscreenGrid = new GridQuad[3];
 
     // All the resource Textures.
     private static final int TEXTURE_FRAME = R.drawable.stack_frame;
@@ -31,7 +29,7 @@ public final class GridDrawables {
     public static final int[] TEXTURE_SPINNER = new int[8];
     private static final int TEXTURE_TRANSPARENT = R.drawable.transparent;
     private static final int TEXTURE_PLACEHOLDER = R.drawable.grid_placeholder;
-    
+
     public Texture mTextureFrame;
     public Texture mTextureGridFrame;
     public Texture mTextureFrameFocus;
@@ -47,9 +45,9 @@ public final class GridDrawables {
     public Texture mTexturePlaceholder;
 
     // The textures generated from strings.
-    public final HashMap<String, StringTexture> mStringTextureTable = new HashMap<String, StringTexture>(128);
+    public static final HashMap<String, StringTexture> sStringTextureTable = new HashMap<String, StringTexture>(128);
 
-    public GridDrawables(final int itemWidth, final int itemHeight) {
+    static {
         // We first populate the spinner textures.
         final int[] textureSpinner = TEXTURE_SPINNER;
         textureSpinner[0] = R.drawable.ic_spinner1;
@@ -60,107 +58,88 @@ public final class GridDrawables {
         textureSpinner[5] = R.drawable.ic_spinner6;
         textureSpinner[6] = R.drawable.ic_spinner7;
         textureSpinner[7] = R.drawable.ic_spinner8;
-        
-        final float height = 1.0f;
-        final float width = (float) (height * itemWidth) / (float) itemHeight;
-        final float aspectRatio = (float) itemWidth / (float) itemHeight;
-        final float oneByAspect = 1.0f / aspectRatio;
-
-        // We create the grid quad.
-        mGrid = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
-
-        // We create the quads used in fullscreen.
-        mFullscreenGrid[0] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
-        mFullscreenGrid[0].setDynamic(true);
-        mFullscreenGrid[1] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
-        mFullscreenGrid[1].setDynamic(true);
-        mFullscreenGrid[2] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
-        mFullscreenGrid[2].setDynamic(true);
-
-        // We create supplementary quads for the checkmarks, video overlay and location button
-        float sizeOfSelectedIcon = 32 * Gallery.PIXEL_DENSITY;  // In pixels.
-        sizeOfSelectedIcon /= itemHeight;
-        float sizeOfLocationIcon = 52 * Gallery.PIXEL_DENSITY;  // In pixels.
-        sizeOfLocationIcon /= itemHeight;
-        float sizeOfSourceIcon = 76 * Gallery.PIXEL_DENSITY;  // In pixels.
-        sizeOfSourceIcon /= itemHeight;
-        mSelectedGrid = GridQuad.createGridQuad(sizeOfSelectedIcon, sizeOfSelectedIcon, -0.5f, 0.25f, 1.0f, 1.0f, false);
-        mVideoGrid = GridQuad.createGridQuad(sizeOfSelectedIcon, sizeOfSelectedIcon, -0.08f, -0.09f, 1.0f, 1.0f, false);
-        mLocationGrid = GridQuad.createGridQuad(sizeOfLocationIcon, sizeOfLocationIcon, 0, 0, 1.0f, 1.0f, false);
-        mSourceIconGrid = GridQuad.createGridQuad(sizeOfSourceIcon, sizeOfSourceIcon, 0, 0, 1.0f, 1.0f, false);
-        
-        // We create the quad for the text label.
-        float seedTextWidth = (Gallery.PIXEL_DENSITY < 1.5f) ? 128.0f : 256.0f;
-        float textWidth = (seedTextWidth / (float) itemWidth) * width;
-        float textHeightPow2 = (Gallery.PIXEL_DENSITY < 1.5f) ? 32.0f : 64.0f;
-        float textHeight = (textHeightPow2 / (float) itemHeight) * height;
-        float textOffsetY = 0.0f;
-        mTextGrid = GridQuad.createGridQuad(textWidth, textHeight, 0, textOffsetY, 1.0f, 1.0f, false);
-
-        // We finally create the frame around every grid item
-        mFrame = GridQuadFrame.createFrame(width, height, itemWidth, itemHeight);
-        
-        Thread creationThread = new Thread() {
-            public void run() {
-                Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    ;
-                }
-                mGridNew = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, true);
-            }
-        };
-        creationThread.start();
     }
-    
-    public void swapGridQuads(GL11 gl) {
-        if (mGridNew != null) {
-            mGrid.freeHardwareBuffers(gl);
-            mGrid = mGridNew;
-            mGrid.generateHardwareBuffers(gl);
-            mGridNew = null;
+
+    public GridDrawables(final int itemWidth, final int itemHeight) {
+        if (sGrid == null) {
+            final float height = 1.0f;
+            final float width = (float) (height * itemWidth) / (float) itemHeight;
+            final float aspectRatio = (float) itemWidth / (float) itemHeight;
+            final float oneByAspect = 1.0f / aspectRatio;
+
+            // We create the grid quad.
+            sGrid = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, true);
+
+            // We create the quads used in fullscreen.
+            sFullscreenGrid[0] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
+            sFullscreenGrid[0].setDynamic(true);
+            sFullscreenGrid[1] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
+            sFullscreenGrid[1].setDynamic(true);
+            sFullscreenGrid[2] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
+            sFullscreenGrid[2].setDynamic(true);
+
+            // We create supplementary quads for the checkmarks, video overlay and location button
+            float sizeOfSelectedIcon = 32 * Gallery.PIXEL_DENSITY; // In pixels.
+            sizeOfSelectedIcon /= itemHeight;
+            float sizeOfLocationIcon = 52 * Gallery.PIXEL_DENSITY; // In pixels.
+            sizeOfLocationIcon /= itemHeight;
+            float sizeOfSourceIcon = 76 * Gallery.PIXEL_DENSITY; // In pixels.
+            sizeOfSourceIcon /= itemHeight;
+            sSelectedGrid = GridQuad.createGridQuad(sizeOfSelectedIcon, sizeOfSelectedIcon, -0.5f, 0.25f, 1.0f, 1.0f, false);
+            sVideoGrid = GridQuad.createGridQuad(sizeOfSelectedIcon, sizeOfSelectedIcon, -0.08f, -0.09f, 1.0f, 1.0f, false);
+            sLocationGrid = GridQuad.createGridQuad(sizeOfLocationIcon, sizeOfLocationIcon, 0, 0, 1.0f, 1.0f, false);
+            sSourceIconGrid = GridQuad.createGridQuad(sizeOfSourceIcon, sizeOfSourceIcon, 0, 0, 1.0f, 1.0f, false);
+
+            // We create the quad for the text label.
+            float seedTextWidth = (Gallery.PIXEL_DENSITY < 1.5f) ? 128.0f : 256.0f;
+            float textWidth = (seedTextWidth / (float) itemWidth) * width;
+            float textHeightPow2 = (Gallery.PIXEL_DENSITY < 1.5f) ? 32.0f : 64.0f;
+            float textHeight = (textHeightPow2 / (float) itemHeight) * height;
+            float textOffsetY = 0.0f;
+            sTextGrid = GridQuad.createGridQuad(textWidth, textHeight, 0, textOffsetY, 1.0f, 1.0f, false);
+
+            // We finally create the frame around every grid item
+            sFrame = GridQuadFrame.createFrame(width, height, itemWidth, itemHeight);
         }
     }
 
     public void onSurfaceCreated(RenderView view, GL11 gl) {
         // The grid quad.
-        mGrid.freeHardwareBuffers(gl);
-        mGrid.generateHardwareBuffers(gl);
+        sGrid.freeHardwareBuffers(gl);
+        sGrid.generateHardwareBuffers(gl);
 
         // The fullscreen quads.
-        mFullscreenGrid[0].freeHardwareBuffers(gl);
-        mFullscreenGrid[1].freeHardwareBuffers(gl);
-        mFullscreenGrid[2].freeHardwareBuffers(gl);
-        mFullscreenGrid[0].generateHardwareBuffers(gl);
-        mFullscreenGrid[1].generateHardwareBuffers(gl);
-        mFullscreenGrid[2].generateHardwareBuffers(gl);
+        sFullscreenGrid[0].freeHardwareBuffers(gl);
+        sFullscreenGrid[1].freeHardwareBuffers(gl);
+        sFullscreenGrid[2].freeHardwareBuffers(gl);
+        sFullscreenGrid[0].generateHardwareBuffers(gl);
+        sFullscreenGrid[1].generateHardwareBuffers(gl);
+        sFullscreenGrid[2].generateHardwareBuffers(gl);
 
         // Supplementary quads.
-        mSelectedGrid.freeHardwareBuffers(gl);
-        mVideoGrid.freeHardwareBuffers(gl);
-        mLocationGrid.freeHardwareBuffers(gl);
-        mSourceIconGrid.freeHardwareBuffers(gl);
-        mSelectedGrid.generateHardwareBuffers(gl);
-        mVideoGrid.generateHardwareBuffers(gl);
-        mLocationGrid.generateHardwareBuffers(gl);
-        mSourceIconGrid.generateHardwareBuffers(gl);
+        sSelectedGrid.freeHardwareBuffers(gl);
+        sVideoGrid.freeHardwareBuffers(gl);
+        sLocationGrid.freeHardwareBuffers(gl);
+        sSourceIconGrid.freeHardwareBuffers(gl);
+        sSelectedGrid.generateHardwareBuffers(gl);
+        sVideoGrid.generateHardwareBuffers(gl);
+        sLocationGrid.generateHardwareBuffers(gl);
+        sSourceIconGrid.generateHardwareBuffers(gl);
 
         // Text quads.
-        mTextGrid.freeHardwareBuffers(gl);
-        mTextGrid.generateHardwareBuffers(gl);
+        sTextGrid.freeHardwareBuffers(gl);
+        sTextGrid.generateHardwareBuffers(gl);
 
         // Frame mesh.
-        mFrame.freeHardwareBuffers(gl);
-        mFrame.generateHardwareBuffers(gl);
+        sFrame.freeHardwareBuffers(gl);
+        sFrame.generateHardwareBuffers(gl);
 
         // Clear the string table.
-        mStringTextureTable.clear();
-        
+        sStringTextureTable.clear();
+
         // Regenerate all the textures.
         mTextureFrame = view.getResource(TEXTURE_FRAME, false);
         mTextureGridFrame = view.getResource(TEXTURE_GRID_FRAME, false);
-        view.loadTexture(mTextureGridFrame);
         mTextureFrameFocus = view.getResource(TEXTURE_FRAME_FOCUS, false);
         mTextureFramePressed = view.getResource(TEXTURE_FRAME_PRESSED, false);
         mTextureLocation = view.getResource(TEXTURE_LOCATION, false);
@@ -171,7 +150,11 @@ public final class GridDrawables {
         mTexturePicasaSmall = view.getResource(TEXTURE_PICASA_SMALL, false);
         mTextureTransparent = view.getResource(TEXTURE_TRANSPARENT, false);
         mTexturePlaceholder = view.getResource(TEXTURE_PLACEHOLDER, false);
-        
+        view.loadTexture(mTextureFrame);
+        view.loadTexture(mTextureGridFrame);
+        view.loadTexture(mTextureFrameFocus);
+        view.loadTexture(mTextureFramePressed);
+
         mTextureSpinner[0] = view.getResource(R.drawable.ic_spinner1);
         mTextureSpinner[1] = view.getResource(R.drawable.ic_spinner2);
         mTextureSpinner[2] = view.getResource(R.drawable.ic_spinner3);

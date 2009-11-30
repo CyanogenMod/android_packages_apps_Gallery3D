@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.SyncResult;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Xml;
 
@@ -30,11 +29,9 @@ public final class PicasaApi {
 
     static {
         // Build the base query string using screen dimensions.
-        DisplayMetrics metrics = new DisplayMetrics();
-        int maxDimension = Math.max(metrics.widthPixels, metrics.heightPixels);
-        StringBuilder query = new StringBuilder("?imgmax=1024&max-results=1000&thumbsize=");
-        String thumbnailSize = metrics.density <= 1 ? "144u," : "144u,";
-        String screennailSize = maxDimension <= 512 ? "512u" : "800u";
+        final StringBuilder query = new StringBuilder("?imgmax=1024&max-results=1000&thumbsize=");
+        final String thumbnailSize = "144u,";
+        final String screennailSize = "1024u";
         query.append(thumbnailSize);
         query.append(screennailSize);
         BASE_QUERY_STRING = query.toString() + "&visibility=visible";

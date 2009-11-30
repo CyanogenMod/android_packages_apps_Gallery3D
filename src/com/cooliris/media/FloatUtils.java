@@ -127,4 +127,11 @@ public class FloatUtils {
             }
         }
     }
+
+    public static final float max(float scaleX, float scaleY) {
+        if (scaleX > scaleY)
+            return scaleX;
+        else
+            return scaleY;
+    }
 }

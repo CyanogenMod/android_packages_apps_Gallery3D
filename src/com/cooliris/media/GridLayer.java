@@ -21,24 +21,42 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public static final int ANCHOR_RIGHT = 1;
     public static final int ANCHOR_CENTER = 2;
 
-    public static final int MAX_ITEMS_PER_SLOT = 24;
+    public static final int MAX_ITEMS_PER_SLOT = 12;
     public static final int MAX_DISPLAYED_ITEMS_PER_SLOT = 4;
     public static final int MAX_DISPLAY_SLOTS = 96;
     public static final int MAX_ITEMS_DRAWABLE = MAX_ITEMS_PER_SLOT * MAX_DISPLAY_SLOTS;
 
     private static final float SLIDESHOW_TRANSITION_TIME = 3.5f;
 
-    private HudLayer mHud;
+    private static HudLayer sHud;
     private int mState;
-    private IndexRange mBufferedVisibleRange;
-    private IndexRange mVisibleRange;
-    private IndexRange mPreviousDataRange;
-    private IndexRange mCompleteRange;
-    private Pool<Vector3f> mTempVec;
-    private final ArrayList<MediaItem> mTempList = new ArrayList<MediaItem>();
-    private final MediaItem[] mTempHash = new MediaItem[64];
-    private Vector3f mDeltaAnchorPositionUncommited;
-    private Vector3f mDeltaAnchorPosition;
+    private static final IndexRange sBufferedVisibleRange = new IndexRange();
+    private static final IndexRange sVisibleRange = new IndexRange();
+    private static final IndexRange sPreviousDataRange = new IndexRange();
+    private static final IndexRange sCompleteRange = new IndexRange();
+    
+    private static final Pool<Vector3f> sTempVec;
+    private static final Pool<Vector3f> sTempVecAlt;
+    static {
+        Vector3f[] vectorPool = new Vector3f[128];
+        int length = vectorPool.length;
+        for (int i = 0; i < length; ++i) {
+            vectorPool[i] = new Vector3f();
+        }
+        Vector3f[] vectorPoolRenderThread = new Vector3f[128];
+        length = vectorPoolRenderThread.length;
+        for (int i = 0; i < length; ++i) {
+            vectorPoolRenderThread[i] = new Vector3f();
+        }
+        sTempVec = new Pool<Vector3f>(vectorPool);
+        sTempVecAlt = new Pool<Vector3f>(vectorPoolRenderThread);
+    }
+    
+    private static final ArrayList<MediaItem> sTempList = new ArrayList<MediaItem>();
+    private static final MediaItem[] sTempHash = new MediaItem[64];
+    
+    private static final Vector3f sDeltaAnchorPositionUncommited = new Vector3f();
+    private static Vector3f sDeltaAnchorPosition = new Vector3f();
 
     // The display primitives.
     private GridDrawables mDrawables;
@@ -54,16 +72,18 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private boolean mPerformingLayoutChange;
     private boolean mFeedChanged;
 
-    private LayoutInterface mLayoutInterface;
-    private LayoutInterface mPrevLayoutInterface;
+    private final LayoutInterface mLayoutInterface;
+    private static final LayoutInterface sfullScreenLayoutInterface = new GridLayoutInterface(1);
+    
     private MediaFeed mMediaFeed;
     private boolean mInAlbum = false;
     private int mCurrentExpandedSlot;
 
-    private ArrayList<MediaItem> mVisibleItems;
-    private DisplayList mDisplayList = new DisplayList();
-    private DisplayItem[] mDisplayItems = new DisplayItem[MAX_ITEMS_DRAWABLE];
-    private DisplaySlot[] mDisplaySlots = new DisplaySlot[MAX_DISPLAY_SLOTS];
+    private static final DisplayList sDisplayList = new DisplayList();
+    private static final DisplayItem[] sDisplayItems = new DisplayItem[MAX_ITEMS_DRAWABLE];
+    private static final DisplaySlot[] sDisplaySlots = new DisplaySlot[MAX_DISPLAY_SLOTS];
+    private static ArrayList<MediaItem> sVisibleItems;
+    
     private float mTimeElapsedSinceTransition;
     private BackgroundLayer mBackground;
     private boolean mLocationFilter;
@@ -75,9 +95,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private boolean mSlideshowMode;
     private boolean mNoDeleteMode = false;
     private float mTimeElapsedSinceView;
-    private MediaBucketList mBucketList = new MediaBucketList();
+    private static final MediaBucketList sBucketList = new MediaBucketList();
     private float mTimeElapsedSinceStackViewReady;
-    private Pool<Vector3f> mTempVecAlt;
+
     private Context mContext;
     private RenderView mView;
     private boolean mPickIntent;
@@ -91,19 +111,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mBackground = new BackgroundLayer(this);
         mContext = context;
         mView = view;
-        Vector3f[] vectorPool = new Vector3f[128];
-        int length = vectorPool.length;
-        for (int i = 0; i < length; ++i) {
-            vectorPool[i] = new Vector3f();
-        }
-        Vector3f[] vectorPoolRenderThread = new Vector3f[128];
-        length = vectorPoolRenderThread.length;
-        for (int i = 0; i < length; ++i) {
-            vectorPoolRenderThread[i] = new Vector3f();
-        }
-        mTempVec = new Pool<Vector3f>(vectorPool);
-        mTempVecAlt = new Pool<Vector3f>(vectorPoolRenderThread);
-        DisplaySlot[] displaySlots = mDisplaySlots;
+        
+        DisplaySlot[] displaySlots = sDisplaySlots;
         for (int i = 0; i < MAX_DISPLAY_SLOTS; ++i) {
             DisplaySlot slot = new DisplaySlot();
             displaySlots[i] = slot;
@@ -111,39 +120,43 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mLayoutInterface = layoutInterface;
         mCamera = new GridCamera(0, 0, itemWidth, itemHeight);
         mDrawables = new GridDrawables(itemWidth, itemHeight);
-        mBufferedVisibleRange = new IndexRange();
-        mVisibleRange = new IndexRange();
-        mCompleteRange = new IndexRange();
-        mPreviousDataRange = new IndexRange();
-        mPreviousDataRange.begin = Shared.INVALID;
-        mPreviousDataRange.end = Shared.INVALID;
-        mDeltaAnchorPosition = new Vector3f();
-        mDeltaAnchorPositionUncommited = new Vector3f();
-        mPrevLayoutInterface = new GridLayoutInterface(1);
-        mVisibleItems = new ArrayList<MediaItem>();
-        mHud = new HudLayer(context);
-        mHud.setGridLayer(this);
-        mHud.getTimeBar().setListener(this);
-        mHud.getPathBar().pushLabel(R.drawable.icon_home_small, context.getResources().getString(R.string.app_name),
+        sBufferedVisibleRange.set(Shared.INVALID, Shared.INVALID);
+        sVisibleRange.set(Shared.INVALID, Shared.INVALID);
+        sCompleteRange.set(Shared.INVALID, Shared.INVALID);
+        sPreviousDataRange.set(Shared.INVALID, Shared.INVALID);
+        sDeltaAnchorPosition.set(0, 0, 0);
+        sDeltaAnchorPositionUncommited.set(0, 0, 0);
+        sBucketList.clear();
+        
+        sVisibleItems = new ArrayList<MediaItem>();
+        if (sHud == null) {
+            sHud = new HudLayer(context);
+        }
+        sHud.setContext(context);
+        sHud.setGridLayer(this);
+        sHud.getPathBar().clear();
+        sHud.setGridLayer(this);
+        sHud.getTimeBar().setListener(this);
+        sHud.getPathBar().pushLabel(R.drawable.icon_home_small, context.getResources().getString(R.string.app_name),
                 new Runnable() {
                     public void run() {
-                        if (mHud.getAlpha() == 1.0f) {
+                        if (sHud.getAlpha() == 1.0f) {
                             if (!mFeedAboutToChange) {
                                 setState(STATE_MEDIA_SETS);
                             }
                         } else {
-                            mHud.setAlpha(1.0f);
+                            sHud.setAlpha(1.0f);
                         }
                     }
                 });
         mCameraManager = new GridCameraManager(mCamera);
-        mDrawManager = new GridDrawManager(context, mCamera, mDrawables, mDisplayList, mDisplayItems, mDisplaySlots);
-        mInputProcessor = new GridInputProcessor(context, mCamera, this, mView, mTempVec, mDisplayItems);
+        mDrawManager = new GridDrawManager(context, mCamera, mDrawables, sDisplayList, sDisplayItems, sDisplaySlots);
+        mInputProcessor = new GridInputProcessor(context, mCamera, this, mView, sTempVec, sDisplayItems);
         setState(STATE_MEDIA_SETS);
     }
 
     public HudLayer getHud() {
-        return mHud;
+        return sHud;
     }
 
     public void shutdown() {
@@ -153,16 +166,11 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mContext = null;
         mInputProcessor = null;
         mBackground = null;
-        mBucketList = null;
+        sBucketList.clear();
         mCameraManager = null;
         mDrawManager = null;
-        mHud.shutDown();
-        mHud = null;
+        sHud.shutDown();
         mView = null;
-
-        mDisplayItems = null;
-        mDisplayList = null;
-        mDisplaySlots = null;
     }
 
     public void stop() {
@@ -178,13 +186,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mBackground.generate(view, lists);
         lists.blendedList.add(this);
         lists.hitTestList.add(this);
-        mHud.generate(view, lists);
+        sHud.generate(view, lists);
     }
 
     @Override
     protected void onSizeChanged() {
-        mHud.setSize(mWidth, mHeight);
-        mHud.setAlpha(1.0f);
+        sHud.setSize(mWidth, mHeight);
+        sHud.setAlpha(1.0f);
         mBackground.setSize(mWidth, mHeight);
         mTimeElapsedSinceTransition = 0.0f;
         if (mView != null) {
@@ -202,7 +210,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             feedUnchanged = true;
         }
         GridLayoutInterface layoutInterface = (GridLayoutInterface) mLayoutInterface;
-        GridLayoutInterface oldLayout = (GridLayoutInterface) mPrevLayoutInterface;
+        GridLayoutInterface oldLayout = (GridLayoutInterface) sfullScreenLayoutInterface;
         oldLayout.mNumRows = layoutInterface.mNumRows;
         oldLayout.mSpacingX = layoutInterface.mSpacingX;
         oldLayout.mSpacingY = layoutInterface.mSpacingY;
@@ -233,24 +241,24 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 MediaSet set = feed.getCurrentSet();
                 int icon = mDrawables.getIconForSet(set, true);
                 if (set != null) {
-                    mHud.getPathBar().pushLabel(icon, set.mNoCountTitleString, new Runnable() {
+                    sHud.getPathBar().pushLabel(icon, set.mNoCountTitleString, new Runnable() {
                         public void run() {
                             if (mFeedAboutToChange) {
                                 return;
                             }
-                            if (mHud.getAlpha() == 1.0f) {
+                            if (sHud.getAlpha() == 1.0f) {
                                 disableLocationFiltering();
                                 mInputProcessor.clearSelection();
                                 setState(STATE_GRID_VIEW);
                             } else {
-                                mHud.setAlpha(1.0f);
+                                sHud.setAlpha(1.0f);
                             }
                         }
                     });
                 }
             }
             if (mState == STATE_FULL_SCREEN) {
-                mHud.getPathBar().popLabel();
+                sHud.getPathBar().popLabel();
             }
             break;
         case STATE_TIMELINE:
@@ -269,12 +277,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             layoutInterface.mSpacingX = (int) (40 * Gallery.PIXEL_DENSITY);
             layoutInterface.mSpacingY = (int) (40 * Gallery.PIXEL_DENSITY);
             if (mState != STATE_FULL_SCREEN) {
-                mHud.getPathBar().pushLabel(R.drawable.ic_fs_details, "", new Runnable() {
+                sHud.getPathBar().pushLabel(R.drawable.ic_fs_details, "", new Runnable() {
                     public void run() {
-                        if (mHud.getAlpha() == 1.0f) {
-                            mHud.swapFullscreenLabel();
+                        if (sHud.getAlpha() == 1.0f) {
+                            sHud.swapFullscreenLabel();
                         }
-                        mHud.setAlpha(1.0f);
+                        sHud.setAlpha(1.0f);
                     }
                 });
             }
@@ -293,15 +301,15 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             layoutInterface.mSpacingY = (int) (70 * Gallery.PIXEL_DENSITY * yStretch);
             if (mInAlbum) {
                 if (mState == STATE_FULL_SCREEN) {
-                    mHud.getPathBar().popLabel();
+                    sHud.getPathBar().popLabel();
                 }
-                mHud.getPathBar().popLabel();
+                sHud.getPathBar().popLabel();
                 mInAlbum = false;
             }
             break;
         }
         mState = state;
-        mHud.onGridStateChanged();
+        sHud.onGridStateChanged();
         if (performLayout && mFeedAboutToChange == false) {
             onLayout(Shared.INVALID, Shared.INVALID, oldLayout);
         }
@@ -314,9 +322,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     protected void enableLocationFiltering(String label) {
         if (mLocationFilter == false) {
             mLocationFilter = true;
-            mHud.getPathBar().pushLabel(R.drawable.icon_location_small, label, new Runnable() {
+            sHud.getPathBar().pushLabel(R.drawable.icon_location_small, label, new Runnable() {
                 public void run() {
-                    if (mHud.getAlpha() == 1.0f) {
+                    if (sHud.getAlpha() == 1.0f) {
                         if (mState == STATE_FULL_SCREEN) {
                             mInputProcessor.clearSelection();
                             setState(STATE_GRID_VIEW);
@@ -324,7 +332,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                             disableLocationFiltering();
                         }
                     } else {
-                        mHud.setAlpha(1.0f);
+                        sHud.setAlpha(1.0f);
                     }
                 }
             });
@@ -335,7 +343,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mLocationFilter) {
             mLocationFilter = false;
             mMediaFeed.removeFilter();
-            mHud.getPathBar().popLabel();
+            sHud.getPathBar().popLabel();
         }
     }
 
@@ -344,7 +352,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             return false;
         }
         int state = mState;
-        if (mInputProcessor.getSelectedSlot() == Shared.INVALID) {
+        if (mInputProcessor.getCurrentSelectedSlot() == Shared.INVALID) {
             if (mLocationFilter) {
                 disableLocationFiltering();
                 setState(STATE_TIMELINE);
@@ -376,7 +384,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             }
             mWakeLock = null;
         }
-        mHud.setAlpha(1.0f);
+        sHud.setAlpha(1.0f);
     }
 
     @Override
@@ -394,7 +402,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         MediaFeed feed = mMediaFeed;
         if (feed != null) {
             feed.shutdown();
-            mDisplayList.clear();
+            sDisplayList.clear();
             mBackground.clear();
         }
         mMediaFeed = new MediaFeed(mContext, dataSource, this);
@@ -402,33 +410,33 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public IndexRange getVisibleRange() {
-        return mVisibleRange;
+        return sVisibleRange;
     }
 
     public IndexRange getBufferedVisibleRange() {
-        return mBufferedVisibleRange;
+        return sBufferedVisibleRange;
     }
 
     public IndexRange getCompleteRange() {
-        return mCompleteRange;
+        return sCompleteRange;
     }
 
     private int hitTest(Vector3f worldPos, int itemWidth, int itemHeight) {
         int retVal = Shared.INVALID;
         int firstSlotIndex = 0;
         int lastSlotIndex = 0;
-        IndexRange rangeToUse = mVisibleRange;
+        IndexRange rangeToUse = sVisibleRange;
         synchronized (rangeToUse) {
             firstSlotIndex = rangeToUse.begin;
             lastSlotIndex = rangeToUse.end;
         }
-        Pool<Vector3f> pool = mTempVec;
+        Pool<Vector3f> pool = sTempVec;
         float itemWidthBy2 = itemWidth * 0.5f;
         float itemHeightBy2 = itemHeight * 0.5f;
         Vector3f position = pool.create();
         Vector3f deltaAnchorPosition = pool.create();
         try {
-            deltaAnchorPosition.set(mDeltaAnchorPosition);
+            deltaAnchorPosition.set(sDeltaAnchorPosition);
             for (int i = firstSlotIndex; i <= lastSlotIndex; ++i) {
                 GridCameraManager.getSlotPositionForSlotIndex(i, mCamera, mLayoutInterface, deltaAnchorPosition, position);
                 if (FloatUtils.boundsContainsPoint(position.x - itemWidthBy2, position.x + itemWidthBy2,
@@ -450,12 +458,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (displayItem != null) {
             imageTheta = displayItem.getImageTheta();
         }
-        mCameraManager.centerCameraForSlot(mLayoutInterface, slotIndex, baseConvergence, mDeltaAnchorPositionUncommited,
+        mCameraManager.centerCameraForSlot(mLayoutInterface, slotIndex, baseConvergence, sDeltaAnchorPositionUncommited,
                 mInputProcessor.getCurrentSelectedSlot(), mZoomValue, imageTheta, mState);
     }
 
     boolean constrainCameraForSlot(int slotIndex) {
-        return mCameraManager.constrainCameraForSlot(mLayoutInterface, slotIndex, mDeltaAnchorPosition, mCurrentFocusItemWidth,
+        return mCameraManager.constrainCameraForSlot(mLayoutInterface, slotIndex, sDeltaAnchorPosition, mCurrentFocusItemWidth,
                 mCurrentFocusItemHeight);
     }
 
@@ -475,10 +483,17 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         } else {
             mTimeElapsedSinceTransition = 0;
         }
+        if (mMediaFeed != null && mMediaFeed.isSingleImageMode()) {
+            HudLayer hud = getHud();
+            hud.getPathBar().setHidden(true);
+            hud.getMenuBar().setHidden(true);
+            if (hud.getMode() != HudLayer.MODE_NORMAL)
+                hud.setMode(HudLayer.MODE_NORMAL);
+        }
         if (view.elapsedLoadingExpensiveTextures() > 150 || (mMediaFeed != null && mMediaFeed.getWaitingForMediaScanner())) {
-            mHud.getPathBar().setAnimatedIcons(GridDrawables.TEXTURE_SPINNER);
+            sHud.getPathBar().setAnimatedIcons(GridDrawables.TEXTURE_SPINNER);
         } else {
-            mHud.getPathBar().setAnimatedIcons(null);
+            sHud.getPathBar().setAnimatedIcons(null);
         }
 
         // In that case, we need to commit the respective Display Items when the
@@ -486,19 +501,19 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         GridCamera camera = mCamera;
         camera.update(timeElapsed);
         DisplayItem anchorDisplayItem = getAnchorDisplayItem(ANCHOR_CENTER);
-        if (anchorDisplayItem != null && !mHud.getTimeBar().isDragged()) {
-            mHud.getTimeBar().setItem(anchorDisplayItem.mItemRef);
+        if (anchorDisplayItem != null && !sHud.getTimeBar().isDragged()) {
+            sHud.getTimeBar().setItem(anchorDisplayItem.mItemRef);
         }
-        mDisplayList.update(timeElapsed);
+        sDisplayList.update(timeElapsed);
         mInputProcessor.update(timeElapsed);
         mSelectedAlpha = FloatUtils.animate(mSelectedAlpha, mTargetAlpha, timeElapsed * 0.5f);
         if (mState == STATE_FULL_SCREEN) {
-            mHud.autoHide(true);
+            sHud.autoHide(true);
         } else {
-            mHud.autoHide(false);
-            mHud.setAlpha(1.0f);
+            sHud.autoHide(false);
+            sHud.setAlpha(1.0f);
         }
-        GridQuad[] fullscreenQuads = mDrawables.mFullscreenGrid;
+        GridQuad[] fullscreenQuads = GridDrawables.sFullscreenGrid;
         int numFullScreenQuads = fullscreenQuads.length;
         for (int i = 0; i < numFullScreenQuads; ++i) {
             fullscreenQuads[i].update(timeElapsed);
@@ -531,7 +546,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         } catch (InterruptedException e) {
 
         }
-        if (mDisplayList.getNumAnimatables() != 0 || mCamera.isAnimating()
+        if (sDisplayList.getNumAnimatables() != 0 || mCamera.isAnimating()
                 || (mTimeElapsedSinceTransition > 0.0f && mTimeElapsedSinceTransition < 1.0f) || mSelectedAlpha != mTargetAlpha
                 // || (mAnimatedFov != mTargetFov)
                 || dirty)
@@ -543,41 +558,40 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private void computeVisibleRange() {
         if (mPerformingLayoutChange)
             return;
-        if (mDeltaAnchorPosition.equals(mDeltaAnchorPositionUncommited) == false) {
-            mDeltaAnchorPosition.set(mDeltaAnchorPositionUncommited);
+        if (sDeltaAnchorPosition.equals(sDeltaAnchorPositionUncommited) == false) {
+            sDeltaAnchorPosition.set(sDeltaAnchorPositionUncommited);
         }
-        mCameraManager.computeVisibleRange(mMediaFeed, mLayoutInterface, mDeltaAnchorPosition, mVisibleRange,
-                mBufferedVisibleRange, mCompleteRange, mState);
+        mCameraManager.computeVisibleRange(mMediaFeed, mLayoutInterface, sDeltaAnchorPosition, sVisibleRange,
+                sBufferedVisibleRange, sCompleteRange, mState);
     }
 
     private void computeVisibleItems() {
         if (mFeedAboutToChange == true || mPerformingLayoutChange == true) {
             return;
         }
-
         computeVisibleRange();
-        int deltaBegin = mBufferedVisibleRange.begin - mPreviousDataRange.begin;
-        int deltaEnd = mBufferedVisibleRange.end - mPreviousDataRange.end;
+        int deltaBegin = sBufferedVisibleRange.begin - sPreviousDataRange.begin;
+        int deltaEnd = sBufferedVisibleRange.end - sPreviousDataRange.end;
         if (deltaBegin != 0 || deltaEnd != 0) {
             // The delta has changed, we have to compute the display items again.
             // We find the intersection range, these slots have not changed at all.
-            int firstVisibleSlotIndex = mBufferedVisibleRange.begin;
-            int lastVisibleSlotIndex = mBufferedVisibleRange.end;
-            mPreviousDataRange.begin = firstVisibleSlotIndex;
-            mPreviousDataRange.end = lastVisibleSlotIndex;
+            int firstVisibleSlotIndex = sBufferedVisibleRange.begin;
+            int lastVisibleSlotIndex = sBufferedVisibleRange.end;
+            sPreviousDataRange.begin = firstVisibleSlotIndex;
+            sPreviousDataRange.end = lastVisibleSlotIndex;
 
-            Pool<Vector3f> pool = mTempVec;
+            Pool<Vector3f> pool = sTempVec;
             Vector3f position = pool.create();
             Vector3f deltaAnchorPosition = pool.create();
             try {
                 MediaFeed feed = mMediaFeed;
-                DisplayList displayList = mDisplayList;
-                DisplayItem[] displayItems = mDisplayItems;
-                DisplaySlot[] displaySlots = mDisplaySlots;
+                DisplayList displayList = sDisplayList;
+                DisplayItem[] displayItems = sDisplayItems;
+                DisplaySlot[] displaySlots = sDisplaySlots;
                 int numDisplayItems = displayItems.length;
                 int numDisplaySlots = displaySlots.length;
-                ArrayList<MediaItem> visibleItems = mVisibleItems;
-                deltaAnchorPosition.set(mDeltaAnchorPosition);
+                ArrayList<MediaItem> visibleItems = sVisibleItems;
+                deltaAnchorPosition.set(sDeltaAnchorPosition);
                 LayoutInterface layout = mLayoutInterface;
                 GridCamera camera = mCamera;
                 for (int i = firstVisibleSlotIndex; i <= lastVisibleSlotIndex; ++i) {
@@ -588,12 +602,15 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     if (set != null && indexIntoSlots >= 0 && indexIntoSlots < numDisplaySlots) {
                         ArrayList<MediaItem> items = set.getItems();
                         displaySlots[indexIntoSlots].setMediaSet(set);
-                        ArrayList<MediaItem> bestItems = mTempList;
+                        ArrayList<MediaItem> bestItems = sTempList;
                         if (mTimeElapsedSinceTransition < 1.0f) {
-                            ArrayUtils.computeSortedIntersection(visibleItems, items, MAX_ITEMS_PER_SLOT, bestItems, mTempHash);
+                            // We always show the same top thumbnails for a stack of albums
+                            if (mState == STATE_MEDIA_SETS)
+                                ArrayUtils.computeSortedIntersection(items, visibleItems, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
+                            else
+                                ArrayUtils.computeSortedIntersection(visibleItems, items, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
                         }
-
-                        // TODO: Could be problematic with dummy items in set.
+                        
                         int numItemsInSet = set.getNumItems();
                         int numBestItems = bestItems.size();
                         int originallyFoundItems = numBestItems;
@@ -621,7 +638,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                                 MediaItem item = bestItems.get(j);
                                 if (item != null) {
                                     DisplayItem displayItem = displayList.get(item);
-                                    if (mState == STATE_FULL_SCREEN
+                                    if ((mState == STATE_FULL_SCREEN && i != mInputProcessor.getCurrentSelectedSlot())
                                             || (mState == STATE_GRID_VIEW && (mTimeElapsedSinceTransition > 1.0f || j >= originallyFoundItems))) {
                                         displayItem.set(position, j, false);
                                         displayItem.commit();
@@ -642,22 +659,22 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     mFeedChanged = false;
                     if (mInputProcessor != null && mState == STATE_FULL_SCREEN) {
                         int currentSelectedSlot = mInputProcessor.getCurrentSelectedSlot();
-                        if (currentSelectedSlot > mCompleteRange.end)
-                            currentSelectedSlot = mCompleteRange.end;
+                        if (currentSelectedSlot > sCompleteRange.end)
+                            currentSelectedSlot = sCompleteRange.end;
                         mInputProcessor.setCurrentSelectedSlot(currentSelectedSlot);
                     }
                     if (mState == STATE_GRID_VIEW) {
                         MediaSet expandedSet = mMediaFeed.getExpandedMediaSet();
                         if (expandedSet != null) {
-                            if (!mHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
-                                mHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
+                            if (!sHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
+                                sHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
                             }
                         }
                     }
                     if (mRequestFocusContentUri != null) {
                         // We have to find the item that has this contentUri
                         if (mState == STATE_FULL_SCREEN) {
-                            int numSlots = mCompleteRange.end;
+                            int numSlots = sCompleteRange.end;
                             for (int i = 0; i < numSlots; ++i) {
                                 MediaSet set = feed.getSetForSlot(i);
                                 ArrayList<MediaItem> items = set.getItems();
@@ -679,7 +696,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             }
             // We keep upto 400 thumbnails in memory.
             int numThumbnailsToKeepInMemory = (mState == STATE_MEDIA_SETS || mState == STATE_TIMELINE) ? 100 : 400;
-            int startMemoryRange = (mBufferedVisibleRange.begin / numThumbnailsToKeepInMemory) * numThumbnailsToKeepInMemory;
+            int startMemoryRange = (sBufferedVisibleRange.begin / numThumbnailsToKeepInMemory) * numThumbnailsToKeepInMemory;
             if (mStartMemoryRange != startMemoryRange) {
                 mStartMemoryRange = startMemoryRange;
                 clearUnusedThumbnails();
@@ -690,22 +707,23 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     @Override
     public void handleLowMemory() {
         clearUnusedThumbnails();
-        mDrawables.mStringTextureTable.clear();
+        GridDrawables.sStringTextureTable.clear();
         mBackground.clearCache();
     }
 
     // This method can be potentially expensive
     public void clearUnusedThumbnails() {
-        mDisplayList.clearExcept(mDisplayItems);
+        sDisplayList.clearExcept(sDisplayItems);
     }
 
     @Override
     public void onSurfaceCreated(RenderView view, GL11 gl) {
-        mDisplayList.clear();
-        mHud.clear();
-        mHud.reset();
-        mDrawables.mStringTextureTable.clear();
+        sDisplayList.clear();
+        sHud.clear();
+        sHud.reset();
+        GridDrawables.sStringTextureTable.clear();
         mDrawables.onSurfaceCreated(view, gl);
+        mBackground.clear();
     }
 
     @Override
@@ -720,7 +738,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         GridCamera camera = mCamera;
         int selectedSlotIndex = mInputProcessor.getCurrentSelectedSlot();
         computeVisibleItems();
-
+        
         gl.glMatrixMode(GL11.GL_MODELVIEW);
         gl.glLoadIdentity();
         GLU.gluLookAt(gl, -camera.mEyeX, -camera.mEyeY, -camera.mEyeZ, -camera.mLookAtX, -camera.mLookAtY, -camera.mLookAtZ,
@@ -736,12 +754,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         } else {
             mTargetAlpha = 1.0f;
         }
-        mDrawManager.prepareDraw(mBufferedVisibleRange, mVisibleRange, selectedSlotIndex, mInputProcessor.getCurrentFocusSlot(),
+        mDrawManager.prepareDraw(sBufferedVisibleRange, sVisibleRange, selectedSlotIndex, mInputProcessor.getCurrentFocusSlot(),
                 mInputProcessor.isFocusItemPressed());
         if (mSelectedAlpha != 0.0f) {
             mDrawManager.drawThumbnails(view, gl, mState);
         }
-        gl.glDisable(GL11.GL_BLEND);
+        if (mSelectedAlpha != 1.0f) {
+            gl.glDisable(GL11.GL_BLEND);
+        }
         // We draw the selected slotIndex.
         if (selectedSlotIndex != Shared.INVALID) {
             mDrawManager.drawFocusItems(view, gl, mZoomValue, mSlideshowMode, mTimeElapsedSinceView);
@@ -753,15 +773,15 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void renderBlended(RenderView view, GL11 gl) {
         // We draw the placeholder for all visible slots.
-        if (mHud != null && mDrawManager != null) {
-            mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, mHud.getMode(), mTimeElapsedSinceStackViewReady,
-                    mTimeElapsedSinceGridViewReady, mBucketList, mMediaFeed.getWaitingForMediaScanner() || mFeedAboutToChange
+        if (sHud != null && mDrawManager != null) {
+            mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, sHud.getMode(), mTimeElapsedSinceStackViewReady,
+                    mTimeElapsedSinceGridViewReady, sBucketList, mMediaFeed.getWaitingForMediaScanner() || mFeedAboutToChange
                             || mMediaFeed.isLoading());
         }
     }
 
     public synchronized void onLayout(int newAnchorSlotIndex, int currentAnchorSlotIndex, LayoutInterface oldLayout) {
-        if (mPerformingLayoutChange || !mDeltaAnchorPosition.equals(mDeltaAnchorPositionUncommited)) {
+        if (mPerformingLayoutChange || !sDeltaAnchorPosition.equals(sDeltaAnchorPositionUncommited)) {
             return;
         }
 
@@ -769,7 +789,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mPerformingLayoutChange = true;
         LayoutInterface layout = mLayoutInterface;
         if (oldLayout == null) {
-            oldLayout = mPrevLayoutInterface;
+            oldLayout = sfullScreenLayoutInterface;
         }
         GridCamera camera = mCamera;
         if (currentAnchorSlotIndex == Shared.INVALID) {
@@ -787,7 +807,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
         int itemHeight = camera.mItemHeight;
         int itemWidth = camera.mItemWidth;
-        Pool<Vector3f> pool = mTempVec;
+        Pool<Vector3f> pool = sTempVec;
         Vector3f deltaAnchorPosition = pool.create();
         Vector3f currentSlotPosition = pool.create();
         try {
@@ -795,12 +815,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (currentAnchorSlotIndex != Shared.INVALID && newAnchorSlotIndex != Shared.INVALID) {
                 layout.getPositionForSlotIndex(newAnchorSlotIndex, itemWidth, itemHeight, deltaAnchorPosition);
                 oldLayout.getPositionForSlotIndex(currentAnchorSlotIndex, itemWidth, itemHeight, currentSlotPosition);
-                currentSlotPosition.subtract(mDeltaAnchorPosition);
+                currentSlotPosition.subtract(sDeltaAnchorPosition);
                 deltaAnchorPosition.subtract(currentSlotPosition);
                 deltaAnchorPosition.y = 0;
                 deltaAnchorPosition.z = 0;
             }
-            mDeltaAnchorPositionUncommited.set(deltaAnchorPosition);
+            sDeltaAnchorPositionUncommited.set(deltaAnchorPosition);
         } finally {
             pool.delete(deltaAnchorPosition);
             pool.delete(currentSlotPosition);
@@ -817,8 +837,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     private void forceRecomputeVisibleRange() {
-        mPreviousDataRange.begin = Shared.INVALID;
-        mPreviousDataRange.end = Shared.INVALID;
+        sPreviousDataRange.begin = Shared.INVALID;
+        sPreviousDataRange.end = Shared.INVALID;
         if (mView != null) {
             mView.requestRender();
         }
@@ -830,7 +850,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mFeedChanged = true;
             forceRecomputeVisibleRange();
             if (mState == STATE_GRID_VIEW || mState == STATE_FULL_SCREEN)
-                mHud.setFeed(feed, mState, needsLayout);
+                sHud.setFeed(feed, mState, needsLayout);
             return;
         }
 
@@ -838,21 +858,21 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             Thread.yield();
         }
         if (mState == STATE_GRID_VIEW) {
-            if (mHud != null) {
+            if (sHud != null) {
                 MediaSet set = feed.getCurrentSet();
                 if (set != null && !mLocationFilter)
-                    mHud.getPathBar().changeLabel(set.mNoCountTitleString);
+                    sHud.getPathBar().changeLabel(set.mNoCountTitleString);
             }
         }
-        DisplayItem[] displayItems = mDisplayItems;
-        int firstBufferedVisibleSlotIndex = mBufferedVisibleRange.begin;
-        int lastBufferedVisibleSlotIndex = mBufferedVisibleRange.end;
+        DisplayItem[] displayItems = sDisplayItems;
+        int firstBufferedVisibleSlotIndex = sBufferedVisibleRange.begin;
+        int lastBufferedVisibleSlotIndex = sBufferedVisibleRange.end;
         int currentlyVisibleSlotIndex = getAnchorSlotIndex(ANCHOR_CENTER);
         if (mCurrentExpandedSlot != Shared.INVALID) {
             currentlyVisibleSlotIndex = mCurrentExpandedSlot;
         }
         MediaItem anchorItem = null;
-        ArrayList<MediaItem> visibleItems = mVisibleItems;
+        ArrayList<MediaItem> visibleItems = sVisibleItems;
         visibleItems.clear();
         visibleItems.ensureCapacity(lastBufferedVisibleSlotIndex - firstBufferedVisibleSlotIndex);
         if (currentlyVisibleSlotIndex != Shared.INVALID && currentlyVisibleSlotIndex >= firstBufferedVisibleSlotIndex
@@ -915,7 +935,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         // We must create a new display store now since the data has changed.
         if (newSlotIndex != Shared.INVALID) {
             if (mState == STATE_MEDIA_SETS) {
-                mDisplayList.clearExcept(displayItems);
+                sDisplayList.clearExcept(displayItems);
             }
             onLayout(newSlotIndex, currentlyVisibleSlotIndex, null);
         } else {
@@ -925,25 +945,37 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mFeedAboutToChange = false;
         mFeedChanged = true;
         if (feed != null) {
-            mHud.setFeed(feed, mState, needsLayout);
+            if (mState == STATE_GRID_VIEW || mState == STATE_FULL_SCREEN)
+                sHud.setFeed(feed, mState, needsLayout);
         }
         if (mView != null) {
             mView.requestRender();
         }
     }
+    
+    public DisplayItem getRepresentativeDisplayItem() {
+        int slotIndex = Shared.INVALID;
+        if (mInputProcessor != null) {
+            slotIndex = mInputProcessor.getCurrentFocusSlot();
+        }
+        if (slotIndex == Shared.INVALID) {
+            slotIndex = getAnchorSlotIndex(ANCHOR_CENTER);
+        }
+        return sDisplayItems[(slotIndex - sBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT];
+    }
 
     public DisplayItem getAnchorDisplayItem(int type) {
         int slotIndex = getAnchorSlotIndex(type);
-        return mDisplayItems[(slotIndex - mBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT];
+        return sDisplayItems[(slotIndex - sBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT];
     }
 
     public float getScrollPosition() {
-        return (mCamera.mLookAtX * mCamera.mScale + mDeltaAnchorPosition.x); // in
+        return (mCamera.mLookAtX * mCamera.mScale + sDeltaAnchorPosition.x); // in
         // pixels
     }
 
     public DisplayItem getDisplayItemForScrollPosition(float posX) {
-        Pool<Vector3f> pool = mTempVecAlt;
+        Pool<Vector3f> pool = sTempVecAlt;
         MediaFeed feed = mMediaFeed;
         int itemWidth = mCamera.mItemWidth;
         int itemHeight = mCamera.mItemHeight;
@@ -978,7 +1010,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (set != null) {
             ArrayList<MediaItem> items = set.getItems();
             if (items != null && set.getNumItems() > 0) {
-                return (mDisplayList.get(items.get(0)));
+                return (sDisplayList.get(items.get(0)));
             }
         }
         return null;
@@ -989,22 +1021,22 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         int retVal = 0;
         switch (anchorType) {
         case ANCHOR_LEFT:
-            retVal = mVisibleRange.begin;
+            retVal = sVisibleRange.begin;
             break;
         case ANCHOR_RIGHT:
-            retVal = mVisibleRange.end;
+            retVal = sVisibleRange.end;
             break;
         case ANCHOR_CENTER:
-            retVal = (mVisibleRange.begin + mVisibleRange.end) / 2;
+            retVal = (sVisibleRange.begin + sVisibleRange.end) / 2;
             break;
         }
         return retVal;
     }
 
     DisplayItem getDisplayItemForSlotId(int slotId) {
-        int index = slotId - mBufferedVisibleRange.begin;
-        if (index >= 0 && slotId <= mBufferedVisibleRange.end) {
-            return mDisplayItems[index * MAX_ITEMS_PER_SLOT];
+        int index = slotId - sBufferedVisibleRange.begin;
+        if (index >= 0 && slotId <= sBufferedVisibleRange.end) {
+            return sDisplayItems[index * MAX_ITEMS_PER_SLOT];
         }
         return null;
     }
@@ -1014,20 +1046,20 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         boolean retVal = changeFocusToSlot(currentSelectedSlot + 1, convergence);
         if (mInputProcessor.getCurrentSelectedSlot() == currentSelectedSlot) {
             endSlideshow();
-            mHud.setAlpha(1.0f);
+            sHud.setAlpha(1.0f);
         }
         return retVal;
     }
 
     boolean changeFocusToSlot(int slotId, float convergence) {
         mZoomValue = 1.0f;
-        int index = slotId - mBufferedVisibleRange.begin;
-        if (index >= 0 && slotId <= mBufferedVisibleRange.end) {
-            DisplayItem displayItem = mDisplayItems[index * MAX_ITEMS_PER_SLOT];
+        int index = slotId - sBufferedVisibleRange.begin;
+        if (index >= 0 && slotId <= sBufferedVisibleRange.end) {
+            DisplayItem displayItem = sDisplayItems[index * MAX_ITEMS_PER_SLOT];
             if (displayItem != null) {
                 MediaItem item = displayItem.mItemRef;
-                mHud.fullscreenSelectionChanged(item, slotId + 1, mCompleteRange.end + 1);
-                if (slotId != Shared.INVALID && slotId <= mCompleteRange.end) {
+                sHud.fullscreenSelectionChanged(item, slotId + 1, sCompleteRange.end + 1);
+                if (slotId != Shared.INVALID && slotId <= sCompleteRange.end) {
                     mInputProcessor.setCurrentFocusSlot(slotId);
                     centerCameraForSlot(slotId, convergence);
                     return true;
@@ -1045,12 +1077,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public ArrayList<MediaBucket> getSelectedBuckets() {
-        return mBucketList.get();
+        return sBucketList.get();
     }
 
     public void selectAll() {
         if (mState != STATE_FULL_SCREEN) {
-            int numSlots = mCompleteRange.end + 1;
+            int numSlots = sCompleteRange.end + 1;
             for (int i = 0; i < numSlots; ++i) {
                 addSlotToSelectedItems(i, false, false);
             }
@@ -1061,17 +1093,17 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public void deselectOrCancelSelectMode() {
-        if (mBucketList.size() == 0) {
-            mHud.cancelSelection();
+        if (sBucketList.size() == 0) {
+            sHud.cancelSelection();
         } else {
-            mBucketList.clear();
+            sBucketList.clear();
             updateCountOfSelectedItems();
         }
     }
 
     public void deselectAll() {
-        mHud.cancelSelection();
-        mBucketList.clear();
+        sHud.cancelSelection();
+        sBucketList.clear();
         updateCountOfSelectedItems();
     }
 
@@ -1081,7 +1113,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         deselectAll();
 
         // If the current set is now empty, return to the parent set.
-        if (mCompleteRange.isEmpty()) {
+        if (sCompleteRange.isEmpty()) {
             goBack(); // TODO(venkat): This does not work most of the time, can you take a look?
         }
     }
@@ -1089,17 +1121,17 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     void addSlotToSelectedItems(int slotId, boolean removeIfAlreadyAdded, boolean updateCount) {
         if (mFeedAboutToChange == false) {
             MediaFeed feed = mMediaFeed;
-            mBucketList.add(slotId, feed, removeIfAlreadyAdded);
+            sBucketList.add(slotId, feed, removeIfAlreadyAdded);
             if (updateCount) {
                 updateCountOfSelectedItems();
-                if (mBucketList.size() == 0)
+                if (sBucketList.size() == 0)
                     deselectAll();
             }
         }
     }
 
     private void updateCountOfSelectedItems() {
-        mHud.updateNumItemsSelected(mBucketList.size());
+        sHud.updateNumItemsSelected(sBucketList.size());
     }
 
     public int getMetadataSlotIndexForScreenPosition(int posX, int posY) {
@@ -1112,7 +1144,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     private int getSlotForScreenPosition(int posX, int posY, int itemWidth, int itemHeight) {
-        Pool<Vector3f> pool = mTempVec;
+        Pool<Vector3f> pool = sTempVec;
         int retVal = 0;
         Vector3f worldPos = pool.create();
         try {
@@ -1148,7 +1180,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mCurrentExpandedSlot = slotIndex;
             goBack();
             if (metadata) {
-                DisplaySlot slot = mDisplaySlots[slotIndex - mBufferedVisibleRange.begin];
+                DisplaySlot slot = sDisplaySlots[slotIndex - sBufferedVisibleRange.begin];
                 if (slot.hasValidLocation()) {
                     MediaSet set = slot.getMediaSet();
                     if (set.mReverseGeocodedLocation != null) {
@@ -1196,7 +1228,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mZoomValue = 1.0f;
         centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
         mTimeElapsedSinceView = SLIDESHOW_TRANSITION_TIME - 1.0f;
-        mHud.setAlpha(0);
+        sHud.setAlpha(0);
         PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "GridView.Slideshow");
         mWakeLock.acquire();
@@ -1204,7 +1236,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void enterSelectionMode() {
         mSlideshowMode = false;
-        mHud.enterSelectionMode();
+        sHud.enterSelectionMode();
         int currentSlot = mInputProcessor.getCurrentSelectedSlot();
         if (currentSlot == Shared.INVALID) {
             currentSlot = mInputProcessor.getCurrentFocusSlot();
@@ -1213,7 +1245,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     private float getFillScreenZoomValue() {
-        return GridCameraManager.getFillScreenZoomValue(mCamera, mTempVec, mCurrentFocusItemWidth, mCurrentFocusItemHeight);
+        return GridCameraManager.getFillScreenZoomValue(mCamera, sTempVec, mCurrentFocusItemWidth, mCurrentFocusItemHeight);
     }
 
     public void zoomInToSelectedItem() {
@@ -1227,7 +1259,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mZoomValue > 6.0f) {
             mZoomValue = 6.0f;
         }
-        mHud.setAlpha(1.0f);
+        sHud.setAlpha(1.0f);
         centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
     }
 
@@ -1241,14 +1273,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mZoomValue < 1.0f) {
             mZoomValue = 1.0f;
         }
-        mHud.setAlpha(1.0f);
+        sHud.setAlpha(1.0f);
         centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
     }
 
     public void rotateSelectedItems(float f) {
-        MediaBucketList bucketList = mBucketList;
+        MediaBucketList bucketList = sBucketList;
         ArrayList<MediaBucket> mediaBuckets = bucketList.get();
-        DisplayList displayList = mDisplayList;
+        DisplayList displayList = sDisplayList;
         int numBuckets = mediaBuckets.size();
         for (int i = 0; i < numBuckets; ++i) {
             MediaBucket bucket = mediaBuckets.get(i);
@@ -1307,7 +1339,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public Vector3f getDeltaAnchorPosition() {
-        return mDeltaAnchorPosition;
+        return sDeltaAnchorPosition;
     }
 
     public int getExpandedSlot() {
@@ -1325,16 +1357,16 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void setPickIntent(boolean b) {
         mPickIntent = b;
-        mHud.getPathBar().popLabel();
-        mHud.getPathBar().pushLabel(R.drawable.icon_location_small, mContext.getResources().getString(R.string.pick),
+        sHud.getPathBar().popLabel();
+        sHud.getPathBar().pushLabel(R.drawable.icon_location_small, mContext.getResources().getString(R.string.pick),
                 new Runnable() {
                     public void run() {
-                        if (mHud.getAlpha() == 1.0f) {
+                        if (sHud.getAlpha() == 1.0f) {
                             if (!mFeedAboutToChange) {
                                 setState(STATE_MEDIA_SETS);
                             }
                         } else {
-                            mHud.setAlpha(1.0f);
+                            sHud.setAlpha(1.0f);
                         }
                     }
                 });
@@ -1350,18 +1382,18 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mMediaFeed.expandMediaSet(0);
             setState(STATE_GRID_VIEW);
             // We need to make sure we haven't pushed the same label twice
-            if (mHud.getPathBar().getNumLevels() == 1) {
-                mHud.getPathBar().pushLabel(R.drawable.icon_folder_small, setName, new Runnable() {
+            if (sHud.getPathBar().getNumLevels() == 1) {
+                sHud.getPathBar().pushLabel(R.drawable.icon_folder_small, setName, new Runnable() {
                     public void run() {
                         if (mFeedAboutToChange) {
                             return;
                         }
-                        if (mHud.getAlpha() == 1.0f) {
+                        if (sHud.getAlpha() == 1.0f) {
                         disableLocationFiltering();
                         mInputProcessor.clearSelection();
                         setState(STATE_GRID_VIEW);
                         } else {
-                            mHud.setAlpha(1.0f);
+                            sHud.setAlpha(1.0f);
                         }
                     }
                 });
