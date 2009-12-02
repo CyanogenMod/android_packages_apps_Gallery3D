@@ -97,7 +97,7 @@
 				<data android:mimeType="image/*" />
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
-			<intent-filter android:label="Photographs">
+			<intent-filter android:label="@string/app_name">
 				<action android:name="android.intent.action.SET_WALLPAPER" />
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
