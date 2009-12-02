@@ -24,7 +24,7 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
         holder.addCallback(this);
     }
 
-    public static final int SLIDESHOW_DURATION = 5000;
+    public static final int SLIDESHOW_DURATION = 2000;
 
     public interface DataSource {
         /**
@@ -126,7 +126,6 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
                         performUpdate(mQueuedFrameRect, sQueuedGrow, delta);
                         if (alpha >= 1.0f) {
                             // We switch the image.
-                            mBitmap.recycle();
                             mRect = mQueuedRect;
                             mBitmap = mQueuedBitmap;
                             mFrameRect =  mQueuedFrameRect;
@@ -156,7 +155,7 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
 
     private void performUpdate(RectF rect, Vector3f grow, long delta) {
         float timeElapsed = ((float)(delta)) / 1000.0f;
-        float amountToGrowX = timeElapsed * (rect.width() / 30.0f);
+        float amountToGrowX = timeElapsed * (rect.width() / 15.0f);
         float amountToGrowY = amountToGrowX * (rect.height() / rect.width());
         rect.top -= amountToGrowY * grow.x;
         rect.left -= amountToGrowX * grow.y;

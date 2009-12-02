@@ -106,6 +106,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private int mStartMemoryRange;
     private int mFramesDirty;
     private String mRequestFocusContentUri;
+    private int mFrameCount;
 
     public GridLayer(Context context, int itemWidth, int itemHeight, LayoutInterface layoutInterface, RenderView view) {
         mBackground = new BackgroundLayer(this);
@@ -164,12 +165,10 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mMediaFeed.shutdown();
         }
         mContext = null;
-        mInputProcessor = null;
         mBackground = null;
         sBucketList.clear();
         mCameraManager = null;
         mDrawManager = null;
-        sHud.shutDown();
         mView = null;
     }
 
@@ -535,6 +534,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         boolean dirty = mDrawManager.update(timeElapsed);
         dirty |= mSlideshowMode;
         dirty |= mFramesDirty > 0;
+        ++mFrameCount;
         if (mFramesDirty > 0) {
             --mFramesDirty;
         }
@@ -961,7 +961,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (slotIndex == Shared.INVALID) {
             slotIndex = getAnchorSlotIndex(ANCHOR_CENTER);
         }
-        return sDisplayItems[(slotIndex - sBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT];
+        int index = (slotIndex - sBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT;
+        if (index >= 0 && index < MAX_ITEMS_DRAWABLE) {
+            return sDisplayItems[index];
+        } else {
+            return null;
+        }
     }
 
     public DisplayItem getAnchorDisplayItem(int type) {
@@ -1390,7 +1395,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                         }
                         if (sHud.getAlpha() == 1.0f) {
                         disableLocationFiltering();
-                        mInputProcessor.clearSelection();
+                        if (mInputProcessor != null)
+                            mInputProcessor.clearSelection();
                         setState(STATE_GRID_VIEW);
                         } else {
                             sHud.setAlpha(1.0f);

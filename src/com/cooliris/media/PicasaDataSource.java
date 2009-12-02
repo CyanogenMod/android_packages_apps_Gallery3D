@@ -1,7 +1,9 @@
 package com.cooliris.media;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import android.accounts.Account;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -28,6 +30,7 @@ public final class PicasaDataSource implements DataSource {
     private ContentProviderClient mProviderClient;
     private final Context mContext;
     private ContentObserver mAlbumObserver;
+    private HashMap<String, Boolean> mAccountEnabled = new HashMap<String, Boolean>();
 
     public PicasaDataSource(Context context) {
         mContext = context;
@@ -39,10 +42,10 @@ public final class PicasaDataSource implements DataSource {
         }
         // Force permission dialog to be displayed if necessary. TODO: remove this after signed by Google.
         PicasaApi.getAccounts(mContext);
-        
+
         // Ensure that users are up to date. TODO: also listen for accounts changed broadcast.
         PicasaService.requestSync(mContext, PicasaService.TYPE_USERS_ALBUMS, 0);
-        Handler handler = ((Gallery)mContext).getHandler();
+        Handler handler = ((Gallery) mContext).getHandler();
         ContentObserver albumObserver = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
                 loadMediaSetsIntoFeed(feed, true);
@@ -50,13 +53,13 @@ public final class PicasaDataSource implements DataSource {
         };
         mAlbumObserver = albumObserver;
         loadMediaSetsIntoFeed(feed, true);
-        
+
         // Start listening.
         ContentResolver cr = mContext.getContentResolver();
         cr.registerContentObserver(PicasaContentProvider.ALBUMS_URI, false, mAlbumObserver);
         cr.registerContentObserver(PicasaContentProvider.PHOTOS_URI, false, mAlbumObserver);
     }
- 
+
     public void shutdown() {
         if (mAlbumObserver != null) {
             ContentResolver cr = mContext.getContentResolver();
@@ -74,6 +77,18 @@ public final class PicasaDataSource implements DataSource {
     }
 
     protected void loadMediaSetsIntoFeed(final MediaFeed feed, boolean sync) {
+        Account[] accounts = PicasaApi.getAccounts(mContext);
+        int numAccounts = accounts.length;
+        for (int i = 0; i < numAccounts; ++i) {
+            Account account = accounts[i];
+            boolean isEnabled = ContentResolver.getSyncAutomatically(account, PicasaContentProvider.AUTHORITY);
+            String username = account.name;
+            if (username.contains("@gmail.") || username.contains("@googlemail.")) {
+                // Strip the domain from GMail accounts for canonicalization. TODO: is there an official way?
+                username = username.substring(0, username.indexOf('@'));
+            }
+            mAccountEnabled.put(username, new Boolean(isEnabled));
+        }
         ContentProviderClient client = mProviderClient;
         if (client == null)
             return;
@@ -88,18 +103,22 @@ public final class PicasaDataSource implements DataSource {
                 ArrayList<MediaSet> picasaSets = new ArrayList<MediaSet>(numAlbums);
                 do {
                     albumSchema.cursorToObject(cursor, album);
-                    mediaSet = feed.getMediaSet(album.id);
-                    if (mediaSet == null) {
-                        mediaSet = feed.addMediaSet(album.id, this);
-                        mediaSet.mName = album.title;
-                        mediaSet.mEditUri = album.editUri;
-                        mediaSet.generateTitle(true);
-                    } else {
-                        mediaSet.setNumExpectedItems(album.numPhotos);
+                    Boolean accountEnabledObj = mAccountEnabled.get(album.user);
+                    boolean accountEnabled = (accountEnabledObj == null) ? false : accountEnabledObj.booleanValue();
+                    if (accountEnabled) {
+                        mediaSet = feed.getMediaSet(album.id);
+                        if (mediaSet == null) {
+                            mediaSet = feed.addMediaSet(album.id, this);
+                            mediaSet.mName = album.title;
+                            mediaSet.mEditUri = album.editUri;
+                            mediaSet.generateTitle(true);
+                        } else {
+                            mediaSet.setNumExpectedItems(album.numPhotos);
+                        }
+                        mediaSet.mPicasaAlbumId = album.id;
+                        mediaSet.mSyncPending = album.photosDirty;
+                        picasaSets.add(mediaSet);
                     }
-                    mediaSet.mPicasaAlbumId = album.id;
-                    mediaSet.mSyncPending = album.photosDirty;
-                    picasaSets.add(mediaSet);
                 } while (cursor.moveToNext());
             }
             cursor.close();
@@ -189,7 +208,7 @@ public final class PicasaDataSource implements DataSource {
                         for (int j = 0, numItems = items.size(); j != numItems; ++j) {
                             MediaItem item = items.get(j);
                             if (item != null) {
-                                String itemUri = PicasaContentProvider.PHOTOS_URI + "/" + item.mId; 
+                                String itemUri = PicasaContentProvider.PHOTOS_URI + "/" + item.mId;
                                 client.delete(Uri.parse(itemUri), null, null);
                             }
                         }

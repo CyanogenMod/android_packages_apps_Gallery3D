@@ -559,7 +559,11 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 } else {
                     // We stop any slideshow.
                     HudLayer hud = layer.getHud();
-                    layer.endSlideshow();
+                    if (layer.inSlideShowMode()) {
+                        layer.endSlideshow();
+                    } else {
+                        hud.setAlpha(1.0f - hud.getAlpha());
+                    }
                     if (hud.getMode() == HudLayer.MODE_SELECT) {
                         hud.setAlpha(1.0f);
                     }
@@ -657,10 +661,11 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     }
 
     private void vibrateShort() {
-        mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        // As per request by Google, this line disables vibration.
+        //mView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
     }
 
     private void vibrateLong() {
-        mView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        //mView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
     }
 }

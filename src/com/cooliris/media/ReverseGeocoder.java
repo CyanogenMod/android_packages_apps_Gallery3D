@@ -317,9 +317,9 @@ public final class ReverseGeocoder extends Thread {
                     if (country == null) {
                         locale = new Locale(language);
                     } else if (variant == null) {
-                        locale = new Locale(country, language);
+                        locale = new Locale(language, country);
                     } else {
-                        locale = new Locale(country, language, variant);
+                        locale = new Locale(language, country, variant);
                     }
                 }
                 if (!locale.getLanguage().equals(Locale.getDefault().getLanguage())) {

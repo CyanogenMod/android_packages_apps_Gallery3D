@@ -15,7 +15,6 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.util.FloatMath;
-import android.util.Log;
 import android.view.MotionEvent;
 
 import com.cooliris.media.MenuBar.Menu;
@@ -750,10 +749,6 @@ public final class HudLayer extends Layer {
 
     public void clear() {
 
-    }
-
-    public void shutDown() {
-        
     }
 
     public void enterSelectionMode() {

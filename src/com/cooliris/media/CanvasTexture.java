@@ -21,6 +21,7 @@ public abstract class CanvasTexture {
     private Bitmap mBitmap = null;
     private boolean mNeedsDraw = false;
     private boolean mNeedsResize = false;
+    private GL11 mCachedGL = null;
 
     public CanvasTexture(Bitmap.Config bitmapConfig) {
         mBitmapConfig = bitmapConfig;
@@ -63,6 +64,10 @@ public abstract class CanvasTexture {
 
     // This code seems largely a dup of CanvasLayer.
     public boolean bind(GL11 gl) {
+        if (mCachedGL != gl) {
+            mCachedGL = gl;
+            resetTexture();
+        }
         int width = (int) mWidth;
         int height = (int) mHeight;
         int textureId = mTextureId;
@@ -110,9 +115,11 @@ public abstract class CanvasTexture {
                 // Recycle the existing bitmap and create a new one.
                 if (bitmap != null)
                     bitmap.recycle();
-                bitmap = Bitmap.createBitmap(textureWidth, textureHeight, mBitmapConfig);
-                canvas.setBitmap(bitmap);
-                mBitmap = bitmap;
+                if (textureWidth > 0 && textureHeight > 0) {
+                    bitmap = Bitmap.createBitmap(textureWidth, textureHeight, mBitmapConfig);
+                    canvas.setBitmap(bitmap);
+                    mBitmap = bitmap;
+                }
             }
         }
 
@@ -147,7 +154,7 @@ public abstract class CanvasTexture {
             float height = mHeight;
 
             // Apply scale transform if not identity.
-            if (scale != 1) {  // CR: 1.0f
+            if (scale != 1) { // CR: 1.0f
                 float originX = x + anchorX * width;
                 float originY = y + anchorY * height;
                 width *= scale;
@@ -157,7 +164,7 @@ public abstract class CanvasTexture {
             }
 
             // Set alpha if needed.
-            if (alpha != 1f) {  // CR: 1.0f
+            if (alpha != 1f) { // CR: 1.0f
                 view.setAlpha(alpha);
             }
             view.draw2D(x, y, 0, width, height);

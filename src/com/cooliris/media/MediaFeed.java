@@ -516,10 +516,12 @@ public final class MediaFeed implements Runnable {
                         if (mInClusteringMode && mClusterSets != null) {
                             requestedItems = 0;
                             MediaClustering clustering = mClusterSets.get(mediaSets.get(expandedSetIndex));
-                            ArrayList<Cluster> clusters = clustering.getClustersForDisplay();
-                            int numClusters = clusters.size();
-                            for (int i = 0; i < numClusters; i++) {
-                                requestedItems += clusters.get(i).getNumExpectedItems();
+                            if (clustering != null) {
+                                ArrayList<Cluster> clusters = clustering.getClustersForDisplay();
+                                int numClusters = clusters.size();
+                                for (int i = 0; i < numClusters; i++) {
+                                    requestedItems += clusters.get(i).getNumExpectedItems();
+                                }
                             }
                         }
                         MediaSet set = mediaSets.get(expandedSetIndex);

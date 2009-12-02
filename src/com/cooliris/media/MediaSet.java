@@ -131,7 +131,7 @@ public class MediaSet {
         mTitleString = mName + size;
         if (truncateTitle) {
             int length = mName.length();
-            mTruncTitleString = (length > 16) ? mName.substring(0, 12) + "\u2026" + mName.substring(length - 4, length) + size : mName + size;
+            mTruncTitleString = (length > 16) ? mName.substring(0, 12) + "..." + mName.substring(length - 4, length) + size : mName + size;
             mNoCountTitleString = mName;
         } else {
             mTruncTitleString = mTitleString;

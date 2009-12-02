@@ -395,7 +395,7 @@ public final class CacheService extends IntentService {
     public static final void populateMediaItemFromCursor(final MediaItem item, final ContentResolver cr, final Cursor cursor,
             final String baseUri) {
         item.mId = cursor.getLong(CacheService.MEDIA_ID_INDEX);
-        //item.mCaption = cursor.getString(CacheService.MEDIA_CAPTION_INDEX);
+        // item.mCaption = cursor.getString(CacheService.MEDIA_CAPTION_INDEX);
         item.mMimeType = cursor.getString(CacheService.MEDIA_MIME_TYPE_INDEX);
         item.mLatitude = cursor.getDouble(CacheService.MEDIA_LATITUDE_INDEX);
         item.mLongitude = cursor.getDouble(CacheService.MEDIA_LONGITUDE_INDEX);
@@ -551,7 +551,6 @@ public final class CacheService extends IntentService {
         if (origId == Shared.INVALID) {
             return null;
         }
-        Log.i(TAG, "Building thumbnail for item " + origId);
         try {
             Bitmap bitmap = null;
             Thread.sleep(1);
@@ -588,7 +587,6 @@ public final class CacheService extends IntentService {
                 return null;
             }
             final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth, thumbnailHeight);
-            Log.i(TAG, "Generated thumbnail for item " + origId);
             return retVal;
         } catch (InterruptedException e) {
             return null;
@@ -850,32 +848,36 @@ public final class CacheService extends IntentService {
         cursors[0] = cursorImages;
         cursors[1] = cursorVideos;
         final SortCursor sortCursor = new SortCursor(cursors, Images.ImageColumns.BUCKET_DISPLAY_NAME, SortCursor.TYPE_STRING, true);
-
-        if (sortCursor != null && sortCursor.moveToFirst()) {
-            sets.ensureCapacity(sortCursor.getCount());
-            acceleratedSets = new LongSparseArray<MediaSet>(sortCursor.getCount());
-            MediaSet cameraSet = new MediaSet();
-            cameraSet.mId = LocalDataSource.CAMERA_BUCKET_ID;
-            cameraSet.mName = context.getResources().getString(R.string.camera);
-            sets.add(cameraSet);
-            acceleratedSets.put(cameraSet.mId, cameraSet);
-            do {
-                if (Thread.interrupted()) {
-                    return;
-                }
-                long setId = sortCursor.getLong(BUCKET_ID_INDEX);
-                MediaSet mediaSet = findSet(setId, acceleratedSets);
-                if (mediaSet == null) {
-                    mediaSet = new MediaSet();
-                    mediaSet.mId = setId;
-                    mediaSet.mName = sortCursor.getString(BUCKET_NAME_INDEX);
-                    sets.add(mediaSet);
-                    acceleratedSets.put(setId, mediaSet);
-                }
-                mediaSet.mHasImages |= (sortCursor.getCurrentCursorIndex() == 0);
-                mediaSet.mHasVideos |= (sortCursor.getCurrentCursorIndex() == 1);
-            } while (sortCursor.moveToNext());
-            sortCursor.close();
+        try {
+            if (sortCursor != null && sortCursor.moveToFirst()) {
+                sets.ensureCapacity(sortCursor.getCount());
+                acceleratedSets = new LongSparseArray<MediaSet>(sortCursor.getCount());
+                MediaSet cameraSet = new MediaSet();
+                cameraSet.mId = LocalDataSource.CAMERA_BUCKET_ID;
+                cameraSet.mName = context.getResources().getString(R.string.camera);
+                sets.add(cameraSet);
+                acceleratedSets.put(cameraSet.mId, cameraSet);
+                do {
+                    if (Thread.interrupted()) {
+                        return;
+                    }
+                    long setId = sortCursor.getLong(BUCKET_ID_INDEX);
+                    MediaSet mediaSet = findSet(setId, acceleratedSets);
+                    if (mediaSet == null) {
+                        mediaSet = new MediaSet();
+                        mediaSet.mId = setId;
+                        mediaSet.mName = sortCursor.getString(BUCKET_NAME_INDEX);
+                        sets.add(mediaSet);
+                        acceleratedSets.put(setId, mediaSet);
+                    }
+                    mediaSet.mHasImages |= (sortCursor.getCurrentCursorIndex() == 0);
+                    mediaSet.mHasVideos |= (sortCursor.getCurrentCursorIndex() == 1);
+                } while (sortCursor.moveToNext());
+                sortCursor.close();
+            }
+        } finally {
+            if (sortCursor != null)
+                sortCursor.close();
         }
 
         sAlbumCache.put(ALBUM_CACHE_INCOMPLETE_INDEX, sDummyData);
@@ -951,33 +953,36 @@ public final class CacheService extends IntentService {
         if (Thread.interrupted()) {
             return;
         }
-        
-        if (sortCursor != null && sortCursor.moveToFirst()) {
-            final int count = sortCursor.getCount();
-            final int numSets = sets.size();
-            final int approximateCountPerSet = count / numSets;
-            for (int i = 0; i < numSets; ++i) {
-                final MediaSet set = sets.get(i);
-                set.getItems().clear();
-                set.setNumExpectedItems(approximateCountPerSet);
+        try {
+            if (sortCursor != null && sortCursor.moveToFirst()) {
+                final int count = sortCursor.getCount();
+                final int numSets = sets.size();
+                final int approximateCountPerSet = count / numSets;
+                for (int i = 0; i < numSets; ++i) {
+                    final MediaSet set = sets.get(i);
+                    set.getItems().clear();
+                    set.setNumExpectedItems(approximateCountPerSet);
+                }
+                do {
+                    if (Thread.interrupted()) {
+                        return;
+                    }
+                    final MediaItem item = new MediaItem();
+                    final boolean isVideo = (sortCursor.getCurrentCursorIndex() == 1);
+                    if (isVideo) {
+                        populateVideoItemFromCursor(item, cr, sortCursor, CacheService.BASE_CONTENT_STRING_VIDEOS);
+                    } else {
+                        populateMediaItemFromCursor(item, cr, sortCursor, CacheService.BASE_CONTENT_STRING_IMAGES);
+                    }
+                    final long setId = sortCursor.getLong(MEDIA_BUCKET_ID_INDEX);
+                    final MediaSet set = findSet(setId, acceleratedSets);
+                    if (set != null) {
+                        set.getItems().add(item);
+                    }
+                } while (sortCursor.moveToNext());
             }
-            do {
-                if (Thread.interrupted()) {
-                    return;
-                }
-                final MediaItem item = new MediaItem();
-                final boolean isVideo = (sortCursor.getCurrentCursorIndex() == 1);
-                if (isVideo) {
-                    populateVideoItemFromCursor(item, cr, sortCursor, CacheService.BASE_CONTENT_STRING_VIDEOS);
-                } else {
-                    populateMediaItemFromCursor(item, cr, sortCursor, CacheService.BASE_CONTENT_STRING_IMAGES);
-                }
-                final long setId = sortCursor.getLong(MEDIA_BUCKET_ID_INDEX);
-                final MediaSet set = findSet(setId, acceleratedSets);
-                if (set != null) {
-                    set.getItems().add(item);
-                }
-            } while (sortCursor.moveToNext());
+        } finally {
+            if (sortCursor != null) sortCursor.close();
         }
         if (sets.size() > 0) {
             writeItemsToCache(sets);

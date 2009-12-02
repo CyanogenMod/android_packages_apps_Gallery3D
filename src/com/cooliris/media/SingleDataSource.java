@@ -89,9 +89,27 @@ public class SingleDataSource implements DataSource {
                     parentSet.generateTitle(true);
                 }
             } else if (mUri.startsWith("file://")) {
-                MediaItem newItem = LocalDataSource.createMediaItemFromFileUri(mContext, mUri);
-                if (newItem != null)
+                MediaItem newItem = null;
+                int numRetries = 3;
+                do {
+                    newItem = LocalDataSource.createMediaItemFromFileUri(mContext, mUri);
+                    if (newItem == null) {
+                        --numRetries;
+                        try {
+                            Thread.sleep(300);
+                        } catch (InterruptedException e) {
+                            ;
+                        }
+                    }
+                } while (newItem == null && numRetries >= 0);
+                if (newItem != null) {
                     item = newItem;
+                } else {
+                    item.mContentUri = mUri;
+                    item.mThumbnailUri = mUri;
+                    item.mScreennailUri = mUri;
+                    feed.setSingleImageMode(true);
+                }
             } else {
                 item.mContentUri = mUri;
                 item.mThumbnailUri = mUri;

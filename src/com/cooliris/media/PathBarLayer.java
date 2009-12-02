@@ -97,7 +97,7 @@ public final class PathBarLayer extends Layer {
             if (origString != null) {
                 label = origString.substring(0, StringTexture.lengthToFit(sPathFormat.fontSize, widthLeft, typeface, origString));
                 if (label.length() != origString.length()) {
-                    label += "\u2026";
+                    label += "...";
                 }
             }
             this.texture = new StringTexture(label, sPathFormat);

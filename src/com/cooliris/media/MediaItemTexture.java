@@ -46,7 +46,7 @@ public final class MediaItemTexture extends Texture {
         if (config != null && parentMediaSet != null && parentMediaSet.mDataSource != null) {
             cache = parentMediaSet.mDataSource.getThumbnailCache();
             if (cache == LocalDataSource.sThumbnailCache) {
-                if (item.mMimeType.contains("video")) {
+                if (item.mMimeType != null && item.mMimeType.contains("video")) {
                     cache = LocalDataSource.sThumbnailCacheVideo;
                 }
             }

@@ -296,7 +296,7 @@ public final class GridDrawManager {
                             mSelectedMixRatio.animateValue(1f, 0.75f, view.getFrameTime());
                         }
                     }
-                    if (mCamera.isAnimating()) {
+                    if (mCamera.isAnimating() || slideshowMode) {
                         if (!slideshowMode && skipPrevious && i == -1) {
                             continue;
                         }

@@ -94,7 +94,7 @@ public class BackgroundLayer extends Layer {
             view.bind(mFallbackBackground);
         } else {
             Texture texture = anchorTexture.getTexture();
-            if (texture.isLoaded()) {
+            if (texture != null && texture.isLoaded()) {
                 mFallbackBackground = texture;
             }
         }

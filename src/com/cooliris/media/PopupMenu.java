@@ -31,7 +31,7 @@ public final class PopupMenu extends Layer {
     private static final int ICON_TITLE_MIN_WIDTH = 100;
     private static final IconTitleDrawable.Config ICON_TITLE_CONFIG;
 
-    private final PopupTexture mPopupTexture;
+    private PopupTexture mPopupTexture;
     private Listener mListener = null;
     private Option[] mOptions = {};
     private boolean mNeedsLayout = false;
@@ -45,7 +45,8 @@ public final class PopupMenu extends Layer {
         paint.setTextSize(17f * Gallery.PIXEL_DENSITY);
         paint.setColor(0xffffffff);
         paint.setAntiAlias(true);
-        ICON_TITLE_CONFIG = new IconTitleDrawable.Config((int)(45 * Gallery.PIXEL_DENSITY), (int)(34 * Gallery.PIXEL_DENSITY), paint);
+        ICON_TITLE_CONFIG = new IconTitleDrawable.Config((int) (45 * Gallery.PIXEL_DENSITY), (int) (34 * Gallery.PIXEL_DENSITY),
+                paint);
         SRC_PAINT.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
     }
 
@@ -70,8 +71,8 @@ public final class PopupMenu extends Layer {
             layout();
         }
         // Try to center the popup over the target point.
-        int width = (int)mWidth;
-        int height = (int)mHeight;
+        int width = (int) mWidth;
+        int height = (int) mHeight;
         int widthOver2 = width / 2;
         int x = pointX - widthOver2;
         int y = pointY + POPUP_Y_OFFSET - height;
@@ -101,7 +102,7 @@ public final class PopupMenu extends Layer {
             mShow = false;
             mSelectedItem = -1;
         }
-        
+
     }
 
     @Override
@@ -115,13 +116,12 @@ public final class PopupMenu extends Layer {
     @Override
     protected void onSizeChanged() {
         super.onSizeChanged();
-        mPopupTexture.setSize((int)mWidth, (int)mHeight);
+        mPopupTexture.setSize((int) mWidth, (int) mHeight);
     }
 
     @Override
     protected void onSurfaceCreated(RenderView view, GL11 gl) {
         close(false);
-        mPopupTexture.resetTexture();
     }
 
     @Override
@@ -155,11 +155,11 @@ public final class PopupMenu extends Layer {
             }
         }
     }
-    
+
     @Override
     public boolean update(RenderView view, float timeElapsed) {
         return (mShowAnim.getTimeRemaining(SystemClock.uptimeMillis()) > 0);
-     }
+    }
 
     @Override
     public void renderBlended(RenderView view, GL11 gl) {
@@ -173,7 +173,6 @@ public final class PopupMenu extends Layer {
         // Draw the selection menu with the show animation.
         int x = (int) mX;
         int y = (int) mY;
-
         if (show && showRatio < 1f) {
             // Animate the scale as well for the open animation.
             float scale;
@@ -193,6 +192,7 @@ public final class PopupMenu extends Layer {
                 view.resetColor();
             }
         }
+
     }
 
     private void layout() {
@@ -202,7 +202,7 @@ public final class PopupMenu extends Layer {
         // Measure the menu options.
         Option[] options = mOptions;
         int numOptions = options.length;
-        int maxWidth = (int)(ICON_TITLE_MIN_WIDTH * Gallery.PIXEL_DENSITY);
+        int maxWidth = (int) (ICON_TITLE_MIN_WIDTH * Gallery.PIXEL_DENSITY);
         for (int i = 0; i != numOptions; ++i) {
             Option option = options[i];
             IconTitleDrawable drawable = option.mDrawable;
@@ -217,9 +217,9 @@ public final class PopupMenu extends Layer {
         }
 
         // Layout the menu options.
-        int rowHeight = (int)(mRowHeight * Gallery.PIXEL_DENSITY);
-        int left = (int)(PADDING_LEFT * Gallery.PIXEL_DENSITY);
-        int top = (int)(PADDING_TOP * Gallery.PIXEL_DENSITY);
+        int rowHeight = (int) (mRowHeight * Gallery.PIXEL_DENSITY);
+        int left = (int) (PADDING_LEFT * Gallery.PIXEL_DENSITY);
+        int top = (int) (PADDING_TOP * Gallery.PIXEL_DENSITY);
         int right = left + maxWidth;
         for (int i = 0; i != numOptions; ++i) {
             Option option = options[i];
@@ -231,7 +231,7 @@ public final class PopupMenu extends Layer {
 
         // Resize the popup menu.
         setSize(right + PADDING_RIGHT * Gallery.PIXEL_DENSITY, top + PADDING_BOTTOM * Gallery.PIXEL_DENSITY);
-        
+
     }
 
     private int hitTestOptions(int x, int y) {
@@ -288,7 +288,7 @@ public final class PopupMenu extends Layer {
 
         @Override
         protected void onSizeChanged() {
-            mBackgroundRect.set(0, 0, getWidth(), getHeight() - (int)(POPUP_TRIANGLE_EXTRA_HEIGHT * Gallery.PIXEL_DENSITY));
+            mBackgroundRect.set(0, 0, getWidth(), getHeight() - (int) (POPUP_TRIANGLE_EXTRA_HEIGHT * Gallery.PIXEL_DENSITY));
         }
 
         @Override

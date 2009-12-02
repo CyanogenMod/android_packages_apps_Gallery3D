@@ -6,12 +6,15 @@ import java.util.TimeZone;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore.Images;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -37,15 +40,25 @@ public final class Gallery extends Activity {
     private ReverseGeocoder mReverseGeocoder;
     private boolean mPause;
     private MediaScannerConnection mConnection;
+    private WakeLock mWakeLock;
     private static final boolean TEST_WALLPAPER = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        final boolean imageManagerHasStorage = ImageManager.quickHasStorage();
         if (TEST_WALLPAPER || (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI))) {
-            Slideshow slideshow = new Slideshow(this);
-            slideshow.setDataSource(new RandomDataSource());
-            setContentView(slideshow);
+            if (!imageManagerHasStorage) {
+                Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
+                finish();
+            } else {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "GridView.Slideshow.All");
+                mWakeLock.acquire();
+                Slideshow slideshow = new Slideshow(this);
+                slideshow.setDataSource(new RandomDataSource());
+                setContentView(slideshow);
+            }
             return;
         }
         boolean isCacheReady = CacheService.isCacheReady(false);
@@ -61,7 +74,6 @@ public final class Gallery extends Activity {
                 mRenderView);
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
-        final boolean imageManagerHasStorage = ImageManager.quickHasStorage();
         if (!isPickIntent() && !isViewIntent()) {
             PicasaDataSource picasaDataSource = new PicasaDataSource(this);
             if (imageManagerHasStorage) {
@@ -194,6 +206,12 @@ public final class Gallery extends Activity {
                 dataSource.shutdown();
             }
             mGridLayer.shutdown();
+        }
+        if (mWakeLock != null) {
+            if (mWakeLock.isHeld()) {
+                mWakeLock.release();
+            }
+            mWakeLock = null;
         }
         if (mReverseGeocoder != null)
             mReverseGeocoder.shutdown();

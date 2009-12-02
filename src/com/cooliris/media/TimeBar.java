@@ -47,7 +47,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     private final StringTexture[] mMonthLabels = new StringTexture[12];
     private final StringTexture[] mDayLabels = new StringTexture[32];
     private final StringTexture[] mOpaqueDayLabels = new StringTexture[32];
-    private final StringTexture mDot = new StringTexture("\u2022");
+    private final StringTexture mDot = new StringTexture("¥");
     private final HashMap<MediaItem, Marker> mTracker = new HashMap<MediaItem, Marker>(1024);
     private int mState;
     private float mTextAlpha = 0.0f;
@@ -87,6 +87,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
             mOpaqueDayLabels[i] = new StringTexture(Integer.toString(i), mMonthYearFormat);
         }
         mDateUnknown = new StringTexture(context.getResources().getString(R.string.date_unknown), mMonthYearFormat);
+        mBackgroundTexture = null;
     }
 
     public void setListener(Listener listener) {
