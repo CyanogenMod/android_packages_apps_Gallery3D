@@ -18,7 +18,7 @@ import android.content.res.Resources;
 
 public final class MediaClustering {
     // If 2 items are greater than 25 miles apart, they will be in different clusters.
-    private static final int GEOGRAPHIC_DISTANCE_CUTOFF_IN_MILES = 25;
+    private static final int GEOGRAPHIC_DISTANCE_CUTOFF_IN_MILES = 20;
 
     // Do not want to split based on anything under 1 min.
     private static final long MIN_CLUSTER_SPLIT_TIME_IN_MS = 60000L;

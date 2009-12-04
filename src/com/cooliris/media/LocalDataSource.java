@@ -65,6 +65,11 @@ public final class LocalDataSource implements DataSource {
         Handler handler = ((Gallery) mContext).getHandler();
         ContentObserver observer = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
+            	MediaSet mediaSet = feed.getCurrentSet();
+            	if (mediaSet != null) {
+            		CacheService.markDirtyImmediate(mediaSet.mId);
+            		refreshUI(feed, mediaSet.mId);
+            	}
             	CacheService.senseDirty(mContext, new CacheService.Observer() {
             		public void onChange(long[] ids) {
             			if (ids != null) {
