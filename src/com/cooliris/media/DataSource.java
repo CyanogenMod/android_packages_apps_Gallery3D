@@ -2,6 +2,7 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
+
 public interface DataSource {
     // Load the sets to be displayed.
     void loadMediaSets(final MediaFeed feed);

@@ -18,6 +18,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.util.SparseArray;
 import android.view.MotionEvent;
+
 import com.cooliris.media.RenderView.Lists;
 
 public final class TimeBar extends Layer implements MediaFeed.Listener {

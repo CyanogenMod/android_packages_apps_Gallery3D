@@ -2,6 +2,7 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
+
 import android.util.Log;
 
 public final class ConcatenatedDataSource implements DataSource {
