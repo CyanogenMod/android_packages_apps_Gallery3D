@@ -396,6 +396,7 @@ public final class HudLayer extends Layer {
 
     void setGridLayer(GridLayer layer) {
         mGridLayer = layer;
+        updateViews();
     }
 
     int getMode() {
@@ -754,12 +755,27 @@ public final class HudLayer extends Layer {
     public void enterSelectionMode() {
         setAlpha(1.0f);
         setMode(HudLayer.MODE_SELECT);
-
         // if we are in single view mode, show the bottom menu without the delete button.
         if (mGridLayer.noDeleteMode()) {
             mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
         } else {
             mSelectionMenuBottom.setMenus(mNormalBottomMenu);
+        }
+    }
+    
+    public void computeBottomMenu() {
+    	// we need to the same for picasa albums
+        ArrayList<MediaBucket> selection = mGridLayer.getSelectedBuckets();
+        Menu[] menus = mSelectionMenuBottom.getMenus();
+        if (menus == mSingleViewIntentBottomMenu)
+        	return;
+        int numBuckets = selection.size();
+        for (int i = 0; i < numBuckets; ++i) {
+        	MediaBucket bucket = selection.get(i);
+        	if (bucket.mediaSet.mPicasaAlbumId != Shared.INVALID) {
+        		mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
+        		break;
+        	}
         }
     }
 

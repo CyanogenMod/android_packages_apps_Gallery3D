@@ -21,7 +21,7 @@ public class BackgroundLayer extends Layer {
     private static final int ADAPTIVE_BACKGROUND_WIDTH = 256;
     private static final int ADAPTIVE_BACKGROUND_HEIGHT = 128;
 
-    BackgroundLayer(GridLayer layer) {
+    public BackgroundLayer(GridLayer layer) {
         mGridLayer = layer;
     }
 

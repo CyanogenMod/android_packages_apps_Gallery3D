@@ -182,6 +182,9 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     layer.setZoomValue(1.0f);
             }
             if (keyCode == KeyEvent.KEYCODE_MENU) {
+            	if (mLayer.getFeed() != null && mLayer.getFeed().isSingleImageMode()) {
+            		return true;
+            	}
                 if (layer.getHud().getMode() == HudLayer.MODE_NORMAL)
                     layer.enterSelectionMode();
                 else

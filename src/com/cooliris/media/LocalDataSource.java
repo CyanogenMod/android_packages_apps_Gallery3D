@@ -32,6 +32,8 @@ public final class LocalDataSource implements DataSource {
     public static final String DOWNLOAD_BUCKET_NAME = Environment.getExternalStorageDirectory().toString() + "/" + DOWNLOAD_STRING;
     public static final int CAMERA_BUCKET_ID = getBucketId(CAMERA_BUCKET_NAME);
     public static final int DOWNLOAD_BUCKET_ID = getBucketId(DOWNLOAD_BUCKET_NAME);
+
+	public static boolean sObserverActive = false;
     private boolean mDisableImages;
     private boolean mDisableVideos;
 
@@ -43,8 +45,7 @@ public final class LocalDataSource implements DataSource {
     }
 
     private Context mContext;
-    private ContentObserver mImagesObserver;
-    private ContentObserver mVideosObserver;
+	private ContentObserver mObserver;
 
     public LocalDataSource(Context context) {
         mContext = context;
@@ -62,35 +63,29 @@ public final class LocalDataSource implements DataSource {
         stopListeners();
         CacheService.loadMediaSets(feed, this, !mDisableImages, !mDisableVideos);
         Handler handler = ((Gallery) mContext).getHandler();
-        ContentObserver imagesObserver = new ContentObserver(handler) {
+        ContentObserver observer = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
-                if (((Gallery) mContext).isPaused()) {
-                    refresh(feed, CAMERA_BUCKET_ID);
-                    refresh(feed, DOWNLOAD_BUCKET_ID);
-
-                    MediaSet set = feed.getCurrentSet();
-                    if (set != null && set.mPicasaAlbumId == Shared.INVALID) {
-                        refresh(feed, set.mId);
-                    }
-                }
+            	CacheService.senseDirty(mContext, new CacheService.Observer() {
+            		public void onChange(long[] ids) {
+            			if (ids != null) {
+            				int numLongs = ids.length;
+            				for (int i = 0; i < numLongs; ++i) {
+            					refreshUI(feed, ids[i]);
+            				}
+            			}
+            		}
+            	});
             }
         };
-        ContentObserver videosObserver = new ContentObserver(handler) {
-            public void onChange(boolean selfChange) {
-                if (((Gallery) mContext).isPaused()) {
-                    refresh(feed, CAMERA_BUCKET_ID);
-                }
-            }
-        };
-
-        // Start listening. TODO: coalesce update notifications while mediascanner is active.
+        
+        // Start listening.
         Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
         ContentResolver cr = mContext.getContentResolver();
-        mImagesObserver = imagesObserver;
-        mVideosObserver = videosObserver;
-        cr.registerContentObserver(uriImages, false, mImagesObserver);
-        cr.registerContentObserver(uriVideos, false, mVideosObserver);
+        mObserver = observer;
+        cr.registerContentObserver(uriImages, false, observer);
+        cr.registerContentObserver(uriVideos, false, observer);
+        sObserverActive = true;
     }
 
     public void shutdown() {
@@ -101,23 +96,18 @@ public final class LocalDataSource implements DataSource {
     
     private void stopListeners() {
         ContentResolver cr = mContext.getContentResolver();
-        if (mImagesObserver != null) {
-            cr.unregisterContentObserver(mImagesObserver);
+        if (mObserver != null) {
+            cr.unregisterContentObserver(mObserver);
         }
-        if (mVideosObserver != null) {
-            cr.unregisterContentObserver(mVideosObserver);
-        }
+        sObserverActive = false;
     }
-
-    protected void refresh(MediaFeed feed, long setIdToUse) {
+    
+    protected void refreshUI(MediaFeed feed, long setIdToUse) {
         if (setIdToUse == Shared.INVALID) {
             return;
         }
         Log.i(TAG, "Refreshing local data source");
-        Gallery.NEEDS_REFRESH = true;
         if (feed.getMediaSet(setIdToUse) == null) {
-            if (!CacheService.setHasItems(mContext.getContentResolver(), setIdToUse))
-                return;
             MediaSet mediaSet = feed.addMediaSet(setIdToUse, this);
             if (setIdToUse == CAMERA_BUCKET_ID) {
                 mediaSet.mName = CAMERA_STRING;
@@ -125,8 +115,6 @@ public final class LocalDataSource implements DataSource {
                 mediaSet.mName = DOWNLOAD_STRING;
             }
             mediaSet.generateTitle(true);
-            if (!CacheService.isPresentInCache(setIdToUse))
-                CacheService.markDirty(mContext);
         } else {
             MediaSet mediaSet = feed.replaceMediaSet(setIdToUse, this);
             if (setIdToUse == CAMERA_BUCKET_ID) {
@@ -135,7 +123,6 @@ public final class LocalDataSource implements DataSource {
                 mediaSet.mName = DOWNLOAD_STRING;
             }
             mediaSet.generateTitle(true);
-            CacheService.markDirty(mContext, setIdToUse);
         }
     }
 
@@ -152,7 +139,7 @@ public final class LocalDataSource implements DataSource {
             return;
         }
         CacheService.loadMediaItemsIntoMediaFeed(mediaFeed, set, rangeStart, rangeEnd, !mDisableImages, !mDisableVideos);
-        if (set.mId == CAMERA_BUCKET_ID && set.mNumItemsLoaded > 0) {
+        if (set.mId == CAMERA_BUCKET_ID) {
             mediaFeed.moveSetToFront(set);
         }
     }
