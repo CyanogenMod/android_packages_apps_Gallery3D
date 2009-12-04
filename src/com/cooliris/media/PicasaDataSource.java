@@ -30,14 +30,31 @@ public final class PicasaDataSource implements DataSource {
     private ContentProviderClient mProviderClient;
     private final Context mContext;
     private ContentObserver mAlbumObserver;
-    private HashMap<String, Boolean> mAccountEnabled = new HashMap<String, Boolean>();
 
-    public PicasaDataSource(Context context) {
+    public PicasaDataSource(final Context context) {
         mContext = context;
+    }
+    
+    public static final HashMap<String, Boolean> getAccountStatus(final Context context) {
+    	final Account[] accounts = PicasaApi.getAccounts(context);
+        int numAccounts = accounts.length;
+        HashMap<String, Boolean> accountsEnabled = new HashMap<String, Boolean>(numAccounts);
+        for (int i = 0; i < numAccounts; ++i) {
+            Account account = accounts[i];
+            boolean isEnabled = ContentResolver.getSyncAutomatically(account, PicasaContentProvider.AUTHORITY);
+            String username = account.name;
+            if (username.contains("@gmail.") || username.contains("@googlemail.")) {
+                // Strip the domain from GMail accounts for canonicalization. TODO: is there an official way?
+                username = username.substring(0, username.indexOf('@'));
+            }
+            accountsEnabled.put(username, new Boolean(isEnabled));
+        }
+        return accountsEnabled;
     }
 
     public void loadMediaSets(final MediaFeed feed) {
-        if (mProviderClient == null) {
+        // We do this here and not in the constructor to speed application loading time since this method is called in a background thread
+    	if (mProviderClient == null) {
             mProviderClient = mContext.getContentResolver().acquireContentProviderClient(PicasaContentProvider.AUTHORITY);
         }
         // Force permission dialog to be displayed if necessary. TODO: remove this after signed by Google.
@@ -45,8 +62,8 @@ public final class PicasaDataSource implements DataSource {
 
         // Ensure that users are up to date. TODO: also listen for accounts changed broadcast.
         PicasaService.requestSync(mContext, PicasaService.TYPE_USERS_ALBUMS, 0);
-        Handler handler = ((Gallery) mContext).getHandler();
-        ContentObserver albumObserver = new ContentObserver(handler) {
+        final Handler handler = ((Gallery) mContext).getHandler();
+        final ContentObserver albumObserver = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
                 loadMediaSetsIntoFeed(feed, true);
             }
@@ -77,34 +94,23 @@ public final class PicasaDataSource implements DataSource {
     }
 
     protected void loadMediaSetsIntoFeed(final MediaFeed feed, boolean sync) {
-        Account[] accounts = PicasaApi.getAccounts(mContext);
-        int numAccounts = accounts.length;
-        for (int i = 0; i < numAccounts; ++i) {
-            Account account = accounts[i];
-            boolean isEnabled = ContentResolver.getSyncAutomatically(account, PicasaContentProvider.AUTHORITY);
-            String username = account.name;
-            if (username.contains("@gmail.") || username.contains("@googlemail.")) {
-                // Strip the domain from GMail accounts for canonicalization. TODO: is there an official way?
-                username = username.substring(0, username.indexOf('@'));
-            }
-            mAccountEnabled.put(username, new Boolean(isEnabled));
-        }
-        ContentProviderClient client = mProviderClient;
+        final HashMap<String, Boolean> accountsEnabled = getAccountStatus(mContext);
+        final ContentProviderClient client = mProviderClient;
         if (client == null)
             return;
         try {
-            EntrySchema albumSchema = AlbumEntry.SCHEMA;
-            Cursor cursor = client.query(PicasaContentProvider.ALBUMS_URI, albumSchema.getProjection(), null, null,
+            final EntrySchema albumSchema = AlbumEntry.SCHEMA;
+            final Cursor cursor = client.query(PicasaContentProvider.ALBUMS_URI, albumSchema.getProjection(), null, null,
                     DEFAULT_BUCKET_SORT_ORDER);
-            AlbumEntry album = new AlbumEntry();
+            final AlbumEntry album = new AlbumEntry();
             MediaSet mediaSet;
             if (cursor.moveToFirst()) {
-                int numAlbums = cursor.getCount();
-                ArrayList<MediaSet> picasaSets = new ArrayList<MediaSet>(numAlbums);
+                final int numAlbums = cursor.getCount();
+                final ArrayList<MediaSet> picasaSets = new ArrayList<MediaSet>(numAlbums);
                 do {
                     albumSchema.cursorToObject(cursor, album);
-                    Boolean accountEnabledObj = mAccountEnabled.get(album.user);
-                    boolean accountEnabled = (accountEnabledObj == null) ? false : accountEnabledObj.booleanValue();
+                    final Boolean accountEnabledObj = accountsEnabled.get(album.user);
+                    final boolean accountEnabled = (accountEnabledObj == null) ? false : accountEnabledObj.booleanValue();
                     if (accountEnabled) {
                         mediaSet = feed.getMediaSet(album.id);
                         if (mediaSet == null) {
@@ -128,14 +134,14 @@ public final class PicasaDataSource implements DataSource {
     }
 
     private void addItemsToFeed(MediaFeed feed, MediaSet set, int start, int end) {
-        ContentProviderClient client = mProviderClient;
+        final ContentProviderClient client = mProviderClient;
         Cursor cursor = null;
         try {
             // Query photos in the album.
-            EntrySchema photosSchema = PhotoProjection.SCHEMA;
-            String whereInAlbum = "album_id = " + Long.toString(set.mId);
+            final EntrySchema photosSchema = PhotoProjection.SCHEMA;
+            final String whereInAlbum = "album_id = " + Long.toString(set.mId);
             cursor = client.query(PicasaContentProvider.PHOTOS_URI, photosSchema.getProjection(), whereInAlbum, null, null);
-            PhotoProjection photo = new PhotoProjection();
+            final PhotoProjection photo = new PhotoProjection();
             int count = cursor.getCount();
             if (count < end) {
                 end = count;
@@ -143,7 +149,7 @@ public final class PicasaDataSource implements DataSource {
             set.setNumExpectedItems(count);
             set.generateTitle(true);
             // Move to the next unread item.
-            int newIndex = start + 1;
+            final int newIndex = start + 1;
             if (newIndex > count || !cursor.move(newIndex)) {
                 end = 0;
                 cursor.close();
@@ -161,7 +167,7 @@ public final class PicasaDataSource implements DataSource {
             }
             for (int i = 0; i < end; ++i) {
                 photosSchema.cursorToObject(cursor, photo);
-                MediaItem item = new MediaItem();
+                final MediaItem item = new MediaItem();
                 item.mId = photo.id;
                 item.mEditUri = photo.editUri;
                 item.mMimeType = photo.contentType;
@@ -187,9 +193,6 @@ public final class PicasaDataSource implements DataSource {
                 cursor.close();
             }
         }
-    }
-
-    public void prime(final MediaItem item) {
     }
 
     public boolean performOperation(final int operation, final ArrayList<MediaBucket> mediaBuckets, final Object data) {

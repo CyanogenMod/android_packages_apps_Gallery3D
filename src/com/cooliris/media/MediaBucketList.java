@@ -3,6 +3,7 @@ package com.cooliris.media;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+
 public final class MediaBucketList {
     private static final Boolean TRUE = new Boolean(true);
     private static final Boolean FALSE = new Boolean(false);

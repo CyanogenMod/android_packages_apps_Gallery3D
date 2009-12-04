@@ -1,5 +1,6 @@
 package com.cooliris.media;
 
+
 public final class GridCameraManager {
     private final GridCamera mCamera;
     private static final Pool<Vector3f> sPool;
