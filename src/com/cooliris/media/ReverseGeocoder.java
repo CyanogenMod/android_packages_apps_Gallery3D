@@ -19,7 +19,7 @@ public final class ReverseGeocoder extends Thread {
     private static final int MAX_COUNTRY_NAME_LENGTH = 8;
     // If two points are within 50 miles of each other, use "Around Palo Alto, CA" or "Around Mountain View, CA".
     // instead of directly jumping to the next level and saying "California, US".
-    private static final int MAX_LOCALITY_MILE_RANGE = 50;
+    private static final int MAX_LOCALITY_MILE_RANGE = 20;
     private static final Deque<MediaSet> sQueue = new Deque<MediaSet>();
     private static final DiskCache sGeoCache = new DiskCache("geocoder-cache");
     private static final String TAG = "ReverseGeocoder";

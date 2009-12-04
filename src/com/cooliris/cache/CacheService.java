@@ -43,6 +43,7 @@ import android.util.Log;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
 import com.cooliris.media.Gallery;
+import com.cooliris.media.ImageManager;
 import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.LongSparseArray;
 import com.cooliris.media.MediaFeed;
@@ -68,10 +69,8 @@ public final class CacheService extends IntentService {
 	private static final int DEFAULT_THUMBNAIL_WIDTH = 128;
 	private static final int DEFAULT_THUMBNAIL_HEIGHT = 96;
 
-	public static final String DEFAULT_IMAGE_SORT_ORDER = Images.ImageColumns.DATE_TAKEN + " ASC, "
-	        + Images.ImageColumns.DATE_ADDED + " ASC";
-	public static final String DEFAULT_VIDEO_SORT_ORDER = Video.VideoColumns.DATE_TAKEN + " ASC, " + Video.VideoColumns.DATE_ADDED
-	        + " ASC";
+	public static final String DEFAULT_IMAGE_SORT_ORDER = Images.ImageColumns.DATE_TAKEN + " ASC";
+	public static final String DEFAULT_VIDEO_SORT_ORDER = Video.VideoColumns.DATE_TAKEN + " ASC";
 	public static final String DEFAULT_BUCKET_SORT_ORDER = "upper(" + Images.ImageColumns.BUCKET_DISPLAY_NAME + ") ASC";
 
 	// Must preserve order between these indices and the order of the terms in
