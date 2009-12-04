@@ -19,6 +19,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.IntentService;
+import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -56,7 +57,7 @@ import com.cooliris.media.Utils;
 public final class CacheService extends IntentService {
 	public static final String ACTION_CACHE = "com.cooliris.cache.action.CACHE";
 	public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
-	public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-album-cache");
+	public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
 
 	private static final String TAG = "CacheService";
 	private static ImageList sList = null;
@@ -94,7 +95,7 @@ public final class CacheService extends IntentService {
 	        Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION };
 
 	public static final String[] SENSE_PROJECTION = new String[] { Images.ImageColumns.BUCKET_ID,
-	        "MAX(" + Images.ImageColumns.DATE_ADDED + ")" };
+	        "MAX(" + Images.ImageColumns.DATE_ADDED + "), COUNT(*)" };
 
 	// Must preserve order between these indices and the order of the terms in
 	// INITIAL_PROJECTION_IMAGES and
@@ -204,10 +205,10 @@ public final class CacheService extends IntentService {
 					if (ids != null && observer != null) {
 						observer.onChange(ids);
 					}
-					if (ids.length > 0) {
+					if (ids != null && ids.length > 0) {
 						sList = null;
+						Log.i(TAG, "Done computing dirty sets for num " + ids.length);
 					}
-					Log.i(TAG, "Done computing dirty sets for num " + ids.length);
 				}
 			});
 		} else {
@@ -556,12 +557,10 @@ public final class CacheService extends IntentService {
 		}
 		byte[] bitmap = thumbnailCache.get(thumbId, timestamp);
 		if (bitmap == null) {
-			Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
 			final long time = SystemClock.uptimeMillis();
 			bitmap = buildThumbnailForId(context, thumbnailCache, thumbId, origId, isVideo, DEFAULT_THUMBNAIL_WIDTH,
 			        DEFAULT_THUMBNAIL_HEIGHT);
 			Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
-			Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 		}
 		return bitmap;
 	}
@@ -608,7 +607,6 @@ public final class CacheService extends IntentService {
 					return null;
 				}
 			} else {
-				Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
 				new Thread() {
 					public void run() {
 						try {
@@ -883,13 +881,22 @@ public final class CacheService extends IntentService {
 		lBuffer.put(0, l);
 		return bArray;
 	}
+	
+	private static final byte[] longArrayToByteArray(final long[] l) {
+		final byte[] bArray = new byte[8 * l.length];
+		final ByteBuffer bBuffer = ByteBuffer.wrap(bArray);
+		final LongBuffer lBuffer = bBuffer.asLongBuffer();
+		int numLongs = l.length;
+		for (int i = 0; i < numLongs; ++i) {
+			lBuffer.put(i, l[i]);
+		}
+		return bArray;
+	}
 
 	private final static void refresh(final Context context) {
 		// First we build the album cache.
 		// This is the meta-data about the albums / buckets on the SD card.
 		Log.i(TAG, "Refreshing cache.");
-		int priority = Process.getThreadPriority(Process.myTid());
-		Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE);
 		sAlbumCache.deleteAll();
 		putLocaleForAlbumCache(Locale.getDefault());
 
@@ -944,7 +951,6 @@ public final class CacheService extends IntentService {
 		// Now we must cache the items contained in every album / bucket.
 		populateMediaItemsForSets(context, sets, acceleratedSets, false);
 		sAlbumCache.delete(ALBUM_CACHE_INCOMPLETE_INDEX);
-		Process.setThreadPriority(priority);
 
 		// Complete any queued dirty requests
 		processQueuedDirty(context);
@@ -973,36 +979,52 @@ public final class CacheService extends IntentService {
 	}
 
 	private static final long[] computeDirtySets(final Context context) {
-		final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true").build();
-		final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true").build();
+		final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
+		final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
 		final ContentResolver cr = context.getContentResolver();
-
-		final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, null, null, null);
-		final Cursor cursorVideos = cr.query(uriVideos, SENSE_PROJECTION, null, null, null);
+		final String where = Images.ImageColumns.BUCKET_ID + "!=0) GROUP BY (" + Images.ImageColumns.BUCKET_ID + " ";
+		final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, where, null, null);
+		final Cursor cursorVideos = cr.query(uriVideos, SENSE_PROJECTION, where, null, null);
 		Cursor[] cursors = new Cursor[2];
 		cursors[0] = cursorImages;
 		cursors[1] = cursorVideos;
 		final MergeCursor cursor = new MergeCursor(cursors);
 		long[] retVal = null;
+		int ctr = 0;
 		try {
 			if (cursor.moveToFirst()) {
 				retVal = new long[cursor.getCount()];
-				int ctr = 0;
 				boolean allDirty = false;
 				do {
 					long setId = cursor.getLong(0);
-					retVal[ctr++] = setId;
-					byte[] data = sMetaAlbumCache.get(setId, 0);
-					if (data == null) {
-						// We need to refresh everything.
-						markDirty(context);
-						allDirty = true;
-					}
-					if (!allDirty) {
-						long maxAdded = cursor.getLong(1);
-						long oldMaxAdded = toLong(data);
-						if (maxAdded > oldMaxAdded) {
-							markDirty(context, setId);
+					if (allDirty) {
+						retVal[ctr++] = setId;
+					} else {
+						boolean contains = sAlbumCache.isDataAvailable(setId, 0);
+						if (!contains) {
+							// We need to refresh everything.
+							markDirty(context);
+							retVal[ctr++] = setId;
+							allDirty = true;
+						}
+						if (!allDirty) {
+							long maxAdded = cursor.getLong(1);
+							int count = cursor.getInt(2);
+							byte[] data = sMetaAlbumCache.get(setId, 0);
+							long[] dataLong = new long[2];
+							if (data != null) {
+								dataLong = toLongArray(data);
+							}
+							long oldMaxAdded = dataLong[0];
+							long oldCount = dataLong[1];
+							Log.i(TAG, "Bucket " + setId + " Old added " + oldMaxAdded + " count " + oldCount + " New added " + maxAdded + " count " + count);
+							if (maxAdded > oldMaxAdded || oldCount != count) {
+								markDirty(context, setId);
+								retVal[ctr++] = setId;
+								dataLong[0] = maxAdded;
+								dataLong[1] = count;
+								sMetaAlbumCache.put(setId, longArrayToByteArray(dataLong));
+							}
 						}
 					}
 				} while (cursor.moveToNext());
@@ -1010,8 +1032,13 @@ public final class CacheService extends IntentService {
 		} finally {
 			cursor.close();
 		}
+		sMetaAlbumCache.flush();
 		processQueuedDirty(context);
-		return retVal;
+		long[] retValCompact = new long[ctr];
+		for (int i = 0; i < ctr; ++i) {
+			retValCompact[i] = retVal[i];
+		}
+		return retValCompact;
 	}
 
 	private static final void processQueuedDirty(final Context context) {
@@ -1074,7 +1101,6 @@ public final class CacheService extends IntentService {
 				final int approximateCountPerSet = count / numSets;
 				for (int i = 0; i < numSets; ++i) {
 					final MediaSet set = sets.get(i);
-					set.getItems().clear();
 					set.setNumExpectedItems(approximateCountPerSet);
 				}
 				do {
@@ -1091,7 +1117,7 @@ public final class CacheService extends IntentService {
 					final long setId = sortCursor.getLong(MEDIA_BUCKET_ID_INDEX);
 					final MediaSet set = findSet(setId, acceleratedSets);
 					if (set != null) {
-						set.getItems().add(item);
+						set.addItem(item);
 					}
 				} while (sortCursor.moveToNext());
 			}
@@ -1144,18 +1170,7 @@ public final class CacheService extends IntentService {
 			}
 			writeItemsForASet(sets.get(i));
 		}
-		writeMetaAlbumCache(sets);
 		sAlbumCache.flush();
-	}
-
-	private static final void writeMetaAlbumCache(ArrayList<MediaSet> sets) {
-		final int numSets = sets.size();
-		for (int i = 0; i < numSets; ++i) {
-			final MediaSet set = sets.get(i);
-			byte[] data = longToByteArray(set.mMaxAddedTimestamp);
-			sMetaAlbumCache.put(set.mId, data);
-		}
-		sMetaAlbumCache.flush();
 	}
 
 	private static final void writeItemsForASet(final MediaSet set) {

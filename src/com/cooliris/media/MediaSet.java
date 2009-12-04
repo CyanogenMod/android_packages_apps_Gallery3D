@@ -167,12 +167,12 @@ public class MediaSet {
                 mMaxTimestamp = dateTaken;
             }
         } else if (item.isDateAddedValid()) {
-            long dateTaken = item.mDateAddedInSec * 1000;
-            if (dateTaken < mMinAddedTimestamp) {
-                mMinAddedTimestamp = dateTaken;
+            long dateAdded = item.mDateAddedInSec * 1000;
+            if (dateAdded < mMinAddedTimestamp) {
+                mMinAddedTimestamp = dateAdded;
             }
-            if (dateTaken > mMaxAddedTimestamp) {
-                mMaxAddedTimestamp = dateTaken;
+            if (dateAdded > mMaxAddedTimestamp) {
+                mMaxAddedTimestamp = dateAdded;
             }            
         }
 

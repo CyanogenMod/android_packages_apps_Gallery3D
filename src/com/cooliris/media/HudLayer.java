@@ -29,8 +29,8 @@ public final class HudLayer extends Layer {
     private final ImageButton mTopRightButton = new ImageButton();
     private final ImageButton mZoomInButton = new ImageButton();
     private final ImageButton mZoomOutButton = new ImageButton();
-    private static PathBarLayer sPathBar;
-    private static TimeBar sTimeBar;
+    private PathBarLayer mPathBar;
+    private TimeBar mTimeBar;
     private MenuBar.Menu[] mNormalBottomMenu = null;
     private MenuBar.Menu[] mSingleViewIntentBottomMenu = null;
     private final MenuBar mSelectionMenuBottom;
@@ -103,9 +103,9 @@ public final class HudLayer extends Layer {
 
     HudLayer(Context context) {
         mAlpha = 1.0f;
-        if (sTimeBar == null) {
-            sTimeBar = new TimeBar(context);
-            sPathBar = new PathBarLayer();
+        if (mTimeBar == null) {
+            mTimeBar = new TimeBar(context);
+            mPathBar = new PathBarLayer();
         }
         mTopRightButton.setSize((int) (100 * Gallery.PIXEL_DENSITY), (int) (94 * Gallery.PIXEL_DENSITY));
 
@@ -191,7 +191,7 @@ public final class HudLayer extends Layer {
     public void setContext(Context context) {
         if (mContext != context) {
             mContext = context;
-            sTimeBar.regenerateStringsForContext(context);
+            mTimeBar.regenerateStringsForContext(context);
         }
     }
 
@@ -416,8 +416,8 @@ public final class HudLayer extends Layer {
         final float height = mHeight;
         closeSelectionMenu();
 
-        sTimeBar.setPosition(0f, height - TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
-        sTimeBar.setSize(width, TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        mTimeBar.setPosition(0f, height - TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        mTimeBar.setSize(width, TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
         mSelectionMenuTop.setPosition(0f, 0);
         mSelectionMenuTop.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
         mSelectionMenuBottom.setPosition(0f, height - MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
@@ -426,7 +426,7 @@ public final class HudLayer extends Layer {
         mFullscreenMenu.setPosition(0f, height - MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
         mFullscreenMenu.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
 
-        sPathBar.setPosition(0f, -4f * Gallery.PIXEL_DENSITY);
+        mPathBar.setPosition(0f, -4f * Gallery.PIXEL_DENSITY);
         computeSizeForPathbar();
 
         mTopRightButton.setPosition(width - mTopRightButton.getWidth(), 0f);
@@ -438,12 +438,12 @@ public final class HudLayer extends Layer {
         float pathBarWidth = mWidth
                 - ((mGridLayer.getState() == GridLayer.STATE_FULL_SCREEN) ? 32 * Gallery.PIXEL_DENSITY
                         : 120 * Gallery.PIXEL_DENSITY);
-        sPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * Gallery.PIXEL_DENSITY));
-        sPathBar.recomputeComponents();
+        mPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * Gallery.PIXEL_DENSITY));
+        mPathBar.recomputeComponents();
     }
 
     public void setFeed(MediaFeed feed, int state, boolean needsLayout) {
-        sTimeBar.setFeed(feed, state, needsLayout);
+        mTimeBar.setFeed(feed, state, needsLayout);
     }
 
     public void onGridStateChanged() {
@@ -465,11 +465,11 @@ public final class HudLayer extends Layer {
         mZoomOutButton.setHidden(mFullscreenMenu.isHidden());
 
         // Show the time bar in stack and grid states, except in selection mode.
-        sTimeBar.setHidden(fullscreenMode || selectionMode || stackMode);
+        mTimeBar.setHidden(fullscreenMode || selectionMode || stackMode);
         // mTimeBar.setHidden(selectionMode || (state != GridLayer.STATE_TIMELINE && state != GridLayer.STATE_GRID_VIEW));
 
         // Hide the path bar and top-right button in selection mode.
-        sPathBar.setHidden(selectionMode);
+        mPathBar.setHidden(selectionMode);
         mTopRightButton.setHidden(selectionMode || fullscreenMode);
         computeSizeForPathbar();
 
@@ -505,11 +505,11 @@ public final class HudLayer extends Layer {
     }
 
     public TimeBar getTimeBar() {
-        return sTimeBar;
+        return mTimeBar;
     }
 
     public PathBarLayer getPathBar() {
-        return sPathBar;
+        return mPathBar;
     }
 
     public GridLayer getGridLayer() {
@@ -576,11 +576,11 @@ public final class HudLayer extends Layer {
         mTopRightButton.generate(view, lists);
         mZoomInButton.generate(view, lists);
         mZoomOutButton.generate(view, lists);
-        sTimeBar.generate(view, lists);
+        mTimeBar.generate(view, lists);
         mSelectionMenuTop.generate(view, lists);
         mSelectionMenuBottom.generate(view, lists);
         mFullscreenMenu.generate(view, lists);
-        sPathBar.generate(view, lists);
+        mPathBar.generate(view, lists);
         // mLoadingLayer.generate(view, lists);
         mView = view;
     }
@@ -619,7 +619,7 @@ public final class HudLayer extends Layer {
 
     void reset() {
         mLoadingLayer.reset();
-        sTimeBar.regenerateStringsForContext(mContext);
+        mTimeBar.regenerateStringsForContext(mContext);
     }
 
     public void fullscreenSelectionChanged(MediaItem item, int index, int count) {
@@ -633,7 +633,7 @@ public final class HudLayer extends Layer {
         mCachedCaption = item.mCaption;
         mCachedPosition = location;
         mCachedCurrentLabel = location;
-        sPathBar.changeLabel(location);
+        mPathBar.changeLabel(location);
     }
 
     private void updateShareMenu() {
@@ -745,7 +745,7 @@ public final class HudLayer extends Layer {
 
     public void swapFullscreenLabel() {
         mCachedCurrentLabel = (mCachedCurrentLabel == mCachedCaption || mCachedCaption == null) ? mCachedPosition : mCachedCaption;
-        sPathBar.changeLabel(mCachedCurrentLabel);
+        mPathBar.changeLabel(mCachedCurrentLabel);
     }
 
     public void clear() {

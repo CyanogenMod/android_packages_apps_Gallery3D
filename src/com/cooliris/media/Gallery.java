@@ -124,7 +124,7 @@ public final class Gallery extends Activity {
 			final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource, picasaDataSource);
 			mGridLayer.setDataSource(singleCombinedDataSource);
 			mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
-			if (SingleDataSource.isSingleImageMode(uri.toString())) {
+			if (singleDataSource.isSingleImage()) {
 				mGridLayer.setSingleImage(false);
 			} else if (slideshow) {
 				mGridLayer.setSingleImage(true);

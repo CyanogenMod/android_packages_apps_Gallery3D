@@ -131,6 +131,10 @@
                 <action android:name="android.intent.action.MEDIA_MOUNTED" />
                 <data android:scheme="file" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_EJECT" />
+                <data android:scheme="file" />
+            </intent-filter>
 		</receiver>
 		<receiver android:name="PhotoAppWidgetProvider" android:label="@string/gadget_title">
             <intent-filter>
