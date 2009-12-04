@@ -7,7 +7,6 @@ import android.hardware.SensorEvent;
 import android.opengl.GLU;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.Context;
@@ -29,7 +28,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
 	private static final float SLIDESHOW_TRANSITION_TIME = 3.5f;
 
-	private static HudLayer sHud;
+	private HudLayer mHud;
 	private int mState;
 	private static final IndexRange sBufferedVisibleRange = new IndexRange();
 	private static final IndexRange sVisibleRange = new IndexRange();
@@ -133,33 +132,32 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		sBucketList.clear();
 
 		sVisibleItems = new ArrayList<MediaItem>();
-		if (sHud == null) {
-			sHud = new HudLayer(context);
-		}
-		sHud.setContext(context);
-		sHud.setGridLayer(this);
-		sHud.getPathBar().clear();
-		sHud.setGridLayer(this);
-		sHud.getTimeBar().setListener(this);
-		sHud.getPathBar().pushLabel(R.drawable.icon_home_small, context.getResources().getString(R.string.app_name),
+		mHud = new HudLayer(context);
+		mHud.setContext(context);
+		mHud.setGridLayer(this);
+		mHud.getPathBar().clear();
+		mHud.setGridLayer(this);
+		mHud.getTimeBar().setListener(this);
+		mHud.getPathBar().pushLabel(R.drawable.icon_home_small, context.getResources().getString(R.string.app_name),
 		        new Runnable() {
 			        public void run() {
-				        if (sHud.getAlpha() == 1.0f) {
+				        if (mHud.getAlpha() == 1.0f) {
 					        if (!mFeedAboutToChange) {
 						        setState(STATE_MEDIA_SETS);
 					        }
 				        } else {
-					        sHud.setAlpha(1.0f);
+					        mHud.setAlpha(1.0f);
 				        }
 			        }
 		        });
 		mCameraManager = new GridCameraManager(mCamera);
 		mDrawManager = new GridDrawManager(context, mCamera, mDrawables, sDisplayList, sDisplayItems, sDisplaySlots);
 		mInputProcessor = new GridInputProcessor(context, mCamera, this, mView, sTempVec, sDisplayItems);
+		setState(STATE_MEDIA_SETS);
 	}
 
 	public HudLayer getHud() {
-		return sHud;
+		return mHud;
 	}
 
 	public void shutdown() {
@@ -185,13 +183,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		mBackground.generate(view, lists);
 		lists.blendedList.add(this);
 		lists.hitTestList.add(this);
-		sHud.generate(view, lists);
+		mHud.generate(view, lists);
 	}
 
 	@Override
 	protected void onSizeChanged() {
-		sHud.setSize(mWidth, mHeight);
-		sHud.setAlpha(1.0f);
+		mHud.setSize(mWidth, mHeight);
+		mHud.setAlpha(1.0f);
 		mBackground.setSize(mWidth, mHeight);
 		mTimeElapsedSinceTransition = 0.0f;
 		if (mView != null) {
@@ -240,24 +238,24 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 				MediaSet set = feed.getCurrentSet();
 				int icon = mDrawables.getIconForSet(set, true);
 				if (set != null) {
-					sHud.getPathBar().pushLabel(icon, set.mNoCountTitleString, new Runnable() {
+					mHud.getPathBar().pushLabel(icon, set.mNoCountTitleString, new Runnable() {
 						public void run() {
 							if (mFeedAboutToChange) {
 								return;
 							}
-							if (sHud.getAlpha() == 1.0f) {
+							if (mHud.getAlpha() == 1.0f) {
 								disableLocationFiltering();
 								mInputProcessor.clearSelection();
 								setState(STATE_GRID_VIEW);
 							} else {
-								sHud.setAlpha(1.0f);
+								mHud.setAlpha(1.0f);
 							}
 						}
 					});
 				}
 			}
 			if (mState == STATE_FULL_SCREEN) {
-				sHud.getPathBar().popLabel();
+				mHud.getPathBar().popLabel();
 			}
 			break;
 		case STATE_TIMELINE:
@@ -276,12 +274,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			layoutInterface.mSpacingX = (int) (40 * Gallery.PIXEL_DENSITY);
 			layoutInterface.mSpacingY = (int) (40 * Gallery.PIXEL_DENSITY);
 			if (mState != STATE_FULL_SCREEN) {
-				sHud.getPathBar().pushLabel(R.drawable.ic_fs_details, "", new Runnable() {
+				mHud.getPathBar().pushLabel(R.drawable.ic_fs_details, "", new Runnable() {
 					public void run() {
-						if (sHud.getAlpha() == 1.0f) {
-							sHud.swapFullscreenLabel();
+						if (mHud.getAlpha() == 1.0f) {
+							mHud.swapFullscreenLabel();
 						}
-						sHud.setAlpha(1.0f);
+						mHud.setAlpha(1.0f);
 					}
 				});
 			}
@@ -300,15 +298,15 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			layoutInterface.mSpacingY = (int) (70 * Gallery.PIXEL_DENSITY * yStretch);
 			if (mInAlbum) {
 				if (mState == STATE_FULL_SCREEN) {
-					sHud.getPathBar().popLabel();
+					mHud.getPathBar().popLabel();
 				}
-				sHud.getPathBar().popLabel();
+				mHud.getPathBar().popLabel();
 				mInAlbum = false;
 			}
 			break;
 		}
 		mState = state;
-		sHud.onGridStateChanged();
+		mHud.onGridStateChanged();
 		if (performLayout && mFeedAboutToChange == false) {
 			onLayout(Shared.INVALID, Shared.INVALID, oldLayout);
 		}
@@ -321,9 +319,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 	protected void enableLocationFiltering(String label) {
 		if (mLocationFilter == false) {
 			mLocationFilter = true;
-			sHud.getPathBar().pushLabel(R.drawable.icon_location_small, label, new Runnable() {
+			mHud.getPathBar().pushLabel(R.drawable.icon_location_small, label, new Runnable() {
 				public void run() {
-					if (sHud.getAlpha() == 1.0f) {
+					if (mHud.getAlpha() == 1.0f) {
 						if (mState == STATE_FULL_SCREEN) {
 							mInputProcessor.clearSelection();
 							setState(STATE_GRID_VIEW);
@@ -331,7 +329,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 							disableLocationFiltering();
 						}
 					} else {
-						sHud.setAlpha(1.0f);
+						mHud.setAlpha(1.0f);
 					}
 				}
 			});
@@ -342,7 +340,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		if (mLocationFilter) {
 			mLocationFilter = false;
 			mMediaFeed.removeFilter();
-			sHud.getPathBar().popLabel();
+			mHud.getPathBar().popLabel();
 		}
 	}
 
@@ -383,7 +381,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			}
 			mWakeLock = null;
 		}
-		sHud.setAlpha(1.0f);
+		mHud.setAlpha(1.0f);
 	}
 
 	@Override
@@ -490,9 +488,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 				hud.setMode(HudLayer.MODE_NORMAL);
 		}
 		if (view.elapsedLoadingExpensiveTextures() > 150 || (mMediaFeed != null && mMediaFeed.getWaitingForMediaScanner())) {
-			sHud.getPathBar().setAnimatedIcons(GridDrawables.TEXTURE_SPINNER);
+			mHud.getPathBar().setAnimatedIcons(GridDrawables.TEXTURE_SPINNER);
 		} else {
-			sHud.getPathBar().setAnimatedIcons(null);
+			mHud.getPathBar().setAnimatedIcons(null);
 		}
 
 		// In that case, we need to commit the respective Display Items when the
@@ -500,17 +498,17 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		GridCamera camera = mCamera;
 		camera.update(timeElapsed);
 		DisplayItem anchorDisplayItem = getAnchorDisplayItem(ANCHOR_CENTER);
-		if (anchorDisplayItem != null && !sHud.getTimeBar().isDragged()) {
-			sHud.getTimeBar().setItem(anchorDisplayItem.mItemRef);
+		if (anchorDisplayItem != null && !mHud.getTimeBar().isDragged()) {
+			mHud.getTimeBar().setItem(anchorDisplayItem.mItemRef);
 		}
 		sDisplayList.update(timeElapsed);
 		mInputProcessor.update(timeElapsed);
 		mSelectedAlpha = FloatUtils.animate(mSelectedAlpha, mTargetAlpha, timeElapsed * 0.5f);
 		if (mState == STATE_FULL_SCREEN) {
-			sHud.autoHide(true);
+			mHud.autoHide(true);
 		} else {
-			sHud.autoHide(false);
-			sHud.setAlpha(1.0f);
+			mHud.autoHide(false);
+			mHud.setAlpha(1.0f);
 		}
 		GridQuad[] fullscreenQuads = GridDrawables.sFullscreenGrid;
 		int numFullScreenQuads = fullscreenQuads.length;
@@ -670,8 +668,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 					if (mState == STATE_GRID_VIEW) {
 						MediaSet expandedSet = mMediaFeed.getExpandedMediaSet();
 						if (expandedSet != null) {
-							if (!sHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
-								sHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
+							if (!mHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
+								mHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
 							}
 						}
 					}
@@ -688,13 +686,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 									if (itemUri != null && mRequestFocusContentUri != null) {
 										if (itemUri.equals(mRequestFocusContentUri)) {
 											mInputProcessor.setCurrentSelectedSlot(i);
-											mRequestFocusContentUri = null;
 											break;
 										}
 									}
 								}
 							}
 						}
+						mRequestFocusContentUri = null;
 					}
 				}
 			} finally {
@@ -726,8 +724,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 	@Override
 	public void onSurfaceCreated(RenderView view, GL11 gl) {
 		sDisplayList.clear();
-		sHud.clear();
-		sHud.reset();
+		mHud.clear();
+		mHud.reset();
 		GridDrawables.sStringTextureTable.clear();
 		mDrawables.onSurfaceCreated(view, gl);
 		mBackground.clear();
@@ -780,8 +778,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
 	public void renderBlended(RenderView view, GL11 gl) {
 		// We draw the placeholder for all visible slots.
-		if (sHud != null && mDrawManager != null) {
-			mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, sHud.getMode(), mTimeElapsedSinceStackViewReady,
+		if (mHud != null && mDrawManager != null) {
+			mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, mHud.getMode(), mTimeElapsedSinceStackViewReady,
 			        mTimeElapsedSinceGridViewReady, sBucketList, mMediaFeed.getWaitingForMediaScanner() || mFeedAboutToChange
 			                || mMediaFeed.isLoading());
 		}
@@ -857,7 +855,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			mFeedChanged = true;
 			forceRecomputeVisibleRange();
 			if (mState == STATE_GRID_VIEW || mState == STATE_FULL_SCREEN)
-				sHud.setFeed(feed, mState, needsLayout);
+				mHud.setFeed(feed, mState, needsLayout);
 			return;
 		}
 
@@ -865,10 +863,10 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			Thread.yield();
 		}
 		if (mState == STATE_GRID_VIEW) {
-			if (sHud != null) {
+			if (mHud != null) {
 				MediaSet set = feed.getCurrentSet();
 				if (set != null && !mLocationFilter)
-					sHud.getPathBar().changeLabel(set.mNoCountTitleString);
+					mHud.getPathBar().changeLabel(set.mNoCountTitleString);
 			}
 		}
 		DisplayItem[] displayItems = sDisplayItems;
@@ -953,7 +951,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		mFeedChanged = true;
 		if (feed != null) {
 			if (mState == STATE_GRID_VIEW || mState == STATE_FULL_SCREEN)
-				sHud.setFeed(feed, mState, needsLayout);
+				mHud.setFeed(feed, mState, needsLayout);
 		}
 		if (mView != null) {
 			mView.requestRender();
@@ -1058,7 +1056,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		boolean retVal = changeFocusToSlot(currentSelectedSlot + 1, convergence);
 		if (mInputProcessor.getCurrentSelectedSlot() == currentSelectedSlot) {
 			endSlideshow();
-			sHud.setAlpha(1.0f);
+			mHud.setAlpha(1.0f);
 		}
 		return retVal;
 	}
@@ -1070,7 +1068,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			DisplayItem displayItem = sDisplayItems[index * MAX_ITEMS_PER_SLOT];
 			if (displayItem != null) {
 				MediaItem item = displayItem.mItemRef;
-				sHud.fullscreenSelectionChanged(item, slotId + 1, sCompleteRange.end + 1);
+				mHud.fullscreenSelectionChanged(item, slotId + 1, sCompleteRange.end + 1);
 				if (slotId != Shared.INVALID && slotId <= sCompleteRange.end) {
 					mInputProcessor.setCurrentFocusSlot(slotId);
 					centerCameraForSlot(slotId, convergence);
@@ -1106,7 +1104,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
 	public void deselectOrCancelSelectMode() {
 		if (sBucketList.size() == 0) {
-			sHud.cancelSelection();
+			mHud.cancelSelection();
 		} else {
 			sBucketList.clear();
 			updateCountOfSelectedItems();
@@ -1114,7 +1112,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 	}
 
 	public void deselectAll() {
-		sHud.cancelSelection();
+		mHud.cancelSelection();
 		sBucketList.clear();
 		updateCountOfSelectedItems();
 	}
@@ -1141,11 +1139,11 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 					deselectAll();
 			}
 		}
-		sHud.computeBottomMenu();
+		mHud.computeBottomMenu();
 	}
 
 	private void updateCountOfSelectedItems() {
-		sHud.updateNumItemsSelected(sBucketList.size());
+		mHud.updateNumItemsSelected(sBucketList.size());
 	}
 
 	public int getMetadataSlotIndexForScreenPosition(int posX, int posY) {
@@ -1244,7 +1242,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		mZoomValue = 1.0f;
 		centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
 		mTimeElapsedSinceView = SLIDESHOW_TRANSITION_TIME - 1.0f;
-		sHud.setAlpha(0);
+		mHud.setAlpha(0);
 		PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "GridView.Slideshow");
 		mWakeLock.acquire();
@@ -1252,7 +1250,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
 	public void enterSelectionMode() {
 		mSlideshowMode = false;
-		sHud.enterSelectionMode();
+		mHud.enterSelectionMode();
 		int currentSlot = mInputProcessor.getCurrentSelectedSlot();
 		if (currentSlot == Shared.INVALID) {
 			currentSlot = mInputProcessor.getCurrentFocusSlot();
@@ -1275,7 +1273,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		if (mZoomValue > 6.0f) {
 			mZoomValue = 6.0f;
 		}
-		sHud.setAlpha(1.0f);
+		mHud.setAlpha(1.0f);
 		centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
 	}
 
@@ -1289,7 +1287,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 		if (mZoomValue < 1.0f) {
 			mZoomValue = 1.0f;
 		}
-		sHud.setAlpha(1.0f);
+		mHud.setAlpha(1.0f);
 		centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
 	}
 
@@ -1373,16 +1371,16 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
 	public void setPickIntent(boolean b) {
 		mPickIntent = b;
-		sHud.getPathBar().popLabel();
-		sHud.getPathBar().pushLabel(R.drawable.icon_location_small, mContext.getResources().getString(R.string.pick),
+		mHud.getPathBar().popLabel();
+		mHud.getPathBar().pushLabel(R.drawable.icon_location_small, mContext.getResources().getString(R.string.pick),
 		        new Runnable() {
 			        public void run() {
-				        if (sHud.getAlpha() == 1.0f) {
+				        if (mHud.getAlpha() == 1.0f) {
 					        if (!mFeedAboutToChange) {
 						        setState(STATE_MEDIA_SETS);
 					        }
 				        } else {
-					        sHud.setAlpha(1.0f);
+					        mHud.setAlpha(1.0f);
 				        }
 			        }
 		        });
@@ -1398,19 +1396,19 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			mMediaFeed.expandMediaSet(0);
 			setState(STATE_GRID_VIEW);
 			// We need to make sure we haven't pushed the same label twice
-			if (sHud.getPathBar().getNumLevels() == 1) {
-				sHud.getPathBar().pushLabel(R.drawable.icon_folder_small, setName, new Runnable() {
+			if (mHud.getPathBar().getNumLevels() == 1) {
+				mHud.getPathBar().pushLabel(R.drawable.icon_folder_small, setName, new Runnable() {
 					public void run() {
 						if (mFeedAboutToChange) {
 							return;
 						}
-						if (sHud.getAlpha() == 1.0f) {
+						if (mHud.getAlpha() == 1.0f) {
 							disableLocationFiltering();
 							if (mInputProcessor != null)
 								mInputProcessor.clearSelection();
 							setState(STATE_GRID_VIEW);
 						} else {
-							sHud.setAlpha(1.0f);
+							mHud.setAlpha(1.0f);
 						}
 					}
 				});

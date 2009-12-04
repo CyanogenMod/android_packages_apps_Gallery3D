@@ -60,8 +60,12 @@ public class SingleDataSource implements DataSource {
     public void shutdown() {
 
     }
+    
+    public boolean isSingleImage() {
+    	return mSingleUri;
+    }
 
-    public static boolean isSingleImageMode(String uriString) {
+    private static boolean isSingleImageMode(String uriString) {
         return !uriString.equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
                 && !uriString.equals(MediaStore.Images.Media.INTERNAL_CONTENT_URI.toString());
     }

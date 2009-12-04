@@ -242,7 +242,9 @@ public final class MediaFeed implements Runnable {
     }
 
     public void removeMediaSet(MediaSet set) {
-        mMediaSets.remove(set);
+        synchronized (mMediaSets) {
+        	mMediaSets.remove(set);
+        }
         mMediaFeedNeedsToRun = true;
     }
 
@@ -434,7 +436,7 @@ public final class MediaFeed implements Runnable {
                     }
                     if (expandedSetIndex == Shared.INVALID) {
                         // We purge the sets outside this visibleRange.
-                        int numSets = mMediaSets.size();
+                        int numSets = mediaSets.size();
                         IndexRange visibleRange = mVisibleRange;
                         IndexRange bufferedRange = mBufferedRange;
                         boolean scanMediaSets = true;
@@ -463,7 +465,7 @@ public final class MediaFeed implements Runnable {
                                 }
                             }
                         }
-                        numSets = mMediaSets.size();
+                        numSets = mediaSets.size();
                         for (int i = 0; i < numSets; ++i) {
                             MediaSet set = mediaSets.get(i);
                             if (i >= bufferedRange.begin && i <= bufferedRange.end) {

@@ -864,6 +864,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             return false;
         }
         // Wait for the render thread to process this event.
+        if (mTouchEventQueue.size() > 8 && event.getAction() == MotionEvent.ACTION_MOVE)
+        	return true;
         synchronized (mTouchEventQueue) {
             MotionEvent eventCopy = MotionEvent.obtain(event);
             mTouchEventQueue.addLast(eventCopy);
