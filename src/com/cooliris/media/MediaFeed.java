@@ -704,9 +704,11 @@ public final class MediaFeed implements Runnable {
         ArrayList<MediaSet> mediaSets = mMediaSets;
         int numSets = mediaSets.size();
         for (int i = 0; i < numSets; ++i) {
-            if (mediaSets.get(i).mId == setId) {
-                MediaSet thisSet = mediaSets.get(i);
+        	final MediaSet thisSet = mediaSets.get(i);
+            if (thisSet.mId == setId) {
                 mediaSet.mName = thisSet.mName;
+                mediaSet.mHasImages = thisSet.mHasImages;
+                mediaSet.mHasVideos = thisSet.mHasVideos;
                 mediaSets.set(i, mediaSet);
                 break;
             }

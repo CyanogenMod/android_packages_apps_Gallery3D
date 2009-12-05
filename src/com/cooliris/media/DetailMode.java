@@ -48,21 +48,21 @@ public final class DetailMode {
             return null;
         }
         Resources resources = context.getResources();
-        CharSequence[] strings = new CharSequence[5];
-
+        ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
+        
         // Number of albums selected.
         if (numOriginalSets == 1) {
-            strings[0] = "1 " + resources.getString(R.string.album_selected);
+            strings.add("1 " + resources.getString(R.string.album_selected));
         } else {
-            strings[0] = Integer.toString(numOriginalSets) + " " + resources.getString(R.string.albums_selected);
+            strings.add(Integer.toString(numOriginalSets) + " " + resources.getString(R.string.albums_selected));
         }
 
         // Number of items selected.
         int numItems = selectedItemsSet.mNumItemsLoaded;
         if (numItems == 1) {
-            strings[1] = "1 " + resources.getString(R.string.item_selected);
+            strings.add("1 " + resources.getString(R.string.item_selected));
         } else {
-            strings[1] = Integer.toString(numItems) + " " + resources.getString(R.string.items_selected);
+            strings.add(Integer.toString(numItems) + " " + resources.getString(R.string.items_selected));
         }
         
         DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,DateFormat.SHORT);
@@ -75,8 +75,8 @@ public final class DetailMode {
                 minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
                 maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
-            strings[2] = resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp));
-            strings[3] = resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp));
+            strings.add(resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
+            strings.add(resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
         } else if (selectedItemsSet.areAddedTimestampsAvailable()) {
             long minTimestamp = selectedItemsSet.mMinAddedTimestamp;
             long maxTimestamp = selectedItemsSet.mMaxAddedTimestamp;
@@ -84,11 +84,11 @@ public final class DetailMode {
                 minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
                 maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
-            strings[2] = resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp));
-            strings[3] = resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp));            
+            strings.add(resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
+            strings.add(resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));            
         } else {
-            strings[2] = resources.getString(R.string.start) + ": " + resources.getString(R.string.date_unknown);
-            strings[3] = resources.getString(R.string.end) + ": " + resources.getString(R.string.date_unknown);
+            strings.add(resources.getString(R.string.start) + ": " + resources.getString(R.string.date_unknown));
+            strings.add(resources.getString(R.string.end) + ": " + resources.getString(R.string.date_unknown));
         }
 
         // The location of the selected items.
@@ -101,11 +101,15 @@ public final class DetailMode {
                 locationString = reverseGeocoder.computeMostGranularCommonLocation(selectedItemsSet);
             }
         }
-        if (locationString == null || locationString.length() == 0) {
-            locationString = resources.getString(R.string.location_unknown);
+        if (locationString != null && locationString.length() > 0) {
+        	strings.add(resources.getString(R.string.location) + ": " + locationString);
         }
-        strings[4] = resources.getString(R.string.location) + ": " + locationString;
-        return strings;
+        int numStrings = strings.size();
+        CharSequence[] stringsArr = new CharSequence[numStrings];
+        for (int i = 0; i < numStrings; ++i) {
+        	stringsArr[i] = strings.get(i);
+        }
+        return stringsArr;
     }
 
     private static CharSequence[] populateItemViewDetailModeStrings(Context context, MediaItem item) {

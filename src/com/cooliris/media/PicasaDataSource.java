@@ -42,7 +42,7 @@ public final class PicasaDataSource implements DataSource {
         for (int i = 0; i < numAccounts; ++i) {
             Account account = accounts[i];
             boolean isEnabled = ContentResolver.getSyncAutomatically(account, PicasaContentProvider.AUTHORITY);
-            String username = account.name;
+            String username = account.name.toLowerCase();
             if (username.contains("@gmail.") || username.contains("@googlemail.")) {
                 // Strip the domain from GMail accounts for canonicalization. TODO: is there an official way?
                 username = username.substring(0, username.indexOf('@'));
@@ -109,7 +109,8 @@ public final class PicasaDataSource implements DataSource {
                 final ArrayList<MediaSet> picasaSets = new ArrayList<MediaSet>(numAlbums);
                 do {
                     albumSchema.cursorToObject(cursor, album);
-                    final Boolean accountEnabledObj = accountsEnabled.get(album.user);
+                    String userLowerCase = album.user.toLowerCase();
+                    final Boolean accountEnabledObj = accountsEnabled.get(userLowerCase);
                     final boolean accountEnabled = (accountEnabledObj == null) ? false : accountEnabledObj.booleanValue();
                     if (accountEnabled) {
                         mediaSet = feed.getMediaSet(album.id);
