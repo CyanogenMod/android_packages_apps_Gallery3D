@@ -59,14 +59,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 	private static Vector3f sDeltaAnchorPosition = new Vector3f();
 
 	// The display primitives.
-	private GridDrawables mDrawables;
+	final private GridDrawables mDrawables;
 	private float mSelectedAlpha = 0.0f;
 	private float mTargetAlpha = 0.0f;
 
-	private GridCamera mCamera;
-	private GridCameraManager mCameraManager;
-	private GridDrawManager mDrawManager;
-	private GridInputProcessor mInputProcessor;
+	final private GridCamera mCamera;
+	final private GridCameraManager mCameraManager;
+	final private GridDrawManager mDrawManager;
+	final private GridInputProcessor mInputProcessor;
 
 	private boolean mFeedAboutToChange;
 	private boolean mPerformingLayoutChange;
@@ -85,7 +85,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 	private static ArrayList<MediaItem> sVisibleItems;
 
 	private float mTimeElapsedSinceTransition;
-	private BackgroundLayer mBackground;
+	private final BackgroundLayer mBackground;
 	private boolean mLocationFilter;
 	private float mZoomValue = 1.0f;
 	private float mCurrentFocusItemWidth = 1.0f;
@@ -107,13 +107,11 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 	private int mFramesDirty;
 	private String mRequestFocusContentUri;
 	private int mFrameCount;
-	private boolean mNeedsInit;
 
 	public GridLayer(Context context, int itemWidth, int itemHeight, LayoutInterface layoutInterface, RenderView view) {
 		mBackground = new BackgroundLayer(this);
 		mContext = context;
 		mView = view;
-		mNeedsInit = true;
 
 		DisplaySlot[] displaySlots = sDisplaySlots;
 		for (int i = 0; i < MAX_DISPLAY_SLOTS; ++i) {
@@ -165,7 +163,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 			mMediaFeed.shutdown();
 		}
 		mContext = null;
-		mBackground = null;
 		sBucketList.clear();
 		mView = null;
 	}

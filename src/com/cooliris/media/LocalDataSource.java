@@ -111,7 +111,6 @@ public final class LocalDataSource implements DataSource {
         if (setIdToUse == Shared.INVALID) {
             return;
         }
-        Log.i(TAG, "Refreshing local data source");
         if (feed.getMediaSet(setIdToUse) == null) {
             MediaSet mediaSet = feed.addMediaSet(setIdToUse, this);
             if (setIdToUse == CAMERA_BUCKET_ID) {
@@ -122,6 +121,7 @@ public final class LocalDataSource implements DataSource {
             mediaSet.generateTitle(true);
         } else {
             MediaSet mediaSet = feed.replaceMediaSet(setIdToUse, this);
+            Log.i(TAG, "Replacing mediaset " + mediaSet.mName + " id " + setIdToUse + " current Id " + mediaSet.mId);
             if (setIdToUse == CAMERA_BUCKET_ID) {
                 mediaSet.mName = CAMERA_STRING;
             } else if (setIdToUse == DOWNLOAD_BUCKET_ID) {

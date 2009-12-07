@@ -76,7 +76,7 @@ public final class Gallery extends Activity {
 		mRenderView.setRootLayer(mGridLayer);
 		setContentView(mRenderView);
 		
-		// Creating the DataSource objects
+		// Creating the DataSource objects.
 		final PicasaDataSource picasaDataSource = new PicasaDataSource(this);
 		final LocalDataSource localDataSource = new LocalDataSource(this);
 		final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(localDataSource, picasaDataSource);
