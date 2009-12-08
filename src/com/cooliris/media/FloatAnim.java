@@ -12,14 +12,14 @@ public final class FloatAnim {
         mValue = value;
         mStartTime = 0;
     }
-    
+
     public boolean isAnimating() {
         return mStartTime != 0;
     }
-    
+
     public float getTimeRemaining(long currentTime) {
         float duration = (currentTime - mStartTime) * 0.001f;
-        if (mDuration > duration)  // CR: braces
+        if (mDuration > duration) // CR: braces
             return mDuration - duration;
         else
             return 0.0f;
@@ -51,11 +51,12 @@ public final class FloatAnim {
 
     private float getInterpolatedValue(long currentTime) {
         float ratio = (float) (currentTime - mStartTime) * 0.001f / mDuration;
-        if (ratio >= 1f) {  // CR: 1.0f
+        if (ratio >= 1f) { // CR: 1.0f
             mStartTime = 0;
             return mValue;
         } else {
-            ratio = 0.5f - 0.5f * FloatMath.cos(ratio * 3.14159265f);  // CR: (float)Math.PI
+            ratio = 0.5f - 0.5f * FloatMath.cos(ratio * 3.14159265f); // CR:
+                                                                      // (float)Math.PI
             return mValue + (1f - ratio) * mDelta;
         }
     }

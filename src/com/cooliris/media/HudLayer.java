@@ -143,12 +143,12 @@ public final class HudLayer extends Layer {
         MenuBar.Menu deleteMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.delete)).icon(
                 R.drawable.icon_delete).options(deleteOptions).build();
 
-        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.more)).icon(
-                R.drawable.icon_more).onSelect(new Runnable() {
-            public void run() {
-                buildMoreOptions();
-            }
-        }).build();
+        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.more))
+                .icon(R.drawable.icon_more).onSelect(new Runnable() {
+                    public void run() {
+                        buildMoreOptions();
+                    }
+                }).build();
 
         mNormalBottomMenu = new MenuBar.Menu[] { shareMenu, deleteMenu, moreMenu };
         mSingleViewIntentBottomMenu = new MenuBar.Menu[] { shareMenu, moreMenu };
@@ -177,8 +177,8 @@ public final class HudLayer extends Layer {
                                     setAlpha(1.0f);
                             }
                         }).build(), /* new MenuBar.Menu.Builder("").build(), */
-                new MenuBar.Menu.Builder(context.getResources().getString(R.string.menu)).icon(R.drawable.icon_more)
-                        .onSingleTapUp(new Runnable() {
+                new MenuBar.Menu.Builder(context.getResources().getString(R.string.menu)).icon(R.drawable.icon_more).onSingleTapUp(
+                        new Runnable() {
                             public void run() {
                                 if (getAlpha() == 1.0f)
                                     mGridLayer.enterSelectionMode();
@@ -187,7 +187,7 @@ public final class HudLayer extends Layer {
                             }
                         }).build() });
     }
-    
+
     public void setContext(Context context) {
         if (mContext != context) {
             mContext = context;
@@ -372,7 +372,8 @@ public final class HudLayer extends Layer {
             }
         }
 
-        // We are assuming that the more menu is the last item in the menu array.
+        // We are assuming that the more menu is the last item in the menu
+        // array.
         int lastIndex = mSelectionMenuBottom.getMenus().length - 1;
         mSelectionMenuBottom.getMenus()[lastIndex].options = options;
     }
@@ -466,7 +467,8 @@ public final class HudLayer extends Layer {
 
         // Show the time bar in stack and grid states, except in selection mode.
         mTimeBar.setHidden(fullscreenMode || selectionMode || stackMode);
-        // mTimeBar.setHidden(selectionMode || (state != GridLayer.STATE_TIMELINE && state != GridLayer.STATE_GRID_VIEW));
+        // mTimeBar.setHidden(selectionMode || (state !=
+        // GridLayer.STATE_TIMELINE && state != GridLayer.STATE_GRID_VIEW));
 
         // Hide the path bar and top-right button in selection mode.
         mPathBar.setHidden(selectionMode);
@@ -604,8 +606,9 @@ public final class HudLayer extends Layer {
     public boolean onTouchEvent(MotionEvent event) {
         if (mMode == MODE_SELECT) {
             /*
-             * setMode(MODE_NORMAL); ArrayList<MediaBucket> displayBuckets = mGridLayer.getSelectedBuckets(); // use this list, and
-             * then clear the items return true;
+             * setMode(MODE_NORMAL); ArrayList<MediaBucket> displayBuckets =
+             * mGridLayer.getSelectedBuckets(); // use this list, and then clear
+             * the items return true;
              */
             return false;
         } else {
@@ -637,7 +640,8 @@ public final class HudLayer extends Layer {
     }
 
     private void updateShareMenu() {
-        // Get the first selected item. Wire this up to multiple-item intents when we move
+        // Get the first selected item. Wire this up to multiple-item intents
+        // when we move
         // to Eclair.
         ArrayList<MediaBucket> selection = mGridLayer.getSelectedBuckets();
         ArrayList<Uri> uris = new ArrayList<Uri>();
@@ -664,8 +668,10 @@ public final class HudLayer extends Layer {
                         mediaType = item.getMediaType();
                         MediaSet parentMediaSet = item.mParentMediaSet;
                         if (parentMediaSet != null && parentMediaSet.mPicasaAlbumId != Shared.INVALID) {
-                            // This will go away once http uri's are supported for all media types.
-                            // This ensures that just the link is shared as a text
+                            // This will go away once http uri's are supported
+                            // for all media types.
+                            // This ensures that just the link is shared as a
+                            // text
                             mimeType = "text/plain";
                         }
                     }
@@ -755,27 +761,28 @@ public final class HudLayer extends Layer {
     public void enterSelectionMode() {
         setAlpha(1.0f);
         setMode(HudLayer.MODE_SELECT);
-        // if we are in single view mode, show the bottom menu without the delete button.
+        // if we are in single view mode, show the bottom menu without the
+        // delete button.
         if (mGridLayer.noDeleteMode()) {
             mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
         } else {
             mSelectionMenuBottom.setMenus(mNormalBottomMenu);
         }
     }
-    
+
     public void computeBottomMenu() {
-    	// we need to the same for picasa albums
+        // we need to the same for picasa albums
         ArrayList<MediaBucket> selection = mGridLayer.getSelectedBuckets();
         Menu[] menus = mSelectionMenuBottom.getMenus();
         if (menus == mSingleViewIntentBottomMenu)
-        	return;
+            return;
         int numBuckets = selection.size();
         for (int i = 0; i < numBuckets; ++i) {
-        	MediaBucket bucket = selection.get(i);
-        	if (bucket.mediaSet.mPicasaAlbumId != Shared.INVALID) {
-        		mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
-        		break;
-        	}
+            MediaBucket bucket = selection.get(i);
+            if (bucket.mediaSet.mPicasaAlbumId != Shared.INVALID) {
+                mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
+                break;
+            }
         }
     }
 

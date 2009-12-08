@@ -83,7 +83,8 @@ public final class PopupMenu extends Layer {
         mPopupTexture.setNeedsDraw();
         setPosition(clampedX, y);
 
-        // Fade in the menu if it is not already visible, otherwise snap to the new location.
+        // Fade in the menu if it is not already visible, otherwise snap to the
+        // new location.
         // if (!mShow) {
         mShow = true;
         setHidden(false);
@@ -297,7 +298,8 @@ public final class PopupMenu extends Layer {
             backing.eraseColor(0);
             mBackground.draw(canvas, mBackgroundRect, SRC_PAINT);
 
-            // Stamp the popup triangle over the appropriate region ignoring alpha.
+            // Stamp the popup triangle over the appropriate region ignoring
+            // alpha.
             Bitmap triangle = mTriangleBottom;
             canvas.drawBitmap(triangle, mTriangleX, height - triangle.getHeight() - 1, SRC_PAINT);
 

@@ -21,7 +21,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
         MENU_TITLE_STYLE.fontSize = 17 * Gallery.PIXEL_DENSITY;
         MENU_TITLE_STYLE.sizeMode = StringTexture.Config.SIZE_EXACT;
         MENU_TITLE_STYLE.overflowMode = StringTexture.Config.OVERFLOW_FADE;
-        
+
         MENU_TITLE_STYLE_TEXT.fontSize = 15 * Gallery.PIXEL_DENSITY;
         MENU_TITLE_STYLE_TEXT.xalignment = StringTexture.Config.ALIGN_HCENTER;
         MENU_TITLE_STYLE_TEXT.sizeMode = StringTexture.Config.SIZE_EXACT;
@@ -70,12 +70,12 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
             mSubmenu.close(false);
         }
     }
-    
+
     @Override
     protected void onSizeChanged() {
         mNeedsLayout = true;
     }
-    
+
     @Override
     public void generate(RenderView view, RenderView.Lists lists) {
         lists.blendedList.add(this);
@@ -93,14 +93,14 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
             mNeedsLayout = false;
         }
         if (mGL != gl) {
-        	mTextureMap.clear();
-        	mGL = gl;
+            mTextureMap.clear();
+            mGL = gl;
         }
-        
+
         // Draw the background.
         Texture background = view.getResource(BACKGROUND);
         int backgroundHeight = background.getHeight();
-        int menuHeight = (int)(HEIGHT * Gallery.PIXEL_DENSITY + 0.5f);
+        int menuHeight = (int) (HEIGHT * Gallery.PIXEL_DENSITY + 0.5f);
         int extra = background.getHeight() - menuHeight;
         view.draw2D(background, mX, mY - extra, mWidth, backgroundHeight);
 
@@ -119,17 +119,17 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
         if (canDrawHighlight()) {
             drawHighlight(view, gl, touchMenu);
         }
-        
+
         // Draw labels.
         float height = mHeight;
         for (int i = 0; i != numMenus; ++i) {
             // Draw the icon and title.
             Menu menu = menus[i];
             ResourceTexture icon = view.getResource(menu.icon);
-            
+
             StringTexture titleTexture = (StringTexture) mTextureMap.get(menu.title);
             if (titleTexture == null) {
-            	titleTexture = new StringTexture(menu.title, menu.config, menu.titleWidth, MENU_TITLE_STYLE.height);
+                titleTexture = new StringTexture(menu.title, menu.config, menu.titleWidth, MENU_TITLE_STYLE.height);
                 view.loadTexture(titleTexture);
                 menu.titleTexture = titleTexture;
                 mTextureMap.put(menu.title, titleTexture);
@@ -145,21 +145,22 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
             view.draw2D(titleTexture, menu.x + offset + iconWidth, titleY);
         }
     }
-    
+
     private void drawHighlight(RenderView view, GL11 gl, int touchMenu) {
         Texture highlightLeft = view.getResource(MENU_HIGHLIGHT_LEFT);
         Texture highlightMiddle = view.getResource(MENU_HIGHLIGHT_MIDDLE);
         Texture highlightRight = view.getResource(MENU_HIGHLIGHT_RIGHT);
 
         int height = highlightLeft.getHeight();
-        int extra = height - (int)(HEIGHT * Gallery.PIXEL_DENSITY);
+        int extra = height - (int) (HEIGHT * Gallery.PIXEL_DENSITY);
         Menu menu = mMenus[touchMenu];
-        int x = menu.x + (int)(MENU_HIGHLIGHT_EDGE_INSET * Gallery.PIXEL_DENSITY);
-        int width = menu.mWidth - (int)((MENU_HIGHLIGHT_EDGE_INSET * 2) * Gallery.PIXEL_DENSITY);
+        int x = menu.x + (int) (MENU_HIGHLIGHT_EDGE_INSET * Gallery.PIXEL_DENSITY);
+        int width = menu.mWidth - (int) ((MENU_HIGHLIGHT_EDGE_INSET * 2) * Gallery.PIXEL_DENSITY);
         int y = (int) mY - extra;
 
         // Draw left edge.
-        view.draw2D(highlightLeft, x - MENU_HIGHLIGHT_EDGE_WIDTH * Gallery.PIXEL_DENSITY, y, MENU_HIGHLIGHT_EDGE_WIDTH * Gallery.PIXEL_DENSITY, height);
+        view.draw2D(highlightLeft, x - MENU_HIGHLIGHT_EDGE_WIDTH * Gallery.PIXEL_DENSITY, y, MENU_HIGHLIGHT_EDGE_WIDTH
+                * Gallery.PIXEL_DENSITY, height);
 
         // Draw middle.
         view.draw2D(highlightMiddle, x, y, width, height);
@@ -217,7 +218,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
                     int y = (int) mY;
                     didShow = true;
                     submenu.setOptions(options);
-                    submenu.showAtPoint(x, y, (int)mWidth, (int)mHeight);
+                    submenu.showAtPoint(x, y, (int) mWidth, (int) mHeight);
                 }
             }
             if (!didShow) {
@@ -279,7 +280,8 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
             // Forward event to submenu.
             mSubmenu.onTouchEvent(event);
 
-            // Leave the submenu open if the touch ends on the menu button in less than
+            // Leave the submenu open if the touch ends on the menu button in
+            // less than
             // a time threshold.
             long elapsed = event.getEventTime() - event.getDownTime();
             if (hit != -1) {
@@ -308,85 +310,92 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
     }
 
     private void layoutMenus() {
-    	mTextureMap.clear();
-    	
+        mTextureMap.clear();
+
         Menu[] menus = mMenus;
         int numMenus = menus.length;
         // we do the best attempt to fit the menu items and resize them
         // also, it tries to minimize different sized menu items
-        // it finds the maximum width for a set of menu items, and checks whether that width
-        // can be used for all the cells, else, it goes to the next maximum width, so on and
+        // it finds the maximum width for a set of menu items, and checks
+        // whether that width
+        // can be used for all the cells, else, it goes to the next maximum
+        // width, so on and
         // so forth
         if (numMenus != 0) {
             float viewWidth = mWidth;
             int occupiedWidth = 0;
             int previousMaxWidth = Integer.MAX_VALUE;
             int totalDesiredWidth = 0;
-            
+
             for (int i = 0; i < numMenus; i++) {
                 totalDesiredWidth += menus[i].computeRequiredWidth();
             }
-            
-            if (totalDesiredWidth > viewWidth) {
-            	// Just split the menus up by available size / nr of menus.
-            	int widthPerMenu = (int) Math.floor(viewWidth / numMenus);
-            	int x = 0;
-            	
-            	for (int i = 0; i < numMenus; i++) {
-            		Menu menu = menus[i];
-            		menu.x = x;
-            		menu.mWidth = widthPerMenu;
-            		menu.titleWidth = widthPerMenu - (20 + (menu.icon != 0 ? 45 : 0)); //TODO factor out padding etc
 
-            		// fix up rounding errors by adding the last pixel to the last menu. 
-            		if (i == numMenus - 1) {
-            			menu.mWidth = (int) viewWidth - x;
-            		}
-            		x += widthPerMenu;
-            		
-            	}
+            if (totalDesiredWidth > viewWidth) {
+                // Just split the menus up by available size / nr of menus.
+                int widthPerMenu = (int) Math.floor(viewWidth / numMenus);
+                int x = 0;
+
+                for (int i = 0; i < numMenus; i++) {
+                    Menu menu = menus[i];
+                    menu.x = x;
+                    menu.mWidth = widthPerMenu;
+                    menu.titleWidth = widthPerMenu - (20 + (menu.icon != 0 ? 45 : 0)); // TODO
+                                                                                       // factor
+                                                                                       // out
+                                                                                       // padding
+                                                                                       // etc
+
+                    // fix up rounding errors by adding the last pixel to the
+                    // last menu.
+                    if (i == numMenus - 1) {
+                        menu.mWidth = (int) viewWidth - x;
+                    }
+                    x += widthPerMenu;
+
+                }
             } else {
                 boolean foundANewMaxWidth = true;
                 int menusProcessed = 0;
-            	
-            	while (foundANewMaxWidth && menusProcessed < numMenus) {
-	                foundANewMaxWidth = false;
-	                int maxWidth = 0;
-	                for (int i = 0; i < numMenus; ++i) {
-	                    int width = menus[i].computeRequiredWidth();
-	                    if (width > maxWidth && width < previousMaxWidth) {
-	                        foundANewMaxWidth = true;
-	                        maxWidth = width;
-	                    }
-	                }
-	                // can all the menus have this width
-	                int cumulativeWidth = maxWidth * (numMenus - menusProcessed) + occupiedWidth;
-	                if (cumulativeWidth < viewWidth || !foundANewMaxWidth || menusProcessed == numMenus - 1) {
-	                    float delta = (viewWidth - cumulativeWidth) / numMenus;
-	                    if (delta < 0) {
-	                        delta = 0;
-	                    }
-	                    int x = 0;
-	                    for (int i = 0; i < numMenus; ++i) {
-	                        Menu menu = menus[i];
-	                        menu.x = x;
-	                        float width = menus[i].computeRequiredWidth();
-	                        if (width < maxWidth) {
-	                            width = maxWidth + delta;
-	                        } else {
-	                            width += delta;
-	                        }
-	                        menu.mWidth = (int)width;
-	                        menu.titleWidth = StringTexture.computeTextWidthForConfig(menu.title, menu.config);  //(int)menus[i].title.computeTextWidth();
-	                        x += width;
-	                    }
-	                    break;
-	                } else {
-	                    ++menusProcessed;
-	                    previousMaxWidth = maxWidth;
-	                    occupiedWidth += maxWidth;
-	                }
-	            }
+
+                while (foundANewMaxWidth && menusProcessed < numMenus) {
+                    foundANewMaxWidth = false;
+                    int maxWidth = 0;
+                    for (int i = 0; i < numMenus; ++i) {
+                        int width = menus[i].computeRequiredWidth();
+                        if (width > maxWidth && width < previousMaxWidth) {
+                            foundANewMaxWidth = true;
+                            maxWidth = width;
+                        }
+                    }
+                    // can all the menus have this width
+                    int cumulativeWidth = maxWidth * (numMenus - menusProcessed) + occupiedWidth;
+                    if (cumulativeWidth < viewWidth || !foundANewMaxWidth || menusProcessed == numMenus - 1) {
+                        float delta = (viewWidth - cumulativeWidth) / numMenus;
+                        if (delta < 0) {
+                            delta = 0;
+                        }
+                        int x = 0;
+                        for (int i = 0; i < numMenus; ++i) {
+                            Menu menu = menus[i];
+                            menu.x = x;
+                            float width = menus[i].computeRequiredWidth();
+                            if (width < maxWidth) {
+                                width = maxWidth + delta;
+                            } else {
+                                width += delta;
+                            }
+                            menu.mWidth = (int) width;
+                            menu.titleWidth = StringTexture.computeTextWidthForConfig(menu.title, menu.config); // (int)menus[i].title.computeTextWidth();
+                            x += width;
+                        }
+                        break;
+                    } else {
+                        ++menusProcessed;
+                        previousMaxWidth = maxWidth;
+                        occupiedWidth += maxWidth;
+                    }
+                }
             }
         }
     }
@@ -405,7 +414,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
         private int x;
         private int mWidth;
         private static final float ICON_WIDTH = 45.0f;
-        
+
         public static final class Builder {
             private final String title;
             private StringTexture.Config config;
@@ -463,7 +472,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
 
         private Menu(Builder builder) {
             config = builder.config;
-            title = builder.title;  //new StringTexture(builder.title, config);
+            title = builder.title; // new StringTexture(builder.title, config);
             icon = builder.icon;
             onSelect = builder.onSelect;
             onDeselect = builder.onDeselect;
@@ -478,7 +487,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
                 width += (ICON_WIDTH); // * Gallery.PIXEL_DENSITY);
             }
             if (title != null) {
-                width += StringTexture.computeTextWidthForConfig(title, config);//title.computeTextWidth();
+                width += StringTexture.computeTextWidthForConfig(title, config);// title.computeTextWidth();
             }
             // pad it
             width += 20;
@@ -486,7 +495,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
                 width = HEIGHT;
             return width;
         }
-        
+
     }
 
     public void onSelectionChanged(PopupMenu menu, int selectedIndex) {

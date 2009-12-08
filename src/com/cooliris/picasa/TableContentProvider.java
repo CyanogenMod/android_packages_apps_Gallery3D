@@ -22,26 +22,28 @@ public class TableContentProvider extends ContentProvider {
     public void setDatabase(SQLiteOpenHelper database) {
         mDatabase = database;
     }
-    
+
     public void addMapping(String authority, String path, String mimeSubtype, EntrySchema table) {
         // Add the table URI mapping.
         ArrayList<Mapping> mappings = mMappings;
         UriMatcher matcher = mUriMatcher;
         matcher.addURI(authority, path, mappings.size());
         mappings.add(new Mapping(table, mimeSubtype, false));
-        
+
         // Add the row URI mapping.
         matcher.addURI(authority, path + "/#", mappings.size());
         mappings.add(new Mapping(table, mimeSubtype, true));
     }
-    
+
     @Override
     public boolean onCreate() {
-        // The database may not be loaded yet since attachInfo() has not been called, so we cannot
-        // check that the database opened successfully. Returns true optimistically.
+        // The database may not be loaded yet since attachInfo() has not been
+        // called, so we cannot
+        // check that the database opened successfully. Returns true
+        // optimistically.
         return true;
     }
-    
+
     @Override
     public String getType(Uri uri) {
         // Resolve the URI.
@@ -57,29 +59,29 @@ public class TableContentProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-                        String sortOrder) {
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         // Resolve the URI.
         int match = mUriMatcher.match(uri);
         if (match == UriMatcher.NO_MATCH) {
             throw new IllegalArgumentException("Invalid URI: " + uri);
         }
-        
+
         // Add the ID predicate if needed.
         Mapping mapping = mMappings.get(match);
         if (mapping.hasId) {
             selection = whereWithId(uri, selection);
         }
-        
-        //System.out.println("QUERY " + uri + " WHERE (" + selection + ")");
+
+        // System.out.println("QUERY " + uri + " WHERE (" + selection + ")");
 
         // Run the query.
         String tableName = mapping.table.getTableName();
-        Cursor cursor = mDatabase.getReadableDatabase().query(tableName, projection, selection, selectionArgs, null, null, sortOrder);
+        Cursor cursor = mDatabase.getReadableDatabase().query(tableName, projection, selection, selectionArgs, null, null,
+                sortOrder);
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
-    
+
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         // Resolve the URI.
@@ -89,7 +91,8 @@ public class TableContentProvider extends ContentProvider {
             throw new IllegalArgumentException("Invalid URI: " + uri);
         }
 
-        // Insert into the database, notify observers, and return the qualified URI.
+        // Insert into the database, notify observers, and return the qualified
+        // URI.
         String tableName = mapping.table.getTableName();
         long rowId = mDatabase.getWritableDatabase().insert(tableName, NULL_COLUMN_HACK, values);
         if (rowId > 0) {
@@ -99,7 +102,7 @@ public class TableContentProvider extends ContentProvider {
             throw new SQLException("Failed to insert row at: " + uri);
         }
     }
-    
+
     @Override
     public int bulkInsert(Uri uri, ContentValues[] values) {
         // Resolve the URI.
@@ -127,7 +130,7 @@ public class TableContentProvider extends ContentProvider {
         notifyChange(uri);
         return numInserted;
     }
-    
+
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         // Resolve the URI.
@@ -135,13 +138,13 @@ public class TableContentProvider extends ContentProvider {
         if (match == UriMatcher.NO_MATCH) {
             throw new IllegalArgumentException("Invalid URI: " + uri);
         }
-        
+
         // Add the ID predicate if needed.
         Mapping mapping = mMappings.get(match);
         if (mapping.hasId) {
             selection = whereWithId(uri, selection);
         }
-        
+
         // Update the item(s) and broadcast a change notification.
         SQLiteDatabase db = mDatabase.getWritableDatabase();
         String tableName = mapping.table.getTableName();
@@ -157,7 +160,7 @@ public class TableContentProvider extends ContentProvider {
         if (match == UriMatcher.NO_MATCH) {
             throw new IllegalArgumentException("Invalid URI: " + uri);
         }
-        
+
         // Add the ID predicate if needed.
         Mapping mapping = mMappings.get(match);
         if (mapping.hasId) {
@@ -171,7 +174,7 @@ public class TableContentProvider extends ContentProvider {
         notifyChange(uri);
         return count;
     }
-    
+
     private final String whereWithId(Uri uri, String selection) {
         String id = uri.getPathSegments().get(1);
         StringBuilder where = new StringBuilder("_id=");
@@ -183,11 +186,11 @@ public class TableContentProvider extends ContentProvider {
         }
         return where.toString();
     }
-    
+
     private final void notifyChange(Uri uri) {
         getContext().getContentResolver().notifyChange(uri, null);
     }
-    
+
     private static final class Mapping {
         public EntrySchema table;
         public String mimeSubtype;

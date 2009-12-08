@@ -37,7 +37,7 @@ public final class MediaItemTexture extends Texture {
         mItem = item;
         mCached = computeCache();
     }
-    
+
     private boolean computeCache() {
         final Config config = mConfig;
         final MediaItem item = mItem;
@@ -83,7 +83,8 @@ public final class MediaItemTexture extends Texture {
         final Config config = mConfig;
         final MediaItem item = mItem;
 
-        // Special case for non-MediaStore content URIs, do not cache the thumbnail.
+        // Special case for non-MediaStore content URIs, do not cache the
+        // thumbnail.
         String uriString = item.mContentUri;
         if (uriString != null) {
             Uri uri = Uri.parse(uriString);

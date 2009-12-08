@@ -6,7 +6,7 @@ public final class UserEntry extends Entry {
 
     @Column("account")
     public String account;
-    
+
     @Column("albums_etag")
     public String albumsEtag;
 }

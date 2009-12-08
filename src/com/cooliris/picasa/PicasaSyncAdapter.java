@@ -27,10 +27,10 @@ public class PicasaSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     public static final class AccountChangeReceiver extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			// TODO: Need to get account list change broadcast.
-		}
-    	
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // TODO: Need to get account list change broadcast.
+        }
+
     }
 }

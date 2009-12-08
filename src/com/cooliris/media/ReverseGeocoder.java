@@ -12,17 +12,32 @@ import java.util.Locale;
 
 import android.content.Context;
 import android.location.Address;
+import android.location.Criteria;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Process;
 
 public final class ReverseGeocoder extends Thread {
     private static final int MAX_COUNTRY_NAME_LENGTH = 8;
-    // If two points are within 50 miles of each other, use "Around Palo Alto, CA" or "Around Mountain View, CA".
-    // instead of directly jumping to the next level and saying "California, US".
+    // If two points are within 20 miles of each other, use
+    // "Around Palo Alto, CA" or "Around Mountain View, CA".
+    // instead of directly jumping to the next level and saying
+    // "California, US".
     private static final int MAX_LOCALITY_MILE_RANGE = 20;
     private static final Deque<MediaSet> sQueue = new Deque<MediaSet>();
     private static final DiskCache sGeoCache = new DiskCache("geocoder-cache");
     private static final String TAG = "ReverseGeocoder";
+    private static Criteria LOCATION_CRITERIA = new Criteria();
+    private static Address sCurrentAddress; // last known address
+    
+    static {
+        LOCATION_CRITERIA.setAccuracy(Criteria.ACCURACY_COARSE);
+        LOCATION_CRITERIA.setPowerRequirement(Criteria.NO_REQUIREMENT);
+        LOCATION_CRITERIA.setBearingRequired(false);
+        LOCATION_CRITERIA.setSpeedRequired(false);
+        LOCATION_CRITERIA.setAltitudeRequired(false);
+    }
 
     private Geocoder mGeocoder;
     private final Context mContext;
@@ -36,7 +51,7 @@ public final class ReverseGeocoder extends Thread {
     public void enqueue(MediaSet set) {
         Deque<MediaSet> inQueue = sQueue;
         synchronized (inQueue) {
-            inQueue.addLast(set);
+            inQueue.addFirst(set);
             inQueue.notify();
         }
     }
@@ -87,36 +102,88 @@ public final class ReverseGeocoder extends Thread {
     protected String computeMostGranularCommonLocation(final MediaSet set) {
         // The overall min and max latitudes and longitudes of the set.
         double setMinLatitude = set.mMinLatLatitude;
-        double setMinLongitude = set.mMinLonLongitude;
+        double setMinLongitude = set.mMinLatLongitude;
         double setMaxLatitude = set.mMaxLatLatitude;
-        double setMaxLongitude = set.mMaxLonLongitude;
+        double setMaxLongitude = set.mMaxLatLongitude;
+        if (Math.abs(set.mMaxLatLatitude - set.mMinLatLatitude) < Math.abs(set.mMaxLonLongitude - set.mMinLonLongitude)) {
+            setMinLatitude = set.mMinLonLatitude;
+            setMinLongitude = set.mMinLonLongitude;
+            setMaxLatitude = set.mMaxLonLatitude;
+            setMaxLongitude = set.mMaxLonLongitude;
+        }
         Address addr1 = lookupAddress(setMinLatitude, setMinLongitude);
         Address addr2 = lookupAddress(setMaxLatitude, setMaxLongitude);
+        if (addr1 == null)
+            addr1 = addr2;
+        if (addr2 == null)
+            addr2 = addr1;
         if (addr1 == null || addr2 == null) {
             return null;
         }
 
-        // Look at the first line of the address.
-        String closestCommonLocation = valueIfEqual(addr1.getAddressLine(0), addr2.getAddressLine(0));
-        if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
-            return closestCommonLocation;
+        // Get current location, we decide the granularity of the string based
+        // on this.
+        LocationManager locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
+        Location location = null;
+        List<String> providers = locationManager.getAllProviders();
+        for (int i = 0; i < providers.size(); ++i) {
+            String provider = providers.get(i);
+            location = (provider != null) ? locationManager.getLastKnownLocation(provider) : null;
+            if (location != null)
+                break;
+        }
+        String currentCity = "";
+        String currentAdminArea = "";
+        String currentCountry = Locale.getDefault().getCountry();
+        if (location != null) {
+            Address currentAddress = lookupAddress(location.getLatitude(), location.getLongitude());
+            if (currentAddress == null) {
+                currentAddress = sCurrentAddress;
+            } else {
+                sCurrentAddress = currentAddress;
+            }
+            if (currentAddress != null && currentAddress.getCountryCode() != null) {
+                currentCity = currentAddress.getLocality();
+                currentCountry = currentAddress.getCountryCode();
+                currentAdminArea = currentAddress.getAdminArea();
+            }
         }
 
-        // Compare thoroughfare (street address) next.
-        closestCommonLocation = valueIfEqual(addr1.getThoroughfare(), addr2.getThoroughfare());
-        if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
-            return closestCommonLocation;
-        }
+        String closestCommonLocation = null;
 
-        // Feature names can sometimes be useful like "Golden Gate Bridge" but can also be
-        // degenerate for street address (like just the house number).
-        closestCommonLocation = valueIfEqual(addr1.getFeatureName(), addr2.getFeatureName());
-        if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
-            try {
-                Integer.parseInt(closestCommonLocation);
-                closestCommonLocation = null;
-            } catch (final NumberFormatException nfe) {
-                // The feature name is not an integer, allow and continue.
+        if (currentCity.equals(addr1.getLocality()) || currentCity.equals(addr2.getLocality())) {
+            String otherCity = currentCity;
+            if (currentCity.equals(addr1.getLocality())) {
+                otherCity = addr2.getLocality();
+                if ("null".equals(otherCity) || otherCity == null) {
+                    otherCity = addr2.getAdminArea();
+                    if (!currentCountry.equals(addr2.getCountryCode())) {
+                        otherCity += " " + addr2.getCountryCode();
+                    }
+                }
+                addr2 = addr1;
+            } else {
+                otherCity = addr1.getLocality();
+                if ("null".equals(otherCity) || otherCity == null) {
+                    otherCity = addr1.getAdminArea() + " " + addr1.getCountryCode();
+                    ;
+                    if (!currentCountry.equals(addr1.getCountryCode())) {
+                        otherCity += " " + addr1.getCountryCode();
+                    }
+                }
+                addr1 = addr2;
+            }
+            closestCommonLocation = valueIfEqual(addr1.getAddressLine(0), addr2.getAddressLine(0));
+            if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
+                if (!currentCity.equals(otherCity)) {
+                    closestCommonLocation += " - " + otherCity;
+                }
+                return closestCommonLocation;
+            }
+
+            // Compare thoroughfare (street address) next.
+            closestCommonLocation = valueIfEqual(addr1.getThoroughfare(), addr2.getThoroughfare());
+            if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
                 return closestCommonLocation;
             }
         }
@@ -125,34 +192,46 @@ public final class ReverseGeocoder extends Thread {
         closestCommonLocation = valueIfEqual(addr1.getLocality(), addr2.getLocality());
         if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
             String adminArea = addr1.getAdminArea();
-            if (adminArea != null && adminArea.length() > 0) {
-                closestCommonLocation += ", " + adminArea;
+            String countryCode = addr1.getCountryCode();
+            if (adminArea != null && adminArea.length() > 0 && !adminArea.equals(currentAdminArea)) {
+                if (!countryCode.equals(currentCountry)) {
+                    closestCommonLocation += ", " + adminArea + " " + countryCode;
+                } else {
+                    closestCommonLocation += ", " + adminArea;
+                }
             }
             return closestCommonLocation;
         }
 
-        // Just choose one of the localities if within a 50 mile radius.
+        // If the admin area is the same as the current location, we hide it and
+        // instead show the city name.
+        if (currentAdminArea.equals(addr1.getAdminArea()) || currentAdminArea.equals(addr2.getAdminArea())) {
+            String addr1Locality = addr2.getLocality();
+            String addr2Locality = addr2.getLocality();
+            if (addr1Locality == null || "null".equals(addr1Locality)) {
+                addr1Locality = addr2Locality;
+            }
+            if (addr2Locality == null || "null".equals(addr2Locality)) {
+                addr2Locality = addr1Locality;
+            }
+            if (addr1Locality != null && !"null".equals(addr1Locality)) {
+                closestCommonLocation = addr1.getLocality() + " - " + addr2.getLocality();
+                return closestCommonLocation;
+            }
+        }
+
+        // Just choose one of the localities if within a MAX_LOCALITY_MILE_RANGE
+        // mile radius.
         int distance = (int) LocationMediaFilter.toMile(LocationMediaFilter.distanceBetween(setMinLatitude, setMinLongitude,
                 setMaxLatitude, setMaxLongitude));
         if (distance < MAX_LOCALITY_MILE_RANGE) {
-            // Try each of the points and just return the first one to have a valid address.
-            Address minLatAddress = lookupAddress(setMinLatitude, set.mMinLatLongitude);
-            closestCommonLocation = getLocalityAdminForAddress(minLatAddress, true);
+            // Try each of the points and just return the first one to have a
+            // valid address.
+            closestCommonLocation = getLocalityAdminForAddress(addr1, true);
             if (closestCommonLocation != null) {
                 return closestCommonLocation;
             }
-            Address minLonAddress = lookupAddress(set.mMinLonLatitude, setMinLongitude);
-            closestCommonLocation = getLocalityAdminForAddress(minLonAddress, true);
-            if (closestCommonLocation != null) {
-                return closestCommonLocation;
-            }
-            Address maxLatAddress = lookupAddress(setMaxLatitude, set.mMaxLatLongitude);
-            closestCommonLocation = getLocalityAdminForAddress(maxLatAddress, true);
-            if (closestCommonLocation != null) {
-                return closestCommonLocation;
-            }
-            Address maxLonAddress = lookupAddress(set.mMaxLonLatitude, setMaxLongitude);
-            closestCommonLocation = getLocalityAdminForAddress(maxLonAddress, true);
+            closestCommonLocation = getLocalityAdminForAddress(addr2, true);
             if (closestCommonLocation != null) {
                 return closestCommonLocation;
             }
@@ -162,8 +241,10 @@ public final class ReverseGeocoder extends Thread {
         closestCommonLocation = valueIfEqual(addr1.getAdminArea(), addr2.getAdminArea());
         if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
             String countryCode = addr1.getCountryCode();
-            if (countryCode != null && countryCode.length() > 0) {
-                closestCommonLocation += ", " + countryCode;
+            if (!countryCode.equals(currentCountry)) {
+                if (countryCode != null && countryCode.length() > 0) {
+                    closestCommonLocation += " " + countryCode;
+                }
             }
             return closestCommonLocation;
         }
@@ -176,6 +257,12 @@ public final class ReverseGeocoder extends Thread {
         // There is no intersection, let's choose a nicer name.
         String addr1Country = addr1.getCountryName();
         String addr2Country = addr2.getCountryName();
+        if (addr1Country == null)
+            addr1Country = addr1.getCountryCode();
+        if (addr2Country == null)
+            addr2Country = addr2.getCountryCode();
+        if (addr1Country == null || addr2Country == null)
+            return null;
         if (addr1Country.length() > MAX_COUNTRY_NAME_LENGTH || addr2Country.length() > MAX_COUNTRY_NAME_LENGTH) {
             closestCommonLocation = addr1.getCountryCode() + " - " + addr2.getCountryCode();
         } else {
@@ -190,7 +277,8 @@ public final class ReverseGeocoder extends Thread {
         Address addr = lookupAddress(latitude, longitude);
 
         if (addr != null) {
-            // Look at the first line of the address, thorough fare and feature name in order and pick one.
+            // Look at the first line of the address, thorough fare and feature
+            // name in order and pick one.
             location = addr.getAddressLine(0);
             if (location != null && !("null".equals(location))) {
                 numDetails++;
@@ -257,8 +345,11 @@ public final class ReverseGeocoder extends Thread {
         String localityAdminStr = addr.getLocality();
         if (localityAdminStr != null && !("null".equals(localityAdminStr))) {
             if (approxLocation) {
-                // TODO: Uncomment these lines as soon as we may translations for R.string.around.
-                // localityAdminStr = mContext.getResources().getString(R.string.around) + " " + localityAdminStr;
+                // TODO: Uncomment these lines as soon as we may translations
+                // for R.string.around.
+                // localityAdminStr =
+                // mContext.getResources().getString(R.string.around) + " " +
+                // localityAdminStr;
             }
             String adminArea = addr.getAdminArea();
             if (adminArea != null && adminArea.length() > 0) {
@@ -275,36 +366,40 @@ public final class ReverseGeocoder extends Thread {
             byte[] cachedLocation = sGeoCache.get(locationKey, 0);
             Address address = null;
             if (cachedLocation == null || cachedLocation.length == 0) {
-                List<Address> addresses = mGeocoder.getFromLocation(latitude, longitude, 1);
-                if (!addresses.isEmpty()) {
-                    address = addresses.get(0);
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(bos, 256));
-                    Locale locale = address.getLocale();
-                    Utils.writeUTF(dos, locale.getLanguage());
-                    Utils.writeUTF(dos, locale.getCountry());
-                    Utils.writeUTF(dos, locale.getVariant());
+                try {
+                    List<Address> addresses = mGeocoder.getFromLocation(latitude, longitude, 1);
+                    if (!addresses.isEmpty()) {
+                        address = addresses.get(0);
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(bos, 256));
+                        Locale locale = address.getLocale();
+                        Utils.writeUTF(dos, locale.getLanguage());
+                        Utils.writeUTF(dos, locale.getCountry());
+                        Utils.writeUTF(dos, locale.getVariant());
 
-                    Utils.writeUTF(dos, address.getThoroughfare());
-                    int numAddressLines = address.getMaxAddressLineIndex();
-                    dos.writeInt(numAddressLines);
-                    for (int i = 0; i < numAddressLines; ++i) {
-                        Utils.writeUTF(dos, address.getAddressLine(i));
+                        Utils.writeUTF(dos, address.getThoroughfare());
+                        int numAddressLines = address.getMaxAddressLineIndex();
+                        dos.writeInt(numAddressLines);
+                        for (int i = 0; i < numAddressLines; ++i) {
+                            Utils.writeUTF(dos, address.getAddressLine(i));
+                        }
+                        Utils.writeUTF(dos, address.getFeatureName());
+                        Utils.writeUTF(dos, address.getLocality());
+                        Utils.writeUTF(dos, address.getAdminArea());
+                        Utils.writeUTF(dos, address.getSubAdminArea());
+
+                        Utils.writeUTF(dos, address.getCountryName());
+                        Utils.writeUTF(dos, address.getCountryCode());
+                        Utils.writeUTF(dos, address.getPostalCode());
+                        Utils.writeUTF(dos, address.getPhone());
+                        Utils.writeUTF(dos, address.getUrl());
+
+                        dos.flush();
+                        sGeoCache.put(locationKey, bos.toByteArray());
+                        dos.close();
                     }
-                    Utils.writeUTF(dos, address.getFeatureName());
-                    Utils.writeUTF(dos, address.getLocality());
-                    Utils.writeUTF(dos, address.getAdminArea());
-                    Utils.writeUTF(dos, address.getSubAdminArea());
+                } finally {
 
-                    Utils.writeUTF(dos, address.getCountryName());
-                    Utils.writeUTF(dos, address.getCountryCode());
-                    Utils.writeUTF(dos, address.getPostalCode());
-                    Utils.writeUTF(dos, address.getPhone());
-                    Utils.writeUTF(dos, address.getUrl());
-
-                    dos.flush();
-                    sGeoCache.put(locationKey, bos.toByteArray());
-                    dos.close();
                 }
             } else {
                 // Parsing the address from the byte stream.

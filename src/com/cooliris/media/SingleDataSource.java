@@ -60,9 +60,9 @@ public class SingleDataSource implements DataSource {
     public void shutdown() {
 
     }
-    
+
     public boolean isSingleImage() {
-    	return mSingleUri;
+        return mSingleUri;
     }
 
     private static boolean isSingleImageMode(String uriString) {
@@ -143,8 +143,9 @@ public class SingleDataSource implements DataSource {
                 for (int i = 1; i < numItems; ++i) {
                     MediaItem thisItem = items.get(i);
                     String filePath = Uri.fromFile(new File(thisItem.mFilePath)).toString();
-                    if (item.mId == thisItem.mId || ((item.mContentUri != null && thisItem.mContentUri != null) && (item.mContentUri.equals(thisItem.mContentUri)
-                            || item.mContentUri.equals(filePath)))) {
+                    if (item.mId == thisItem.mId
+                            || ((item.mContentUri != null && thisItem.mContentUri != null) && (item.mContentUri
+                                    .equals(thisItem.mContentUri) || item.mContentUri.equals(filePath)))) {
                         items.remove(thisItem);
                         --parentSet.mNumItemsLoaded;
                         break;
@@ -157,23 +158,28 @@ public class SingleDataSource implements DataSource {
             final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
             final ContentResolver cr = mContext.getContentResolver();
             String where = null;
-            Cursor cursor = cr.query(uriImages, CacheService.PROJECTION_IMAGES, where, null, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                parentSet.setNumExpectedItems(cursor.getCount());
-                do {
-                    if (Thread.interrupted()) {
-                        return;
+            try {
+                Cursor cursor = cr.query(uriImages, CacheService.PROJECTION_IMAGES, where, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    parentSet.setNumExpectedItems(cursor.getCount());
+                    do {
+                        if (Thread.interrupted()) {
+                            return;
+                        }
+                        final MediaItem item = new MediaItem();
+                        CacheService.populateMediaItemFromCursor(item, cr, cursor, CacheService.BASE_CONTENT_STRING_IMAGES);
+                        feed.addItemToMediaSet(item, parentSet);
+                    } while (cursor.moveToNext());
+                    if (cursor != null) {
+                        cursor.close();
+                        cursor = null;
                     }
-                    final MediaItem item = new MediaItem();
-                    CacheService.populateMediaItemFromCursor(item, cr, cursor, CacheService.BASE_CONTENT_STRING_IMAGES);
-                    feed.addItemToMediaSet(item, parentSet);
-                } while (cursor.moveToNext());
-                if (cursor != null) {
-                    cursor.close();
-                    cursor = null;
+                    parentSet.updateNumExpectedItems();
+                    parentSet.generateTitle(true);
                 }
-                parentSet.updateNumExpectedItems();
-                parentSet.generateTitle(true);
+            } catch (Exception e) {
+                // If the database operation failed for any reason.
+                ;
             }
         } else {
             CacheService.loadMediaItemsIntoMediaFeed(feed, parentSet, rangeStart, rangeEnd, true, true);

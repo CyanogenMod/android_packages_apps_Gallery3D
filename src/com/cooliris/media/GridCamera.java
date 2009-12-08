@@ -10,7 +10,7 @@ public final class GridCamera {
     public static final float EYE_Z = 8.0f; // Initial z distance.
     private static final float DEFAULT_PORTRAIT_ASPECT = 320.0f / 480.0f;
     private static final float DEFAULT_LANDSCAPE_ASPECT = 1.0f / DEFAULT_PORTRAIT_ASPECT;
-    
+
     public float mEyeX;
     public float mEyeY;
     public float mEyeZ;
@@ -20,7 +20,7 @@ public final class GridCamera {
     public float mUpX;
     public float mUpY;
     public float mUpZ;
-    
+
     // To tilt the wall.
     public float mEyeOffsetX;
     public float mEyeOffsetY;
@@ -28,10 +28,9 @@ public final class GridCamera {
     private float mEyeEdgeOffsetXAnim;
     private float mAmountExceeding;
 
-
     // Animation speed, 1.0f is normal speed.
     public float mConvergenceSpeed;
-    
+
     // Camera field of view and its relation to the grid item width.
     public float mFov;
     public float mScale;
@@ -53,12 +52,12 @@ public final class GridCamera {
     private float mEyeOffsetAnimX;
     private float mEyeOffsetAnimY;
     private float mTargetEyeX;
-    
+
     // Screen width and height.
     private int mWidthBy2;
     private int mHeightBy2;
     private float mTanFovBy2;
-    
+
     public GridCamera(int width, int height, int itemWidth, int itemHeight) {
         reset();
         viewportChanged(width, height, itemWidth, itemHeight);
@@ -108,7 +107,7 @@ public final class GridCamera {
         mHeight = h;
         mWidthBy2 = w >> 1;
         mHeightBy2 = h >> 1;
-        mAspectRatio = (h == 0) ? 1.0f : (float)w / (float)h;
+        mAspectRatio = (h == 0) ? 1.0f : (float) w / (float) h;
         mDefaultAspectRatio = (w > h) ? DEFAULT_LANDSCAPE_ASPECT : DEFAULT_PORTRAIT_ASPECT;
         mTanFovBy2 = (float) Math.tan(Math.toRadians(fov * 0.5f));
         mItemHeight = (int) itemHeight;
@@ -153,7 +152,8 @@ public final class GridCamera {
             // The width will hit the screen.
             h = (f * mHeight) / mWidth;
         }
-        // To fit ITEM_HEIGHT pixels perfectly, the targetZ value must be the 1.0f for the given fov
+        // To fit ITEM_HEIGHT pixels perfectly, the targetZ value must be the
+        // 1.0f for the given fov
         // Thus to fit h pixels,
         h = h / mItemHeight;
         float targetZ = h / mTanFovBy2;
@@ -191,7 +191,7 @@ public final class GridCamera {
         mPosY = mTargetPosY;
         mPosZ = mTargetPosZ;
     }
-    
+
     public void commitMoveInX() {
         mPosX = mTargetPosX;
     }
@@ -203,7 +203,7 @@ public final class GridCamera {
     public void commitMoveInZ() {
         mPosZ = mTargetPosZ;
     }
-    
+
     public boolean computeConstraints(boolean applyConstraints, boolean applyOverflowFeedback, Vector3f firstSlotPosition,
             Vector3f lastSlotPosition) {
         boolean retVal = false;
@@ -240,7 +240,8 @@ public final class GridCamera {
         }
         if (applyConstraints) {
             mEyeEdgeOffsetX = 0.0f;
-            // We look at amount exceeding and calculate target position in the reverse direction.
+            // We look at amount exceeding and calculate target position in the
+            // reverse direction.
             final float maxBounceBack = 0.8f;
             if (mAmountExceeding < -maxBounceBack)
                 mAmountExceeding = -maxBounceBack;
@@ -288,7 +289,7 @@ public final class GridCamera {
     public boolean isAnimating() {
         return (mPosX != mTargetPosX || mPosY != mTargetPosY || mPosZ != mTargetPosZ || mEyeOffsetAnimX != mEyeOffsetX || mEyeEdgeOffsetXAnim != mEyeEdgeOffsetX);
     }
-    
+
     public boolean isZAnimating() {
         return mPosZ != mTargetPosZ;
     }
@@ -309,8 +310,10 @@ public final class GridCamera {
         mTargetEyeX = EYE_X + mPosX;
         if (mEyeZ == EYE_Z) {
             mEyeX = mTargetEyeX;
-            // Enable the line below for achieving tilt while you scroll the wall.
-            // FloatUtils.animate(eyeX_, targetEyeX_, timeElapsedx - (timeElapsedx * 0.35f));
+            // Enable the line below for achieving tilt while you scroll the
+            // wall.
+            // FloatUtils.animate(eyeX_, targetEyeX_, timeElapsedx -
+            // (timeElapsedx * 0.35f));
         } else {
             mEyeX = mTargetEyeX;
         }
@@ -322,4 +325,3 @@ public final class GridCamera {
         mLookAtZ = mPosZ;
     }
 }
-

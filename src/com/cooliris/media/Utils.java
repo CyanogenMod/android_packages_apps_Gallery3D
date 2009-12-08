@@ -126,7 +126,8 @@ public class Utils {
             return null;
         long crc = Crc64Long(in);
         /*
-         * The output is done in two parts to avoid problems with architecture-dependent word order
+         * The output is done in two parts to avoid problems with
+         * architecture-dependent word order
          */
         int low = ((int) crc) & 0xffffffff;
         int high = ((int) (crc >> 32)) & 0xffffffff;
@@ -147,13 +148,13 @@ public class Utils {
         }
         return string;
     }
-    
+
     // Copies src file to dst file.
     // If the dst file does not exist, it is created
     public static void Copy(File src, File dst) throws IOException {
         InputStream in = new FileInputStream(src);
         OutputStream out = new FileOutputStream(dst);
-    
+
         // Transfer bytes from in to out
         byte[] buf = new byte[1024];
         int len;

@@ -33,8 +33,8 @@ import android.provider.MediaStore.Images.ImageColumns;
 import android.util.Log;
 
 /**
- * ImageManager is used to retrieve and store images
- * in the media content provider.
+ * ImageManager is used to retrieve and store images in the media content
+ * provider.
  */
 public class ImageManager {
     private static final String TAG = "ImageManager";
@@ -44,12 +44,12 @@ public class ImageManager {
     /**
      * Enumerate type for the location of the images in gallery.
      */
-    public static enum DataLocation { NONE, INTERNAL, EXTERNAL, ALL }
+    public static enum DataLocation {
+        NONE, INTERNAL, EXTERNAL, ALL
+    }
 
-    public static final Bitmap DEFAULT_THUMBNAIL =
-            Bitmap.createBitmap(32, 32, Bitmap.Config.RGB_565);
-    public static final Bitmap NO_IMAGE_BITMAP =
-            Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565);
+    public static final Bitmap DEFAULT_THUMBNAIL = Bitmap.createBitmap(32, 32, Bitmap.Config.RGB_565);
+    public static final Bitmap NO_IMAGE_BITMAP = Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565);
 
     public static final int SORT_ASCENDING = 1;
     public static final int SORT_DESCENDING = 2;
@@ -58,11 +58,8 @@ public class ImageManager {
     public static final int INCLUDE_DRM_IMAGES = (1 << 1);
     public static final int INCLUDE_VIDEOS = (1 << 2);
 
-    public static final String CAMERA_IMAGE_BUCKET_NAME =
-            Environment.getExternalStorageDirectory().toString()
-            + "/DCIM/Camera";
-    public static final String CAMERA_IMAGE_BUCKET_ID =
-            getBucketId(CAMERA_IMAGE_BUCKET_NAME);
+    public static final String CAMERA_IMAGE_BUCKET_NAME = Environment.getExternalStorageDirectory().toString() + "/DCIM/Camera";
+    public static final String CAMERA_IMAGE_BUCKET_ID = getBucketId(CAMERA_IMAGE_BUCKET_NAME);
 
     /**
      * Matches code in MediaProvider.computeBucketValues. Should be a common
@@ -77,12 +74,9 @@ public class ImageManager {
      * imported. This is a temporary fix for bug#1655552.
      */
     public static void ensureOSXCompatibleFolder() {
-        File nnnAAAAA = new File(
-            Environment.getExternalStorageDirectory().toString()
-            + "/DCIM/100ANDRO");
+        File nnnAAAAA = new File(Environment.getExternalStorageDirectory().toString() + "/DCIM/100ANDRO");
         if ((!nnnAAAAA.exists()) && (!nnnAAAAA.mkdir())) {
-            Log.e(TAG, "create NNNAAAAA file: " + nnnAAAAA.getPath()
-                    + " failed");
+            Log.e(TAG, "create NNNAAAAA file: " + nnnAAAAA.getPath() + " failed");
         }
     }
 
@@ -129,8 +123,7 @@ public class ImageManager {
         cr.update(uri, values, null, null);
     }
 
-    public static Uri addImage(ContentResolver cr, String title,
-            long dateTaken, double latitude, double longitude,
+    public static Uri addImage(ContentResolver cr, String title, long dateTaken, double latitude, double longitude,
             int orientation, String directory, String filename) {
 
         ContentValues values = new ContentValues(7);
@@ -146,7 +139,7 @@ public class ImageManager {
 
         values.put(Images.Media.LATITUDE, latitude);
         values.put(Images.Media.LONGITUDE, longitude);
-                
+
         if (directory != null && filename != null) {
             String value = directory + "/" + filename;
             values.put(Images.Media.DATA, value);
@@ -155,14 +148,12 @@ public class ImageManager {
         return cr.insert(STORAGE_URI, values);
     }
 
-
     private static class AddImageCancelable extends BaseCancelable<Void> {
         private final Uri mUri;
         private final ContentResolver mCr;
-        private final byte [] mJpegData;
+        private final byte[] mJpegData;
 
-        public AddImageCancelable(Uri uri, ContentResolver cr,
-                int orientation, Bitmap source, byte[] jpegData) {
+        public AddImageCancelable(Uri uri, ContentResolver cr, int orientation, Bitmap source, byte[] jpegData) {
             if (source == null && jpegData == null || uri == null) {
                 throw new IllegalArgumentException("source cannot be null");
             }
@@ -172,13 +163,10 @@ public class ImageManager {
         }
 
         @Override
-        protected Void execute() throws InterruptedException,
-                ExecutionException {
+        protected Void execute() throws InterruptedException, ExecutionException {
             boolean complete = false;
             try {
-                String[] projection = new String[] {
-                        ImageColumns._ID,
-                        ImageColumns.MINI_THUMB_MAGIC};
+                String[] projection = new String[] { ImageColumns._ID, ImageColumns.MINI_THUMB_MAGIC };
                 Cursor c = mCr.query(mUri, projection, null, null, null);
                 try {
                     c.moveToPosition(0);
@@ -214,26 +202,20 @@ public class ImageManager {
         }
     }
 
-    public static Cancelable<Void> storeImage(
-            Uri uri, ContentResolver cr, int orientation,
-            Bitmap source, byte [] jpegData) {
-        return new AddImageCancelable(
-                uri, cr, orientation, source, jpegData);
+    public static Cancelable<Void> storeImage(Uri uri, ContentResolver cr, int orientation, Bitmap source, byte[] jpegData) {
+        return new AddImageCancelable(uri, cr, orientation, source, jpegData);
     }
 
     static boolean isSingleImageMode(String uriString) {
-        return !uriString.startsWith(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
-                && !uriString.startsWith(
-                MediaStore.Images.Media.INTERNAL_CONTENT_URI.toString());
+        return !uriString.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
+                && !uriString.startsWith(MediaStore.Images.Media.INTERNAL_CONTENT_URI.toString());
     }
 
     private static boolean checkFsWritable() {
         // Create a temporary file to see whether a volume is really writeable.
         // It's important not to put it in the root directory which may have a
         // limit on the number of files.
-        String directoryName =
-                Environment.getExternalStorageDirectory().toString() + "/DCIM";
+        String directoryName = Environment.getExternalStorageDirectory().toString() + "/DCIM";
         File directory = new File(directoryName);
         if (!directory.isDirectory()) {
             if (!directory.mkdirs()) {
@@ -255,7 +237,7 @@ public class ImageManager {
             return false;
         }
     }
-    
+
     public static boolean quickHasStorage() {
         return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
     }
@@ -273,23 +255,20 @@ public class ImageManager {
             } else {
                 return true;
             }
-        } else if (!requireWriteAccess
-                && Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+        } else if (!requireWriteAccess && Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
             return true;
         }
         return false;
     }
 
-    private static final Cursor query(final ContentResolver resolver, final Uri uri,
-            final String[] projection, final String selection, final String[] selectionArgs,
-            final String sortOrder) {
+    private static final Cursor query(final ContentResolver resolver, final Uri uri, final String[] projection,
+            final String selection, final String[] selectionArgs, final String sortOrder) {
         try {
             if (resolver == null) {
                 return null;
             }
-            return resolver.query(
-                    uri, projection, selection, selectionArgs, sortOrder);
-         } catch (UnsupportedOperationException ex) {
+            return resolver.query(uri, projection, selection, selectionArgs, sortOrder);
+        } catch (UnsupportedOperationException ex) {
             return null;
         }
 
@@ -297,9 +276,8 @@ public class ImageManager {
 
     public static final boolean isMediaScannerScanning(final ContentResolver cr) {
         boolean result = false;
-        final Cursor cursor = query(cr, MediaStore.getMediaScannerUri(),
-                new String [] {MediaStore.MEDIA_SCANNER_VOLUME},
-                null, null, null);
+        final Cursor cursor = query(cr, MediaStore.getMediaScannerUri(), new String[] { MediaStore.MEDIA_SCANNER_VOLUME }, null,
+                null, null);
         if (cursor != null) {
             if (cursor.getCount() == 1) {
                 cursor.moveToFirst();
@@ -311,13 +289,10 @@ public class ImageManager {
     }
 
     public static String getLastImageThumbPath() {
-        return Environment.getExternalStorageDirectory().toString() +
-               "/DCIM/.thumbnails/image_last_thumb";
+        return Environment.getExternalStorageDirectory().toString() + "/DCIM/.thumbnails/image_last_thumb";
     }
 
     public static String getLastVideoThumbPath() {
-        return Environment.getExternalStorageDirectory().toString() +
-               "/DCIM/.thumbnails/video_last_thumb";
+        return Environment.getExternalStorageDirectory().toString() + "/DCIM/.thumbnails/video_last_thumb";
     }
 }
-

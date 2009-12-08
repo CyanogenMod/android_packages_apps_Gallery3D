@@ -5,13 +5,16 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import android.content.Context;
-import android.content.res.Resources;;
+import android.content.res.Resources;
+
+;
 
 public final class DetailMode {
     public static CharSequence[] populateDetailModeStrings(Context context, ArrayList<MediaBucket> buckets) {
         int numBuckets = buckets.size();
         if (MediaBucketList.isSetSelection(buckets) && numBuckets == 1) {
-            // If just 1 set was selected, save the trouble of processing the items in the set again.
+            // If just 1 set was selected, save the trouble of processing the
+            // items in the set again.
             // We have already processed details for that set.
             return populateSetViewDetailModeStrings(context, MediaBucketList.getFirstSetSelection(buckets), 1);
         } else if (MediaBucketList.isSetSelection(buckets) || MediaBucketList.isMultipleItemSelection(buckets)) {
@@ -39,7 +42,7 @@ public final class DetailMode {
             }
             return populateSetViewDetailModeStrings(context, selectedItemsSet, numBuckets);
         } else {
-            return populateItemViewDetailModeStrings(context, MediaBucketList.getFirstItemSelection(buckets)); 
+            return populateItemViewDetailModeStrings(context, MediaBucketList.getFirstItemSelection(buckets));
         }
     }
 
@@ -49,7 +52,7 @@ public final class DetailMode {
         }
         Resources resources = context.getResources();
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
-        
+
         // Number of albums selected.
         if (numOriginalSets == 1) {
             strings.add("1 " + resources.getString(R.string.album_selected));
@@ -64,9 +67,9 @@ public final class DetailMode {
         } else {
             strings.add(Integer.toString(numItems) + " " + resources.getString(R.string.items_selected));
         }
-        
-        DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,DateFormat.SHORT);
-        
+
+        DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
+
         // Start and end times of the selected items.
         if (selectedItemsSet.areTimestampsAvailable()) {
             long minTimestamp = selectedItemsSet.mMinTimestamp;
@@ -85,7 +88,7 @@ public final class DetailMode {
                 maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
             strings.add(resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
-            strings.add(resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));            
+            strings.add(resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
         } else {
             strings.add(resources.getString(R.string.start) + ": " + resources.getString(R.string.date_unknown));
             strings.add(resources.getString(R.string.end) + ": " + resources.getString(R.string.date_unknown));
@@ -102,12 +105,12 @@ public final class DetailMode {
             }
         }
         if (locationString != null && locationString.length() > 0) {
-        	strings.add(resources.getString(R.string.location) + ": " + locationString);
+            strings.add(resources.getString(R.string.location) + ": " + locationString);
         }
         int numStrings = strings.size();
         CharSequence[] stringsArr = new CharSequence[numStrings];
         for (int i = 0; i < numStrings; ++i) {
-        	stringsArr[i] = strings.get(i);
+            stringsArr[i] = strings.get(i);
         }
         return stringsArr;
     }
@@ -116,13 +119,13 @@ public final class DetailMode {
         if (item == null) {
             return null;
         }
-        Resources resources = context.getResources(); 
+        Resources resources = context.getResources();
         CharSequence[] strings = new CharSequence[5];
         strings[0] = resources.getString(R.string.title) + ": " + item.mCaption;
         strings[1] = resources.getString(R.string.type) + ": " + item.getDisplayMimeType();
-        
-        DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,DateFormat.SHORT);
-        
+
+        DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
+
         if (item.isDateTakenValid()) {
             long dateTaken = item.mDateTakenInMs;
             if (item.isPicassaItem()) {
@@ -135,7 +138,8 @@ public final class DetailMode {
                 dateAdded -= Gallery.CURRENT_TIME_ZONE.getOffset(dateAdded);
             }
             // TODO: Make this added_on as soon as translations are ready.
-            //strings[2] = resources.getString(R.string.added_on) + ": " + DateFormat.format("h:mmaa MMM dd yyyy", dateAdded);
+            // strings[2] = resources.getString(R.string.added_on) + ": " +
+            // DateFormat.format("h:mmaa MMM dd yyyy", dateAdded);
             strings[2] = resources.getString(R.string.taken_on) + ": " + dateTimeFormat.format(new Date(dateAdded));
         } else {
             strings[2] = resources.getString(R.string.taken_on) + ": " + resources.getString(R.string.date_unknown);

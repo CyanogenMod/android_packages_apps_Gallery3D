@@ -28,11 +28,13 @@ public abstract class BaseCancelable<T> implements Cancelable<T> {
 
     /**
      * The state of the task, possible transitions are:
+     * 
      * <pre>
-     *     INITIAL -> CANCELED
-     *     EXECUTING -> COMPLETE, CANCELING, ERROR, CANCELED
-     *     CANCELING -> CANCELED
+     *     INITIAL -&gt; CANCELED
+     *     EXECUTING -&gt; COMPLETE, CANCELING, ERROR, CANCELED
+     *     CANCELING -&gt; CANCELED
      * </pre>
+     * 
      * When the task stop, it must be end with one of the following states:
      * COMPLETE, CANCELED, or ERROR;
      */
@@ -69,7 +71,8 @@ public abstract class BaseCancelable<T> implements Cancelable<T> {
         if (mState == STATE_ERROR) {
             throw new ExecutionException(mError);
         }
-        if (mState == STATE_COMPLETE) return mResult;
+        if (mState == STATE_COMPLETE)
+            return mResult;
         throw new IllegalStateException();
     }
 
@@ -102,8 +105,10 @@ public abstract class BaseCancelable<T> implements Cancelable<T> {
             }
         }
         synchronized (this) {
-            if (mState == STATE_CANCELING) mState = STATE_CANCELED;
-            if (mState == STATE_EXECUTING) mState = STATE_COMPLETE;
+            if (mState == STATE_CANCELING)
+                mState = STATE_CANCELED;
+            if (mState == STATE_EXECUTING)
+                mState = STATE_COMPLETE;
             notifyAll();
             if (mState == STATE_CANCELED && mResult != null) {
                 freeCanceledResult(mResult);
@@ -114,9 +119,9 @@ public abstract class BaseCancelable<T> implements Cancelable<T> {
 
     /**
      * Requests the task to be canceled.
-     *
+     * 
      * @return true if the task is running and has not been canceled; false
-     *     otherwise
+     *         otherwise
      */
 
     public synchronized boolean requestCancel() {
@@ -126,11 +131,11 @@ public abstract class BaseCancelable<T> implements Cancelable<T> {
             return false;
         }
         if (mState == STATE_EXECUTING) {
-            if (mCurrentTask != null) mCurrentTask.requestCancel();
+            if (mCurrentTask != null)
+                mCurrentTask.requestCancel();
             mState = STATE_CANCELING;
             return true;
         }
         return false;
     }
 }
-

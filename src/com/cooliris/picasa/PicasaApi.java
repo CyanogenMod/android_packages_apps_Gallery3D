@@ -83,7 +83,8 @@ public final class PicasaApi {
                 // Get the token without user interaction.
                 authToken = accountManager.blockingGetAuthToken(account, PicasaService.SERVICE_NAME, true);
 
-                // TODO: Remove this once the build is signed by Google, since we will always have permission.
+                // TODO: Remove this once the build is signed by Google, since
+                // we will always have permission.
                 // This code requests permission from the user explicitly.
                 if (context instanceof Activity) {
                     Bundle bundle = accountManager.getAuthToken(account, PicasaService.SERVICE_NAME, null, (Activity) context,
@@ -96,7 +97,8 @@ public final class PicasaApi {
                 if (authToken != null) {
                     String username = account.name;
                     if (username.contains("@gmail.") || username.contains("@googlemail.")) {
-                        // Strip the domain from GMail accounts for canonicalization. TODO: is there an official way?
+                        // Strip the domain from GMail accounts for
+                        // canonicalization. TODO: is there an official way?
                         username = username.substring(0, username.indexOf('@'));
                     }
                     authAccounts.add(new AuthAccount(username, authToken, account));
@@ -188,7 +190,8 @@ public final class PicasaApi {
         return RESULT_ERROR;
     }
 
-    public int getAlbumPhotos(AccountManager accountManager, SyncResult syncResult, AlbumEntry album, GDataParser.EntryHandler handler) {
+    public int getAlbumPhotos(AccountManager accountManager, SyncResult syncResult, AlbumEntry album,
+            GDataParser.EntryHandler handler) {
         // Construct the query URL for user albums.
         StringBuilder builder = new StringBuilder(BASE_URL);
         builder.append("user/");

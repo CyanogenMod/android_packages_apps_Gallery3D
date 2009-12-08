@@ -1,6 +1,5 @@
 package com.cooliris.media;
 
-
 public final class GridCameraManager {
     private final GridCamera mCamera;
     private static final Pool<Vector3f> sPool;
@@ -47,10 +46,11 @@ public final class GridCameraManager {
                         width = height;
                         height = temp;
                     }
-                    camera.moveTo(position.x, position.y, zoomin ? camera.getDistanceToFitRect(width * oneByZoom, height * oneByZoom) : 0);
+                    camera.moveTo(position.x, position.y, zoomin ? camera.getDistanceToFitRect(width * oneByZoom, height
+                            * oneByZoom) : 0);
                 } finally {
                     pool.delete(position);
-                    pool.delete(deltaAnchorPosition);        
+                    pool.delete(deltaAnchorPosition);
                 }
             } else {
                 camera.moveYTo(0);
@@ -59,7 +59,8 @@ public final class GridCameraManager {
         }
     }
 
-    // CR: line too long. Documentation--what are the semantics of the return value?
+    // CR: line too long. Documentation--what are the semantics of the return
+    // value?
     /**
      */
     public boolean constrainCameraForSlot(LayoutInterface layout, int slotIndex, Vector3f deltaAnchorPositionIn,
@@ -107,7 +108,7 @@ public final class GridCameraManager {
                     if (bottomExtent > 0) {
                         camera.moveBy(0, -bottomExtent, 0);
                     }
-                } 
+                }
             } finally {
                 pool.delete(position);
                 pool.delete(deltaAnchorPosition);

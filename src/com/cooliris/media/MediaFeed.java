@@ -214,7 +214,8 @@ public final class MediaFeed implements Runnable {
                         } else if (set != null && items != null) {
                             // We need to remove these items from the set.
                             int numItems = items.size();
-                            // We also need to delete the items from the cluster.
+                            // We also need to delete the items from the
+                            // cluster.
                             MediaClustering clustering = mClusterSets.get(set);
                             for (int j = 0; j < numItems; ++j) {
                                 MediaItem item = items.get(j);
@@ -243,7 +244,7 @@ public final class MediaFeed implements Runnable {
 
     public void removeMediaSet(MediaSet set) {
         synchronized (mMediaSets) {
-        	mMediaSets.remove(set);
+            mMediaSets.remove(set);
         }
         mMediaFeedNeedsToRun = true;
     }
@@ -346,7 +347,8 @@ public final class MediaFeed implements Runnable {
                     return;
                 Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 DataSource dataSource = mDataSource;
-                // We must wait while the SD card is mounted or the MediaScanner is running.
+                // We must wait while the SD card is mounted or the MediaScanner
+                // is running.
                 if (dataSource != null) {
                     dataSource.loadMediaSets(feed);
                 }
@@ -528,7 +530,8 @@ public final class MediaFeed implements Runnable {
                         }
                         MediaSet set = mediaSets.get(expandedSetIndex);
                         if (numItemsLoaded < set.getNumExpectedItems()) {
-                            // TODO(Venkat) Why are we doing 4th param calculations like this?
+                            // We perform calculations for a window that gets anchored to a multiple of NUM_ITEMS_LOOKAHEAD.
+                            // The start of the window is 0, x, 2x, 3x ... etc where x = NUM_ITEMS_LOOKAHEAD.
                             dataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
                                     * NUM_ITEMS_LOOKAHEAD + NUM_ITEMS_LOOKAHEAD);
                             if (set.getNumExpectedItems() == 0) {
@@ -572,7 +575,7 @@ public final class MediaFeed implements Runnable {
         }
         if (mExpandedMediaSetIndex > 0 && mediaSetIndex == Shared.INVALID) {
             // We are collapsing a previously expanded media set
-            if (mediaSetIndex < mMediaSets.size() && mExpandedMediaSetIndex >= 0) {
+            if (mediaSetIndex < mMediaSets.size() && mExpandedMediaSetIndex >= 0 && mExpandedMediaSetIndex < mMediaSets.size()) {
                 MediaSet set = mMediaSets.get(mExpandedMediaSetIndex);
                 if (set.getNumItems() == 0) {
                     set.clear();
@@ -583,7 +586,8 @@ public final class MediaFeed implements Runnable {
         if (mediaSetIndex < mMediaSets.size() && mediaSetIndex >= 0) {
             // Notify Picasa that the user entered the album.
             // MediaSet set = mMediaSets.get(mediaSetIndex);
-            // PicasaService.requestSync(mContext, PicasaService.TYPE_ALBUM_PHOTOS, set.mPicasaAlbumId);
+            // PicasaService.requestSync(mContext,
+            // PicasaService.TYPE_ALBUM_PHOTOS, set.mPicasaAlbumId);
         }
         updateListener(true);
         mMediaFeedNeedsToRun = true;
@@ -704,7 +708,7 @@ public final class MediaFeed implements Runnable {
         ArrayList<MediaSet> mediaSets = mMediaSets;
         int numSets = mediaSets.size();
         for (int i = 0; i < numSets; ++i) {
-        	final MediaSet thisSet = mediaSets.get(i);
+            final MediaSet thisSet = mediaSets.get(i);
             if (thisSet.mId == setId) {
                 mediaSet.mName = thisSet.mName;
                 mediaSet.mHasImages = thisSet.mHasImages;

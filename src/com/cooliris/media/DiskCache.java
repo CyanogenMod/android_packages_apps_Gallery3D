@@ -102,7 +102,8 @@ public final class DiskCache {
                     chunkFile.seek(record.offset);
                     chunkFile.write(data);
                     synchronized (mIndexMap) {
-                        mIndexMap.put(key, new Record(currentChunk, record.offset, data.length, record.sizeOnDisk, System.currentTimeMillis()));
+                        mIndexMap.put(key, new Record(currentChunk, record.offset, data.length, record.sizeOnDisk, System
+                                .currentTimeMillis()));
                     }
                     return;
                 }

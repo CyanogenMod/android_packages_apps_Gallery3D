@@ -32,7 +32,7 @@ public final class PicasaContentProvider extends TableContentProvider {
     private final AlbumEntry mAlbumInstance = new AlbumEntry();
     private SyncContext mSyncContext = null;
     private Account mActiveAccount;
-    
+
     @Override
     public void attachInfo(Context context, ProviderInfo info) {
         // Initialize the provider and set the database.
@@ -50,6 +50,7 @@ public final class PicasaContentProvider extends TableContentProvider {
     public static final class Database extends SQLiteOpenHelper {
         public static final String DATABASE_NAME = "picasa.db";
         public static final int DATABASE_VERSION = 83;
+
         public Database(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
         }
@@ -63,7 +64,8 @@ public final class PicasaContentProvider extends TableContentProvider {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // No new versions yet, if we are asked to upgrade we just reset everything.
+            // No new versions yet, if we are asked to upgrade we just reset
+            // everything.
             PhotoEntry.SCHEMA.dropTables(db);
             AlbumEntry.SCHEMA.dropTables(db);
             UserEntry.SCHEMA.dropTables(db);
@@ -73,7 +75,8 @@ public final class PicasaContentProvider extends TableContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        // Ensure that the URI is well-formed. We currently do not allow WHERE clauses.
+        // Ensure that the URI is well-formed. We currently do not allow WHERE
+        // clauses.
         List<String> path = uri.getPathSegments();
         if (path.size() != 2 || !uri.getAuthority().equals(AUTHORITY) || selection != null) {
             return 0;
@@ -116,25 +119,25 @@ public final class PicasaContentProvider extends TableContentProvider {
         context.finish();
         return 0;
     }
-    
+
     public void reloadAccounts() {
-    	mSyncContext.reloadAccounts();
+        mSyncContext.reloadAccounts();
     }
- 
+
     public void setActiveSyncAccount(Account account) {
         mActiveAccount = account;
     }
-    
+
     public void syncUsers(SyncResult syncResult) {
-    	syncUsers(mSyncContext, syncResult);
+        syncUsers(mSyncContext, syncResult);
     }
 
     public void syncUsersAndAlbums(final boolean syncAlbumPhotos, SyncResult syncResult) {
         SyncContext context = mSyncContext;
-        
+
         // Synchronize users authenticated on the device.
         UserEntry[] users = syncUsers(context, syncResult);
-        
+
         // Synchronize albums for each user.
         String activeUsername = null;
         if (mActiveAccount != null) {
@@ -148,7 +151,8 @@ public final class PicasaContentProvider extends TableContentProvider {
         for (int i = 0, numUsers = users.length; i != numUsers; ++i) {
             if (activeUsername != null && !context.accounts[i].user.equals(activeUsername))
                 continue;
-            if (!ContentResolver.getSyncAutomatically(context.accounts[i].account, AUTHORITY)) continue;
+            if (!ContentResolver.getSyncAutomatically(context.accounts[i].account, AUTHORITY))
+                continue;
             didSyncActiveUserName = true;
             context.api.setAuth(context.accounts[i]);
             syncUserAlbums(context, users[i], syncResult);
@@ -179,7 +183,7 @@ public final class PicasaContentProvider extends TableContentProvider {
         }
         context.finish();
     }
-    
+
     public static boolean isSyncEnabled(String accountName, SyncContext context) {
         PicasaApi.AuthAccount[] accounts = context.accounts;
         int numAccounts = accounts.length;
@@ -212,7 +216,8 @@ public final class PicasaContentProvider extends TableContentProvider {
                 UserEntry entry = new UserEntry();
                 schema.cursorToObject(cursor, entry);
 
-                // Find the corresponding account, or delete the row if it does not exist.
+                // Find the corresponding account, or delete the row if it does
+                // not exist.
                 int i;
                 for (i = 0; i != numUsers; ++i) {
                     Log.i(TAG, "Check " + accounts[i].user + " == " + entry.account);
@@ -258,7 +263,8 @@ public final class PicasaContentProvider extends TableContentProvider {
         // Build a sorted index with existing entry timestamps.
         final EntryMetadata local[] = new EntryMetadata[localCount];
         for (int i = 0; i != localCount; ++i) {
-            cursor.moveToPosition(i); // TODO: throw exception here if returns false?
+            cursor.moveToPosition(i); // TODO: throw exception here if returns
+                                      // false?
             local[i] = new EntryMetadata(cursor.getLong(0), cursor.getLong(1), 0);
         }
         cursor.close();
@@ -333,7 +339,7 @@ public final class PicasaContentProvider extends TableContentProvider {
             if (AlbumEntry.SCHEMA.queryWithId(db, cursor.getLong(0), album)) {
                 syncAlbumPhotos(context, account, album, syncResult);
             }
-            
+
             // Abort if interrupted.
             if (Thread.interrupted()) {
                 ++syncResult.stats.numIoExceptions;
@@ -344,8 +350,8 @@ public final class PicasaContentProvider extends TableContentProvider {
     }
 
     private void syncAlbumPhotos(SyncContext context, final String account, AlbumEntry album, final SyncResult syncResult) {
-    	Log.i(TAG, "Syncing Picasa album: " + album.title);
-    	
+        Log.i(TAG, "Syncing Picasa album: " + album.title);
+
         // Query existing album entry (id, dateEdited) sorted by ID.
         final SQLiteDatabase db = context.db;
         long albumId = album.id;
@@ -354,11 +360,13 @@ public final class PicasaContentProvider extends TableContentProvider {
                 null, "date_edited");
         int localCount = cursor.getCount();
 
-        // Build a sorted index with existing entry timestamps and display indexes.
+        // Build a sorted index with existing entry timestamps and display
+        // indexes.
         final EntryMetadata local[] = new EntryMetadata[localCount];
         final EntryMetadata key = new EntryMetadata();
         for (int i = 0; i != localCount; ++i) {
-            cursor.moveToPosition(i); // TODO: throw exception here if returns false?
+            cursor.moveToPosition(i); // TODO: throw exception here if returns
+                                      // false?
             local[i] = new EntryMetadata(cursor.getLong(0), cursor.getLong(1), cursor.getInt(2));
         }
         cursor.close();
@@ -448,7 +456,7 @@ public final class PicasaContentProvider extends TableContentProvider {
 
         // Delete all albums.
         db.delete(albumTableName, WHERE_ACCOUNT, whereArgs);
-        
+
         // Delete the user entry.
         db.delete(UserEntry.SCHEMA.getTableName(), "account=?", whereArgs);
     }
@@ -493,7 +501,8 @@ public final class PicasaContentProvider extends TableContentProvider {
         // List of all authenticated user accounts.
         public PicasaApi.AuthAccount[] accounts;
 
-        // A connection to the Picasa API for a specific user account. Initially null.
+        // A connection to the Picasa API for a specific user account. Initially
+        // null.
         public PicasaApi api = new PicasaApi();
 
         // A handle to the Picasa databse.
@@ -512,11 +521,11 @@ public final class PicasaContentProvider extends TableContentProvider {
             db = mDatabase.getWritableDatabase();
             reloadAccounts();
         }
-        
+
         public void reloadAccounts() {
-        	accounts = PicasaApi.getAuthenticatedAccounts(getContext());
+            accounts = PicasaApi.getAuthenticatedAccounts(getContext());
         }
-        
+
         public void finish() {
             // Send notifications if needed and reset state.
             ContentResolver cr = getContext().getContentResolver();

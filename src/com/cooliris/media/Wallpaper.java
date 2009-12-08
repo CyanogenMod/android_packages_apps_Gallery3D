@@ -58,18 +58,17 @@ public class Wallpaper extends Activity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case SHOW_PROGRESS: {
-                    CharSequence c = getText(R.string.wallpaper);
-                    mProgressDialog = ProgressDialog.show(Wallpaper.this,
-                            "", c, true, false);
-                    break;
-                }
-                case FINISH: {
-                    closeProgressDialog();
-                    setResult(RESULT_OK);
-                    finish();
-                    break;
-                }
+            case SHOW_PROGRESS: {
+                CharSequence c = getText(R.string.wallpaper);
+                mProgressDialog = ProgressDialog.show(Wallpaper.this, "", c, true, false);
+                break;
+            }
+            case FINISH: {
+                closeProgressDialog();
+                setResult(RESULT_OK);
+                finish();
+                break;
+            }
             }
         }
     };
@@ -80,8 +79,7 @@ public class Wallpaper extends Activity {
         private final Context mContext;
         private final File mFile;
 
-        public SetWallpaperThread(Bitmap bitmap, Handler handler,
-                                  Context context, File file) {
+        public SetWallpaperThread(Bitmap bitmap, Handler handler, Context context, File file) {
             mBitmap = bitmap;
             mHandler = handler;
             mContext = context;
@@ -138,8 +136,7 @@ public class Wallpaper extends Activity {
         Uri imageToUse = getIntent().getData();
         if (imageToUse != null) {
             Intent intent = new Intent();
-            intent.setClassName("com.cooliris.media",
-                                "com.cooliris.media.CropImage");
+            intent.setClassName("com.cooliris.media", "com.cooliris.media.CropImage");
             intent.setData(imageToUse);
             formatIntent(intent);
             startActivityForResult(intent, CROP_DONE);
@@ -162,11 +159,11 @@ public class Wallpaper extends Activity {
 
         int width = getWallpaperDesiredMinimumWidth();
         int height = getWallpaperDesiredMinimumHeight();
-        intent.putExtra("outputX",         width);
-        intent.putExtra("outputY",         height);
-        intent.putExtra("aspectX",         width);
-        intent.putExtra("aspectY",         height);
-        intent.putExtra("scale",           true);
+        intent.putExtra("outputX", width);
+        intent.putExtra("outputY", height);
+        intent.putExtra("aspectX", width);
+        intent.putExtra("aspectY", height);
+        intent.putExtra("scale", true);
         intent.putExtra("noFaceDetection", true);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(mTempFile));
         intent.putExtra("outputFormat", Bitmap.CompressFormat.PNG.name());
@@ -176,22 +173,17 @@ public class Wallpaper extends Activity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    Intent data) {
-        if ((requestCode == PHOTO_PICKED || requestCode == CROP_DONE)
-                && (resultCode == RESULT_OK) && (data != null)) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if ((requestCode == PHOTO_PICKED || requestCode == CROP_DONE) && (resultCode == RESULT_OK) && (data != null)) {
             try {
                 InputStream s = new FileInputStream(mTempFile);
                 try {
                     Bitmap bitmap = BitmapFactory.decodeStream(s);
                     if (bitmap == null) {
-                        Log.e(LOG_TAG, "Failed to set wallpaper. "
-                                       + "Couldn't get bitmap for path "
-                                       + mTempFile);
+                        Log.e(LOG_TAG, "Failed to set wallpaper. " + "Couldn't get bitmap for path " + mTempFile);
                     } else {
                         mHandler.sendEmptyMessage(SHOW_PROGRESS);
-                        new SetWallpaperThread(
-                                bitmap, mHandler, this, mTempFile).start();
+                        new SetWallpaperThread(bitmap, mHandler, this, mTempFile).start();
                     }
                     mDoLaunch = false;
                 } finally {

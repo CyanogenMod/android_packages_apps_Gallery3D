@@ -9,15 +9,19 @@ import android.content.Context;
 import android.content.res.Resources;
 
 /**
- * Implementation of an agglomerative based clustering where all items within a certain time cutoff are grouped into the
- * same cluster. Small adjacent clusters are merged and large individual clusters are considered for splitting.
+ * Implementation of an agglomerative based clustering where all items within a
+ * certain time cutoff are grouped into the same cluster. Small adjacent
+ * clusters are merged and large individual clusters are considered for
+ * splitting.
  * 
- * TODO: Limitation: Can deal with items not being added incrementally to the end of the current date range
- * but effectively assumes this is the case for efficient performance.
+ * TODO: Limitation: Can deal with items not being added incrementally to the
+ * end of the current date range but effectively assumes this is the case for
+ * efficient performance.
  */
 
 public final class MediaClustering {
-    // If 2 items are greater than 25 miles apart, they will be in different clusters.
+    // If 2 items are greater than 25 miles apart, they will be in different
+    // clusters.
     private static final int GEOGRAPHIC_DISTANCE_CUTOFF_IN_MILES = 20;
 
     // Do not want to split based on anything under 1 min.
@@ -43,11 +47,13 @@ public final class MediaClustering {
     // 3 cluster frequencies of each other.
     private static int CLUSTER_SPLIT_MULTIPLIER = 3;
 
-    // The minimum change factor in the time between items to consider a partition.
+    // The minimum change factor in the time between items to consider a
+    // partition.
     // Example: (Item 3 - Item 2) / (Item 2 - Item 1).
     private static final int MIN_PARTITION_CHANGE_FACTOR = 2;
 
-    // Make the cluster split time of a large cluster half that of a regular cluster.
+    // Make the cluster split time of a large cluster half that of a regular
+    // cluster.
     private static final int PARTITION_CLUSTER_SPLIT_TIME_FACTOR = 2;
 
     private ArrayList<Cluster> mClusters;
@@ -78,7 +84,8 @@ public final class MediaClustering {
     public void setTimeRange(long timeRange, int numItems) {
         if (numItems != 0) {
             int meanItemsPerCluster = numItems / NUM_CLUSTERS_TARGETED;
-            // Heuristic to get min and max cluster size - half and double the desired items per cluster.
+            // Heuristic to get min and max cluster size - half and double the
+            // desired items per cluster.
             mMinClusterSize = meanItemsPerCluster / 2;
             mMaxClusterSize = meanItemsPerCluster * 2;
             mClusterSplitTime = timeRange / numItems * CLUSTER_SPLIT_MULTIPLIER;
@@ -117,20 +124,22 @@ public final class MediaClustering {
             boolean geographicallySeparateItem = false;
             boolean itemAddedToCurrentCluster = false;
 
-            // Determine if this item should go in the current cluster or be the start of a new cluster.
+            // Determine if this item should go in the current cluster or be the
+            // start of a new cluster.
             if (numCurrClusterItems == 0) {
                 mCurrCluster.addItem(currentItem);
             } else {
                 MediaItem prevItem = mCurrCluster.getLastItem();
-                if (timeDistance(prevItem, currentItem) < mClusterSplitTime) {
-                    mCurrCluster.addItem(currentItem);
-                    itemAddedToCurrentCluster = true;
-                } else if (isGeographicallySeparated(prevItem, currentItem)) {
+                if (isGeographicallySeparated(prevItem, currentItem)) {
                     mClusters.add(mCurrCluster);
                     geographicallySeparateItem = true;
                 } else if (numCurrClusterItems > mMaxClusterSize) {
                     splitAndAddCurrentCluster();
-                } else if (numClusters > 0 && numCurrClusterItems < mMinClusterSize && !mCurrCluster.mGeographicallySeparatedFromPrevCluster) {
+                } else if (timeDistance(prevItem, currentItem) < mClusterSplitTime) {
+                    mCurrCluster.addItem(currentItem);
+                    itemAddedToCurrentCluster = true;
+                } else if (numClusters > 0 && numCurrClusterItems < mMinClusterSize
+                        && !mCurrCluster.mGeographicallySeparatedFromPrevCluster) {
                     mergeAndAddCurrentCluster();
                 } else {
                     mClusters.add(mCurrCluster);
@@ -154,7 +163,8 @@ public final class MediaClustering {
             // The last cluster may potentially be too big or too small.
             if (numCurrClusterItems > mMaxClusterSize) {
                 splitAndAddCurrentCluster();
-            } else if (numClusters > 0 && numCurrClusterItems < mMinClusterSize && !mCurrCluster.mGeographicallySeparatedFromPrevCluster) {
+            } else if (numClusters > 0 && numCurrClusterItems < mMinClusterSize
+                    && !mCurrCluster.mGeographicallySeparatedFromPrevCluster) {
                 mergeAndAddCurrentCluster();
             } else {
                 mClusters.add(mCurrCluster);
@@ -180,7 +190,7 @@ public final class MediaClustering {
             mClusters.add(partitionedCluster);
         } else {
             mClusters.add(mCurrCluster);
-        }        
+        }
     }
 
     private int getPartitionIndexForCurrentCluster() {
@@ -196,7 +206,7 @@ public final class MediaClustering {
                 MediaItem prevItem = currClusterItems.get(i - 1);
                 MediaItem currItem = currClusterItems.get(i);
                 MediaItem nextItem = currClusterItems.get(i + 1);
-    
+
                 if (prevItem.isDateTakenValid() && currItem.isDateModifiedValid() && nextItem.isDateModifiedValid()) {
                     long diff1 = Math.abs(nextItem.mDateTakenInMs - currItem.mDateTakenInMs);
                     long diff2 = Math.abs(currItem.mDateTakenInMs - prevItem.mDateTakenInMs);
@@ -281,24 +291,33 @@ public final class MediaClustering {
                     String maxDay = DateFormat.format(MMDDYY_FORMAT, maxTimestamp).toString();
 
                     if (minDay.substring(4).equals(maxDay.substring(4))) {
-                        // The items are from the same year - show at least as much granularity as abbrev_all allows.
+                        // The items are from the same year - show at least as
+                        // much granularity as abbrev_all allows.
                         mName = DateUtils.formatDateRange(context, minTimestamp, maxTimestamp, DateUtils.FORMAT_ABBREV_ALL);
 
-                        // Get a more granular date range string if the min and max timestamp are on the same day and from the current year.
+                        // Get a more granular date range string if the min and
+                        // max timestamp are on the same day and from the
+                        // current year.
                         if (minDay.equals(maxDay)) {
                             int flags = DateUtils.FORMAT_ABBREV_MONTH | DateUtils.FORMAT_SHOW_DATE;
-                            // Contains the year only if the date does not correspond to the current year.
+                            // Contains the year only if the date does not
+                            // correspond to the current year.
                             String dateRangeWithOptionalYear = DateUtils.formatDateTime(context, minTimestamp, flags);
-                            String dateRangeWithYear = DateUtils.formatDateTime(context, minTimestamp, flags | DateUtils.FORMAT_SHOW_YEAR);
+                            String dateRangeWithYear = DateUtils.formatDateTime(context, minTimestamp, flags
+                                    | DateUtils.FORMAT_SHOW_YEAR);
                             if (!dateRangeWithOptionalYear.equals(dateRangeWithYear)) {
-                                // This means both dates are from the same year - show the time.
-                                // Not enough room to display the time range. Pick the mid-point.
+                                // This means both dates are from the same year
+                                // - show the time.
+                                // Not enough room to display the time range.
+                                // Pick the mid-point.
                                 long midTimestamp = (minTimestamp + maxTimestamp) / 2;
-                                mName = DateUtils.formatDateRange(context, midTimestamp, midTimestamp, DateUtils.FORMAT_SHOW_TIME | flags);
+                                mName = DateUtils.formatDateRange(context, midTimestamp, midTimestamp, DateUtils.FORMAT_SHOW_TIME
+                                        | flags);
                             }
                         }
                     } else {
-                        // The items are not from the same year - only show month and year.
+                        // The items are not from the same year - only show
+                        // month and year.
                         int flags = DateUtils.FORMAT_NO_MONTH_DAY | DateUtils.FORMAT_ABBREV_MONTH | DateUtils.FORMAT_SHOW_DATE;
                         mName = DateUtils.formatDateRange(context, minTimestamp, maxTimestamp, flags);
                     }
@@ -344,7 +363,8 @@ public final class MediaClustering {
 
     // Returns true if a, b are sufficiently geographically separated.
     private static boolean isGeographicallySeparated(MediaItem a, MediaItem b) {
-        // If a or b are null, a or b have the default latitude, longitude values or are close enough, return false.
+        // If a or b are null, a or b have the default latitude, longitude
+        // values or are close enough, return false.
         if (a != null && b != null && a.isLatLongValid() && b.isLatLongValid()) {
             int distance = (int) (LocationMediaFilter.toMile(LocationMediaFilter.distanceBetween(a.mLatitude, a.mLongitude,
                     b.mLatitude, b.mLongitude)) + 0.5);

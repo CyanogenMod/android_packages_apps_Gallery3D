@@ -13,9 +13,12 @@ public class MediaSet {
     public boolean mHasImages;
     public boolean mHasVideos;
 
-    // The type of the media set. A smart media set is an automatically generated media set. For example, the most recently
-    // viewed items media set is a media set that gets populated by the contents of a folder. A user defined media set
-    // is a set that is made by the user. This would typically correspond to media items belonging to an event.
+    // The type of the media set. A smart media set is an automatically
+    // generated media set. For example, the most recently
+    // viewed items media set is a media set that gets populated by the contents
+    // of a folder. A user defined media set
+    // is a set that is made by the user. This would typically correspond to
+    // media items belonging to an event.
     public int mType;
 
     // The min and max date taken and added at timestamps.
@@ -37,9 +40,11 @@ public class MediaSet {
     public double mMaxLonLatitude;
     public double mMaxLonLongitude = LocationMediaFilter.LON_MIN;
 
-    // Reverse geocoding the latitude, longitude and getting an address or location.
+    // Reverse geocoding the latitude, longitude and getting an address or
+    // location.
     public String mReverseGeocodedLocation;
-    // Set to true if at least one item in the set has a valid latitude and longitude.
+    // Set to true if at least one item in the set has a valid latitude and
+    // longitude.
     public boolean mLatLongDetermined = false;
     public boolean mReverseGeocodedLocationComputed = false;
     public boolean mReverseGeocodedLocationRequestMade = false;
@@ -56,8 +61,10 @@ public class MediaSet {
 
     private ArrayList<MediaItem> mItems;
     public int mNumItemsLoaded = 0;
-    // mNumExpectedItems is preset to how many items are expected to be in the set as it is used to visually
-    // display the number of items in the set and we don't want this display to keep changing as items get loaded.
+    // mNumExpectedItems is preset to how many items are expected to be in the
+    // set as it is used to visually
+    // display the number of items in the set and we don't want this display to
+    // keep changing as items get loaded.
     private int mNumExpectedItems = 0;
     private boolean mNumExpectedItemsCountAccurate = false;
 
@@ -77,7 +84,8 @@ public class MediaSet {
     }
 
     /**
-     * @return underlying ArrayList of MediaItems. Use only for iteration (read operations) on the ArrayList.
+     * @return underlying ArrayList of MediaItems. Use only for iteration (read
+     *         operations) on the ArrayList.
      */
     public ArrayList<MediaItem> getItems() {
         return mItems;
@@ -92,7 +100,7 @@ public class MediaSet {
     public int getNumExpectedItems() {
         return mNumExpectedItems;
     }
-    
+
     public boolean setContainsValidItems() {
         if (mNumExpectedItems == 0)
             return false;
@@ -131,7 +139,8 @@ public class MediaSet {
         mTitleString = mName + size;
         if (truncateTitle) {
             int length = mName.length();
-            mTruncTitleString = (length > 16) ? mName.substring(0, 12) + "..." + mName.substring(length - 4, length) + size : mName + size;
+            mTruncTitleString = (length > 16) ? mName.substring(0, 12) + "..." + mName.substring(length - 4, length) + size : mName
+                    + size;
             mNoCountTitleString = mName;
         } else {
             mTruncTitleString = mTitleString;
@@ -139,11 +148,13 @@ public class MediaSet {
     }
 
     /**
-     * Adds a MediaItem to this set, and increments the load count. Additionally, it also recomputes
-     * the location bounds and time range of the media set.
+     * Adds a MediaItem to this set, and increments the load count.
+     * Additionally, it also recomputes the location bounds and time range of
+     * the media set.
      */
     public void addItem(final MediaItem item) {
-        // Important to not set the parentMediaSet in here as temporary MediaSet's are occasionally
+        // Important to not set the parentMediaSet in here as temporary
+        // MediaSet's are occasionally
         // created and we do not want the MediaItem updated as a result of that.
         if (mItems.size() == 0) {
             mItems.add(item);
@@ -173,10 +184,11 @@ public class MediaSet {
             }
             if (dateAdded > mMaxAddedTimestamp) {
                 mMaxAddedTimestamp = dateAdded;
-            }            
+            }
         }
 
-        // Determining the latitude longitude bounds of the set and setting the location string.
+        // Determining the latitude longitude bounds of the set and setting the
+        // location string.
         if (!item.isLatLongValid()) {
             return;
         }
@@ -207,7 +219,8 @@ public class MediaSet {
     /**
      * Removes a MediaItem if present in the MediaSet.
      * 
-     * @return true if the item was removed, false if removal failed or item was not present in the set.
+     * @return true if the item was removed, false if removal failed or item was
+     *         not present in the set.
      */
     public boolean removeItem(final MediaItem itemToRemove) {
         if (mItems.remove(itemToRemove)) {
@@ -251,11 +264,13 @@ public class MediaSet {
      */
     public boolean isPicassaSet() {
         // 2 cases:-
-        // 1. This set is just a Picassa Album, and all its items are therefore from Picassa.
-        // 2. This set is a random collection of items and each item is a Picassa item.
+        // 1. This set is just a Picassa Album, and all its items are therefore
+        // from Picassa.
+        // 2. This set is a random collection of items and each item is a
+        // Picassa item.
         if (isPicassaAlbum()) {
             return true;
-        } 
+        }
         int numItems = mItems.size();
         for (int i = 0; i < numItems; i++) {
             if (!mItems.get(i).isPicassaItem()) {

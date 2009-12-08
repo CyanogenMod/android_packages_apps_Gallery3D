@@ -25,8 +25,9 @@ import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
 /**
- * A 2D rectangular mesh. Can be drawn textured or untextured. This version is modified from the original Grid.java (found in the
- * SpriteText package in the APIDemos Android sample) to support hardware vertex buffers.
+ * A 2D rectangular mesh. Can be drawn textured or untextured. This version is
+ * modified from the original Grid.java (found in the SpriteText package in the
+ * APIDemos Android sample) to support hardware vertex buffers.
  */
 final class GridQuadMesh {
     private FloatBuffer mVertexBuffer;
@@ -147,8 +148,9 @@ final class GridQuadMesh {
     }
 
     /**
-     * When the OpenGL ES device is lost, GL handles become invalidated. In that case, we just want to "forget" the old handles
-     * (without explicitly deleting them) and make new ones.
+     * When the OpenGL ES device is lost, GL handles become invalidated. In that
+     * case, we just want to "forget" the old handles (without explicitly
+     * deleting them) and make new ones.
      */
     public void forgetHardwareBuffers() {
         mVertBufferIndex = 0;
@@ -179,9 +181,10 @@ final class GridQuadMesh {
     }
 
     /**
-     * Allocates hardware buffers on the graphics card and fills them with data if a buffer has not already been previously
-     * allocated. Note that this function uses the GL_OES_vertex_buffer_object extension, which is not guaranteed to be supported on
-     * every device.
+     * Allocates hardware buffers on the graphics card and fills them with data
+     * if a buffer has not already been previously allocated. Note that this
+     * function uses the GL_OES_vertex_buffer_object extension, which is not
+     * guaranteed to be supported on every device.
      * 
      * @param gl
      *            A pointer to the OpenGL ES context.

@@ -75,7 +75,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
         mBackgroundRect = new Rect();
         SRC_PAINT.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
     }
-    
+
     public void regenerateStringsForContext(Context context) {
         // Create textures for month names.
         String[] months = context.getResources().getStringArray(R.array.months_abbreviated);
@@ -234,14 +234,12 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
                         if (month != lastMonth) {
                             lastMonth = month;
                             lastDayBlock = -1;
-                            marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock,
-                                    Marker.TYPE_MONTH, increment);
+                            marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock, Marker.TYPE_MONTH, increment);
                             dx = addMarker(marker);
                         } else if (dayBlock != lastDayBlock) {
                             lastDayBlock = dayBlock;
                             if (dayBlock != 0) {
-                                marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock,
-                                        Marker.TYPE_DAY, increment);
+                                marker = new Marker(dx, time.getTimeInMillis(), year, month, dayBlock, Marker.TYPE_DAY, increment);
                                 dx = addMarker(marker);
                             }
                         } else {
@@ -288,13 +286,15 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     }
 
     /*
-     * private float getKnobXForPosition(float position) { return position * (mTotalWidth - mKnob.getWidth()); }
+     * private float getKnobXForPosition(float position) { return position *
+     * (mTotalWidth - mKnob.getWidth()); }
      * 
-     * private float getPositionForKnobX(float knobX) { return Math.max(0f, Math.min(1f, knobX / (mTotalWidth - mKnob.getWidth())));
+     * private float getPositionForKnobX(float knobX) { return Math.max(0f,
+     * Math.min(1f, knobX / (mTotalWidth - mKnob.getWidth()))); }
+     * 
+     * private float getScrollForPosition(float position) { return position *
+     * (mTotalWidth - mWidth);// - (1f - 2f * position) * MARKER_SPACING_PIXELS;
      * }
-     * 
-     * private float getScrollForPosition(float position) { return position * (mTotalWidth - mWidth);// - (1f - 2f * position) *
-     * MARKER_SPACING_PIXELS; }
      */
 
     private float getScrollForPosition(float position) {

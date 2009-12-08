@@ -12,7 +12,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 
 public class RandomDataSource implements Slideshow.DataSource {
-    
+
     public Bitmap getBitmapForIndex(Context context, int currentSlideshowCounter) {
         ImageList list = CacheService.getImageList(context);
         // Once we have the id and the thumbid, we can return a bitmap
