@@ -162,7 +162,8 @@ public class UriTexture extends Texture {
                     }
                     HttpEntity entity = httpResponse.getEntity();
                     if (entity != null) {
-                        // Wrap the entity input stream in a GZIP decoder if necessary.
+                        // Wrap the entity input stream in a GZIP decoder if
+                        // necessary.
                         contentInput = entity.getContent();
                     }
                 }
@@ -237,7 +238,7 @@ public class UriTexture extends Texture {
             return null;
         }
     }
-    
+
     public static String writeHttpDataInDirectory(Context context, String uri, String path) {
         long crc64 = Utils.Crc64Long(uri);
         if (!isCached(crc64, 1024)) {
@@ -286,7 +287,7 @@ public class UriTexture extends Texture {
             }
         }
     }
-    
+
     public static void invalidateCache(long crc64, int maxResolution) {
         String file = createFilePathFromCrc64(crc64, maxResolution);
         if (file != null && crc64 != 0) {

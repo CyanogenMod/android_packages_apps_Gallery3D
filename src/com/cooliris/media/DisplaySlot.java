@@ -44,6 +44,10 @@ public final class DisplaySlot {
         mTitle = null;
         mTitleImage = null;
         mLocationImage = null;
+        if (set.mReverseGeocodedLocation == null) {
+            set.mReverseGeocodedLocationRequestMade = false;
+            set.mReverseGeocodedLocationComputed = false;
+        }
     }
 
     public MediaSet getMediaSet() {
@@ -58,7 +62,8 @@ public final class DisplaySlot {
         }
     }
 
-    private StringTexture getTextureForString(String string, HashMap<String, StringTexture> textureTable, StringTexture.Config config) {
+    private StringTexture getTextureForString(String string, HashMap<String, StringTexture> textureTable,
+            StringTexture.Config config) {
         StringTexture texture = null;
         if (textureTable != null && textureTable.containsKey(string)) {
             texture = textureTable.get(string);
@@ -79,7 +84,8 @@ public final class DisplaySlot {
         StringTexture texture = mTitleImage;
         String title = mSetRef.mTruncTitleString;
         if (texture == null && title != null && !(title.equals(mTitle))) {
-            texture = getTextureForString(title, textureTable, ((mSetRef.mId != Shared.INVALID && mSetRef.mId != 0) ? CAPTION_STYLE : CLUSTER_STYLE));
+            texture = getTextureForString(title, textureTable, ((mSetRef.mId != Shared.INVALID && mSetRef.mId != 0) ? CAPTION_STYLE
+                    : CLUSTER_STYLE));
             mTitleImage = texture;
             mTitle = title;
         }
@@ -99,7 +105,7 @@ public final class DisplaySlot {
                 String geocodedLocation = mSetRef.mReverseGeocodedLocation;
                 if (geocodedLocation != null) {
                     mLocation = geocodedLocation;
-                    mLocationImage = getTextureForString(mLocation, textureTable, LOCATION_STYLE);                  
+                    mLocationImage = getTextureForString(mLocation, textureTable, LOCATION_STYLE);
                 }
             }
         }

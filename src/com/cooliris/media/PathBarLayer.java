@@ -26,7 +26,7 @@ public final class PathBarLayer extends Layer {
         mComponents.add(new Component(icon, label, action, 0));
         recomputeComponents();
     }
-    
+
     public void setAnimatedIcons(final int[] icons) {
         final int numComponents = mComponents.size();
         for (int i = 0; i < numComponents; ++i) {
@@ -50,7 +50,7 @@ public final class PathBarLayer extends Layer {
             pushLabel(component.icon, label, component.action);
         }
     }
-    
+
     public String getCurrentLabel() {
         final ArrayList<Component> components = mComponents;
         int lastIndex = components.size() - 1;
@@ -189,10 +189,10 @@ public final class PathBarLayer extends Layer {
             float xOffset = 5 * Gallery.PIXEL_DENSITY;
             // Draw the label.
             final int[] icons = component.animatedIcons;
-            
+
             // Cycles animated icons.
-            final int iconId = (icons != null && icons.length > 0) ? icons[(int) (component.timeElapsed * 20.0f)
-                    % icons.length] : component.icon;
+            final int iconId = (icons != null && icons.length > 0) ? icons[(int) (component.timeElapsed * 20.0f) % icons.length]
+                    : component.icon;
             final Texture icon = view.getResource(iconId);
             if (icon != null) {
                 view.loadTexture(icon);

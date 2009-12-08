@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public final class ArrayUtils {
-    public static final void computeSortedIntersection(ArrayList<MediaItem> firstList, final ArrayList<MediaItem> secondList, int maxSize,
-            ArrayList<MediaItem> intersectionList, MediaItem[] hash) {
+    public static final void computeSortedIntersection(ArrayList<MediaItem> firstList, final ArrayList<MediaItem> secondList,
+            int maxSize, ArrayList<MediaItem> intersectionList, MediaItem[] hash) {
         // Assumes that firstList is generally larger than the second list.
         // Build a simple filter to speed up containment testing.
         int mask = hash.length - 1;
@@ -22,9 +22,10 @@ public final class ArrayUtils {
         for (int i = 0; i < firstListSize; ++i) {
             MediaItem firstListItem = firstList.get(i);
             if (firstListItem == null)
-            	continue;
+                continue;
             MediaItem hashItem = (hash != null) ? hash[firstListItem.hashCode() & mask] : null;
-            if (hashItem != null && ((hashItem.mId != Shared.INVALID && hashItem.mId == firstListItem.mId) || contains(secondList, firstListItem))) {
+            if (hashItem != null
+                    && ((hashItem.mId != Shared.INVALID && hashItem.mId == firstListItem.mId) || contains(secondList, firstListItem))) {
                 intersectionList.add(firstListItem);
                 if (--maxSize == 0) {
                     break;
@@ -49,12 +50,12 @@ public final class ArrayUtils {
         return false;
     }
 
-	public static void clear(Object[] array) {
-		int length = array.length;
-		for (int i = 0; i < length; i++) {
-			array[i] = null;
-		}
-	}
+    public static void clear(Object[] array) {
+        int length = array.length;
+        for (int i = 0; i < length; i++) {
+            array[i] = null;
+        }
+    }
 
     public static final boolean contains(ArrayList<MediaItem> items, MediaItem item) {
         final int numItems = items.size();

@@ -40,8 +40,7 @@ public class PhotoAppWidgetConfigure extends Activity {
         // Someone is requesting that we configure the given mAppWidgetId, which
         // means we prompt the user to pick and crop a photo.
 
-        mAppWidgetId = getIntent().getIntExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_ID, -1);
+        mAppWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1);
         if (mAppWidgetId == -1) {
             setResult(Activity.RESULT_CANCELED);
             finish();
@@ -63,8 +62,7 @@ public class PhotoAppWidgetConfigure extends Activity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK && mAppWidgetId != -1) {
             // Store the cropped photo in our database
             Bitmap bitmap = (Bitmap) data.getParcelableExtra("data");
@@ -74,12 +72,9 @@ public class PhotoAppWidgetConfigure extends Activity {
                 resultCode = Activity.RESULT_OK;
 
                 // Push newly updated widget to surface
-                RemoteViews views = PhotoAppWidgetProvider.buildUpdate(this,
-                        mAppWidgetId, helper);
-                AppWidgetManager appWidgetManager =
-                        AppWidgetManager.getInstance(this);
-                appWidgetManager.updateAppWidget(new int[] {mAppWidgetId},
-                                                 views);
+                RemoteViews views = PhotoAppWidgetProvider.buildUpdate(this, mAppWidgetId, helper);
+                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(this);
+                appWidgetManager.updateAppWidget(new int[] { mAppWidgetId }, views);
             }
             helper.close();
         } else {
@@ -94,4 +89,3 @@ public class PhotoAppWidgetConfigure extends Activity {
     }
 
 }
-

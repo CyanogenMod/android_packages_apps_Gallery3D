@@ -27,8 +27,8 @@ import android.database.DataSetObserver;
 import android.util.Log;
 
 /**
- * A variant of MergeCursor that sorts the cursors being merged. If decent performance is ever obtained, it can be put back under
- * android.database.
+ * A variant of MergeCursor that sorts the cursors being merged. If decent
+ * performance is ever obtained, it can be put back under android.database.
  */
 public class SortCursor extends AbstractCursor {
     private static final String TAG = "SortCursor";
@@ -129,9 +129,11 @@ public class SortCursor extends AbstractCursor {
             return true;
 
         /*
-         * Find the right cursor Because the client of this cursor (the listadapter/view) tends to jump around in the cursor
-         * somewhat, a simple cache strategy is used to avoid having to search all cursors from the start. TODO: investigate
-         * strategies for optimizing random access and reverse-order access.
+         * Find the right cursor Because the client of this cursor (the
+         * listadapter/view) tends to jump around in the cursor somewhat, a
+         * simple cache strategy is used to avoid having to search all cursors
+         * from the start. TODO: investigate strategies for optimizing random
+         * access and reverse-order access.
          */
 
         int cache_entry = newPosition % ROWCACHESIZE;

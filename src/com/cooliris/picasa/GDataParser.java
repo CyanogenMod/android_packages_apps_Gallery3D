@@ -17,13 +17,13 @@ public final class GDataParser implements ContentHandler {
     public static final String GML_NAMESPACE = "http://www.opengis.net/gml";
     private static final String FEED_ELEMENT = "feed";
     private static final String ENTRY_ELEMENT = "entry";
-  
+
     private static final int STATE_DOCUMENT = 0;
     private static final int STATE_FEED = 1;
     private static final int STATE_ENTRY = 2;
-    
+
     private static final int NUM_LEVELS = 5;
-    
+
     private Entry mEntry = null;
     private EntryHandler mHandler = null;
     private int mState = STATE_DOCUMENT;
@@ -32,77 +32,77 @@ public final class GDataParser implements ContentHandler {
     private String[] mName = new String[NUM_LEVELS];
     private AttributesImpl[] mAttributes = new AttributesImpl[NUM_LEVELS];
     private final StringBuilder mValue = new StringBuilder(128);
-    
+
     public interface EntryHandler {
         void handleEntry(Entry entry);
     }
-    
+
     public GDataParser() {
         AttributesImpl[] attributes = mAttributes;
         for (int i = 0; i != NUM_LEVELS; ++i) {
             attributes[i] = new AttributesImpl();
         }
     }
-    
+
     public void setEntry(Entry entry) {
         mEntry = entry;
     }
-    
+
     public void setHandler(EntryHandler handler) {
         mHandler = handler;
     }
-    
+
     public static long parseAtomTimestamp(String timestamp) {
         Time time = new Time();
         time.parse3339(timestamp);
         return time.toMillis(true);
     }
-    
+
     public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
         switch (mState) {
-            case STATE_DOCUMENT:
-                // Expect an atom:feed element.
-                if (uri.equals(ATOM_NAMESPACE) && localName.equals(FEED_ELEMENT)) {
-                    mState = STATE_FEED;
-                } else {
-                    throw new SAXException();
-                }
-                break;
-            case STATE_FEED:
-                // Expect a feed property element or an atom:entry element.
-                if (uri.equals(ATOM_NAMESPACE) && localName.equals(ENTRY_ELEMENT)) {
-                    mState = STATE_ENTRY;
-                    mEntry.clear();
-                } else {
-                    startProperty(uri, localName, attrs);
-                }
-                break;
-            case STATE_ENTRY:
+        case STATE_DOCUMENT:
+            // Expect an atom:feed element.
+            if (uri.equals(ATOM_NAMESPACE) && localName.equals(FEED_ELEMENT)) {
+                mState = STATE_FEED;
+            } else {
+                throw new SAXException();
+            }
+            break;
+        case STATE_FEED:
+            // Expect a feed property element or an atom:entry element.
+            if (uri.equals(ATOM_NAMESPACE) && localName.equals(ENTRY_ELEMENT)) {
+                mState = STATE_ENTRY;
+                mEntry.clear();
+            } else {
                 startProperty(uri, localName, attrs);
-                break;
+            }
+            break;
+        case STATE_ENTRY:
+            startProperty(uri, localName, attrs);
+            break;
         }
     }
-    
+
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (mLevel > 0) {
             // Handle property exit.
             endProperty();
-        } else {        
+        } else {
             // Handle state exit.
             switch (mState) {
-                case STATE_DOCUMENT:
-                    throw new SAXException();
-                case STATE_FEED:
-                    mState = STATE_DOCUMENT;
-                    break;
-                case STATE_ENTRY:
-                    mState = STATE_FEED;
-                    mHandler.handleEntry(mEntry);
-                    break;
+            case STATE_DOCUMENT:
+                throw new SAXException();
+            case STATE_FEED:
+                mState = STATE_DOCUMENT;
+                break;
+            case STATE_ENTRY:
+                mState = STATE_FEED;
+                mHandler.handleEntry(mEntry);
+                break;
             }
         }
     }
-    
+
     private void startProperty(String uri, String localName, Attributes attrs) {
         // Push element information onto the property stack.
         int level = mLevel + 1;
@@ -137,7 +137,7 @@ public final class GDataParser implements ContentHandler {
     }
 
     public void skippedEntity(String name) throws SAXException {
-        // Ignored. 
+        // Ignored.
     }
 
     public void startDocument() throws SAXException {
@@ -151,7 +151,7 @@ public final class GDataParser implements ContentHandler {
     public void startPrefixMapping(String prefix, String uri) throws SAXException {
         // Ignored.
     }
-    
+
     public void endPrefixMapping(String prefix) throws SAXException {
         // Ignored.
     }

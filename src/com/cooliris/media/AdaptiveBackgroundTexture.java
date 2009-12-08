@@ -51,7 +51,7 @@ public final class AdaptiveBackgroundTexture extends Texture {
     protected boolean shouldQueue() {
         return true;
     }
-    
+
     @Override
     public boolean isCached() {
         return true;
@@ -59,13 +59,14 @@ public final class AdaptiveBackgroundTexture extends Texture {
 
     @Override
     protected Bitmap load(RenderView view) {
-        // Determine a crop rectangle for the source image that is the aspect ratio of the destination.
+        // Determine a crop rectangle for the source image that is the aspect
+        // ratio of the destination.
         Bitmap source = mSource;
         if (source == null) {
             if (mBaseTexture != null) {
                 source = mBaseTexture.load(view);
                 if (source == null) {
-                	return null;
+                    return null;
                 }
             } else {
                 return null;
@@ -76,8 +77,8 @@ public final class AdaptiveBackgroundTexture extends Texture {
         int sourceHeight = source.getHeight();
         int destWidth = mWidth;
         int destHeight = mHeight;
-        float fitX = (float)sourceWidth / (float)destWidth;
-        float fitY = (float)sourceHeight / (float)destHeight;
+        float fitX = (float) sourceWidth / (float) destWidth;
+        float fitY = (float) sourceHeight / (float) destHeight;
         float scale;
         int cropX;
         int cropY;
@@ -86,7 +87,7 @@ public final class AdaptiveBackgroundTexture extends Texture {
         if (fitX < fitY) {
             // Full width, partial height.
             cropWidth = sourceWidth;
-            cropHeight = (int)(destHeight * fitX);
+            cropHeight = (int) (destHeight * fitX);
             cropX = 0;
             cropY = (sourceHeight - cropHeight) / 2;
             scale = 1.0f / fitX;
@@ -107,9 +108,12 @@ public final class AdaptiveBackgroundTexture extends Texture {
         // Get the source pixels as 32-bit ARGB.
         source.getPixels(in, 0, cropWidth, cropX, cropY, cropWidth, cropHeight);
 
-        // Box blur is a separable kernel, so it is decomposed into a horizontal and vertical pass.
-        // The filter function applies the kernel across each row and transposes the output.
-        // Hence we apply it twice to provide efficient horizontal and vertical convolution.
+        // Box blur is a separable kernel, so it is decomposed into a horizontal
+        // and vertical pass.
+        // The filter function applies the kernel across each row and transposes
+        // the output.
+        // Hence we apply it twice to provide efficient horizontal and vertical
+        // convolution.
         // The filter discards the alpha channel.
         boxBlurFilter(in, tmp, cropWidth, cropHeight, cropWidth);
         boxBlurFilter(tmp, in, cropHeight, cropWidth, START_FADE_X);
@@ -127,7 +131,7 @@ public final class AdaptiveBackgroundTexture extends Texture {
         canvas.scale(scale, scale);
         canvas.drawBitmap(filtered, 0f, 0f, paint);
         filtered.recycle();
-        
+
         // Clear the texture
         mBaseTexture = null;
         return output;
@@ -151,9 +155,10 @@ public final class AdaptiveBackgroundTexture extends Texture {
             int alpha = (y < startFadeX) ? 0xff : ((height - y - 1) * MAX_COLOR_VALUE / (height - startFadeX));
             // Compute output values for the row.
             int outPos = y;
-            for (int x = 0; x != width; ++x) {  // CR: x < width
+            for (int x = 0; x != width; ++x) { // CR: x < width
                 // Output the current pixel.
-                out[outPos] = (alpha << 24) | (KERNEL_NORM[red] << RED_MASK_SHIFT) | (KERNEL_NORM[green] << GREEN_MASK_SHIFT) | KERNEL_NORM[blue];
+                out[outPos] = (alpha << 24) | (KERNEL_NORM[red] << RED_MASK_SHIFT) | (KERNEL_NORM[green] << GREEN_MASK_SHIFT)
+                        | KERNEL_NORM[blue];
                 // Slide to the next pixel, adding the new rightmost pixel and
                 // subtracting the former leftmost.
                 int prevX = FloatUtils.clamp(x - RADIUS, 0, maxX);

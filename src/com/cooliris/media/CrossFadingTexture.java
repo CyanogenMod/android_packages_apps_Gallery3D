@@ -15,8 +15,9 @@ public class CrossFadingTexture {
     private boolean mBind = false;
     private boolean mFadeNecessary = false;
 
-    public CrossFadingTexture() { }
-    
+    public CrossFadingTexture() {
+    }
+
     public CrossFadingTexture(Texture initialTexture) {
         mMixRatio = 1.0f;
         mAnimatedMixRatio = 1.0f;
@@ -43,7 +44,7 @@ public class CrossFadingTexture {
     }
 
     public void setTexture(Texture texture) {
-        if (mTexture == texture || texture == null || (mAnimatedMixRatio > 0.0f && mAnimatedMixRatio < 1.0f)) {
+        if (mTexture == texture || texture == null || mAnimatedMixRatio < 1.0f) {
             return;
         }
         mFadeNecessary = false;
@@ -80,10 +81,10 @@ public class CrossFadingTexture {
             return false;
         }
     }
-    
+
     public boolean bind(RenderView view, GL11 gl) {
         if (mBind) {
-            return true;  // Already bound.
+            return true; // Already bound.
         }
         if (mFadingTexture != null && mFadingTexture.mState == Texture.STATE_ERROR) {
             mFadingTexture = null;
@@ -115,8 +116,8 @@ public class CrossFadingTexture {
         mBind = true;
         if (mAnimatedMixRatio <= 0.0f && fadingTextureLoaded) {
             view.bind(mFadingTexture);
-        } else if (mAnimatedMixRatio >= 1.0f || !fadingTextureLoaded ||
-                view.getAlpha() < mAnimatedMixRatio || mFadingTexture == mTexture) {
+        } else if (mAnimatedMixRatio >= 1.0f || !fadingTextureLoaded || view.getAlpha() < mAnimatedMixRatio
+                || mFadingTexture == mTexture) {
             view.bind(mTexture);
         } else {
             mBindUsingMixed = true;

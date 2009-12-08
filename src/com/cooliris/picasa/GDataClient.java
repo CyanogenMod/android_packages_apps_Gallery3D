@@ -38,8 +38,7 @@ public final class GDataClient {
     public static final HttpParams HTTP_PARAMS;
     public static final ThreadSafeClientConnManager HTTP_CONNECTION_MANAGER;
 
-    private final DefaultHttpClient mHttpClient = new DefaultHttpClient(HTTP_CONNECTION_MANAGER,
-                                                                        HTTP_PARAMS);
+    private final DefaultHttpClient mHttpClient = new DefaultHttpClient(HTTP_CONNECTION_MANAGER, HTTP_PARAMS);
     private String mAuthToken;
 
     static {
@@ -69,13 +68,12 @@ public final class GDataClient {
     public void setAuthToken(String authToken) {
         mAuthToken = authToken;
     }
-    
+
     public void get(String feedUrl, Operation operation) throws IOException {
         callMethod(new HttpGet(feedUrl), operation);
     }
 
-    public void post(String feedUrl, byte[] data, String contentType, Operation operation)
-            throws IOException {
+    public void post(String feedUrl, byte[] data, String contentType, Operation operation) throws IOException {
         ByteArrayEntity entity = getCompressedEntity(data);
         entity.setContentType(contentType);
         HttpPost post = new HttpPost(feedUrl);
@@ -83,8 +81,7 @@ public final class GDataClient {
         callMethod(post, operation);
     }
 
-    public void put(String feedUrl, byte[] data, String contentType, Operation operation)
-            throws IOException {
+    public void put(String feedUrl, byte[] data, String contentType, Operation operation) throws IOException {
         ByteArrayEntity entity = getCompressedEntity(data);
         entity.setContentType(contentType);
         HttpPost post = new HttpPost(feedUrl);
@@ -93,8 +90,7 @@ public final class GDataClient {
         callMethod(post, operation);
     }
 
-    public void putStream(String feedUrl, InputStream stream, String contentType,
-                          Operation operation) throws IOException {
+    public void putStream(String feedUrl, InputStream stream, String contentType, Operation operation) throws IOException {
         InputStreamEntity entity = new InputStreamEntity(stream, -1);
         entity.setContentType(contentType);
         HttpPost post = new HttpPost(feedUrl);
@@ -111,8 +107,7 @@ public final class GDataClient {
         callMethod(post, operation);
     }
 
-    private void callMethod(HttpUriRequest request, Operation operation)
-            throws IOException {
+    private void callMethod(HttpUriRequest request, Operation operation) throws IOException {
         // Specify GData protocol version 2.0.
         request.addHeader("GData-Version", "2");
 
@@ -156,7 +151,7 @@ public final class GDataClient {
                 }
             }
         }
-        
+
         // Return the stream if successful.
         Header etagHeader = httpResponse.getFirstHeader("ETag");
         operation.outStatus = status;

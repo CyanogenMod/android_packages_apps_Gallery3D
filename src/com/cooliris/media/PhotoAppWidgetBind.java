@@ -30,8 +30,7 @@ import java.util.ArrayList;
 
 public class PhotoAppWidgetBind extends Activity {
     private static final String TAG = "PhotoAppWidgetBind";
-    private static final String EXTRA_APPWIDGET_BITMAPS =
-            "com.android.camera.appwidgetbitmaps";
+    private static final String EXTRA_APPWIDGET_BITMAPS = "com.android.camera.appwidgetbitmaps";
 
     @Override
     protected void onCreate(Bundle icicle) {
@@ -47,13 +46,10 @@ public class PhotoAppWidgetBind extends Activity {
         final Intent intent = getIntent();
         final Bundle extras = intent.getExtras();
 
-        final int[] appWidgetIds =
-                extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-        final ArrayList<Bitmap> bitmaps =
-                extras.getParcelableArrayList(EXTRA_APPWIDGET_BITMAPS);
+        final int[] appWidgetIds = extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS);
+        final ArrayList<Bitmap> bitmaps = extras.getParcelableArrayList(EXTRA_APPWIDGET_BITMAPS);
 
-        if (appWidgetIds == null || bitmaps == null
-                || appWidgetIds.length != bitmaps.size()) {
+        if (appWidgetIds == null || bitmaps == null || appWidgetIds.length != bitmaps.size()) {
             Log.e(TAG, "Problem parsing photo widget bind request");
             return;
         }
@@ -66,12 +62,9 @@ public class PhotoAppWidgetBind extends Activity {
             helper.setPhoto(appWidgetId, bitmaps.get(i));
 
             // Push newly updated widget to surface
-            RemoteViews views =
-                    PhotoAppWidgetProvider.buildUpdate(this, appWidgetId,
-                    helper);
+            RemoteViews views = PhotoAppWidgetProvider.buildUpdate(this, appWidgetId, helper);
             appWidgetManager.updateAppWidget(new int[] { appWidgetId }, views);
         }
         helper.close();
     }
 }
-

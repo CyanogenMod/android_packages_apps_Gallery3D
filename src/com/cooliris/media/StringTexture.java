@@ -22,9 +22,9 @@ public final class StringTexture extends Texture {
     private static final Paint sPaint = new Paint();
 
     public static int computeTextWidthForConfig(String string, Config config) {
-    	return computeTextWidthForConfig(config.fontSize, config.bold ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT, string);
+        return computeTextWidthForConfig(config.fontSize, config.bold ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT, string);
     }
-    
+
     public static int computeTextWidthForConfig(float textSize, Typeface typeface, String string) {
         Paint paint = sPaint;
         synchronized (paint) {
@@ -32,7 +32,7 @@ public final class StringTexture extends Texture {
             paint.setTypeface(typeface);
             paint.setTextSize(textSize);
             // 10 pixel buffer to compensate for the shade at the end.
-            return (int)(10.0f * Gallery.PIXEL_DENSITY) + (int)FloatMath.ceil(paint.measureText(string));
+            return (int) (10.0f * Gallery.PIXEL_DENSITY) + (int) FloatMath.ceil(paint.measureText(string));
         }
     }
 
@@ -64,7 +64,7 @@ public final class StringTexture extends Texture {
     public StringTexture(String string, Config config) {
         this(string, config, config.width, config.height);
     }
-    
+
     public StringTexture(String string, Config config, int width, int height) {
         mString = string;
         mConfig = config;
@@ -83,7 +83,7 @@ public final class StringTexture extends Texture {
             return 0;
         }
     }
-    
+
     @Override
     public boolean isCached() {
         return true;
@@ -156,64 +156,65 @@ public final class StringTexture extends Texture {
         int descent = metrics.descent + padding;
         int backWidth = mWidth;
         int backHeight = mHeight;
-        
+
         String string = mString;
         Rect bounds = new Rect();
         paint.getTextBounds(string, 0, string.length(), bounds);
-        
+
         if (config.sizeMode == Config.SIZE_BOUNDS_TO_TEXT) {
             // do something else
             backWidth = bounds.width() + 2 * padding;
             int height = descent - ascent;
             backHeight = height + padding;
-        } 
+        }
         if (backWidth <= 0 || backHeight <= 0)
             return null;
         Bitmap bitmap = Bitmap.createBitmap(backWidth, backHeight, bmConfig);
         Canvas canvas = new Canvas(bitmap);
         // for top
-        int x = (config.xalignment == Config.ALIGN_LEFT) ? padding
-                : (config.xalignment == Config.ALIGN_RIGHT ? backWidth - padding : backWidth / 2);
+        int x = (config.xalignment == Config.ALIGN_LEFT) ? padding : (config.xalignment == Config.ALIGN_RIGHT ? backWidth - padding
+                : backWidth / 2);
         int y = (config.yalignment == Config.ALIGN_TOP) ? -metrics.top + padding
                 : ((config.yalignment == Config.ALIGN_BOTTOM) ? (backHeight - descent)
                         : ((int) backHeight - (descent + ascent)) / 2);
         // bitmap.eraseColor(0xff00ff00);
         canvas.drawText(stringToDraw, x, y, paint);
-        
+
         if (bounds.width() > backWidth && config.overflowMode == Config.OVERFLOW_FADE) {
-            // Fade the right edge of the string if the text overflows. TODO: BIDI text should fade on the left.
+            // Fade the right edge of the string if the text overflows. TODO:
+            // BIDI text should fade on the left.
             float gradientLeft = backWidth - Config.FADE_WIDTH;
-            LinearGradient gradient = new LinearGradient(gradientLeft, 0, backWidth, 0, 0xffffffff,
-                    0x00ffffff, Shader.TileMode.CLAMP);
+            LinearGradient gradient = new LinearGradient(gradientLeft, 0, backWidth, 0, 0xffffffff, 0x00ffffff,
+                    Shader.TileMode.CLAMP);
             paint = new Paint();
             paint.setShader(gradient);
             paint.setDither(true);
             paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
             canvas.drawRect(gradientLeft, 0, backWidth, backHeight, paint);
         }
-        
+
         mBaselineHeight = padding + metrics.bottom;
         return bitmap;
     }
-    
+
     public static final class Config {
         public static final int SIZE_EXACT = 0;
         public static final int SIZE_TEXT_TO_BOUNDS = 1;
         public static final int SIZE_BOUNDS_TO_TEXT = 2;
-        
+
         public static final int OVERFLOW_CLIP = 0;
         public static final int OVERFLOW_ELLIPSIZE = 1;
         public static final int OVERFLOW_FADE = 2;
-        
+
         public static final int ALIGN_HCENTER = 0;
         public static final int ALIGN_LEFT = 1;
         public static final int ALIGN_RIGHT = 2;
         public static final int ALIGN_TOP = 3;
         public static final int ALIGN_BOTTOM = 4;
         public static final int ALIGN_VCENTER = 5;
-        
+
         private static final int FADE_WIDTH = 30;
-        
+
         public static final Config DEFAULT_CONFIG_SCALED = new Config();
         public static final Config DEFAULT_CONFIG_TRUNCATED = new Config(SIZE_TEXT_TO_BOUNDS);
 
@@ -222,12 +223,13 @@ public final class StringTexture extends Texture {
         public float g = 1f;
         public float b = 1f;
         public float a = 1f;
-        public int shadowRadius = 4 * (int)Gallery.PIXEL_DENSITY;
+        public int shadowRadius = 4 * (int) Gallery.PIXEL_DENSITY;
         public boolean underline = false;
         public boolean bold = false;
         public boolean italic = false;
         public boolean strikeThrough = false;
-        public int width = 256;  // TODO: there is no good default for this, require explicit specification.
+        public int width = 256; // TODO: there is no good default for this,
+                                // require explicit specification.
         public int height = 32;
         public int xalignment = ALIGN_LEFT;
         public int yalignment = ALIGN_VCENTER;

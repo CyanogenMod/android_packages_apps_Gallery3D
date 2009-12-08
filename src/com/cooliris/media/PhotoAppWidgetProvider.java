@@ -40,16 +40,14 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
     private static final boolean LOGD = true;
 
     @Override
-    public void onUpdate(Context context, AppWidgetManager appWidgetManager,
-                         int[] appWidgetIds) {
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         // Update each requested appWidgetId with its unique photo
         PhotoDatabaseHelper helper = new PhotoDatabaseHelper(context);
         for (int appWidgetId : appWidgetIds) {
             int[] specificAppWidget = new int[] { appWidgetId };
             RemoteViews views = buildUpdate(context, appWidgetId, helper);
             if (LOGD) {
-                Log.d(TAG, "sending out views=" + views
-                        + " for id=" + appWidgetId);
+                Log.d(TAG, "sending out views=" + views + " for id=" + appWidgetId);
             }
             appWidgetManager.updateAppWidget(specificAppWidget, views);
         }
@@ -69,13 +67,11 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
     /**
      * Load photo for given widget and build {@link RemoteViews} for it.
      */
-    static RemoteViews buildUpdate(Context context, int appWidgetId,
-                                   PhotoDatabaseHelper helper) {
+    static RemoteViews buildUpdate(Context context, int appWidgetId, PhotoDatabaseHelper helper) {
         RemoteViews views = null;
         Bitmap bitmap = helper.getPhoto(appWidgetId);
         if (bitmap != null) {
-            views = new RemoteViews(context.getPackageName(),
-                                    R.layout.photo_frame);
+            views = new RemoteViews(context.getPackageName(), R.layout.photo_frame);
             views.setImageViewBitmap(R.id.photo, bitmap);
         }
         return views;
@@ -96,15 +92,12 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE " + TABLE_PHOTOS + " (" +
-                    FIELD_APPWIDGET_ID + " INTEGER PRIMARY KEY," +
-                    FIELD_PHOTO_BLOB + " BLOB" +
-                    ");");
+            db.execSQL("CREATE TABLE " + TABLE_PHOTOS + " (" + FIELD_APPWIDGET_ID + " INTEGER PRIMARY KEY," + FIELD_PHOTO_BLOB
+                    + " BLOB" + ");");
         }
 
         @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion,
-                              int newVersion) {
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             int version = oldVersion;
 
             if (version != DATABASE_VERSION) {
@@ -131,12 +124,10 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
 
                 ContentValues values = new ContentValues();
                 values.put(PhotoDatabaseHelper.FIELD_APPWIDGET_ID, appWidgetId);
-                values.put(PhotoDatabaseHelper.FIELD_PHOTO_BLOB,
-                           out.toByteArray());
+                values.put(PhotoDatabaseHelper.FIELD_PHOTO_BLOB, out.toByteArray());
 
                 SQLiteDatabase db = getWritableDatabase();
-                db.insertOrThrow(PhotoDatabaseHelper.TABLE_PHOTOS, null,
-                                 values);
+                db.insertOrThrow(PhotoDatabaseHelper.TABLE_PHOTOS, null, values);
 
                 success = true;
             } catch (SQLiteException e) {
@@ -150,9 +141,7 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
             return success;
         }
 
-        static final String[] PHOTOS_PROJECTION = {
-            FIELD_PHOTO_BLOB,
-        };
+        static final String[] PHOTOS_PROJECTION = { FIELD_PHOTO_BLOB, };
 
         static final int INDEX_PHOTO_BLOB = 0;
 
@@ -164,10 +153,8 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
             Bitmap bitmap = null;
             try {
                 SQLiteDatabase db = getReadableDatabase();
-                String selection = String.format("%s=%d", FIELD_APPWIDGET_ID,
-                                                 appWidgetId);
-                c = db.query(TABLE_PHOTOS, PHOTOS_PROJECTION, selection, null,
-                        null, null, null, null);
+                String selection = String.format("%s=%d", FIELD_APPWIDGET_ID, appWidgetId);
+                c = db.query(TABLE_PHOTOS, PHOTOS_PROJECTION, selection, null, null, null, null, null);
 
                 if (c != null && LOGD) {
                     Log.d(TAG, "getPhoto query count=" + c.getCount());
@@ -176,8 +163,7 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
                 if (c != null && c.moveToFirst()) {
                     byte[] data = c.getBlob(INDEX_PHOTO_BLOB);
                     if (data != null) {
-                        bitmap = BitmapFactory.decodeByteArray(data, 0,
-                                data.length);
+                        bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                     }
                 }
             } catch (SQLiteException e) {
@@ -196,8 +182,7 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
         public void deletePhoto(int appWidgetId) {
             try {
                 SQLiteDatabase db = getWritableDatabase();
-                String whereClause = String.format("%s=%d", FIELD_APPWIDGET_ID,
-                                                   appWidgetId);
+                String whereClause = String.format("%s=%d", FIELD_APPWIDGET_ID, appWidgetId);
                 db.delete(TABLE_PHOTOS, whereClause, null);
             } catch (SQLiteException e) {
                 Log.e(TAG, "Could not delete photo from database", e);
@@ -206,5 +191,3 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
     }
 
 }
-
-

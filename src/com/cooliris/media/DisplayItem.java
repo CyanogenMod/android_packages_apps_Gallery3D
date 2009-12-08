@@ -87,7 +87,7 @@ public final class DisplayItem {
         }
         mTargetPosition.add(mJitteredPosition);
         mStacktopPosition.set(position);
-    } 
+    }
 
     public int getStackIndex() {
         return mStackId;
@@ -116,7 +116,7 @@ public final class DisplayItem {
                 }
             } else {
                 texture = new UriTexture(mItemRef.mScreennailUri);
-                ((UriTexture)texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
+                ((UriTexture) texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
             }
             mScreennailImage = texture;
         }
@@ -144,9 +144,9 @@ public final class DisplayItem {
      * @return true if the display item is animating
      */
     public boolean isAnimating() {
-        return mAlive && (!mAnimatedPosition.equals(mTargetPosition) ||
-                mAnimatedTheta != mTargetTheta || mAnimatedImageTheta != mImageTheta ||
-                mAnimatedPlaceholderFade != 1f);
+        return mAlive
+                && (!mAnimatedPosition.equals(mTargetPosition) || mAnimatedTheta != mTargetTheta
+                        || mAnimatedImageTheta != mImageTheta || mAnimatedPlaceholderFade != 1f);
     }
 
     /**

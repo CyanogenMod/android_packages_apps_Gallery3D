@@ -78,7 +78,8 @@ public final class GridDrawables {
             sFullscreenGrid[2] = GridQuad.createGridQuad(width, height, 0, 0, 1.0f, oneByAspect, false);
             sFullscreenGrid[2].setDynamic(true);
 
-            // We create supplementary quads for the checkmarks, video overlay and location button
+            // We create supplementary quads for the checkmarks, video overlay
+            // and location button
             float sizeOfSelectedIcon = 32 * Gallery.PIXEL_DENSITY; // In pixels.
             sizeOfSelectedIcon /= itemHeight;
             float sizeOfLocationIcon = 52 * Gallery.PIXEL_DENSITY; // In pixels.
@@ -166,7 +167,8 @@ public final class GridDrawables {
     }
 
     public int getIconForSet(MediaSet set, boolean scaled) {
-        // We return the scaled version for HUD rendering and the unscaled version for 3D rendering.
+        // We return the scaled version for HUD rendering and the unscaled
+        // version for 3D rendering.
         if (scaled) {
             if (set == null) {
                 return R.drawable.icon_folder_small;

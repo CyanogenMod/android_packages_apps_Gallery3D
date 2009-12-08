@@ -59,9 +59,13 @@ public class CropImage extends MonitoredActivity {
     private static final String TAG = "CropImage";
 
     // These are various options can be specified in the intent.
-    private Bitmap.CompressFormat mOutputFormat = Bitmap.CompressFormat.JPEG; // only used with mSaveUri
+    private Bitmap.CompressFormat mOutputFormat = Bitmap.CompressFormat.JPEG; // only
+                                                                              // used
+                                                                              // with
+                                                                              // mSaveUri
     private Uri mSaveUri = null;
-    private int mAspectX, mAspectY;  // CR: two definitions per line == sad panda.
+    private int mAspectX, mAspectY; // CR: two definitions per line == sad
+                                    // panda.
     private boolean mDoFaceDetection = true;
     private boolean mCircleCrop = false;
     private final Handler mHandler = new Handler();
@@ -93,7 +97,8 @@ public class CropImage extends MonitoredActivity {
         mImageView = (CropImageView) findViewById(R.id.image);
 
         // CR: remove TODO's.
-        // TODO: we may need to show this indicator for the main gallery application
+        // TODO: we may need to show this indicator for the main gallery
+        // application
         // MenuHelper.showStorageToast(this);
 
         Intent intent = getIntent();
@@ -124,32 +129,32 @@ public class CropImage extends MonitoredActivity {
 
         if (mBitmap == null) {
             // Create a MediaItem representing the URI.
-        	Uri target = intent.getData();
+            Uri target = intent.getData();
             String targetScheme = target.getScheme();
             int rotation = 0;
-            
+
             if (targetScheme.equals("content")) {
-            	mItem = LocalDataSource.createMediaItemFromUri(this, target);
+                mItem = LocalDataSource.createMediaItemFromUri(this, target);
             }
             try {
-            	if (mItem != null) {
-	                mBitmap = UriTexture.createFromUri(this, mItem.mContentUri, 1024, 1024, 0, null);
-	                rotation = (int)mItem.mRotation;
-	            } else {
-	                mBitmap = UriTexture.createFromUri(this, target.toString(), 1024, 1024, 0, null);
-	                if (targetScheme.equals("file")) {
-	                	ExifInterface exif = new ExifInterface(target.getPath());
-	        			rotation = (int)Shared.exifOrientationToDegrees(exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-	        							ExifInterface.ORIENTATION_NORMAL));
-	                }
-	            }
+                if (mItem != null) {
+                    mBitmap = UriTexture.createFromUri(this, mItem.mContentUri, 1024, 1024, 0, null);
+                    rotation = (int) mItem.mRotation;
+                } else {
+                    mBitmap = UriTexture.createFromUri(this, target.toString(), 1024, 1024, 0, null);
+                    if (targetScheme.equals("file")) {
+                        ExifInterface exif = new ExifInterface(target.getPath());
+                        rotation = (int) Shared.exifOrientationToDegrees(exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_NORMAL));
+                    }
+                }
             } catch (IOException e) {
             } catch (URISyntaxException e) {
             }
 
-			if (mBitmap != null && rotation != 0f) {
-				mBitmap = Util.rotate(mBitmap, rotation);
-			}
+            if (mBitmap != null && rotation != 0f) {
+                mBitmap = Util.rotate(mBitmap, rotation);
+            }
         }
 
         if (mBitmap == null) {
@@ -227,7 +232,7 @@ public class CropImage extends MonitoredActivity {
 
         Rect r = mCrop.getCropRect();
 
-        int width = r.width();  // CR: final == happy panda!
+        int width = r.width(); // CR: final == happy panda!
         int height = r.height();
 
         // If we are circle cropping, we want alpha channel, which is the
@@ -264,8 +269,9 @@ public class CropImage extends MonitoredActivity {
             } else {
 
                 /*
-                 * Don't scale the image crop it to the size requested. Create an new image with the cropped image in the center and
-                 * the extra space filled.
+                 * Don't scale the image crop it to the size requested. Create
+                 * an new image with the cropped image in the center and the
+                 * extra space filled.
                  */
 
                 // Don't scale the image but instead fill it so it's the
@@ -343,13 +349,15 @@ public class CropImage extends MonitoredActivity {
                 String fileName = oldPath.getName();
                 fileName = fileName.substring(0, fileName.lastIndexOf("."));
 
-                // Try file-1.jpg, file-2.jpg, ... until we find a filename which
+                // Try file-1.jpg, file-2.jpg, ... until we find a filename
+                // which
                 // does not exist yet.
                 while (true) {
                     x += 1;
                     String candidate = directory.toString() + "/" + fileName + "-" + x + ".jpg";
                     boolean exists = (new File(candidate)).exists();
-                    if (!exists) {  // CR: inline the expression for exists here--it's clear enough.
+                    if (!exists) { // CR: inline the expression for exists
+                                   // here--it's clear enough.
                         break;
                     }
                 }
@@ -358,7 +366,7 @@ public class CropImage extends MonitoredActivity {
                     String finalFileName = fileName + "-" + x + ".jpg";
                     // TODO this is going to cause the orientation to reset.
                     Uri newUri = ImageManager.addImage(mContentResolver, item.mCaption, item.mDateTakenInMs, item.mLatitude,
-                                                       item.mLongitude, 0, directory.toString(), finalFileName);
+                            item.mLongitude, 0, directory.toString(), finalFileName);
                     boolean complete = false;
                     try {
                         String[] projection = new String[] { ImageColumns._ID, ImageColumns.MINI_THUMB_MAGIC };
@@ -394,7 +402,7 @@ public class CropImage extends MonitoredActivity {
                         }
                     }
                     setResult(RESULT_OK, new Intent().setAction(newUri.toString()).putExtras(extras));
-                } catch (Exception e) {  // CR: e.
+                } catch (Exception e) { // CR: e.
                     // CR: sentences!
                     Log.e(TAG, "Store image fail, continue anyway", e);
                 }
@@ -501,7 +509,8 @@ public class CropImage extends MonitoredActivity {
 
             // 256 pixels wide is enough.
             if (mBitmap.getWidth() > 256) {
-                mScale = 256.0F / mBitmap.getWidth();  // CR: F => f (or change all f to F).
+                mScale = 256.0F / mBitmap.getWidth(); // CR: F => f (or change
+                                                      // all f to F).
             }
             Matrix matrix = new Matrix();
             matrix.setScale(mScale, mScale);
@@ -540,7 +549,8 @@ public class CropImage extends MonitoredActivity {
                     }
 
                     if (mNumFaces > 1) {
-                        // CR: no need for the variable t. just do Toast.makeText(...).show().
+                        // CR: no need for the variable t. just do
+                        // Toast.makeText(...).show().
                         Toast t = Toast.makeText(CropImage.this, R.string.multiface_crop_help, Toast.LENGTH_SHORT);
                         t.show();
                     }
@@ -642,11 +652,16 @@ class CropImageView extends ImageViewTouchBase {
         }
 
         switch (event.getAction()) {
-        case MotionEvent.ACTION_DOWN:  // CR: inline case blocks.
+        case MotionEvent.ACTION_DOWN: // CR: inline case blocks.
             if (cropImage.mWaitingToPick) {
                 recomputeFocus(event);
             } else {
-                for (int i = 0; i < mHighlightViews.size(); i++) {  // CR: iterator for; if not, then i++ => ++i.
+                for (int i = 0; i < mHighlightViews.size(); i++) { // CR:
+                                                                   // iterator
+                                                                   // for; if
+                                                                   // not, then
+                                                                   // i++ =>
+                                                                   // ++i.
                     HighlightView hv = mHighlightViews.get(i);
                     int edge = hv.getHit(event.getX(), event.getY());
                     if (edge != HighlightView.GROW_NONE) {
@@ -670,7 +685,8 @@ class CropImageView extends ImageViewTouchBase {
                     if (hv.hasFocus()) {
                         cropImage.mCrop = hv;
                         for (int j = 0; j < mHighlightViews.size(); j++) {
-                            if (j == i) {  // CR: if j != i do your shit; no need for continue.
+                            if (j == i) { // CR: if j != i do your shit; no need
+                                          // for continue.
                                 continue;
                             }
                             mHighlightViews.get(j).setHidden(true);
@@ -763,7 +779,7 @@ class CropImageView extends ImageViewTouchBase {
         if ((Math.abs(zoom - getScale()) / zoom) > .1) {
             float[] coordinates = new float[] { hv.mCropRect.centerX(), hv.mCropRect.centerY() };
             getImageMatrix().mapPoints(coordinates);
-            zoomTo(zoom, coordinates[0], coordinates[1], 300F);  // CR: 300.0f.
+            zoomTo(zoom, coordinates[0], coordinates[1], 300F); // CR: 300.0f.
         }
 
         ensureVisible(hv);

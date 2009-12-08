@@ -16,9 +16,10 @@ final class GridQuadFrame {
 
     private int mW;
     private int mH;
-    
+
     // This has 8 quads, 16 vertices, 22 triangles (for tristrip).
-    // We have more triangles because we have to make degenerate triangles to use tri-strips
+    // We have more triangles because we have to make degenerate triangles to
+    // use tri-strips
     public static final int INDEX_COUNT = 25;
     private int mVertBufferIndex;
     private int mIndexBufferIndex;
@@ -85,8 +86,10 @@ final class GridQuadFrame {
         /*
          * Initialize triangle list mesh.
          * 
-         * [0]---[1]---------[2]---[3] ... | / | / | / | [4]---[5]---------[6]---[7] | / | | /| | / | | / | | / | | / |
-         * [8]---[9]---------[10]---[11] | / | \ | \ | [12]--[13]--------[14]---[15]
+         * [0]---[1]---------[2]---[3] ... | / | / | / |
+         * [4]---[5]---------[6]---[7] | / | | /| | / | | / | | / | | / |
+         * [8]---[9]---------[10]---[11] | / | \ | \ |
+         * [12]--[13]--------[14]---[15]
          */
         CharBuffer buffer = mIndexBuffer;
         buffer.put(0, (char) 0);
@@ -135,7 +138,7 @@ final class GridQuadFrame {
         int texIndex = index * 2;
         mTexCoordBuffer.put(texIndex, u);
         mTexCoordBuffer.put(texIndex + 1, v);
-        
+
         int secTexIndex = index * 2;
         mSecTexCoordBuffer.put(secTexIndex, u);
         mSecTexCoordBuffer.put(secTexIndex + 1, v);
@@ -172,8 +175,9 @@ final class GridQuadFrame {
     }
 
     /**
-     * When the OpenGL ES device is lost, GL handles become invalidated. In that case, we just want to "forget" the old handles
-     * (without explicitly deleting them) and make new ones.
+     * When the OpenGL ES device is lost, GL handles become invalidated. In that
+     * case, we just want to "forget" the old handles (without explicitly
+     * deleting them) and make new ones.
      */
     public void forgetHardwareBuffers() {
         mVertBufferIndex = 0;
@@ -195,7 +199,7 @@ final class GridQuadFrame {
 
                 buffer[0] = mTextureCoordBufferIndex;
                 gl11.glDeleteBuffers(1, buffer, 0);
-                
+
                 buffer[0] = mSecTextureCoordBufferIndex;
                 gl11.glDeleteBuffers(1, buffer, 0);
 
@@ -207,9 +211,10 @@ final class GridQuadFrame {
     }
 
     /**
-     * Allocates hardware buffers on the graphics card and fills them with data if a buffer has not already been previously
-     * allocated. Note that this function uses the GL_OES_vertex_buffer_object extension, which is not guaranteed to be supported on
-     * every device.
+     * Allocates hardware buffers on the graphics card and fills them with data
+     * if a buffer has not already been previously allocated. Note that this
+     * function uses the GL_OES_vertex_buffer_object extension, which is not
+     * guaranteed to be supported on every device.
      * 
      * @param gl
      *            A pointer to the OpenGL ES context.
@@ -235,7 +240,7 @@ final class GridQuadFrame {
                 final int texCoordSize = mTexCoordBuffer.capacity() * 4;
                 mTexCoordBuffer.position(0);
                 gl11.glBufferData(GL11.GL_ARRAY_BUFFER, texCoordSize, mTexCoordBuffer, GL11.GL_STATIC_DRAW);
-                
+
                 // Allocate and fill the secondary texture coordinate buffer.
                 gl11.glGenBuffers(1, buffer, 0);
                 mSecTextureCoordBufferIndex = buffer[0];

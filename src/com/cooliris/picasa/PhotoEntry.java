@@ -10,7 +10,8 @@ public final class PhotoEntry extends Entry {
     public static final EntrySchema SCHEMA = new EntrySchema(PhotoEntry.class);
 
     /**
-     * The user account that is the sync source for this entry. Must be set before insert/update.
+     * The user account that is the sync source for this entry. Must be set
+     * before insert/update.
      */
     @Column("sync_account")
     public String syncAccount;
@@ -28,7 +29,8 @@ public final class PhotoEntry extends Entry {
     public long albumId;
 
     /**
-     * The display index of the photo within the album. Must be set before insert/update.
+     * The display index of the photo within the album. Must be set before
+     * insert/update.
      */
     @Column(value = "display_index", indexed = true)
     public int displayIndex;
@@ -58,7 +60,8 @@ public final class PhotoEntry extends Entry {
     public long dateUpdated;
 
     /**
-     * The date the photo entry was last edited. May be more recent than dateUpdated.
+     * The date the photo entry was last edited. May be more recent than
+     * dateUpdated.
      */
     @Column("date_edited")
     public long dateEdited;
@@ -88,7 +91,8 @@ public final class PhotoEntry extends Entry {
     public int height;
 
     /**
-     * The rotation of the photo in degrees, if rotation has not already been applied.
+     * The rotation of the photo in degrees, if rotation has not already been
+     * applied.
      */
     @Column("rotation")
     public int rotation;
@@ -124,8 +128,9 @@ public final class PhotoEntry extends Entry {
     public String screennailUrl;
 
     /**
-     * The "content" URL for the photo (currently 1280px, or a video). The original image URL is not fetched since "imgmax" accepts
-     * one size, used to get this resource.
+     * The "content" URL for the photo (currently 1280px, or a video). The
+     * original image URL is not fetched since "imgmax" accepts one size, used
+     * to get this resource.
      */
     @Column("content_url")
     public String contentUrl;
@@ -173,7 +178,8 @@ public final class PhotoEntry extends Entry {
     }
 
     /**
-     * Sets the property value corresponding to the given XML element, if applicable.
+     * Sets the property value corresponding to the given XML element, if
+     * applicable.
      */
     @Override
     public void setPropertyFromXml(String uri, String localName, Attributes attrs, String content) {
