@@ -66,13 +66,18 @@ public final class LocalDataSource implements DataSource {
         Handler handler = ((Gallery) mContext).getHandler();
         ContentObserver observer = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
-                MediaSet mediaSet = feed.getCurrentSet();
-                if (mediaSet != null) {
-                    CacheService.markDirtyImmediate(mediaSet.mId);
-                    refreshUI(feed, mediaSet.mId);
+                final boolean isPaused = ((Gallery) mContext).isPaused();
+                if (isPaused) {
+                    MediaSet mediaSet = feed.getCurrentSet();
+                    if (mediaSet != null) {
+                        CacheService.markDirtyImmediate(mediaSet.mId);
+                        refreshUI(feed, mediaSet.mId);
+                    }
                 }
                 CacheService.senseDirty(mContext, new CacheService.Observer() {
                     public void onChange(long[] ids) {
+                        if (!isPaused)
+                            return;
                         if (ids != null) {
                             int numLongs = ids.length;
                             for (int i = 0; i < numLongs; ++i) {
@@ -89,15 +94,13 @@ public final class LocalDataSource implements DataSource {
         Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
         ContentResolver cr = mContext.getContentResolver();
         mObserver = observer;
-        cr.registerContentObserver(uriImages, false, observer);
-        cr.registerContentObserver(uriVideos, false, observer);
+        cr.registerContentObserver(uriImages, true, observer);
+        cr.registerContentObserver(uriVideos, true, observer);
         sObserverActive = true;
     }
 
     public void shutdown() {
-        if (ImageManager.isMediaScannerScanning(mContext.getContentResolver())) {
-            stopListeners();
-        }
+        stopListeners();
     }
 
     private void stopListeners() {
