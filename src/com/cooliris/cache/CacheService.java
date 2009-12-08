@@ -14,12 +14,12 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.IntentService;
-import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -43,7 +43,6 @@ import android.util.Log;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
 import com.cooliris.media.Gallery;
-import com.cooliris.media.ImageManager;
 import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.LongSparseArray;
 import com.cooliris.media.MediaFeed;
@@ -199,6 +198,12 @@ public final class CacheService extends IntentService {
 			QUEUE_DIRTY_SET = false;
 			restartThread(CACHE_THREAD, "CacheRefresh", new Runnable() {
 				public void run() {
+					try {
+						// We sleep for a bit here waiting for the provider database to insert the row(s).
+						// This should be unnecessary, and to be fixed in future versions.
+	                    Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                    }
 					Log.i(TAG, "Computing dirty sets.");
 					long ids[] = computeDirtySets(context);
 					if (ids != null && observer != null) {
@@ -852,16 +857,6 @@ public final class CacheService extends IntentService {
 		return C;
 	}
 
-	private static final long toLong(final byte[] data) {
-		// 8 bytes for a long
-		if (data == null || data.length < 8)
-			return 0;
-		final ByteBuffer bBuffer = ByteBuffer.wrap(data);
-		final LongBuffer lBuffer = bBuffer.asLongBuffer();
-		final int numLongs = lBuffer.capacity();
-		return lBuffer.get(0);
-	}
-
 	private static final long[] toLongArray(final byte[] data) {
 		final ByteBuffer bBuffer = ByteBuffer.wrap(data);
 		final LongBuffer lBuffer = bBuffer.asLongBuffer();
@@ -988,22 +983,20 @@ public final class CacheService extends IntentService {
 		cursors[0] = cursorImages;
 		cursors[1] = cursorVideos;
 		final MergeCursor cursor = new MergeCursor(cursors);
-		long[] retVal = null;
-		int ctr = 0;
+		ArrayList<Long> retVal = new ArrayList<Long>();
 		try {
 			if (cursor.moveToFirst()) {
-				retVal = new long[cursor.getCount()];
 				boolean allDirty = false;
 				do {
 					long setId = cursor.getLong(0);
 					if (allDirty) {
-						retVal[ctr++] = setId;
+						addNoDupe(retVal, setId);
 					} else {
 						boolean contains = sAlbumCache.isDataAvailable(setId, 0);
 						if (!contains) {
 							// We need to refresh everything.
 							markDirty(context);
-							retVal[ctr++] = setId;
+							addNoDupe(retVal, setId);
 							allDirty = true;
 						}
 						if (!allDirty) {
@@ -1016,10 +1009,9 @@ public final class CacheService extends IntentService {
 							}
 							long oldMaxAdded = dataLong[0];
 							long oldCount = dataLong[1];
-							Log.i(TAG, "Bucket " + setId + " Old added " + oldMaxAdded + " count " + oldCount + " New added " + maxAdded + " count " + count);
 							if (maxAdded > oldMaxAdded || oldCount != count) {
 								markDirty(context, setId);
-								retVal[ctr++] = setId;
+								addNoDupe(retVal, setId);
 								dataLong[0] = maxAdded;
 								dataLong[1] = count;
 								sMetaAlbumCache.put(setId, longArrayToByteArray(dataLong));
@@ -1033,11 +1025,21 @@ public final class CacheService extends IntentService {
 		}
 		sMetaAlbumCache.flush();
 		processQueuedDirty(context);
-		long[] retValCompact = new long[ctr];
-		for (int i = 0; i < ctr; ++i) {
-			retValCompact[i] = retVal[i];
+		int numIds = retVal.size();
+		long retValIds[] = new long[retVal.size()];
+		for (int i = 0; i < numIds; ++i) {
+			retValIds[i] = retVal.get(i);
 		}
-		return retValCompact;
+		return retValIds;
+	}
+	
+	private static final void addNoDupe(ArrayList<Long> array, long value) {
+		int size = array.size();
+		for (int i = 0; i < size; ++i) {
+			if (array.get(i).longValue() == value)
+				return;
+		}
+		array.add(value);
 	}
 
 	private static final void processQueuedDirty(final Context context) {
