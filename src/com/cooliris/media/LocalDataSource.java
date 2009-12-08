@@ -107,6 +107,7 @@ public final class LocalDataSource implements DataSource {
         ContentResolver cr = mContext.getContentResolver();
         if (mObserver != null) {
             cr.unregisterContentObserver(mObserver);
+            cr.unregisterContentObserver(mObserver);
         }
         sObserverActive = false;
     }
