@@ -23,7 +23,6 @@ public class PicasaSyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient providerClient,
             SyncResult syncResult) {
         PicasaService.performSync(mContext, account, extras, syncResult);
-        Log.i(TAG, "SyncResult: " + syncResult.toDebugString());
     }
 
     public static final class AccountChangeReceiver extends BroadcastReceiver {

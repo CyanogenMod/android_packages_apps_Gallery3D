@@ -197,8 +197,6 @@ public final class PicasaContentProvider extends TableContentProvider {
     }
 
     private UserEntry[] syncUsers(SyncContext context, SyncResult syncResult) {
-        Log.i(TAG, "syncUsers");
-
         // Get authorized accounts.
         context.reloadAccounts();
         PicasaApi.AuthAccount[] accounts = context.accounts;
@@ -209,7 +207,6 @@ public final class PicasaContentProvider extends TableContentProvider {
         EntrySchema schema = UserEntry.SCHEMA;
         SQLiteDatabase db = context.db;
         Cursor cursor = schema.queryAll(db);
-        Log.i(TAG, "#users: " + cursor.getCount());
         if (cursor.moveToFirst()) {
             do {
                 // Read the current account.
@@ -220,10 +217,8 @@ public final class PicasaContentProvider extends TableContentProvider {
                 // not exist.
                 int i;
                 for (i = 0; i != numUsers; ++i) {
-                    Log.i(TAG, "Check " + accounts[i].user + " == " + entry.account);
                     if (accounts[i].user.equals(entry.account)) {
                         users[i] = entry;
-                        Log.e(TAG, "Updating user " + entry.account);
                         break;
                     }
                 }
@@ -245,7 +240,6 @@ public final class PicasaContentProvider extends TableContentProvider {
             if (entry == null) {
                 entry = new UserEntry();
                 entry.account = account.user;
-                Log.d(TAG, "insert/replace: " + schema.insertOrReplace(db, entry));
                 users[i] = entry;
                 Log.e(TAG, "Inserting user " + entry.account);
             }
@@ -351,7 +345,6 @@ public final class PicasaContentProvider extends TableContentProvider {
 
     private void syncAlbumPhotos(SyncContext context, final String account, AlbumEntry album, final SyncResult syncResult) {
         Log.i(TAG, "Syncing Picasa album: " + album.title);
-
         // Query existing album entry (id, dateEdited) sorted by ID.
         final SQLiteDatabase db = context.db;
         long albumId = album.id;
