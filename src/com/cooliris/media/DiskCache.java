@@ -53,7 +53,7 @@ public final class DiskCache {
         }
         if (record != null) {
             // Read the chunk from the file.
-            if (record.timestamp < timestamp && timestamp < System.currentTimeMillis()) {
+            if (record.timestamp != timestamp) {
                 return null;
             }
             try {
@@ -79,7 +79,7 @@ public final class DiskCache {
         if (record == null) {
             return false;
         }
-        if (record.timestamp < timestamp && timestamp < System.currentTimeMillis()) {
+        if (record.timestamp != timestamp) {
             return false;
         }
         if (record.size == 0)
@@ -87,7 +87,7 @@ public final class DiskCache {
         return true;
     }
 
-    public void put(long key, byte[] data) {
+    public void put(long key, byte[] data, long timestamp) {
         // Check to see if the record already exists.
         Record record = null;
         synchronized (mIndexMap) {
@@ -102,8 +102,7 @@ public final class DiskCache {
                     chunkFile.seek(record.offset);
                     chunkFile.write(data);
                     synchronized (mIndexMap) {
-                        mIndexMap.put(key, new Record(currentChunk, record.offset, data.length, record.sizeOnDisk, System
-                                .currentTimeMillis()));
+                        mIndexMap.put(key, new Record(currentChunk, record.offset, data.length, record.sizeOnDisk, timestamp));
                     }
                     return;
                 }
@@ -120,7 +119,7 @@ public final class DiskCache {
                 chunkFile.seek(offset);
                 chunkFile.write(data);
                 synchronized (mIndexMap) {
-                    mIndexMap.put(key, new Record(chunk, offset, data.length, data.length, System.currentTimeMillis()));
+                    mIndexMap.put(key, new Record(chunk, offset, data.length, data.length, timestamp));
                 }
                 if (offset + data.length > CHUNK_SIZE) {
                     ++mTailChunk;
