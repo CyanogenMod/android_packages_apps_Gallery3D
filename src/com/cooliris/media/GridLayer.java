@@ -1190,6 +1190,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             // Select a cluster, and recompute a new cluster within this
             // cluster.
             mCurrentExpandedSlot = slotIndex;
+            sMarkedBucketList.clear();
             sMarkedBucketList.add(slotIndex, feed, false);
             goBack();
             if (metadata) {
