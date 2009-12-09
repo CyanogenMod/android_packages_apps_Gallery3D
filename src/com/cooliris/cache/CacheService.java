@@ -992,7 +992,7 @@ public final class CacheService extends IntentService {
         sAlbumCache.delete(ALBUM_CACHE_DIRTY_BUCKET_INDEX);
     }
 
-    private static final long[] computeDirtySets(final Context context) {
+    public static final long[] computeDirtySets(final Context context) {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();

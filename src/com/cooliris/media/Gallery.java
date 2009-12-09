@@ -62,6 +62,7 @@ public final class Gallery extends Activity {
             }
             return;
         }
+        CacheService.computeDirtySets(this);
         final boolean isCacheReady = CacheService.isCacheReady(false);
         CacheService.startCache(this, false);
         if (PIXEL_DENSITY == 0.0f) {
