@@ -182,6 +182,7 @@ public final class PicasaApi {
                         Log.e(TAG, "getAlbumPhotos: " + e);
                         ++syncResult.stats.numIoExceptions;
                         e.printStackTrace();
+                        return RESULT_ERROR;
                     }
                 }
             }
@@ -256,6 +257,7 @@ public final class PicasaApi {
                         Log.e(TAG, "getAlbumPhotos: " + e);
                         ++syncResult.stats.numIoExceptions;
                         e.printStackTrace();
+                        return RESULT_ERROR;
                     }
                 }
             }

@@ -142,6 +142,7 @@ public class SingleDataSource implements DataSource {
                 int numItems = items.size();
                 for (int i = 1; i < numItems; ++i) {
                     MediaItem thisItem = items.get(i);
+                    try {
                     String filePath = Uri.fromFile(new File(thisItem.mFilePath)).toString();
                     if (item.mId == thisItem.mId
                             || ((item.mContentUri != null && thisItem.mContentUri != null) && (item.mContentUri
@@ -149,6 +150,10 @@ public class SingleDataSource implements DataSource {
                         items.remove(thisItem);
                         --parentSet.mNumItemsLoaded;
                         break;
+                    }
+                    } catch (Exception e) {
+                        // NullPointerException at java.io.File.fixSlashes(File.java:267)
+                        continue;
                     }
                 }
             }
