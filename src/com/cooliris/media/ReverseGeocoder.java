@@ -205,8 +205,8 @@ public final class ReverseGeocoder extends Thread {
 
         // If the admin area is the same as the current location, we hide it and
         // instead show the city name.
-        if (currentAdminArea.equals(addr1.getAdminArea()) || currentAdminArea.equals(addr2.getAdminArea())) {
-            String addr1Locality = addr2.getLocality();
+        if (currentAdminArea.equals(addr1.getAdminArea()) && currentAdminArea.equals(addr2.getAdminArea())) {
+            String addr1Locality = addr1.getLocality();
             String addr2Locality = addr2.getLocality();
             if (addr1Locality == null || "null".equals(addr1Locality)) {
                 addr1Locality = addr2Locality;
@@ -215,7 +215,11 @@ public final class ReverseGeocoder extends Thread {
                 addr2Locality = addr1Locality;
             }
             if (addr1Locality != null && !"null".equals(addr1Locality)) {
-                closestCommonLocation = addr1.getLocality() + " - " + addr2.getLocality();
+                if (addr1Locality.equals(addr2Locality)) {
+                    closestCommonLocation = addr1Locality + ", " + currentAdminArea;
+                } else {
+                    closestCommonLocation = addr1Locality + " - " + addr2Locality;
+                }
                 return closestCommonLocation;
             }
         }
