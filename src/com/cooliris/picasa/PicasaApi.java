@@ -131,8 +131,6 @@ public final class PicasaApi {
         builder.append(Uri.encode(mAuth.user));
         builder.append(BASE_QUERY_STRING);
         builder.append("&kind=album");
-        Log.i(TAG, "getAlbums uri " + builder.toString());
-
         try {
             // Send the request.
             synchronized (mOperation) {
@@ -160,6 +158,7 @@ public final class PicasaApi {
                             ++syncResult.stats.numAuthExceptions;
                         }
                     default:
+                        Log.i(TAG, "getAlbums uri " + builder.toString());
                         Log.e(TAG, "getAlbums: unexpected status code " + operation.outStatus + " data: "
                                 + operation.outBody.toString());
                         ++syncResult.stats.numIoExceptions;
