@@ -431,6 +431,8 @@ public final class MediaFeed implements Runnable {
                 sleepMs = 300;
                 if (!mMediaFeedNeedsToRun)
                     continue;
+                if (((Gallery) mContext).isPaused())
+                    continue;
                 mMediaFeedNeedsToRun = false;
                 ArrayList<MediaSet> mediaSets = mMediaSets;
                 synchronized (mediaSets) {

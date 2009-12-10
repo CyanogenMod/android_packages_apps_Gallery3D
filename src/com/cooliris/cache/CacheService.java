@@ -724,6 +724,7 @@ public final class CacheService extends IntentService {
                 thumbnailCache.put(thumbId, retVal);
             }
             cacheOutput.close();
+            finalBitmap.recycle();
         } catch (Exception e) {
             ;
         }
