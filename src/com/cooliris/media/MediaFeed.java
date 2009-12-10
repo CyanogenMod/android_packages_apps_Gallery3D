@@ -355,6 +355,8 @@ public final class MediaFeed implements Runnable {
                 mWaitingForMediaScanner = false;
                 while (ImageManager.isMediaScannerScanning(mContext.getContentResolver())) {
                     // MediaScanner is still running, wait
+                    if (Thread.interrupted())
+                        return;
                     mWaitingForMediaScanner = true;
                     try {
                         if (mContext == null)
@@ -362,7 +364,7 @@ public final class MediaFeed implements Runnable {
                         showToast(mContext.getResources().getString(R.string.initializing), Toast.LENGTH_LONG);
                         Thread.sleep(6000);
                     } catch (InterruptedException e) {
-
+                        return;
                     }
                 }
                 if (mWaitingForMediaScanner) {
