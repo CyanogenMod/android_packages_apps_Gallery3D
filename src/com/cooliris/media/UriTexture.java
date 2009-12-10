@@ -98,11 +98,9 @@ public class UriTexture extends Texture {
         if (bitmap != null) {
             return bitmap;
         }
-        boolean local = false;
+        final boolean local = uri.startsWith(ContentResolver.SCHEME_CONTENT) || uri.startsWith("file://");
         int sampleSize = 1;
         if (uri.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            local = true;
-
             // Load the bitmap from a local file.
             options.inJustDecodeBounds = true;
             BufferedInputStream bufferedInput = new BufferedInputStream(context.getContentResolver()

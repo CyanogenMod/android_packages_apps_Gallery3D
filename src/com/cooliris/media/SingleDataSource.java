@@ -94,13 +94,13 @@ public class SingleDataSource implements DataSource {
                 }
             } else if (mUri.startsWith("file://")) {
                 MediaItem newItem = null;
-                int numRetries = 3;
+                int numRetries = 15;
                 do {
                     newItem = LocalDataSource.createMediaItemFromFileUri(mContext, mUri);
                     if (newItem == null) {
                         --numRetries;
                         try {
-                            Thread.sleep(300);
+                            Thread.sleep(500);
                         } catch (InterruptedException e) {
                             ;
                         }
@@ -140,6 +140,9 @@ public class SingleDataSource implements DataSource {
                 CacheService.loadMediaItemsIntoMediaFeed(feed, parentSet, rangeStart, rangeEnd, true, false);
                 ArrayList<MediaItem> items = parentSet.getItems();
                 int numItems = items.size();
+                if (numItems == 1 && parentSet.mNumItemsLoaded > 1) {
+                    parentSet.mNumItemsLoaded = 1;
+                }
                 for (int i = 1; i < numItems; ++i) {
                     MediaItem thisItem = items.get(i);
                     try {

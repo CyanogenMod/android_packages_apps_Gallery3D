@@ -31,7 +31,7 @@ import android.view.SurfaceHolder;
 public final class RenderView extends GLSurfaceView implements GLSurfaceView.Renderer, SensorEventListener {
     private static final String TAG = "RenderView";
     private static final int NUM_TEXTURE_LOAD_THREADS = 4;
-    private static final int MAX_LOADING_COUNT = 128;
+    private static final int MAX_LOADING_COUNT = 8;
 
     private static final int EVENT_NONE = 0;
     // private static final int EVENT_TOUCH = 1;
