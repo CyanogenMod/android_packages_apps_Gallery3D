@@ -193,7 +193,7 @@ public final class ReverseGeocoder extends Thread {
         if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
             String adminArea = addr1.getAdminArea();
             String countryCode = addr1.getCountryCode();
-            if (adminArea != null && adminArea.length() > 0 && !adminArea.equals(currentAdminArea)) {
+            if (adminArea != null && adminArea.length() > 0) {
                 if (!countryCode.equals(currentCountry)) {
                     closestCommonLocation += ", " + adminArea + " " + countryCode;
                 } else {
