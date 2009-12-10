@@ -1,6 +1,7 @@
 package com.cooliris.picasa;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 import org.apache.http.HttpStatus;
@@ -175,7 +176,13 @@ public final class PicasaApi {
                     GDataParser parser = mParser;
                     parser.setEntry(mAlbumInstance);
                     parser.setHandler(handler);
-                    Xml.parse(operation.outBody, Xml.Encoding.UTF_8, parser);
+                    try {
+                        Xml.parse(operation.outBody, Xml.Encoding.UTF_8, parser);
+                    } catch (SocketException e) {
+                        Log.e(TAG, "getAlbumPhotos: " + e);
+                        ++syncResult.stats.numIoExceptions;
+                        e.printStackTrace();
+                    }
                 }
             }
             return RESULT_OK;
@@ -243,7 +250,13 @@ public final class PicasaApi {
                     GDataParser parser = mParser;
                     parser.setEntry(mPhotoInstance);
                     parser.setHandler(handler);
-                    Xml.parse(operation.outBody, Xml.Encoding.UTF_8, parser);
+                    try {
+                        Xml.parse(operation.outBody, Xml.Encoding.UTF_8, parser);
+                    } catch (SocketException e) {
+                        Log.e(TAG, "getAlbumPhotos: " + e);
+                        ++syncResult.stats.numIoExceptions;
+                        e.printStackTrace();
+                    }
                 }
             }
             return RESULT_OK;
