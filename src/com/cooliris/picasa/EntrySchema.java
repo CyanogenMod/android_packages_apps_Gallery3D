@@ -18,8 +18,7 @@ public final class EntrySchema {
     public static final int TYPE_FLOAT = 5;
     public static final int TYPE_DOUBLE = 6;
     public static final int TYPE_BLOB = 7;
-    public static final String SQLITE_TYPES[] = { "TEXT", "INTEGER", "INTEGER", "INTEGER",
-                                                 "INTEGER", "REAL", "REAL", "NONE" };
+    public static final String SQLITE_TYPES[] = { "TEXT", "INTEGER", "INTEGER", "INTEGER", "INTEGER", "REAL", "REAL", "NONE" };
 
     private static final String TAG = "SchemaInfo";
     private static final String FULL_TEXT_INDEX_SUFFIX = "_fulltext";
@@ -65,7 +64,7 @@ public final class EntrySchema {
     }
 
     private void logExecSql(SQLiteDatabase db, String sql) {
-        //Log.i(TAG, sql);
+        // Log.i(TAG, sql);
         db.execSQL(sql);
     }
 
@@ -77,30 +76,30 @@ public final class EntrySchema {
                 int columnIndex = column.projectionIndex;
                 Field field = column.field;
                 switch (column.type) {
-                    case TYPE_STRING:
-                        field.set(object, cursor.getString(columnIndex));
-                        break;
-                    case TYPE_BOOLEAN:
-                        field.setBoolean(object, cursor.getShort(columnIndex) == 1);
-                        break;
-                    case TYPE_SHORT:
-                        field.setShort(object, cursor.getShort(columnIndex));
-                        break;
-                    case TYPE_INT:
-                        field.setInt(object, cursor.getInt(columnIndex));
-                        break;
-                    case TYPE_LONG:
-                        field.setLong(object, cursor.getLong(columnIndex));
-                        break;
-                    case TYPE_FLOAT:
-                        field.setFloat(object, cursor.getFloat(columnIndex));
-                        break;
-                    case TYPE_DOUBLE:
-                        field.setDouble(object, cursor.getDouble(columnIndex));
-                        break;
-                    case TYPE_BLOB:
-                        field.set(object, cursor.getBlob(columnIndex));
-                        break;
+                case TYPE_STRING:
+                    field.set(object, cursor.getString(columnIndex));
+                    break;
+                case TYPE_BOOLEAN:
+                    field.setBoolean(object, cursor.getShort(columnIndex) == 1);
+                    break;
+                case TYPE_SHORT:
+                    field.setShort(object, cursor.getShort(columnIndex));
+                    break;
+                case TYPE_INT:
+                    field.setInt(object, cursor.getInt(columnIndex));
+                    break;
+                case TYPE_LONG:
+                    field.setLong(object, cursor.getLong(columnIndex));
+                    break;
+                case TYPE_FLOAT:
+                    field.setFloat(object, cursor.getFloat(columnIndex));
+                    break;
+                case TYPE_DOUBLE:
+                    field.setDouble(object, cursor.getDouble(columnIndex));
+                    break;
+                case TYPE_BLOB:
+                    field.set(object, cursor.getBlob(columnIndex));
+                    break;
                 }
             }
         } catch (IllegalArgumentException e) {
@@ -118,30 +117,30 @@ public final class EntrySchema {
                 String columnName = column.name;
                 Field field = column.field;
                 switch (column.type) {
-                    case TYPE_STRING:
-                        values.put(columnName, (String)field.get(object));
-                        break;
-                    case TYPE_BOOLEAN:
-                        values.put(columnName, field.getBoolean(object));
-                        break;
-                    case TYPE_SHORT:
-                        values.put(columnName, field.getShort(object));
-                        break;
-                    case TYPE_INT:
-                        values.put(columnName, field.getInt(object));
-                        break;
-                    case TYPE_LONG:
-                        values.put(columnName, field.getLong(object));
-                        break;
-                    case TYPE_FLOAT:
-                        values.put(columnName, field.getFloat(object));
-                        break;
-                    case TYPE_DOUBLE:
-                        values.put(columnName, field.getDouble(object));
-                        break;
-                    case TYPE_BLOB:
-                        values.put(columnName, (byte[])field.get(object));
-                        break;
+                case TYPE_STRING:
+                    values.put(columnName, (String) field.get(object));
+                    break;
+                case TYPE_BOOLEAN:
+                    values.put(columnName, field.getBoolean(object));
+                    break;
+                case TYPE_SHORT:
+                    values.put(columnName, field.getShort(object));
+                    break;
+                case TYPE_INT:
+                    values.put(columnName, field.getInt(object));
+                    break;
+                case TYPE_LONG:
+                    values.put(columnName, field.getLong(object));
+                    break;
+                case TYPE_FLOAT:
+                    values.put(columnName, field.getFloat(object));
+                    break;
+                case TYPE_DOUBLE:
+                    values.put(columnName, field.getDouble(object));
+                    break;
+                case TYPE_BLOB:
+                    values.put(columnName, (byte[]) field.get(object));
+                    break;
                 }
             }
         } catch (IllegalArgumentException e) {
@@ -156,8 +155,7 @@ public final class EntrySchema {
     }
 
     public boolean queryWithId(SQLiteDatabase db, long id, Entry entry) {
-        Cursor cursor = db.query(mTableName, mProjection, "_id=?",
-                                 new String[] { Long.toString(id) }, null, null, null);
+        Cursor cursor = db.query(mTableName, mProjection, "_id=?", new String[] { Long.toString(id) }, null, null, null);
         boolean success = false;
         if (cursor.moveToFirst()) {
             cursorToObject(cursor, entry);
@@ -252,7 +250,8 @@ public final class EntrySchema {
             logExecSql(db, sql.toString());
             sql.setLength(0);
 
-            // Build an insert statement that will automatically keep the FTS table in sync.
+            // Build an insert statement that will automatically keep the FTS
+            // table in sync.
             StringBuilder insertSql = new StringBuilder("INSERT OR REPLACE INTO ");
             insertSql.append(ftsTableName);
             insertSql.append(" (_id");
@@ -352,7 +351,7 @@ public final class EntrySchema {
         for (int i = 0; i != fields.length; ++i) {
             // Get column metadata from the annotation.
             Field field = fields[i];
-            Entry.Column info = ((AnnotatedElement)field).getAnnotation(Entry.Column.class);
+            Entry.Column info = ((AnnotatedElement) field).getAnnotation(Entry.Column.class);
             if (info == null) {
                 continue;
             }
@@ -377,14 +376,12 @@ public final class EntrySchema {
             } else if (fieldType == byte[].class) {
                 type = TYPE_BLOB;
             } else {
-                throw new IllegalArgumentException("Unsupported field type for column: " +
-                                                   fieldType.getName());
+                throw new IllegalArgumentException("Unsupported field type for column: " + fieldType.getName());
             }
 
             // Add the column to the array.
             int index = columns.size();
-            columns.add(new ColumnInfo(info.value(), type, info.indexed(), info.fullText(), field,
-                                       index));
+            columns.add(new ColumnInfo(info.value(), type, info.indexed(), info.fullText(), field, index));
         }
 
         // Return a list.
@@ -402,8 +399,7 @@ public final class EntrySchema {
         public final Field field;
         public final int projectionIndex;
 
-        public ColumnInfo(String name, int type, boolean indexed, boolean fullText, Field field,
-                          int projectionIndex) {
+        public ColumnInfo(String name, int type, boolean indexed, boolean fullText, Field field, int projectionIndex) {
             this.name = name.toLowerCase();
             this.type = type;
             this.indexed = indexed;

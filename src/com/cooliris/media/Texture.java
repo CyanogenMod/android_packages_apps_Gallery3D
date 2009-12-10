@@ -21,7 +21,7 @@ public abstract class Texture {
     public boolean isCached() {
         return false;
     }
-    
+
     public final void clear() {
         mId = 0;
         mState = STATE_UNLOADED;
@@ -34,7 +34,7 @@ public abstract class Texture {
             mBitmap = null;
         }
     }
-    
+
     public final boolean isLoaded() {
         return mState == STATE_LOADED;
     }

@@ -16,7 +16,6 @@ package com.cooliris.media;
  * limitations under the License.
  */
 
-
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -36,8 +35,7 @@ import android.view.View;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
-public class MovieViewControl implements MediaPlayer.OnErrorListener,
-        MediaPlayer.OnCompletionListener {
+public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
 
     @SuppressWarnings("unused")
     private static final String TAG = "MovieViewControl";
@@ -48,8 +46,7 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
 
     // Copied from MediaPlaybackService in the Music Player app. Should be
     // public, but isn't.
-    private static final String SERVICECMD =
-            "com.android.music.musicservicecommand";
+    private static final String SERVICECMD = "com.android.music.musicservicecommand";
     private static final String CMDNAME = "command";
     private static final String CMDPAUSE = "pause";
 
@@ -73,20 +70,17 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
             }
         }
     };
-    
-    public static String formatDuration(final Context context,
-            int durationMs) {
+
+    public static String formatDuration(final Context context, int durationMs) {
         int duration = durationMs / 1000;
         int h = duration / 3600;
         int m = (duration - h * 3600) / 60;
         int s = duration - (h * 3600 + m * 60);
         String durationValue;
         if (h == 0) {
-            durationValue = String.format(
-                    context.getString(R.string.details_ms), m, s);
+            durationValue = String.format(context.getString(R.string.details_ms), m, s);
         } else {
-            durationValue = String.format(
-                    context.getString(R.string.details_hms), h, m, s);
+            durationValue = String.format(context.getString(R.string.details_hms), h, m, s);
         }
         return durationValue;
     }
@@ -101,8 +95,7 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
         // For streams that we expect to be slow to start up, show a
         // progress spinner until playback starts.
         String scheme = mUri.getScheme();
-        if ("http".equalsIgnoreCase(scheme)
-                || "rtsp".equalsIgnoreCase(scheme)) {
+        if ("http".equalsIgnoreCase(scheme) || "rtsp".equalsIgnoreCase(scheme)) {
             mHandler.postDelayed(mPlayingChecker, 250);
         } else {
             mProgressView.setVisibility(View.GONE);
@@ -124,24 +117,25 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
         if (bookmark != null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle(R.string.resume_playing_title);
-            builder.setMessage(String.format(
-                    context.getString(R.string.resume_playing_message),
-                    formatDuration(context, bookmark)));
+            builder
+                    .setMessage(String
+                            .format(context.getString(R.string.resume_playing_message), formatDuration(context, bookmark)));
             builder.setOnCancelListener(new OnCancelListener() {
                 public void onCancel(DialogInterface dialog) {
                     onCompletion();
-                }});
-            builder.setPositiveButton(R.string.resume_playing_resume,
-                    new OnClickListener() {
+                }
+            });
+            builder.setPositiveButton(R.string.resume_playing_resume, new OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     mVideoView.seekTo(bookmark);
                     mVideoView.start();
-                }});
-            builder.setNegativeButton(R.string.resume_playing_restart,
-                    new OnClickListener() {
+                }
+            });
+            builder.setNegativeButton(R.string.resume_playing_restart, new OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     mVideoView.start();
-                }});
+                }
+            });
             builder.show();
         } else {
             mVideoView.start();
@@ -151,8 +145,7 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
     private static boolean uriSupportsBookmarks(Uri uri) {
         String scheme = uri.getScheme();
         String authority = uri.getAuthority();
-        return ("content".equalsIgnoreCase(scheme)
-                && MediaStore.AUTHORITY.equalsIgnoreCase(authority));
+        return ("content".equalsIgnoreCase(scheme) && MediaStore.AUTHORITY.equalsIgnoreCase(authority));
     }
 
     private Integer getBookmark() {
@@ -160,21 +153,16 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
             return null;
         }
 
-        String[] projection = new String[] {
-                Video.VideoColumns.DURATION,
-                Video.VideoColumns.BOOKMARK};
+        String[] projection = new String[] { Video.VideoColumns.DURATION, Video.VideoColumns.BOOKMARK };
 
         try {
-            Cursor cursor = mContentResolver.query(
-                    mUri, projection, null, null, null);
+            Cursor cursor = mContentResolver.query(mUri, projection, null, null, null);
             if (cursor != null) {
                 try {
                     if (cursor.moveToFirst()) {
                         int duration = getCursorInteger(cursor, 0);
                         int bookmark = getCursorInteger(cursor, 1);
-                        if ((bookmark < TWO_MINUTES)
-                                || (duration < FIVE_MINUTES)
-                                || (bookmark > (duration - ONE_MINUTE))) {
+                        if ((bookmark < TWO_MINUTES) || (duration < FIVE_MINUTES) || (bookmark > (duration - ONE_MINUTE))) {
                             return null;
                         }
                         return Integer.valueOf(bookmark);
@@ -253,4 +241,3 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener,
     public void onCompletion() {
     }
 }
-

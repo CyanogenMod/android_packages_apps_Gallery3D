@@ -2,7 +2,6 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
-
 import android.util.Log;
 
 public final class ConcatenatedDataSource implements DataSource {
@@ -36,17 +35,17 @@ public final class ConcatenatedDataSource implements DataSource {
         singleBucket.add(null);
         int numBuckets = mediaBuckets.size();
         boolean retVal = true;
-        for (int i = 0; i < numBuckets; ++i) {  // CR: iterator for
+        for (int i = 0; i < numBuckets; ++i) { // CR: iterator for
             MediaBucket bucket = mediaBuckets.get(i);
             MediaSet set = bucket.mediaSet;
             if (set != null) {
-	            DataSource dataSource = set.mDataSource;
-	            if (dataSource != null) {
-	                singleBucket.set(0, bucket);
-	                retVal &= dataSource.performOperation(operation, singleBucket, data);
-	            } else {
-	                Log.e(TAG, "MediaSet was not added to the feed");
-	            }
+                DataSource dataSource = set.mDataSource;
+                if (dataSource != null) {
+                    singleBucket.set(0, bucket);
+                    retVal &= dataSource.performOperation(operation, singleBucket, data);
+                } else {
+                    Log.e(TAG, "MediaSet was not added to the feed");
+                }
             }
         }
         return retVal;
@@ -55,7 +54,7 @@ public final class ConcatenatedDataSource implements DataSource {
     public DiskCache getThumbnailCache() {
         throw new UnsupportedOperationException("ConcatenatedDataSource should not create MediaItems");
     }
-    
+
     public void shutdown() {
         mFirst.shutdown();
         mSecond.shutdown();

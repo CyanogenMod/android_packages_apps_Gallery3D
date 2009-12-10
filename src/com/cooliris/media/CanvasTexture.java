@@ -57,7 +57,8 @@ public abstract class CanvasTexture {
     }
 
     public void resetTexture() {
-        // Happens when restoring the scene. Need to manage this more automatically.
+        // Happens when restoring the scene. Need to manage this more
+        // automatically.
         mTextureId = 0;
         mNeedsResize = true;
     }

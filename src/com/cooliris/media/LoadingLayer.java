@@ -12,22 +12,118 @@ import android.os.SystemClock;
 public final class LoadingLayer extends Layer {
     private static final float FADE_INTERVAL = 0.5f;
     private static final float GRAY_VALUE = 0.1f;
-    private static final int[] PRELOAD_RESOURCES_ASYNC_UNSCALED = {R.drawable.stack_frame, R.drawable.grid_frame,
-            R.drawable.stack_frame_focus, R.drawable.stack_frame_gold, R.drawable.btn_location_filter_unscaled, R.drawable.videooverlay,
-            R.drawable.grid_check_on, R.drawable.grid_check_off, R.drawable.icon_camera_small_unscaled, R.drawable.icon_picasa_small_unscaled};
+    private static final int[] PRELOAD_RESOURCES_ASYNC_UNSCALED = { R.drawable.stack_frame, R.drawable.grid_frame,
+            R.drawable.stack_frame_focus, R.drawable.stack_frame_gold, R.drawable.btn_location_filter_unscaled,
+            R.drawable.videooverlay, R.drawable.grid_check_on, R.drawable.grid_check_off, R.drawable.icon_camera_small_unscaled,
+            R.drawable.icon_picasa_small_unscaled };
 
-    private static final int[] PRELOAD_RESOURCES_ASYNC_SCALED = {/*R.drawable.btn_camera_pressed, R.drawable.btn_camera_focus,
-            R.drawable.fullscreen_hud_bg, R.drawable.icon_delete,
-            R.drawable.icon_edit, R.drawable.icon_more, R.drawable.icon_share, R.drawable.selection_bg_upper,
-            R.drawable.selection_menu_bg, R.drawable.selection_menu_bg_pressed, R.drawable.selection_menu_bg_pressed_left,
-            R.drawable.selection_menu_bg_pressed_right, R.drawable.selection_menu_divider, R.drawable.timebar_bg,
-            R.drawable.timebar_knob, R.drawable.timebar_knob_pressed, R.drawable.timebar_prev, R.drawable.timebar_next,
-            R.drawable.mode_grid, R.drawable.mode_stack, R.drawable.icon_camera_small, R.drawable.icon_location_small,
-            R.drawable.icon_picasa_small, R.drawable.icon_folder_small, R.drawable.scroller_new, R.drawable.scroller_pressed_new,
-            R.drawable.btn_camera, R.drawable.btn_play, R.drawable.pathbar_bg, R.drawable.pathbar_cap, R.drawable.pathbar_join,
-            R.drawable.transparent, R.drawable.icon_home_small, R.drawable.ic_fs_details,
-            R.drawable.ic_spinner1, R.drawable.ic_spinner2, R.drawable.ic_spinner3, R.drawable.ic_spinner4, R.drawable.ic_spinner5,
-            R.drawable.ic_spinner6, R.drawable.ic_spinner7, R.drawable.ic_spinner8*/};
+    private static final int[] PRELOAD_RESOURCES_ASYNC_SCALED = {/*
+                                                                  * R.drawable.btn_camera_pressed
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * btn_camera_focus
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * fullscreen_hud_bg
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * icon_delete,
+                                                                  * R.drawable.
+                                                                  * icon_edit,
+                                                                  * R.drawable.
+                                                                  * icon_more,
+                                                                  * R.drawable.
+                                                                  * icon_share,
+                                                                  * R.drawable.
+                                                                  * selection_bg_upper
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * selection_menu_bg
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * selection_menu_bg_pressed
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * selection_menu_bg_pressed_left
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * selection_menu_bg_pressed_right
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * selection_menu_divider
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * timebar_bg,
+                                                                  * R.drawable.
+                                                                  * timebar_knob
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * timebar_knob_pressed
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * timebar_prev
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * timebar_next
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * mode_grid,
+                                                                  * R.drawable.
+                                                                  * mode_stack,
+                                                                  * R.drawable.
+                                                                  * icon_camera_small
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * icon_location_small
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * icon_picasa_small
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * icon_folder_small
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * scroller_new
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * scroller_pressed_new
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * btn_camera,
+                                                                  * R.drawable.
+                                                                  * btn_play,
+                                                                  * R.drawable
+                                                                  * .pathbar_bg,
+                                                                  * R.drawable.
+                                                                  * pathbar_cap,
+                                                                  * R.drawable.
+                                                                  * pathbar_join
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * transparent,
+                                                                  * R.drawable.
+                                                                  * icon_home_small
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * ic_fs_details
+                                                                  * ,
+                                                                  * R.drawable.
+                                                                  * ic_spinner1,
+                                                                  * R.drawable.
+                                                                  * ic_spinner2,
+                                                                  * R.drawable.
+                                                                  * ic_spinner3,
+                                                                  * R.drawable.
+                                                                  * ic_spinner4,
+                                                                  * R.drawable.
+                                                                  * ic_spinner5,
+                                                                  * R.drawable.
+                                                                  * ic_spinner6,
+                                                                  * R.drawable.
+                                                                  * ic_spinner7,
+                                                                  * R.drawable.
+                                                                  * ic_spinner8
+                                                                  */};
 
     private boolean mLoaded = false;
     private final FloatAnim mOpacity = new FloatAnim(1f);

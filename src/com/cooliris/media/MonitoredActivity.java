@@ -23,15 +23,19 @@ import java.util.ArrayList;
 
 public class MonitoredActivity extends Activity {
 
-    private final ArrayList<LifeCycleListener> mListeners =
-            new ArrayList<LifeCycleListener>();
+    private final ArrayList<LifeCycleListener> mListeners = new ArrayList<LifeCycleListener>();
 
     public static interface LifeCycleListener {
         public void onActivityCreated(MonitoredActivity activity);
+
         public void onActivityDestroyed(MonitoredActivity activity);
+
         public void onActivityPaused(MonitoredActivity activity);
+
         public void onActivityResumed(MonitoredActivity activity);
+
         public void onActivityStarted(MonitoredActivity activity);
+
         public void onActivityStopped(MonitoredActivity activity);
     }
 
@@ -56,7 +60,8 @@ public class MonitoredActivity extends Activity {
     }
 
     public void addLifeCycleListener(LifeCycleListener listener) {
-        if (mListeners.contains(listener)) return;
+        if (mListeners.contains(listener))
+            return;
         mListeners.add(listener);
     }
 
@@ -96,4 +101,3 @@ public class MonitoredActivity extends Activity {
         }
     }
 }
-

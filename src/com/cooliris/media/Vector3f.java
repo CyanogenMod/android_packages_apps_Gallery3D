@@ -48,9 +48,9 @@ public final class Vector3f {
             return true;
         return false;
     }
-    
+
     @Override
     public String toString() {
-        return (new String("(" + x + ", " + y + ", " + z + ")" ));
+        return (new String("(" + x + ", " + y + ", " + z + ")"));
     }
 }

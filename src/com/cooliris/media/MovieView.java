@@ -16,7 +16,6 @@ package com.cooliris.media;
  * limitations under the License.
  */
 
-
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -27,7 +26,7 @@ import android.view.View;
 /**
  * This activity plays a video from a specified URI.
  */
-public class MovieView extends Activity  {
+public class MovieView extends Activity {
     @SuppressWarnings("unused")
     private static final String TAG = "MovieView";
 
@@ -49,15 +48,12 @@ public class MovieView extends Activity  {
             }
         };
         if (intent.hasExtra(MediaStore.EXTRA_SCREEN_ORIENTATION)) {
-            int orientation = intent.getIntExtra(
-                    MediaStore.EXTRA_SCREEN_ORIENTATION,
-                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            int orientation = intent.getIntExtra(MediaStore.EXTRA_SCREEN_ORIENTATION, ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
             if (orientation != getRequestedOrientation()) {
                 setRequestedOrientation(orientation);
             }
         }
-        mFinishOnCompletion = intent.getBooleanExtra(
-                MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
+        mFinishOnCompletion = intent.getBooleanExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
     }
 
     @Override
@@ -72,4 +68,3 @@ public class MovieView extends Activity  {
         super.onResume();
     }
 }
-

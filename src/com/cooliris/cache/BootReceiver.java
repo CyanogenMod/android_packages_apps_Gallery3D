@@ -41,7 +41,7 @@ public class BootReceiver extends BroadcastReceiver {
             final ContentObserver localObserver = new ContentObserver(handler) {
                 public void onChange(boolean selfChange) {
                     if (!LocalDataSource.sObserverActive) {
-                    	CacheService.senseDirty(context, null);
+                        CacheService.senseDirty(context, null);
                     }
                 }
             };
@@ -52,11 +52,11 @@ public class BootReceiver extends BroadcastReceiver {
             cr.registerContentObserver(uriImages, false, localObserver);
             cr.registerContentObserver(uriVideos, false, localObserver);
         } else if (action.equals(Intent.ACTION_MEDIA_EJECT)) {
-        	LocalDataSource.sThumbnailCache.close();
-        	LocalDataSource.sThumbnailCacheVideo.close();
-        	PicasaDataSource.sThumbnailCache.close();
-        	CacheService.sAlbumCache.close();
-        	CacheService.sMetaAlbumCache.close();
+            LocalDataSource.sThumbnailCache.close();
+            LocalDataSource.sThumbnailCacheVideo.close();
+            PicasaDataSource.sThumbnailCache.close();
+            CacheService.sAlbumCache.close();
+            CacheService.sMetaAlbumCache.close();
         }
     }
 }

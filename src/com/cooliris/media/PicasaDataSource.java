@@ -34,9 +34,9 @@ public final class PicasaDataSource implements DataSource {
     public PicasaDataSource(final Context context) {
         mContext = context;
     }
-    
+
     public static final HashMap<String, Boolean> getAccountStatus(final Context context) {
-    	final Account[] accounts = PicasaApi.getAccounts(context);
+        final Account[] accounts = PicasaApi.getAccounts(context);
         int numAccounts = accounts.length;
         HashMap<String, Boolean> accountsEnabled = new HashMap<String, Boolean>(numAccounts);
         for (int i = 0; i < numAccounts; ++i) {
@@ -44,7 +44,8 @@ public final class PicasaDataSource implements DataSource {
             boolean isEnabled = ContentResolver.getSyncAutomatically(account, PicasaContentProvider.AUTHORITY);
             String username = account.name.toLowerCase();
             if (username.contains("@gmail.") || username.contains("@googlemail.")) {
-                // Strip the domain from GMail accounts for canonicalization. TODO: is there an official way?
+                // Strip the domain from GMail accounts for canonicalization.
+                // TODO: is there an official way?
                 username = username.substring(0, username.indexOf('@'));
             }
             accountsEnabled.put(username, new Boolean(isEnabled));
@@ -53,14 +54,17 @@ public final class PicasaDataSource implements DataSource {
     }
 
     public void loadMediaSets(final MediaFeed feed) {
-        // We do this here and not in the constructor to speed application loading time since this method is called in a background thread
-    	if (mProviderClient == null) {
+        // We do this here and not in the constructor to speed application
+        // loading time since this method is called in a background thread
+        if (mProviderClient == null) {
             mProviderClient = mContext.getContentResolver().acquireContentProviderClient(PicasaContentProvider.AUTHORITY);
         }
-        // Force permission dialog to be displayed if necessary. TODO: remove this after signed by Google.
+        // Force permission dialog to be displayed if necessary. TODO: remove
+        // this after signed by Google.
         PicasaApi.getAccounts(mContext);
 
-        // Ensure that users are up to date. TODO: also listen for accounts changed broadcast.
+        // Ensure that users are up to date. TODO: also listen for accounts
+        // changed broadcast.
         PicasaService.requestSync(mContext, PicasaService.TYPE_USERS_ALBUMS, 0);
         final Handler handler = ((Gallery) mContext).getHandler();
         final ContentObserver albumObserver = new ContentObserver(handler) {
@@ -109,7 +113,7 @@ public final class PicasaDataSource implements DataSource {
                 final ArrayList<MediaSet> picasaSets = new ArrayList<MediaSet>(numAlbums);
                 do {
                     albumSchema.cursorToObject(cursor, album);
-                    String userLowerCase = album.user.toLowerCase();
+                    String userLowerCase = album.syncAccount.toLowerCase();
                     final Boolean accountEnabledObj = accountsEnabled.get(userLowerCase);
                     final boolean accountEnabled = (accountEnabledObj == null) ? false : accountEnabledObj.booleanValue();
                     if (accountEnabled) {

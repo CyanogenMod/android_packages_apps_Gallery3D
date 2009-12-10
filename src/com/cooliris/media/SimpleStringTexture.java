@@ -21,7 +21,7 @@ public final class SimpleStringTexture extends Texture {
     public float getBaselineHeight() {
         return mBaselineHeight;
     }
-    
+
     @Override
     public boolean isCached() {
         return true;

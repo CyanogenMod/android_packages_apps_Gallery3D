@@ -57,7 +57,7 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
     private Rect mQueuedRect;
     private RectF mQueuedFrameRect;
     private static final Vector3f sQueuedGrow = new Vector3f();
-    
+
     private long mPrevTime;
     private long mTimeElapsed;
 
@@ -80,7 +80,8 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
-        // We may need to make calls to super once this is a subclass of WallpaperService.
+        // We may need to make calls to super once this is a subclass of
+        // WallpaperService.
         mHandler.post(mDrawFrame);
     }
 
@@ -106,33 +107,34 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
                 // We draw the source bitmap
                 if (mBitmap != null) {
                     if (mTimeElapsed > SLIDESHOW_DURATION) {
-                        float alpha = ((float)(mTimeElapsed - SLIDESHOW_DURATION)) / 2000.0f;
+                        float alpha = ((float) (mTimeElapsed - SLIDESHOW_DURATION)) / 2000.0f;
                         paint.setColorFilter(null);
                         if (alpha < 1.0f) {
-                            //int val = (int)(255 * (1.0f - alpha));
-                            //int srcColor = Color.argb(val, 0, 0, 0);
-                            //PorterDuffColorFilter colorFilter = new PorterDuffColorFilter(srcColor, Mode.SRC_IN);
-                            //paint.setColorFilter(null);
+                            // int val = (int)(255 * (1.0f - alpha));
+                            // int srcColor = Color.argb(val, 0, 0, 0);
+                            // PorterDuffColorFilter colorFilter = new
+                            // PorterDuffColorFilter(srcColor, Mode.SRC_IN);
+                            // paint.setColorFilter(null);
                         }
                         c.drawBitmap(mBitmap, mRect, mFrameRect, paint);
                         if (alpha < 1.0f) {
-                            int val = (int)(255 * alpha);
+                            int val = (int) (255 * alpha);
                             int srcColor = Color.argb(val, 0, 0, 0);
                             PorterDuffColorFilter colorFilter = new PorterDuffColorFilter(srcColor, Mode.DST_IN);
                             paint.setColorFilter(colorFilter);
                         }
-                        
+
                         c.drawBitmap(mQueuedBitmap, mQueuedRect, mQueuedFrameRect, paint);
                         performUpdate(mQueuedFrameRect, sQueuedGrow, delta);
                         if (alpha >= 1.0f) {
                             // We switch the image.
                             mRect = mQueuedRect;
                             mBitmap = mQueuedBitmap;
-                            mFrameRect =  mQueuedFrameRect;
+                            mFrameRect = mQueuedFrameRect;
                             sGrow.set(sQueuedGrow);
                             mQueuedBitmap = null;
                             mQueuedRect = null;
-                            mQueuedFrameRect =  null;
+                            mQueuedFrameRect = null;
                             mTimeElapsed = 0;
                         }
                     } else {
@@ -154,12 +156,12 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private void performUpdate(RectF rect, Vector3f grow, long delta) {
-        float timeElapsed = ((float)(delta)) / 1000.0f;
+        float timeElapsed = ((float) (delta)) / 1000.0f;
         float amountToGrowX = timeElapsed * (rect.width() / 15.0f);
         float amountToGrowY = amountToGrowX * (rect.height() / rect.width());
         rect.top -= amountToGrowY * grow.x;
         rect.left -= amountToGrowX * grow.y;
-        
+
         rect.bottom += amountToGrowY * (1 - grow.x);
         rect.right += amountToGrowX * (1 - grow.y);
     }
@@ -172,7 +174,7 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
                 mFrameRect = new RectF();
                 mFrameRect.right = viewWidth;
                 mFrameRect.bottom = viewHeight;
-                sGrow.set((float)Math.random(), (float)Math.random(), 0);
+                sGrow.set((float) Math.random(), (float) Math.random(), 0);
             }
         }
         if (mQueuedBitmap == null) {
@@ -185,23 +187,23 @@ public class Slideshow extends SurfaceView implements SurfaceHolder.Callback {
                 mQueuedFrameRect = new RectF();
                 mQueuedFrameRect.right = viewWidth;
                 mQueuedFrameRect.bottom = viewHeight;
-                sQueuedGrow.set((float)Math.random(), (float)Math.random(), 0);
+                sQueuedGrow.set((float) Math.random(), (float) Math.random(), 0);
             }
         }
     }
 
     private Rect getRectToFitBitmap(int bitmapWidth, int bitmapHeight, int viewWidth, int viewHeight) {
         Rect rect = new Rect();
-        float viewAspect = (float)viewHeight / viewWidth;
+        float viewAspect = (float) viewHeight / viewWidth;
         float newWidth = bitmapWidth * viewAspect;
         if (bitmapHeight < newWidth) {
             // Vertically constrained.
             newWidth = bitmapHeight / viewAspect;
-            rect.set((int)(bitmapWidth/2 - newWidth/2), 0, (int)(bitmapWidth/2 + newWidth/2), bitmapHeight);
+            rect.set((int) (bitmapWidth / 2 - newWidth / 2), 0, (int) (bitmapWidth / 2 + newWidth / 2), bitmapHeight);
         } else {
             // Horizontally constrained
             float newHeight = bitmapWidth * viewAspect;
-            rect.set(0, (int)(bitmapHeight/2 - newHeight/2), bitmapWidth, (int)(bitmapHeight/2 + newHeight/2));
+            rect.set(0, (int) (bitmapHeight / 2 - newHeight / 2), bitmapWidth, (int) (bitmapHeight / 2 + newHeight / 2));
         }
         return rect;
     }

@@ -3,14 +3,17 @@ package com.cooliris.media;
 public final class MediaItem {
     public static final int MEDIA_TYPE_IMAGE = 0;
     public static final int MEDIA_TYPE_VIDEO = 1;
-    // Approximately the year 1975 in milliseconds and seconds. Serves as a min cutoff for bad times.
+    // Approximately the year 1975 in milliseconds and seconds. Serves as a min
+    // cutoff for bad times.
     public static final long MIN_VALID_DATE_IN_MS = 157680000000L;
     public static final long MIN_VALID_DATE_IN_SEC = 157680000L;
-    // Approximately the year 2035 in milliseconds ans seconds. Serves as a max cutoff for bad time.
+    // Approximately the year 2035 in milliseconds ans seconds. Serves as a max
+    // cutoff for bad time.
     public static final long MAX_VALID_DATE_IN_MS = 2049840000000L;
     public static final long MAX_VALID_DATE_IN_SEC = 2049840000L;
 
-    // mId is not a unique identifier of the item mId is initialized to -1 in some cases.
+    // mId is not a unique identifier of the item mId is initialized to -1 in
+    // some cases.
     public static final String ID = new String("id");
     public long mId;
 
@@ -91,13 +94,14 @@ public final class MediaItem {
     public boolean isPicassaItem() {
         return (mParentMediaSet != null && mParentMediaSet.isPicassaAlbum());
     }
-    
+
     private static final String VIDEO = "video/";
 
     public int getMediaType() {
         if (mMediaType == -1) {
             // Default to image if mMimetype is null or not video.
-            mMediaType = (mMimeType != null && mMimeType.startsWith(VIDEO)) ? MediaItem.MEDIA_TYPE_VIDEO : MediaItem.MEDIA_TYPE_IMAGE;
+            mMediaType = (mMimeType != null && mMimeType.startsWith(VIDEO)) ? MediaItem.MEDIA_TYPE_VIDEO
+                    : MediaItem.MEDIA_TYPE_IMAGE;
         }
         return mMediaType;
     }
@@ -110,7 +114,7 @@ public final class MediaItem {
         if (mDisplayMimeType == null && mMimeType != null) {
             int slashPos = mMimeType.indexOf('/');
             if (slashPos != -1 && slashPos + 1 < mMimeType.length()) {
-                mDisplayMimeType = mMimeType.substring(slashPos + 1).toUpperCase();                
+                mDisplayMimeType = mMimeType.substring(slashPos + 1).toUpperCase();
             } else {
                 mDisplayMimeType = mMimeType.toUpperCase();
             }

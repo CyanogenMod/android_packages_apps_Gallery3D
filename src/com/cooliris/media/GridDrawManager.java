@@ -140,8 +140,7 @@ public final class GridDrawManager {
                     Texture texture = displayItem.getThumbnailImage(context, sThumbnailConfig);
                     if (texture != null && !texture.isLoaded() && numTexturesQueued <= 6) {
                         boolean isCached = texture.isCached();
-                        if (isCached)
-                            view.prime(texture, priority);
+                        view.prime(texture, priority);
                         view.bind(texture);
                         if (priority && isCached && texture.mState != Texture.STATE_ERROR)
                             ++numTexturesQueued;
@@ -386,7 +385,7 @@ public final class GridDrawManager {
     }
 
     public void drawBlendedComponents(RenderView view, GL11 gl, float alpha, int state, int hudMode, float stackMixRatio,
-            float gridMixRatio, MediaBucketList bucketList, boolean isFeedLoading) {
+            float gridMixRatio, MediaBucketList selectedBucketList, MediaBucketList markedBucketList, boolean isFeedLoading) {
         int firstBufferedVisibleSlot = mBufferedVisibleRange.begin;
         int lastBufferedVisibleSlot = mBufferedVisibleRange.end;
         int firstVisibleSlot = mVisibleRange.begin;
@@ -437,10 +436,11 @@ public final class GridDrawManager {
                         if (itemDrawn == null) {
                             continue;
                         }
-                        boolean displayItemPresentInSelectedItems = bucketList.find(itemDrawn.mItemRef);
+                        boolean displayItemPresentInSelectedItems = selectedBucketList.find(itemDrawn.mItemRef);
+                        boolean displayItemPresentInMarkedItems = markedBucketList.find(itemDrawn.mItemRef);
                         Texture previousTexture = (displayItemPresentInSelectedItems) ? texturePressed : texture;
                         Texture textureToUse = (itemDrawn.getHasFocus()) ? (currentFocusIsPressed ? texturePressed : textureFocus)
-                                : ((displayItemPresentInSelectedItems) ? texturePressed : textureGrid);
+                                : ((displayItemPresentInSelectedItems) ? texturePressed : (displayItemPresentInMarkedItems) ? texture : textureGrid);
                         float ratio = timeElapsedSinceGridView;
                         if (itemDrawn.mAlive) {
                             if (state != GridLayer.STATE_GRID_VIEW) {
@@ -509,6 +509,7 @@ public final class GridDrawManager {
                         DisplaySlot displaySlot = displaySlots[i - firstBufferedVisibleSlot];
                         StringTexture textureString = displaySlot.getLocationImage(reverseGeocoder, stringTextureTable);
                         if (textureString != null) {
+                            view.loadTexture(textureString);
                             drawDisplayItem(view, gl, displayItem, textureString, PASS_TEXT_LABEL, null, 0);
                         }
                     }
@@ -550,7 +551,8 @@ public final class GridDrawManager {
                                 Texture locationTexture = view.getResource(drawables
                                         .getIconForSet(displaySlot.getMediaSet(), false), false);
 
-                                // Draw the icon at 0.85 alpha over the top item in the stack.
+                                // Draw the icon at 0.85 alpha over the top item
+                                // in the stack.
                                 gl.glTranslatef(0.24f, 0.5f, 0);
                                 drawDisplayItem(view, gl, displayItem, locationTexture, PASS_MEDIASET_SOURCE_LABEL,
                                         transparentTexture, 0.85f);
@@ -573,7 +575,7 @@ public final class GridDrawManager {
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {
-                        Texture textureToUse = bucketList.find(displayItem.mItemRef) ? textureSelectedOn : textureSelectedOff;
+                        Texture textureToUse = selectedBucketList.find(displayItem.mItemRef) ? textureSelectedOn : textureSelectedOff;
                         drawDisplayItem(view, gl, displayItem, textureToUse, PASS_SELECTION_LABEL, null, 0);
                     }
                 }

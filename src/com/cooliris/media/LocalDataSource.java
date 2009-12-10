@@ -33,19 +33,20 @@ public final class LocalDataSource implements DataSource {
     public static final int CAMERA_BUCKET_ID = getBucketId(CAMERA_BUCKET_NAME);
     public static final int DOWNLOAD_BUCKET_ID = getBucketId(DOWNLOAD_BUCKET_NAME);
 
-	public static boolean sObserverActive = false;
+    public static boolean sObserverActive = false;
     private boolean mDisableImages;
     private boolean mDisableVideos;
 
     /**
-     * Matches code in MediaProvider.computeBucketValues. Should be a common function.
+     * Matches code in MediaProvider.computeBucketValues. Should be a common
+     * function.
      */
     public static int getBucketId(String path) {
         return (path.toLowerCase().hashCode());
     }
 
     private Context mContext;
-	private ContentObserver mObserver;
+    private ContentObserver mObserver;
 
     public LocalDataSource(Context context) {
         mContext = context;
@@ -65,24 +66,24 @@ public final class LocalDataSource implements DataSource {
         Handler handler = ((Gallery) mContext).getHandler();
         ContentObserver observer = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
-            	MediaSet mediaSet = feed.getCurrentSet();
-            	if (mediaSet != null) {
-            		CacheService.markDirtyImmediate(mediaSet.mId);
-            		refreshUI(feed, mediaSet.mId);
-            	}
-            	CacheService.senseDirty(mContext, new CacheService.Observer() {
-            		public void onChange(long[] ids) {
-            			if (ids != null) {
-            				int numLongs = ids.length;
-            				for (int i = 0; i < numLongs; ++i) {
-            					refreshUI(feed, ids[i]);
-            				}
-            			}
-            		}
-            	});
+                MediaSet mediaSet = feed.getCurrentSet();
+                if (mediaSet != null) {
+                    CacheService.markDirtyImmediate(mediaSet.mId);
+                    refreshUI(feed, mediaSet.mId);
+                }
+                CacheService.senseDirty(mContext, new CacheService.Observer() {
+                    public void onChange(long[] ids) {
+                        if (ids != null) {
+                            int numLongs = ids.length;
+                            for (int i = 0; i < numLongs; ++i) {
+                                refreshUI(feed, ids[i]);
+                            }
+                        }
+                    }
+                });
             }
         };
-        
+
         // Start listening.
         Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
@@ -98,7 +99,7 @@ public final class LocalDataSource implements DataSource {
             stopListeners();
         }
     }
-    
+
     private void stopListeners() {
         ContentResolver cr = mContext.getContentResolver();
         if (mObserver != null) {
@@ -106,7 +107,7 @@ public final class LocalDataSource implements DataSource {
         }
         sObserverActive = false;
     }
-    
+
     protected void refreshUI(MediaFeed feed, long setIdToUse) {
         if (setIdToUse == Shared.INVALID) {
             return;
@@ -171,9 +172,14 @@ public final class LocalDataSource implements DataSource {
                 if (set != null && items != null) {
                     // We need to remove these items from the set.
                     int numItems = items.size();
-                    for (int j = 0; j < numItems; ++j) {
-                        MediaItem item = items.get(j);
-                        cr.delete(Uri.parse(item.mContentUri), null, null);
+                    try {
+                        for (int j = 0; j < numItems; ++j) {
+                            MediaItem item = items.get(j);
+                            cr.delete(Uri.parse(item.mContentUri), null, null);
+                        }
+                    } catch (Exception e) {
+                        // If the database operation failed for any reason.
+                        ;
                     }
                     set.updateNumExpectedItems();
                     set.generateTitle(true);
@@ -213,7 +219,12 @@ public final class LocalDataSource implements DataSource {
             // Update the database entry.
             ContentValues values = new ContentValues();
             values.put(Images.ImageColumns.ORIENTATION, rotationString);
-            cr.update(Uri.parse(item.mContentUri), values, null, null);
+            try {
+                cr.update(Uri.parse(item.mContentUri), values, null, null);
+            } catch (Exception e) {
+                // If the database operation fails for any reason.
+                ;
+            }
 
             // Update the file EXIF information.
             Uri uri = Uri.parse(item.mContentUri);
@@ -243,14 +254,19 @@ public final class LocalDataSource implements DataSource {
         long id = ContentUris.parseId(target);
         ContentResolver cr = context.getContentResolver();
         String whereClause = Images.ImageColumns._ID + "=" + Long.toString(id);
-        Cursor cursor = cr.query(Images.Media.EXTERNAL_CONTENT_URI, CacheService.PROJECTION_IMAGES, whereClause, null, null);
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                item = new MediaItem();
-                CacheService.populateMediaItemFromCursor(item, cr, cursor, Images.Media.EXTERNAL_CONTENT_URI.toString() + "/");
+        try {
+            Cursor cursor = cr.query(Images.Media.EXTERNAL_CONTENT_URI, CacheService.PROJECTION_IMAGES, whereClause, null, null);
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    item = new MediaItem();
+                    CacheService.populateMediaItemFromCursor(item, cr, cursor, Images.Media.EXTERNAL_CONTENT_URI.toString() + "/");
+                }
+                cursor.close();
+                cursor = null;
             }
-            cursor.close();
-            cursor = null;
+        } catch (Exception e) {
+            // If the database operation failed for any reason.
+            ;
         }
         return item;
     }
@@ -262,14 +278,19 @@ public final class LocalDataSource implements DataSource {
         long bucketId = SingleDataSource.parseBucketIdFromFileUri(fileUri);
         String whereClause = Images.ImageColumns.BUCKET_ID + "=" + bucketId + " AND " + Images.ImageColumns.DATA + "='" + filepath
                 + "'";
-        Cursor cursor = cr.query(Images.Media.EXTERNAL_CONTENT_URI, CacheService.PROJECTION_IMAGES, whereClause, null, null);
-        if (cursor != null) {
-            if (cursor.moveToFirst()) {
-                item = new MediaItem();
-                CacheService.populateMediaItemFromCursor(item, cr, cursor, Images.Media.EXTERNAL_CONTENT_URI.toString() + "/");
+        try {
+            Cursor cursor = cr.query(Images.Media.EXTERNAL_CONTENT_URI, CacheService.PROJECTION_IMAGES, whereClause, null, null);
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    item = new MediaItem();
+                    CacheService.populateMediaItemFromCursor(item, cr, cursor, Images.Media.EXTERNAL_CONTENT_URI.toString() + "/");
+                }
+                cursor.close();
+                cursor = null;
             }
-            cursor.close();
-            cursor = null;
+        } catch (Exception e) {
+            // If the database operation failed for any reason.
+            ;
         }
         return item;
     }

@@ -23,7 +23,9 @@ public final class Deque<E extends Object> {
     }
 
     public int size() {
-        return (mTail - mHead) & (mArray.length - 1);  // CR: wtf?!? this definitely needs a comment.
+        return (mTail - mHead) & (mArray.length - 1); // CR: wtf?!? this
+                                                      // definitely needs a
+                                                      // comment.
     }
 
     public void clear() {

@@ -69,7 +69,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     @SuppressWarnings("unchecked")
     private final ReferenceQueue mUnreferencedTextureQueue = new ReferenceQueue();
 
-    // Frame time in milliseconds and delta since last frame in seconds. Uses SystemClock.getUptimeMillis().
+    // Frame time in milliseconds and delta since last frame in seconds. Uses
+    // SystemClock.getUptimeMillis().
     private long mFrameTime = 0;
     private float mFrameInterval = 0.0f;
     private float mAlpha;
@@ -170,8 +171,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     private void clearTextureArray(SparseArray<ResourceTexture> array) {
         /*
-         * final int size = array.size(); for (int i = 0; i < size; ++i) { ResourceTexture texture = array.get(array.keyAt(i)); if
-         * (texture != null) { texture.clear(); } }
+         * final int size = array.size(); for (int i = 0; i < size; ++i) {
+         * ResourceTexture texture = array.get(array.keyAt(i)); if (texture !=
+         * null) { texture.clear(); } }
          */
         array.clear();
     }
@@ -215,7 +217,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                 int height = bitmap.getHeight();
                 texture.mWidth = width;
                 texture.mHeight = height;
-                // Create a padded bitmap if the natural size is not a power of 2.
+                // Create a padded bitmap if the natural size is not a power of
+                // 2.
                 if (!Shared.isPowerOf2(width) || !Shared.isPowerOf2(height)) {
                     int paddedWidth = Shared.nextPowerOf2(width);
                     int paddedHeight = Shared.nextPowerOf2(height);
@@ -229,7 +232,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                     canvas.drawBitmap(bitmap, 0, 0, null);
                     bitmap.recycle();
                     bitmap = padded;
-                    // Store normalized width and height for use in texture coordinates.
+                    // Store normalized width and height for use in texture
+                    // coordinates.
                     texture.mNormalizedWidth = (float) width / (float) paddedWidth;
                     texture.mNormalizedHeight = (float) height / (float) paddedHeight;
                 } else {
@@ -318,7 +322,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         texture.mState = Texture.STATE_LOADING;
 
         // Push the texture onto the load input queue.
-        Deque<Texture> inputQueue = (texture.isUncachedVideo()) ? sLoadInputQueueVideo : (texture.isCached()) ? sLoadInputQueueCached : sLoadInputQueue;;
+        Deque<Texture> inputQueue = (texture.isUncachedVideo()) ? sLoadInputQueueVideo
+                : (texture.isCached()) ? sLoadInputQueueCached : sLoadInputQueue;
+        ;
         synchronized (inputQueue) {
             if (highPriority) {
                 inputQueue.addFirst(texture);
@@ -374,7 +380,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_RGB, GL11.GL_INTERPOLATE);
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_ALPHA, GL11.GL_INTERPOLATE);
 
-        // Specify the interpolation factor via the alpha component of GL_TEXTURE_ENV_COLOR.
+        // Specify the interpolation factor via the alpha component of
+        // GL_TEXTURE_ENV_COLOR.
         final float[] color = { 1f, 1f, 1f, ratio };
         gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, color, 0);
 
@@ -414,7 +421,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                 gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_RGB, GL11.GL_INTERPOLATE);
                 gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_ALPHA, GL11.GL_INTERPOLATE);
 
-                // Specify the interpolation factor via the alpha component of GL_TEXTURE_ENV_COLOR.
+                // Specify the interpolation factor via the alpha component of
+                // GL_TEXTURE_ENV_COLOR.
                 final float[] color = { 1f, 1f, 1f, ratio };
                 gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, color, 0);
 
@@ -498,13 +506,14 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             gl.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             GLUtils.texImage2D(GL11.GL_TEXTURE_2D, 0, bitmap, 0);
             glError = gl.glGetError();
-            
+
             bitmap.recycle();
             if (glError == GL11.GL_OUT_OF_MEMORY) {
                 handleLowMemory();
             }
             if (glError != GL11.GL_NO_ERROR) {
-                // There was an error, we need to retry this texture at some later time
+                // There was an error, we need to retry this texture at some
+                // later time
                 Log.i(TAG, "Texture creation fail, glError " + glError);
                 texture.mId = 0;
                 texture.mBitmap = null;
@@ -597,7 +606,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             if (isDirty) {
                 requestRender();
             }
-        
+
             // Clear the depth buffer.
             gl.glClear(GL11.GL_DEPTH_BUFFER_BIT);
             gl.glEnable(GL11.GL_SCISSOR_TEST);
@@ -612,7 +621,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                     layer.renderOpaque(this, gl);
                 }
             }
-            
+
             // Run the blended pass.
             gl.glEnable(GL11.GL_BLEND);
             final ArrayList<Layer> blendedList = lists.blendedList;
@@ -732,7 +741,10 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         }
     }
 
-    /** Called when the OpenGL surface is recreated without destroying the context. */
+    /**
+     * Called when the OpenGL surface is recreated without destroying the
+     * context.
+     */
     public void onSurfaceChanged(GL10 gl1, int width, int height) {
         GL11 gl = (GL11) gl1;
         mFirstDraw = false;
@@ -765,7 +777,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         gl.glMatrixMode(GL11.GL_MODELVIEW);
     }
 
-    /** Called when the context is created, possibly after automatic destruction. */
+    /**
+     * Called when the context is created, possibly after automatic destruction.
+     */
     public void onSurfaceCreated(GL10 gl1, EGLConfig config) {
         // Clear the resource texture cache.
         clearCache();
@@ -793,9 +807,12 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         gl.glEnable(GL11.GL_TEXTURE_2D);
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
 
-        // Set up state for multitexture operations. Since multitexture is currently used
-        // only for layered crossfades the needed state can be factored out into one-time
-        // initialization. This section may need to be folded into drawMixed2D() if multitexture
+        // Set up state for multitexture operations. Since multitexture is
+        // currently used
+        // only for layered crossfades the needed state can be factored out into
+        // one-time
+        // initialization. This section may need to be folded into drawMixed2D()
+        // if multitexture
         // is used for other effects.
 
         // Enable Vertex Arrays
@@ -865,7 +882,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         }
         // Wait for the render thread to process this event.
         if (mTouchEventQueue.size() > 8 && event.getAction() == MotionEvent.ACTION_MOVE)
-        	return true;
+            return true;
         synchronized (mTouchEventQueue) {
             MotionEvent eventCopy = MotionEvent.obtain(event);
             mTouchEventQueue.addLast(eventCopy);
@@ -883,9 +900,12 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         /*
          * if (mGL == null) { return; }
          * 
-         * // Wait for the render thread to process this event. try { synchronized (this) { mCurrentFocusEventGain = gainFocus;
-         * mCurrentFocusEventDirection = direction; mCurrentEventType = EVENT_FOCUS; do { wait(); } while (mCurrentEventType !=
-         * EVENT_NONE); } } catch (InterruptedException e) { // Stop waiting for the render thread if interrupted. }
+         * // Wait for the render thread to process this event. try {
+         * synchronized (this) { mCurrentFocusEventGain = gainFocus;
+         * mCurrentFocusEventDirection = direction; mCurrentEventType =
+         * EVENT_FOCUS; do { wait(); } while (mCurrentEventType != EVENT_NONE);
+         * } } catch (InterruptedException e) { // Stop waiting for the render
+         * thread if interrupted. }
          */
         requestRender();
     }
@@ -948,7 +968,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
         public void run() {
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-            Deque<Texture> inputQueue = (sVideoTextureLoadThread == this) ? sLoadInputQueueVideo : ((sCachedTextureLoadThread == this) ? sLoadInputQueueCached : sLoadInputQueue);
+            Deque<Texture> inputQueue = (sVideoTextureLoadThread == this) ? sLoadInputQueueVideo
+                    : ((sCachedTextureLoadThread == this) ? sLoadInputQueueCached : sLoadInputQueue);
             Deque<Texture> outputQueue = sLoadOutputQueue;
             try {
                 for (;;) {

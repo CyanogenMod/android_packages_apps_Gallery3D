@@ -68,7 +68,8 @@ public abstract class Layer {
         return false;
     }
 
-    // Allows subclasses to further constrain the hit test defined by layer bounds.
+    // Allows subclasses to further constrain the hit test defined by layer
+    // bounds.
     public boolean containsPoint(float x, float y) {
         return true;
     }

@@ -98,24 +98,25 @@ public class BackgroundLayer extends Layer {
                 mFallbackBackground = texture;
             }
         }
-        
-        // We stitch this crossfading texture, and to cover all cases of overlap we need to perform 3 draws.
+
+        // We stitch this crossfading texture, and to cover all cases of overlap
+        // we need to perform 3 draws.
         int cameraPosition = (int) (mGridLayer.getScrollPosition() * PARALLAX);
         int backgroundSpacing = mBackgroundBlitWidth - mBackgroundOverlap;
         int anchorEdge = -cameraPosition % (backgroundSpacing);
         int rightEdge = anchorEdge + backgroundSpacing;
-        
+
         view.draw2D(rightEdge, 0, Z_FAR_PLANE, mBackgroundBlitWidth, mHeight);
 
         view.draw2D(anchorEdge, 0, Z_FAR_PLANE, mBackgroundBlitWidth, mHeight);
 
         int leftEdge = anchorEdge - backgroundSpacing;
         view.draw2D(leftEdge, 0, Z_FAR_PLANE, mBackgroundBlitWidth, mHeight);
-        
+
         if (bind) {
             anchorTexture.unbind(view, gl);
         }
-        
+
         gl.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
         gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     }

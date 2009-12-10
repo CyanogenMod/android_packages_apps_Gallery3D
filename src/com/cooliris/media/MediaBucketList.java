@@ -3,7 +3,6 @@ package com.cooliris.media;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
 public final class MediaBucketList {
     private static final Boolean TRUE = new Boolean(true);
     private static final Boolean FALSE = new Boolean(false);
@@ -36,7 +35,8 @@ public final class MediaBucketList {
         return item;
     }
 
-    // Returns the first set selection (ignoring sets corresponding to item selections).
+    // Returns the first set selection (ignoring sets corresponding to item
+    // selections).
     public static MediaSet getFirstSetSelection(ArrayList<MediaBucket> buckets) {
         MediaSet set = null;
         if (buckets != null) {
@@ -65,7 +65,8 @@ public final class MediaBucketList {
                 int numItems = 0;
                 if (bucket.mediaItems == null && bucket.mediaSet != null) {
                     numItems = bucket.mediaSet.getNumItems();
-                    // This selection reflects the bucket itself, and not the items inside the bucket (which is 0).
+                    // This selection reflects the bucket itself, and not the
+                    // items inside the bucket (which is 0).
                     if (numItems == 0) {
                         numItems = 1;
                     }
@@ -116,7 +117,8 @@ public final class MediaBucketList {
             if (bucketCompare.mediaSet == mediaSetToAdd) {
                 // We found the MediaSet.
                 if (!hasExpandedMediaSet) {
-                    // Remove this bucket from the list since this bucket was already selected.
+                    // Remove this bucket from the list since this bucket was
+                    // already selected.
                     if (removeIfAlreadyAdded) {
                         selectedBuckets.remove(bucketCompare);
                     }
@@ -153,7 +155,8 @@ public final class MediaBucketList {
                         boolean foundIndex = false;
                         for (int j = 0; j < numPresentItems; ++j) {
                             if (selectedItems.get(j) == item) {
-                                // This index was already present, we need to remove it.
+                                // This index was already present, we need to
+                                // remove it.
                                 foundIndex = true;
                                 if (removeIfAlreadyAdded) {
                                     selectedItems.remove(j);
@@ -238,7 +241,8 @@ public final class MediaBucketList {
         return (bucket.mediaSet != null && bucket.mediaItems == null) ? true : false;
     }
 
-    // Assumption: If multiple items are selected, they must all be in the first bucket.
+    // Assumption: If multiple items are selected, they must all be in the first
+    // bucket.
     protected static boolean isMultipleItemSelection(ArrayList<MediaBucket> buckets) {
         if (buckets != null) {
             int numBuckets = buckets.size();

@@ -24,8 +24,8 @@ public abstract class RootLayer extends Layer {
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         return false;
     }
-    
+
     public void handleLowMemory() {
-     
+
     }
- }
+}

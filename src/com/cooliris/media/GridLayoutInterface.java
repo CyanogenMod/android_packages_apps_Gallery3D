@@ -3,8 +3,8 @@ package com.cooliris.media;
 public final class GridLayoutInterface extends LayoutInterface {
     GridLayoutInterface(int numRows) {
         mNumRows = numRows;
-        mSpacingX = (int)(20 * Gallery.PIXEL_DENSITY);
-        mSpacingY = (int)(40 * Gallery.PIXEL_DENSITY);
+        mSpacingX = (int) (20 * Gallery.PIXEL_DENSITY);
+        mSpacingY = (int) (40 * Gallery.PIXEL_DENSITY);
     }
 
     public void getPositionForSlotIndex(int slotIndex, int itemWidth, int itemHeight, Vector3f outPosition) {

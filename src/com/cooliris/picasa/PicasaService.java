@@ -36,16 +36,17 @@ public final class PicasaService extends Service {
     private static final AtomicBoolean sSyncPending = new AtomicBoolean(false);
 
     public static void requestSync(Context context, int type, long id) {
-    	Bundle extras = new Bundle();
-    	extras.putInt(KEY_TYPE, type);
-    	extras.putLong(KEY_ID, id);
-    	
-    	Account[] accounts = PicasaApi.getAccounts(context);
-    	for (Account account : accounts) {
-    	    ContentResolver.requestSync(account, PicasaContentProvider.AUTHORITY, extras);
-    	}
-    	
-    	//context.startService(new Intent(context, PicasaService.class).putExtras(extras));
+        Bundle extras = new Bundle();
+        extras.putInt(KEY_TYPE, type);
+        extras.putLong(KEY_ID, id);
+
+        Account[] accounts = PicasaApi.getAccounts(context);
+        for (Account account : accounts) {
+            ContentResolver.requestSync(account, PicasaContentProvider.AUTHORITY, extras);
+        }
+
+        // context.startService(new Intent(context,
+        // PicasaService.class).putExtras(extras));
     }
 
     public PicasaService() {
@@ -53,9 +54,9 @@ public final class PicasaService extends Service {
         mSyncThread.start();
         mSyncHandler = new Handler(mSyncThread.getLooper());
         mSyncHandler.post(new Runnable() {
-        	public void run() {
-        		Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-        	}
+            public void run() {
+                Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+            }
         });
     }
 
@@ -64,45 +65,45 @@ public final class PicasaService extends Service {
         ContentProviderClient client = cr.acquireContentProviderClient(PicasaContentProvider.AUTHORITY);
         return (PicasaContentProvider) client.getLocalContentProvider();
     }
-    
+
     @Override
     public int onStartCommand(final Intent intent, int flags, final int startId) {
-		mSyncHandler.post(new Runnable() {
-			public void run() {
-				performSync(PicasaService.this, null, intent.getExtras(), new SyncResult());
-				stopSelf(startId);
-			}
-		});
-		return START_NOT_STICKY;
+        mSyncHandler.post(new Runnable() {
+            public void run() {
+                performSync(PicasaService.this, null, intent.getExtras(), new SyncResult());
+                stopSelf(startId);
+            }
+        });
+        return START_NOT_STICKY;
     }
 
     @Override
     public IBinder onBind(Intent intent) {
         return new PicasaSyncAdapter(getApplicationContext()).getSyncAdapterBinder();
     }
-    
+
     @Override
     public void onDestroy() {
-    	mSyncThread.quit();
+        mSyncThread.quit();
     }
-    
+
     public static boolean performSync(Context context, Account account, Bundle extras, SyncResult syncResult) {
-    	// Skip if another sync is pending.
-    	if (!sSyncPending.compareAndSet(false, true)) {
-    		return false;
-		}
-    	
-    	// Perform the sync.
-    	performSyncImpl(context, account, extras, syncResult);
-    	
-    	// Mark sync as complete and notify all waiters.
-    	sSyncPending.set(false);
-    	synchronized (sSyncPending) {
-    	    sSyncPending.notifyAll();
-    	}
-    	return true;
+        // Skip if another sync is pending.
+        if (!sSyncPending.compareAndSet(false, true)) {
+            return false;
+        }
+
+        // Perform the sync.
+        performSyncImpl(context, account, extras, syncResult);
+
+        // Mark sync as complete and notify all waiters.
+        sSyncPending.set(false);
+        synchronized (sSyncPending) {
+            sSyncPending.notifyAll();
+        }
+        return true;
     }
-    
+
     public static void waitForPerformSync() {
         synchronized (sSyncPending) {
             while (sSyncPending.get()) {
@@ -116,54 +117,57 @@ public final class PicasaService extends Service {
             }
         }
     }
-    
+
     private static void performSyncImpl(Context context, Account account, Bundle extras, SyncResult syncResult) {
-    	// Initialize newly added accounts to sync by default.
-    	String authority = PicasaContentProvider.AUTHORITY;
-    	if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_INITIALIZE, false)) {
-	    	if (account != null && ContentResolver.getIsSyncable(account, authority) < 0) {
-	    		try {
-	    			ContentResolver.setIsSyncable(account, authority, getIsSyncable(context, account) ? 1 : 0);
-	    		} catch (OperationCanceledException e) {
-	    		} catch (IOException e) {
-	    		}
-	    	}
-	    	return;
-    	}
-    	
-    	// Do nothing if sync is disabled for this account. TODO: is this blocked in PicasaContentProvider too?
-    	if (account != null && ContentResolver.getIsSyncable(account, authority) < 0) {
-    	    ++syncResult.stats.numSkippedEntries;
-    		return;
-    	}
-	    	
-    	// Get the type of sync operation and the entity ID, if applicable. Default to synchronize all.
-    	int type = extras.getInt(PicasaService.KEY_TYPE, PicasaService.TYPE_USERS_ALBUMS);
-    	long id = extras.getLong(PicasaService.KEY_ID, -1);
-    	
-    	// Get the content provider instance and reload the list of user accounts.
-    	PicasaContentProvider provider = getContentProvider(context);
-    	provider.reloadAccounts();
-    	
-    	// Restrict sync to either a specific account or all accounts.
-    	provider.setActiveSyncAccount(account);
-    	
-    	// Perform the desired sync operation.
-    	switch (type) {
-    	case PicasaService.TYPE_USERS:
-    		provider.syncUsers(syncResult);
-    		break;
-    	case PicasaService.TYPE_USERS_ALBUMS:
-    		provider.syncUsersAndAlbums(true, syncResult);
-    		break;
-    	case PicasaService.TYPE_ALBUM_PHOTOS:
-    		provider.syncAlbumPhotos(id, true, syncResult);
-    		break;
-    	default:
-    		throw new IllegalArgumentException();
-    	}
+        // Initialize newly added accounts to sync by default.
+        String authority = PicasaContentProvider.AUTHORITY;
+        if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_INITIALIZE, false)) {
+            if (account != null && ContentResolver.getIsSyncable(account, authority) < 0) {
+                try {
+                    ContentResolver.setIsSyncable(account, authority, getIsSyncable(context, account) ? 1 : 0);
+                } catch (OperationCanceledException e) {
+                } catch (IOException e) {
+                }
+            }
+            return;
+        }
+
+        // Do nothing if sync is disabled for this account. TODO: is this
+        // blocked in PicasaContentProvider too?
+        if (account != null && ContentResolver.getIsSyncable(account, authority) < 0) {
+            ++syncResult.stats.numSkippedEntries;
+            return;
+        }
+
+        // Get the type of sync operation and the entity ID, if applicable.
+        // Default to synchronize all.
+        int type = extras.getInt(PicasaService.KEY_TYPE, PicasaService.TYPE_USERS_ALBUMS);
+        long id = extras.getLong(PicasaService.KEY_ID, -1);
+
+        // Get the content provider instance and reload the list of user
+        // accounts.
+        PicasaContentProvider provider = getContentProvider(context);
+        provider.reloadAccounts();
+
+        // Restrict sync to either a specific account or all accounts.
+        provider.setActiveSyncAccount(account);
+
+        // Perform the desired sync operation.
+        switch (type) {
+        case PicasaService.TYPE_USERS:
+            provider.syncUsers(syncResult);
+            break;
+        case PicasaService.TYPE_USERS_ALBUMS:
+            provider.syncUsersAndAlbums(true, syncResult);
+            break;
+        case PicasaService.TYPE_ALBUM_PHOTOS:
+            provider.syncAlbumPhotos(id, true, syncResult);
+            break;
+        default:
+            throw new IllegalArgumentException();
+        }
     }
-    
+
     private static boolean getIsSyncable(Context context, Account account) throws IOException, OperationCanceledException {
         try {
             Account[] picasaAccounts = AccountManager.get(context).getAccountsByTypeAndFeatures(ACCOUNT_TYPE,
