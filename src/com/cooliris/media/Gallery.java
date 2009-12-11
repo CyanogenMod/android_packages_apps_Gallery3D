@@ -64,7 +64,6 @@ public final class Gallery extends Activity {
         }
         CacheService.computeDirtySets(this);
         final boolean isCacheReady = CacheService.isCacheReady(false);
-        CacheService.startCache(this, false);
         if (PIXEL_DENSITY == 0.0f) {
             DisplayMetrics metrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -158,6 +157,8 @@ public final class Gallery extends Activity {
     @Override
     public void onResume() {
         super.onResume();
+        CacheService.computeDirtySets(this);
+        CacheService.startCache(this, false);
         if (mRenderView != null) {
             mRenderView.onResume();
         }
