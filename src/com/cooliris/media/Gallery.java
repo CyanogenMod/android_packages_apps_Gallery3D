@@ -158,8 +158,9 @@ public final class Gallery extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        if (mRenderView != null)
+        if (mRenderView != null) {
             mRenderView.onResume();
+        }
         if (mPause) {
             // We check to see if the authenticated accounts have changed, and
             // if so, reload the datasource.
