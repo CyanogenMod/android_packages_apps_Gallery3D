@@ -224,7 +224,7 @@ public final class CacheService extends IntentService {
 
     public static final void markDirty(final Context context) {
         sList = null;
-        sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData);
+        sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
         if (CACHE_THREAD.get() == null) {
             QUEUE_DIRTY_SENSE = false;
             QUEUE_DIRTY_ALL = false;
@@ -258,7 +258,7 @@ public final class CacheService extends IntentService {
             // Add this to the existing keys and concatenate the byte arrays.
             data = concat(data, existingData);
         }
-        sAlbumCache.put(ALBUM_CACHE_DIRTY_BUCKET_INDEX, data);
+        sAlbumCache.put(ALBUM_CACHE_DIRTY_BUCKET_INDEX, data, 0);
     }
 
     public static final void markDirty(final Context context, final long id) {
@@ -582,7 +582,7 @@ public final class CacheService extends IntentService {
         if (bitmap == null) {
             final long time = SystemClock.uptimeMillis();
             bitmap = buildThumbnailForId(context, thumbnailCache, thumbId, origId, isVideo, DEFAULT_THUMBNAIL_WIDTH,
-                    DEFAULT_THUMBNAIL_HEIGHT);
+                    DEFAULT_THUMBNAIL_HEIGHT, timestamp);
             Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
         }
         return bitmap;
@@ -605,14 +605,14 @@ public final class CacheService extends IntentService {
             final long thumbnailId = thumbnailIds[i];
             if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
                 buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false, DEFAULT_THUMBNAIL_WIDTH,
-                        DEFAULT_THUMBNAIL_HEIGHT);
+                        DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
             }
         }
         Log.i(TAG, "DiskCache ready for all thumbnails.");
     }
 
     private static final byte[] buildThumbnailForId(final Context context, final DiskCache thumbnailCache, final long thumbId,
-            final long origId, final boolean isVideo, final int thumbnailWidth, final int thumbnailHeight) {
+            final long origId, final boolean isVideo, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
         if (origId == Shared.INVALID) {
             return null;
         }
@@ -650,7 +650,7 @@ public final class CacheService extends IntentService {
             if (bitmap == null) {
                 return null;
             }
-            final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth, thumbnailHeight);
+            final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth, thumbnailHeight, timestamp);
             return retVal;
         } catch (InterruptedException e) {
             return null;
@@ -658,7 +658,7 @@ public final class CacheService extends IntentService {
     }
 
     public static final byte[] writeBitmapToCache(final DiskCache thumbnailCache, final long thumbId, final long origId,
-            final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight) {
+            final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
         // Detect faces to find the focal point, otherwise fall back to the
@@ -721,7 +721,7 @@ public final class CacheService extends IntentService {
             finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, cacheOutput);
             retVal = cacheOutput.toByteArray();
             synchronized (thumbnailCache) {
-                thumbnailCache.put(thumbId, retVal);
+                thumbnailCache.put(thumbId, retVal, timestamp);
             }
             cacheOutput.close();
             finalBitmap.recycle();
@@ -778,7 +778,7 @@ public final class CacheService extends IntentService {
             dos.flush();
             bos.flush();
             final byte[] data = bos.toByteArray();
-            sAlbumCache.put(ALBUM_CACHE_LOCALE_INDEX, data);
+            sAlbumCache.put(ALBUM_CACHE_LOCALE_INDEX, data, 0);
             sAlbumCache.flush();
             dos.close();
             bos.close();
@@ -960,7 +960,7 @@ public final class CacheService extends IntentService {
                     sortCursor.close();
             }
 
-            sAlbumCache.put(ALBUM_CACHE_INCOMPLETE_INDEX, sDummyData);
+            sAlbumCache.put(ALBUM_CACHE_INCOMPLETE_INDEX, sDummyData, 0);
             writeSetsToCache(sets);
             Log.i(TAG, "Done building albums.");
             // Now we must cache the items contained in every album / bucket.
@@ -1036,7 +1036,7 @@ public final class CacheService extends IntentService {
                                     addNoDupe(retVal, setId);
                                     dataLong[0] = maxAdded;
                                     dataLong[1] = count;
-                                    sMetaAlbumCache.put(setId, longArrayToByteArray(dataLong));
+                                    sMetaAlbumCache.put(setId, longArrayToByteArray(dataLong), 0);
                                 }
                             }
                         }
@@ -1181,7 +1181,7 @@ public final class CacheService extends IntentService {
                 dos.writeBoolean(set.mHasVideos);
             }
             dos.flush();
-            sAlbumCache.put(ALBUM_CACHE_METADATA_INDEX, bos.toByteArray());
+            sAlbumCache.put(ALBUM_CACHE_METADATA_INDEX, bos.toByteArray(), 0);
             dos.close();
             if (numSets == 0) {
                 sAlbumCache.deleteAll();
@@ -1237,7 +1237,7 @@ public final class CacheService extends IntentService {
                 Utils.writeUTF(dos, item.mFilePath);
             }
             dos.flush();
-            sAlbumCache.put(set.mId, bos.toByteArray());
+            sAlbumCache.put(set.mId, bos.toByteArray(), 0);
             dos.close();
         } catch (IOException e) {
             Log.e(TAG, "Error writing to diskcache for set " + set.mName);
