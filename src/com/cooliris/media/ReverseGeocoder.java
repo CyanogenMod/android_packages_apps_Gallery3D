@@ -151,7 +151,7 @@ public final class ReverseGeocoder extends Thread {
 
         String closestCommonLocation = null;
 
-        if (currentCity.equals(addr1.getLocality()) || currentCity.equals(addr2.getLocality())) {
+        if (currentCity.equals(addr1.getLocality()) && currentCity.equals(addr2.getLocality())) {
             String otherCity = currentCity;
             if (currentCity.equals(addr1.getLocality())) {
                 otherCity = addr2.getLocality();
@@ -399,7 +399,7 @@ public final class ReverseGeocoder extends Thread {
                         Utils.writeUTF(dos, address.getUrl());
 
                         dos.flush();
-                        sGeoCache.put(locationKey, bos.toByteArray());
+                        sGeoCache.put(locationKey, bos.toByteArray(), 0);
                         dos.close();
                     }
                 } finally {

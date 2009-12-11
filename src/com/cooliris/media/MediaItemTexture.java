@@ -106,6 +106,21 @@ public final class MediaItemTexture extends Texture {
                 if (mItem.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) {
                     Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
                     try {
+                        // We first dirty the cache if the timestamp has changed
+                        DiskCache cache = null;
+                        MediaSet parentMediaSet = item.mParentMediaSet;
+                        if (parentMediaSet != null && parentMediaSet.mDataSource != null) {
+                            cache = parentMediaSet.mDataSource.getThumbnailCache();
+                            if (cache == LocalDataSource.sThumbnailCache) {
+                                if (item.mMimeType != null && item.mMimeType.contains("video")) {
+                                    cache = LocalDataSource.sThumbnailCacheVideo;
+                                }
+                                final long crc64 = Utils.Crc64Long(item.mFilePath);
+                                if (!cache.isDataAvailable(crc64, item.mDateModifiedInSec * 1000)) {
+                                    UriTexture.invalidateCache(crc64, UriTexture.MAX_RESOLUTION);
+                                }
+                            }
+                        }
                         retVal = UriTexture.createFromUri(mContext, mItem.mContentUri, UriTexture.MAX_RESOLUTION,
                                 UriTexture.MAX_RESOLUTION, Utils.Crc64Long(item.mFilePath), null);
                     } catch (IOException e) {
@@ -159,7 +174,7 @@ public final class MediaItemTexture extends Texture {
                     try {
                         Bitmap retVal = UriTexture.createFromUri(mContext, item.mThumbnailUri, 256, 256, 0, null);
                         data = CacheService.writeBitmapToCache(thumbnailCache, item.mId, item.mId, retVal, config.thumbnailWidth,
-                                config.thumbnailHeight);
+                                config.thumbnailHeight, item.mDateModifiedInSec * 1000);
                     } catch (IOException e) {
                         return null;
                     } catch (URISyntaxException e) {
