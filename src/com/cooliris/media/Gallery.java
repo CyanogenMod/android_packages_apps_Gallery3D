@@ -47,8 +47,15 @@ public final class Gallery extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final boolean imageManagerHasStorage = ImageManager.quickHasStorage();
+        boolean slideshowIntent = false;
+        if (isViewIntent()) {
+            Bundle extras = getIntent().getExtras();
+            if (extras != null) {
+                slideshowIntent = extras.getBoolean("slideshow", false);
+            }
+        }
         if (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI)
-                && getIntent().getExtras().getBoolean("slideshow", false)) {
+                && slideshowIntent) {
             if (!imageManagerHasStorage) {
                 Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
                 finish();
