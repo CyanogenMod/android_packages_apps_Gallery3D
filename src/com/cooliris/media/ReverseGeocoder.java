@@ -143,35 +143,46 @@ public final class ReverseGeocoder extends Thread {
                 sCurrentAddress = currentAddress;
             }
             if (currentAddress != null && currentAddress.getCountryCode() != null) {
-                currentCity = currentAddress.getLocality();
-                currentCountry = currentAddress.getCountryCode();
-                currentAdminArea = currentAddress.getAdminArea();
+                currentCity = checkNull(currentAddress.getLocality());
+                currentCountry = checkNull(currentAddress.getCountryCode());
+                currentAdminArea = checkNull(currentAddress.getAdminArea());
             }
         }
 
         String closestCommonLocation = null;
+        String addr1Locality = checkNull(addr1.getLocality());
+        String addr2Locality = checkNull(addr2.getLocality());
+        String addr1AdminArea = checkNull(addr1.getAdminArea());
+        String addr2AdminArea = checkNull(addr2.getAdminArea());
+        String addr1CountryCode = checkNull(addr1.getCountryCode());
+        String addr2CountryCode = checkNull(addr2.getCountryCode());
+        
 
-        if (currentCity.equals(addr1.getLocality()) && currentCity.equals(addr2.getLocality())) {
+        if (currentCity.equals(addr1Locality) && currentCity.equals(addr2Locality)) {
             String otherCity = currentCity;
-            if (currentCity.equals(addr1.getLocality())) {
-                otherCity = addr2.getLocality();
-                if ("null".equals(otherCity) || otherCity == null) {
-                    otherCity = addr2.getAdminArea();
-                    if (!currentCountry.equals(addr2.getCountryCode())) {
-                        otherCity += " " + addr2.getCountryCode();
+            if (currentCity.equals(addr1Locality)) {
+                otherCity = addr2Locality;
+                if (otherCity.length() == 0) {
+                    otherCity = addr2AdminArea;
+                    if (!currentCountry.equals(addr2CountryCode)) {
+                        otherCity += " " + addr2CountryCode;
                     }
                 }
-                addr2 = addr1;
+                addr2Locality = addr1Locality;
+                addr2AdminArea = addr1AdminArea;
+                addr2CountryCode = addr1CountryCode;
             } else {
-                otherCity = addr1.getLocality();
-                if ("null".equals(otherCity) || otherCity == null) {
-                    otherCity = addr1.getAdminArea() + " " + addr1.getCountryCode();
+                otherCity = addr1Locality;
+                if (otherCity.length() == 0) {
+                    otherCity = addr1AdminArea + " " + addr1CountryCode;
                     ;
-                    if (!currentCountry.equals(addr1.getCountryCode())) {
-                        otherCity += " " + addr1.getCountryCode();
+                    if (!currentCountry.equals(addr1CountryCode)) {
+                        otherCity += " " + addr1CountryCode;
                     }
                 }
-                addr1 = addr2;
+                addr1Locality = addr2Locality;
+                addr1AdminArea = addr2AdminArea;
+                addr1CountryCode = addr2CountryCode;
             }
             closestCommonLocation = valueIfEqual(addr1.getAddressLine(0), addr2.getAddressLine(0));
             if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
@@ -189,10 +200,10 @@ public final class ReverseGeocoder extends Thread {
         }
 
         // Compare the locality.
-        closestCommonLocation = valueIfEqual(addr1.getLocality(), addr2.getLocality());
-        if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
-            String adminArea = addr1.getAdminArea();
-            String countryCode = addr1.getCountryCode();
+        closestCommonLocation = valueIfEqual(addr1Locality, addr2Locality);
+        if (closestCommonLocation != null && !("".equals(closestCommonLocation))) {
+            String adminArea = addr1AdminArea;
+            String countryCode = addr1CountryCode;
             if (adminArea != null && adminArea.length() > 0) {
                 if (!countryCode.equals(currentCountry)) {
                     closestCommonLocation += ", " + adminArea + " " + countryCode;
@@ -205,16 +216,14 @@ public final class ReverseGeocoder extends Thread {
 
         // If the admin area is the same as the current location, we hide it and
         // instead show the city name.
-        if (currentAdminArea.equals(addr1.getAdminArea()) && currentAdminArea.equals(addr2.getAdminArea())) {
-            String addr1Locality = addr1.getLocality();
-            String addr2Locality = addr2.getLocality();
-            if (addr1Locality == null || "null".equals(addr1Locality)) {
+        if (currentAdminArea.equals(addr1AdminArea) && currentAdminArea.equals(addr2AdminArea)) {
+            if ("".equals(addr1Locality)) {
                 addr1Locality = addr2Locality;
             }
-            if (addr2Locality == null || "null".equals(addr2Locality)) {
+            if ("".equals(addr2Locality)) {
                 addr2Locality = addr1Locality;
             }
-            if (addr1Locality != null && !"null".equals(addr1Locality)) {
+            if (!"".equals(addr1Locality)) {
                 if (addr1Locality.equals(addr2Locality)) {
                     closestCommonLocation = addr1Locality + ", " + currentAdminArea;
                 } else {
@@ -242,9 +251,9 @@ public final class ReverseGeocoder extends Thread {
         }
 
         // Check the administrative area.
-        closestCommonLocation = valueIfEqual(addr1.getAdminArea(), addr2.getAdminArea());
-        if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
-            String countryCode = addr1.getCountryCode();
+        closestCommonLocation = valueIfEqual(addr1AdminArea, addr2AdminArea);
+        if (closestCommonLocation != null && !("".equals(closestCommonLocation))) {
+            String countryCode = addr1CountryCode;
             if (!countryCode.equals(currentCountry)) {
                 if (countryCode != null && countryCode.length() > 0) {
                     closestCommonLocation += " " + countryCode;
@@ -254,25 +263,33 @@ public final class ReverseGeocoder extends Thread {
         }
 
         // Check the country codes.
-        closestCommonLocation = valueIfEqual(addr1.getCountryCode(), addr2.getCountryCode());
-        if (closestCommonLocation != null && !("null".equals(closestCommonLocation))) {
+        closestCommonLocation = valueIfEqual(addr1CountryCode, addr2CountryCode);
+        if (closestCommonLocation != null && !("".equals(closestCommonLocation))) {
             return closestCommonLocation;
         }
         // There is no intersection, let's choose a nicer name.
         String addr1Country = addr1.getCountryName();
         String addr2Country = addr2.getCountryName();
         if (addr1Country == null)
-            addr1Country = addr1.getCountryCode();
+            addr1Country = addr1CountryCode;
         if (addr2Country == null)
-            addr2Country = addr2.getCountryCode();
+            addr2Country = addr2CountryCode;
         if (addr1Country == null || addr2Country == null)
             return null;
         if (addr1Country.length() > MAX_COUNTRY_NAME_LENGTH || addr2Country.length() > MAX_COUNTRY_NAME_LENGTH) {
-            closestCommonLocation = addr1.getCountryCode() + " - " + addr2.getCountryCode();
+            closestCommonLocation = addr1CountryCode + " - " + addr2CountryCode;
         } else {
             closestCommonLocation = addr1Country + " - " + addr2Country;
         }
         return closestCommonLocation;
+    }
+
+    private String checkNull(String locality) {
+        if (locality == null)
+            return "";
+        if (locality.equals("null"))
+            return "";
+        return locality;
     }
 
     protected String getReverseGeocodedLocation(final double latitude, final double longitude, final int desiredNumDetails) {
