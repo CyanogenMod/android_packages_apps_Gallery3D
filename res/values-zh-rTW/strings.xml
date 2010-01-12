@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2009 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"圖片庫"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"1 月"</item>
+    <item msgid="4680813504147866612">"2 月"</item>
+    <item msgid="1934595560893153574">"3 月"</item>
+    <item msgid="9020107212348500338">"4 月"</item>
+    <item msgid="5734859077892484949">"5 月"</item>
+    <item msgid="8546985030184126468">"6 月"</item>
+    <item msgid="3639654472839533748">"7 月"</item>
+    <item msgid="8434242278630875235">"8 月"</item>
+    <item msgid="8493511009771049442">"9 月"</item>
+    <item msgid="685181459001441496">"10 月"</item>
+    <item msgid="6662413035764778250">"11 月"</item>
+    <item msgid="3784870986696899313">"12 月"</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"相框"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"電影"</string>
+    <string name="loading_video" msgid="4013492720121891585">"正在載入影片…"</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"繼續播放影片"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"要從 %s 繼續播放嗎？"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"繼續播放"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"重新開始"</string>
+    <string name="photos" msgid="3921471644099818826">"張相片"</string>
+    <string name="videos" msgid="9168892901395116842">"部影片"</string>
+    <string name="camera" msgid="2730811566218090802">"相機"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"儲存"</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"放棄"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"輕觸所需的臉孔開始裁剪。"</string>
+    <string name="saving_image" msgid="7270334453636349407">"正在儲存相片..."</string>
+    <string name="crop_label" msgid="521114301871349328">"裁剪相片"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"請稍候..."</string>
+    <string name="set_image" msgid="2331476809308010401">"將相片設為"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"設定桌布中，請稍候…"</string>
+    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"圖片"</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"桌布"</string>
+    <string name="details_ok" msgid="6848594369924424312">"確定"</string>
+    <string name="loading_new" msgid="7893793767294787579">"正在載入新相簿和相片"</string>
+    <string name="initializing" msgid="2374228157398540466">"載入中"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"從圖片集中挑選一個項目"</string>
+    <string name="no_items" msgid="3117870234034732172">"您的圖片集裡並沒有任何項目"</string>
+    <string name="home" msgid="3335112006212947568">"主螢幕鍵"</string>
+    <string name="pick" msgid="7248789132035843128">"挑選"</string>
+    <string name="delete" msgid="2839695998251824487">"刪除"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"確認刪除"</string>
+    <string name="are_you_sure" msgid="6293680869731897736">"您確定嗎？"</string>
+    <string name="cancel" msgid="3637516880917356226">"取消"</string>
+    <string name="share" msgid="3619042788254195341">"分享"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"已取出或未插入 SD 卡"</string>
+    <string name="more" msgid="1526449516720792387">"更多"</string>
+    <string name="select_all" msgid="8623593677101437957">"全選"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"取消選取全部"</string>
+    <string name="slideshow" msgid="4355906903247112975">"投影播放"</string>
+    <string name="play" msgid="8116587039599675035">"播放"</string>
+    <string name="menu" msgid="1819649153380636719">"選單"</string>
+    <string name="details" msgid="8415120088556445230">"詳細資料"</string>
+    <string name="album_selected" msgid="3441280740465738452">"本相簿已選取"</string>
+    <string name="item_selected" msgid="6137767503817908841">"個項目已選取"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"本相簿已選取"</string>
+    <string name="items_selected" msgid="8548754404879264861">"個項目已選取"</string>
+    <string name="album" msgid="5198388817734336004">"相簿"</string>
+    <string name="start" msgid="4316892252528232165">"開始"</string>
+    <string name="end" msgid="3645506196012005500">"結束"</string>
+    <string name="location" msgid="3432705876921618314">"地點"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"未知地點"</string>
+    <string name="title" msgid="7622928349908052569">"標題"</string>
+    <string name="type" msgid="4329478642546287192">"類型"</string>
+    <string name="taken_on" msgid="3269486910757192479">"拍攝時間"</string>
+    <string name="added_on" msgid="5194321063173381814">"新增日期："</string>
+    <string name="show_on_map" msgid="6157544221201750980">"在地圖上顯示"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"向左旋轉"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"向右旋轉"</string>
+    <string name="crop" msgid="7970750655414797277">"裁剪"</string>
+    <string name="set_as" msgid="3636764710790507868">"設為"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"設為桌布"</string>
+    <string name="item" msgid="636303673288563698">"個項目"</string>
+    <string name="items" msgid="6403254716052150916">"個項目"</string>
+    <string name="set_as_contact_icon" msgid="749479412834888190">"設為聯絡人圖示"</string>
+    <string name="miles_around" msgid="267745511737880822">"距離 (英哩數)"</string>
+    <string name="around" msgid="2223906282110417412">"靠近"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"未知日期"</string>
+    <string name="video_err" msgid="7917736494827857757">"無法播放影片"</string>
+</resources>

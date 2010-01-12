@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2009 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"Galerie"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"Janv."</item>
+    <item msgid="4680813504147866612">"Févr."</item>
+    <item msgid="1934595560893153574">"Mars"</item>
+    <item msgid="9020107212348500338">"Avr."</item>
+    <item msgid="5734859077892484949">"Mai"</item>
+    <item msgid="8546985030184126468">"Juin"</item>
+    <item msgid="3639654472839533748">"Juil."</item>
+    <item msgid="8434242278630875235">"Août"</item>
+    <item msgid="8493511009771049442">"Sept."</item>
+    <item msgid="685181459001441496">"Oct."</item>
+    <item msgid="6662413035764778250">"Nov."</item>
+    <item msgid="3784870986696899313">"Déc."</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"Cadre d\'image"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"Films"</string>
+    <string name="loading_video" msgid="4013492720121891585">"Chargement de la vidéo..."</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"Reprendre la vidéo"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"Reprendre la lecture à partir de %s ?"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"Reprendre la lecture"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"Démarrer"</string>
+    <string name="photos" msgid="3921471644099818826">"photos"</string>
+    <string name="videos" msgid="9168892901395116842">"vidéos"</string>
+    <string name="camera" msgid="2730811566218090802">"Appareil photo"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"Enregistrer"</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"Annuler"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"Appuyez sur un visage pour commencer."</string>
+    <string name="saving_image" msgid="7270334453636349407">"Enregistrement de l\'image"</string>
+    <string name="crop_label" msgid="521114301871349328">"Rogner l\'image"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"Veuillez patienter..."</string>
+    <string name="set_image" msgid="2331476809308010401">"Utiliser l\'image comme"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Configuration du fond d\'écran en cours. Veuillez patienter..."</string>
+    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"Images"</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Fond d\'écran"</string>
+    <string name="details_ok" msgid="6848594369924424312">"OK"</string>
+    <string name="loading_new" msgid="7893793767294787579">"Chargement de photos et d\'albums nouveaux"</string>
+    <string name="initializing" msgid="2374228157398540466">"Chargement"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"Choisissez un élément dans votre collection."</string>
+    <string name="no_items" msgid="3117870234034732172">"Votre collection ne contient aucun élément"</string>
+    <string name="home" msgid="3335112006212947568">"Page d\'accueil"</string>
+    <string name="pick" msgid="7248789132035843128">"Choisir"</string>
+    <string name="delete" msgid="2839695998251824487">"Supprimer"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"Confirmer la suppression"</string>
+    <string name="are_you_sure" msgid="6293680869731897736">"Souhaitez-vous confirmer ?"</string>
+    <string name="cancel" msgid="3637516880917356226">"Annuler"</string>
+    <string name="share" msgid="3619042788254195341">"Partager"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"Carte SD désactivée ou non connectée"</string>
+    <string name="more" msgid="1526449516720792387">"Plus"</string>
+    <string name="select_all" msgid="8623593677101437957">"Tout sélectionner"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Tout désélectionner"</string>
+    <string name="slideshow" msgid="4355906903247112975">"Diaporama"</string>
+    <string name="play" msgid="8116587039599675035">"Lire"</string>
+    <string name="menu" msgid="1819649153380636719">"Menu"</string>
+    <string name="details" msgid="8415120088556445230">"Détails"</string>
+    <string name="album_selected" msgid="3441280740465738452">"album sélectionné"</string>
+    <string name="item_selected" msgid="6137767503817908841">"élément sélectionné"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"albums sélectionnés"</string>
+    <string name="items_selected" msgid="8548754404879264861">"éléments sélectionnés"</string>
+    <string name="album" msgid="5198388817734336004">"Album"</string>
+    <string name="start" msgid="4316892252528232165">"Démarrer"</string>
+    <string name="end" msgid="3645506196012005500">"Fin"</string>
+    <string name="location" msgid="3432705876921618314">"Lieu"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"Lieu inconnu"</string>
+    <string name="title" msgid="7622928349908052569">"Titre"</string>
+    <string name="type" msgid="4329478642546287192">"Type"</string>
+    <string name="taken_on" msgid="3269486910757192479">"Prise"</string>
+    <string name="added_on" msgid="5194321063173381814">"Ajoutée le"</string>
+    <string name="show_on_map" msgid="6157544221201750980">"Afficher sur la carte"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"Rotation à gauche"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"Rotation à droite"</string>
+    <string name="crop" msgid="7970750655414797277">"Rogner"</string>
+    <string name="set_as" msgid="3636764710790507868">"Définir comme"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"Définir comme fond d\'écran"</string>
+    <string name="item" msgid="636303673288563698">"élément"</string>
+    <string name="items" msgid="6403254716052150916">"éléments"</string>
+    <string name="set_as_contact_icon" msgid="749479412834888190">"Définir comme icône de contact"</string>
+    <string name="miles_around" msgid="267745511737880822">"km autour de"</string>
+    <string name="around" msgid="2223906282110417412">"À proximité de"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"Date inconnue"</string>
+    <string name="video_err" msgid="7917736494827857757">"Impossible de lire la vidéo."</string>
+</resources>
