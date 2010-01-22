@@ -789,4 +789,9 @@ public final class HudLayer extends Layer {
     public Layer getMenuBar() {
         return mFullscreenMenu;
     }
+
+    public void hideZoomButtons(boolean hide) {
+        mZoomInButton.setHidden(hide);
+        mZoomOutButton.setHidden(hide);
+    }
 }
