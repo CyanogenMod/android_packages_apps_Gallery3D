@@ -4,11 +4,11 @@ import android.accounts.Account;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.BroadcastReceiver;
 import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
 import android.os.Bundle;
-import android.util.Log;
 
 public class PicasaSyncAdapter extends AbstractThreadedSyncAdapter {
     private final Context mContext;
@@ -22,6 +22,11 @@ public class PicasaSyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient providerClient,
             SyncResult syncResult) {
+        if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_INITIALIZE, false)) {
+            ContentResolver.setIsSyncable(account, authority, 1);
+            ContentResolver.setSyncAutomatically(account, authority, true);
+            return;
+        }
         PicasaService.performSync(mContext, account, extras, syncResult);
     }
 
