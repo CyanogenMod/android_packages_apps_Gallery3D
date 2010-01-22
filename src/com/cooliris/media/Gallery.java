@@ -46,7 +46,7 @@ public final class Gallery extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final boolean imageManagerHasStorage = ImageManager.quickHasStorage();
+        final boolean imageManagerHasStorage = ImageManager.hasStorage();
         boolean slideshowIntent = false;
         if (isViewIntent()) {
             Bundle extras = getIntent().getExtras();
@@ -69,8 +69,6 @@ public final class Gallery extends Activity {
             }
             return;
         }
-        CacheService.computeDirtySets(this);
-        final boolean isCacheReady = CacheService.isCacheReady(false);
         if (PIXEL_DENSITY == 0.0f) {
             DisplayMetrics metrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -82,65 +80,93 @@ public final class Gallery extends Activity {
                 mRenderView);
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
+        
+        Thread t = new Thread() {
+            public void run() {
+                int numRetries = 25;
+                if (!imageManagerHasStorage) {
+                    showToast(getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG);
+                    do {
+                        --numRetries;
+                        try {
+                        Thread.sleep(200);
+                        } catch (InterruptedException e) {
+                            ;
+                        }
+                    } while (numRetries > 0 && !ImageManager.hasStorage());
+                }
+                final boolean imageManagerHasStorageAfterDelay = ImageManager.hasStorage();
+                CacheService.computeDirtySets(Gallery.this);
+                CacheService.startCache(Gallery.this, false);
+                final boolean isCacheReady = CacheService.isCacheReady(false);
 
-        // Creating the DataSource objects.
-        final PicasaDataSource picasaDataSource = new PicasaDataSource(this);
-        final LocalDataSource localDataSource = new LocalDataSource(this);
-        final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(localDataSource, picasaDataSource);
+                // Creating the DataSource objects.
+                final PicasaDataSource picasaDataSource = new PicasaDataSource(Gallery.this);
+                final LocalDataSource localDataSource = new LocalDataSource(Gallery.this);
+                final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(localDataSource, picasaDataSource);
 
-        // Depending upon the intent, we assign the right dataSource.
-        if (!isPickIntent() && !isViewIntent()) {
-            if (imageManagerHasStorage) {
-                mGridLayer.setDataSource(combinedDataSource);
-            } else {
-                mGridLayer.setDataSource(picasaDataSource);
-            }
-            if (!imageManagerHasStorage) {
-                Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
-            } else if (!isCacheReady) {
-                Toast.makeText(this, getResources().getString(R.string.loading_new), Toast.LENGTH_LONG).show();
-            }
-        } else if (!isViewIntent()) {
-            final Intent intent = getIntent();
-            if (intent != null) {
-                final String type = intent.resolveType(this);
-                boolean includeImages = isImageType(type);
-                boolean includeVideos = isVideoType(type);
-                ((LocalDataSource) localDataSource).setMimeFilter(!includeImages, !includeVideos);
-                if (includeImages) {
-                    if (imageManagerHasStorage) {
+                // Depending upon the intent, we assign the right dataSource.
+                if (!isPickIntent() && !isViewIntent()) {
+                    if (imageManagerHasStorageAfterDelay) {
                         mGridLayer.setDataSource(combinedDataSource);
                     } else {
                         mGridLayer.setDataSource(picasaDataSource);
                     }
+                    if (!isCacheReady && imageManagerHasStorageAfterDelay) {
+                        showToast(getResources().getString(R.string.loading_new), Toast.LENGTH_LONG);
+                    }
+                } else if (!isViewIntent()) {
+                    final Intent intent = getIntent();
+                    if (intent != null) {
+                        final String type = intent.resolveType(Gallery.this);
+                        boolean includeImages = isImageType(type);
+                        boolean includeVideos = isVideoType(type);
+                        ((LocalDataSource) localDataSource).setMimeFilter(!includeImages, !includeVideos);
+                        if (includeImages) {
+                            if (imageManagerHasStorageAfterDelay) {
+                                mGridLayer.setDataSource(combinedDataSource);
+                            } else {
+                                mGridLayer.setDataSource(picasaDataSource);
+                            }
+                        } else {
+                            mGridLayer.setDataSource(localDataSource);
+                        }
+                        mGridLayer.setPickIntent(true);
+                        if (!imageManagerHasStorageAfterDelay) {
+                            showToast(getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG);
+                        } else {
+                            showToast(getResources().getString(R.string.pick_prompt), Toast.LENGTH_LONG);
+                        }
+                    }
                 } else {
-                    mGridLayer.setDataSource(localDataSource);
-                }
-                mGridLayer.setPickIntent(true);
-                if (!imageManagerHasStorage) {
-                    Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(this, getResources().getString(R.string.pick_prompt), Toast.LENGTH_LONG).show();
+                    // View intent for images.
+                    Uri uri = getIntent().getData();
+                    boolean slideshow = getIntent().getBooleanExtra("slideshow", false);
+                    final SingleDataSource singleDataSource = new SingleDataSource(Gallery.this, uri.toString(), slideshow);
+                    final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource, picasaDataSource);
+                    mGridLayer.setDataSource(singleCombinedDataSource);
+                    mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
+                    if (singleDataSource.isSingleImage()) {
+                        mGridLayer.setSingleImage(false);
+                    } else if (slideshow) {
+                        mGridLayer.setSingleImage(true);
+                        mGridLayer.startSlideshow();
+                    }
                 }
             }
-        } else {
-            // View intent for images.
-            Uri uri = getIntent().getData();
-            boolean slideshow = getIntent().getBooleanExtra("slideshow", false);
-            final SingleDataSource singleDataSource = new SingleDataSource(this, uri.toString(), slideshow);
-            final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource, picasaDataSource);
-            mGridLayer.setDataSource(singleCombinedDataSource);
-            mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
-            if (singleDataSource.isSingleImage()) {
-                mGridLayer.setSingleImage(false);
-            } else if (slideshow) {
-                mGridLayer.setSingleImage(true);
-                mGridLayer.startSlideshow();
-            }
-        }
-        // We record the set of enabled accounts for picasa.
+        };
+        t.start();
+        //We record the set of enabled accounts for picasa.
         mAccountsEnabled = PicasaDataSource.getAccountStatus(this);
         Log.i(TAG, "onCreate");
+    }
+    
+    private void showToast(final String string, final int duration) {
+        mHandler.post(new Runnable() {
+            public void run() {
+                Toast.makeText(Gallery.this, string, duration).show();
+            }
+        });
     }
 
     public ReverseGeocoder getReverseGeocoder() {
@@ -164,8 +190,10 @@ public final class Gallery extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        CacheService.computeDirtySets(this);
-        CacheService.startCache(this, false);
+        if (ImageManager.hasStorage()) {
+            CacheService.computeDirtySets(this);
+            CacheService.startCache(this, false);
+        }
         if (mRenderView != null) {
             mRenderView.onResume();
         }
