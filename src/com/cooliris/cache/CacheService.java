@@ -57,6 +57,7 @@ public final class CacheService extends IntentService {
     public static final String ACTION_CACHE = "com.cooliris.cache.action.CACHE";
     public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
     public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
+    public static final DiskCache sSkipThumbnailIds = new DiskCache("local-skip-cache");
 
     private static final String TAG = "CacheService";
     private static ImageList sList = null;
@@ -604,12 +605,34 @@ public final class CacheService extends IntentService {
             final long id = ids[i];
             final long timeModifiedInSec = timestamp[i];
             final long thumbnailId = thumbnailIds[i];
-            if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
-                buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false, DEFAULT_THUMBNAIL_WIDTH,
-                        DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
+            if (!isInThumbnailerSkipList(thumbnailId)) {
+                if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
+                    byte[] retVal = buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false, DEFAULT_THUMBNAIL_WIDTH,
+                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
+                    if (retVal == null || retVal.length == 0) {
+                        // There was an error in building the thumbnail.
+                        // We record this thumbnail id
+                        addToThumbnailerSkipList(thumbnailId);
+                    }
+                }
             }
         }
         if (DEBUG) Log.i(TAG, "DiskCache ready for all thumbnails.");
+    }
+
+    private static void addToThumbnailerSkipList(long thumbnailId) {
+        sSkipThumbnailIds.put(thumbnailId, sDummyData, 0);
+        sSkipThumbnailIds.flush();
+    }
+
+    private static boolean isInThumbnailerSkipList(long thumbnailId) {
+        if (sSkipThumbnailIds.isDataAvailable(thumbnailId, 0)) {
+            byte[] data = sSkipThumbnailIds.get(thumbnailId, 0);
+            if (data.length > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final byte[] buildThumbnailForId(final Context context, final DiskCache thumbnailCache, final long thumbId,
@@ -651,7 +674,8 @@ public final class CacheService extends IntentService {
             if (bitmap == null) {
                 return null;
             }
-            final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth, thumbnailHeight, timestamp);
+            final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth, thumbnailHeight,
+                    timestamp);
             return retVal;
         } catch (InterruptedException e) {
             return null;
