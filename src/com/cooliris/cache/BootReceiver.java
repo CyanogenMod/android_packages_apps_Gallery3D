@@ -58,6 +58,7 @@ public class BootReceiver extends BroadcastReceiver {
             PicasaDataSource.sThumbnailCache.close();
             CacheService.sAlbumCache.close();
             CacheService.sMetaAlbumCache.close();
+            CacheService.sSkipThumbnailIds.flush();
         }
     }
 }
