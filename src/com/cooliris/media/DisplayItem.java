@@ -11,6 +11,7 @@ import com.cooliris.media.FloatUtils;
  */
 public final class DisplayItem {
     private static final float STACK_SPACING = 0.2f;
+    private static final int MAX_RETRIES = 2;
     private DirectLinkedList.Entry<DisplayItem> mAnimatablesEntry = new DirectLinkedList.Entry<DisplayItem>(this);
     private static final Random random = new Random();
     private Vector3f mStacktopPosition = new Vector3f(-1.0f, -1.0f, -1.0f);
@@ -24,6 +25,7 @@ public final class DisplayItem {
     private Texture mScreennailImage = null;
     private UriTexture mHiResImage = null;
     private float mConvergenceSpeed = 1.0f;
+    private int mNumRetries;
 
     public final MediaItem mItemRef;
     public float mAnimatedTheta;
@@ -107,18 +109,23 @@ public final class DisplayItem {
     public Texture getScreennailImage(Context context) {
         Texture texture = mScreennailImage;
         if (texture == null || texture.mState == Texture.STATE_ERROR) {
-            MediaSet parentMediaSet = mItemRef.mParentMediaSet;
-            if (parentMediaSet != null && parentMediaSet.mDataSource.getThumbnailCache() == LocalDataSource.sThumbnailCache) {
-                if (mItemRef.mId != Shared.INVALID && mItemRef.mId != 0) {
-                    texture = new MediaItemTexture(context, null, mItemRef);
-                } else if (mItemRef.mContentUri != null) {
-                    texture = new UriTexture(mItemRef.mContentUri);
-                }
-            } else {
-                texture = new UriTexture(mItemRef.mScreennailUri);
-                ((UriTexture) texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
+            if (texture.mState == Texture.STATE_ERROR) {
+                ++mNumRetries;
             }
-            mScreennailImage = texture;
+            if (mNumRetries < MAX_RETRIES) {
+                MediaSet parentMediaSet = mItemRef.mParentMediaSet;
+                if (parentMediaSet != null && parentMediaSet.mDataSource.getThumbnailCache() == LocalDataSource.sThumbnailCache) {
+                    if (mItemRef.mId != Shared.INVALID && mItemRef.mId != 0) {
+                        texture = new MediaItemTexture(context, null, mItemRef);
+                    } else if (mItemRef.mContentUri != null) {
+                        texture = new UriTexture(mItemRef.mContentUri);
+                    }
+                } else {
+                    texture = new UriTexture(mItemRef.mScreennailUri);
+                    ((UriTexture) texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
+                }
+                mScreennailImage = texture;
+            }
         }
         return texture;
     }

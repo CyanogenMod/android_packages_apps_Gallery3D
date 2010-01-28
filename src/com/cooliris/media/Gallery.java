@@ -61,9 +61,6 @@ public final class Gallery extends Activity {
                 Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
                 finish();
             } else {
-                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "GridView.Slideshow.All");
-                mWakeLock.acquire();
                 Slideshow slideshow = new Slideshow(this);
                 slideshow.setDataSource(new RandomDataSource());
                 setContentView(slideshow);
