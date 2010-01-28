@@ -42,6 +42,7 @@ public final class Gallery extends Activity {
     private MediaScannerConnection mConnection;
     private WakeLock mWakeLock;
     private HashMap<String, Boolean> mAccountsEnabled = new HashMap<String, Boolean>();
+    private boolean mDockSlideshow = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,12 +61,10 @@ public final class Gallery extends Activity {
                 Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
                 finish();
             } else {
-                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "GridView.Slideshow.All");
-                mWakeLock.acquire();
                 Slideshow slideshow = new Slideshow(this);
                 slideshow.setDataSource(new RandomDataSource());
                 setContentView(slideshow);
+                mDockSlideshow = true;
             }
             return;
         }
@@ -190,6 +189,17 @@ public final class Gallery extends Activity {
     @Override
     public void onResume() {
         super.onResume();
+        if (mDockSlideshow) {
+            if (mWakeLock != null) {
+                if (mWakeLock.isHeld()) {
+                    mWakeLock.release();
+                }
+            }
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            mWakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "GridView.Slideshow.All");
+            mWakeLock.acquire();
+            return;
+        }
         if (ImageManager.hasStorage()) {
             CacheService.computeDirtySets(this);
             CacheService.startCache(this, false);
@@ -229,6 +239,12 @@ public final class Gallery extends Activity {
         super.onPause();
         if (mRenderView != null)
             mRenderView.onPause();
+        if (mWakeLock != null) {
+            if (mWakeLock.isHeld()) {
+                mWakeLock.release();
+            }
+            mWakeLock = null;
+        }
         mPause = true;
     }
 
@@ -260,12 +276,6 @@ public final class Gallery extends Activity {
                 dataSource.shutdown();
             }
             mGridLayer.shutdown();
-        }
-        if (mWakeLock != null) {
-            if (mWakeLock.isHeld()) {
-                mWakeLock.release();
-            }
-            mWakeLock = null;
         }
         if (mReverseGeocoder != null)
             mReverseGeocoder.shutdown();
