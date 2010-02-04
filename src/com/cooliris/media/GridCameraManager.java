@@ -213,6 +213,12 @@ public final class GridCameraManager {
                 firstVisibleSlotIndex = 0;
             if (lastVisibleSlotIndex >= numSlots)
                 lastVisibleSlotIndex = numSlots - 1;
+
+            while (((lastVisibleSlotIndex - firstVisibleSlotIndex) * GridLayer.MAX_ITEMS_PER_SLOT
+                        + GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT - 1) > GridLayer.MAX_ITEMS_DRAWABLE) {
+                lastVisibleSlotIndex--;
+            }
+
             synchronized (outVisibleRange) {
                 outVisibleRange.set(firstVisibleSlotIndex, lastVisibleSlotIndex);
             }
@@ -229,6 +235,12 @@ public final class GridCameraManager {
             if (lastVisibleSlotIndex >= numSlots) {
                 lastVisibleSlotIndex = numSlots - 1;
             }
+
+            while (((lastVisibleSlotIndex - firstVisibleSlotIndex) * GridLayer.MAX_ITEMS_PER_SLOT
+                        + GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT - 1) > GridLayer.MAX_ITEMS_DRAWABLE) {
+                lastVisibleSlotIndex--;
+            }
+
             synchronized (outBufferedVisibleRange) {
                 outBufferedVisibleRange.set(firstVisibleSlotIndex, lastVisibleSlotIndex);
             }
