@@ -141,11 +141,7 @@ public final class PicasaContentProvider extends TableContentProvider {
         // Synchronize albums for each user.
         String activeUsername = null;
         if (mActiveAccount != null) {
-            String username = mActiveAccount.name;
-            if (username.contains("@gmail.")) {
-                username = username.substring(0, username.indexOf('@'));
-            }
-            activeUsername = username;
+            activeUsername = PicasaApi.canonicalizeUsername(mActiveAccount.name);
         }
         boolean didSyncActiveUserName = false;
         for (int i = 0, numUsers = users.length; i != numUsers; ++i) {

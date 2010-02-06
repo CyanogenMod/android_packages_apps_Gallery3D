@@ -42,12 +42,7 @@ public final class PicasaDataSource implements DataSource {
         for (int i = 0; i < numAccounts; ++i) {
             Account account = accounts[i];
             boolean isEnabled = ContentResolver.getSyncAutomatically(account, PicasaContentProvider.AUTHORITY);
-            String username = account.name.toLowerCase();
-            if (username.contains("@gmail.") || username.contains("@googlemail.")) {
-                // Strip the domain from GMail accounts for canonicalization.
-                // TODO: is there an official way?
-                username = username.substring(0, username.indexOf('@'));
-            }
+            String username = PicasaApi.canonicalizeUsername(account.name);
             accountsEnabled.put(username, new Boolean(isEnabled));
         }
         return accountsEnabled;
