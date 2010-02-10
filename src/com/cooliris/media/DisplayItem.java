@@ -84,7 +84,7 @@ public final class DisplayItem {
                 mJitteredPosition.y = sign * 4 + ((sign == 1) ? -8.0f : sign * (random.nextFloat()) * 16.0f);
                 mJitteredPosition.x *= Gallery.PIXEL_DENSITY;
                 mJitteredPosition.y *= Gallery.PIXEL_DENSITY;
-                mJitteredPosition.z = seed * STACK_SPACING;
+                mJitteredPosition.z = seed * STACK_SPACING * 0.1f;
             }
         }
         mTargetPosition.add(mJitteredPosition);
@@ -109,10 +109,10 @@ public final class DisplayItem {
     public Texture getScreennailImage(Context context) {
         Texture texture = mScreennailImage;
         if (texture == null || texture.mState == Texture.STATE_ERROR) {
-            if (texture.mState == Texture.STATE_ERROR) {
+            if (texture != null && texture.mState == Texture.STATE_ERROR) {
                 ++mNumRetries;
             }
-            if (mNumRetries < MAX_RETRIES) {
+            if (mNumRetries < Integer.MAX_VALUE) {
                 MediaSet parentMediaSet = mItemRef.mParentMediaSet;
                 if (parentMediaSet != null && parentMediaSet.mDataSource.getThumbnailCache() == LocalDataSource.sThumbnailCache) {
                     if (mItemRef.mId != Shared.INVALID && mItemRef.mId != 0) {
@@ -199,6 +199,50 @@ public final class DisplayItem {
             mTargetPosition.set(mStacktopPosition);
             mTargetPosition.add(mJitteredPosition);
             mTargetPosition.z = seed * STACK_SPACING;
+        }
+    }
+
+    public final void setOffset(boolean useOffset, boolean pushAway, float x, float y, float z, float spreadValue) {
+        int seed = mStackId;
+        if (useOffset) {
+            if (seed > 3) {
+                seed = 3;
+            }
+            mTargetPosition.set(mStacktopPosition);
+            if (spreadValue > 4.0f)
+                spreadValue = 4.0f + 0.1f * spreadValue;
+            if (spreadValue < 1.0f) {
+                spreadValue = 1.0f / spreadValue;
+                pushAway = true;
+            }
+            if (!pushAway) {
+                if (seed == 0) {
+                    mTargetPosition.add(0, -spreadValue * 14, 0);
+                }
+                if (seed == 1) {
+                    mTargetPosition.add(-spreadValue * 32, 0, 0);
+                }
+                if (seed == 2) {
+                    mTargetPosition.add(0, spreadValue * 14, 0);
+                }
+                if (seed == 3) {
+                    mTargetPosition.add(spreadValue * 32, 0, 0);
+                }
+                mTargetPosition.z = -0.4f * spreadValue + seed * STACK_SPACING * spreadValue;
+                mTargetTheta = 0.0f;
+            } else {
+                mTargetPosition.z = seed * STACK_SPACING + spreadValue * 0.5f;
+            }
+        } else {
+            if (seed > 3) {
+                seed = 3;
+            }
+            mTargetPosition.set(mStacktopPosition);
+            mTargetPosition.add(mJitteredPosition);
+            mTargetPosition.z = seed * STACK_SPACING;
+            if (seed != 0 && mTargetTheta == 0.0f) {
+                mTargetTheta = 30.0f * (0.5f - (float) Math.random());
+            }
         }
     }
 

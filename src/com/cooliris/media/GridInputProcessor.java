@@ -40,6 +40,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     private GestureDetector mGestureDetector;
     private ScaleGestureDetector mScaleGestureDetector;
     private boolean mZoomGesture;
+    private int mCurrentScaleSlot;
+    private float mScale;
 
     public GridInputProcessor(Context context, GridCamera camera, GridLayer layer, RenderView view, Pool<Vector3f> pool,
             DisplayItem[] displayItems) {
@@ -48,6 +50,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mLayer = layer;
         mCurrentFocusSlot = Shared.INVALID;
         mCurrentSelectedSlot = Shared.INVALID;
+        mCurrentScaleSlot = Shared.INVALID;
         mContext = context;
         mDisplayItems = displayItems;
         mGestureDetector = new GestureDetector(context, this);
@@ -64,6 +67,10 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return mCurrentSelectedSlot;
     }
 
+    public int getCurrentScaledSlot() {
+        return mCurrentScaleSlot;
+    }
+
     public void setCurrentSelectedSlot(int slot) {
         mCurrentSelectedSlot = slot;
         GridLayer layer = mLayer;
@@ -77,6 +84,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     }
 
     public void onSensorChanged(RenderView view, SensorEvent event, int state) {
+        if (mZoomGesture)
+            return;
         switch (event.sensor.getType()) {
         case Sensor.TYPE_ACCELEROMETER:
         case Sensor.TYPE_ORIENTATION:
@@ -116,9 +125,6 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         timeElapsed = timeElapsed * 0.001f; // division by 1000 for seconds
         switch (mActionCode) {
         case MotionEvent.ACTION_UP:
-            if (mProcessTouch == false) {
-                touchBegan(mTouchPosX, mTouchPosY);
-            }
             touchEnded(mTouchPosX, mTouchPosY, timeElapsed);
             break;
         case MotionEvent.ACTION_DOWN:
@@ -129,7 +135,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             touchMoved(mTouchPosX, mTouchPosY, timeElapsed);
             break;
         }
-        mGestureDetector.onTouchEvent(event);
+        if (!mZoomGesture)
+            mGestureDetector.onTouchEvent(event);
         mScaleGestureDetector.onTouchEvent(event);
         return true;
     }
@@ -249,6 +256,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mTouchVelX = 0;
         mTouchVelY = 0;
         mProcessTouch = true;
+        mZoomGesture = false;
         mTouchMoved = false;
         mCamera.stopMovementInX();
         GridLayer layer = mLayer;
@@ -309,8 +317,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 pool.delete(worldPosDelta);
             }
             if (layer.getZoomValue() == 1.0f) {
-                if (camera
-                        .computeConstraints(false, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition, lastPosition)) {
+                if (camera.computeConstraints(false, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition, lastPosition)) {
                     deltaX = 0.0f;
                     // vibrate
                     if (!mTouchFeedbackDelivered) {
@@ -353,8 +360,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     }
 
     private void touchEnded(int posX, int posY, float timeElapsedx) {
-        if (mProcessTouch == false) {
-            mZoomGesture = false;
+        if (mProcessTouch == false || mZoomGesture) {
             return;
         }
         int maxPixelsBeforeSwitch = mCamera.mWidth / 8;
@@ -413,7 +419,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     }
                 }
             } else {
-                if (!layer.feedAboutToChange() && layer.getZoomValue() == 1.0f) {
+                if (!layer.feedAboutToChange() && layer.getZoomValue() == 1.0f && mTouchMoved) {
                     constrainCamera(true);
                 }
             }
@@ -423,7 +429,6 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mPrevTouchPosX = posX;
         mPrevTouchPosY = posY;
         mProcessTouch = false;
-        mZoomGesture = false;
     }
 
     private void constrainCamera(boolean b) {
@@ -516,6 +521,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     }
 
     public void onLongPress(MotionEvent e) {
+        if (mZoomGesture)
+            return;
         if (mLayer.getFeed() != null && mLayer.getFeed().isSingleImageMode()) {
             HudLayer hud = mLayer.getHud();
             hud.getPathBar().setHidden(true);
@@ -635,6 +642,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 }
             }
         }
+        constrainCamera(true);
     }
 
     public boolean onDoubleTap(MotionEvent e) {
@@ -684,8 +692,9 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
 
     public boolean onScale(ScaleGestureDetector detector) {
         final GridLayer layer = mLayer;
+        float scale = detector.getScaleFactor();
+        mScale = scale * mScale;
         if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
-            float scale = detector.getScaleFactor();
             float currentScale = layer.getZoomValue();
             if (currentScale < 0.7f && scale < 1.0f) {
                 scale = 1.0f;
@@ -700,12 +709,24 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
 
     public boolean onScaleBegin(ScaleGestureDetector detector) {
         mZoomGesture = true;
+        mScale = 1.0f;
         mLayer.getHud().hideZoomButtons(true);
+        int posX = (int) detector.getFocusX();
+        int posY = (int) detector.getFocusY();
+        int slotId = mLayer.getSlotIndexForScreenPosition(posX, posY);
+        if (slotId == Shared.INVALID) {
+            slotId = mLayer.getAnchorSlotIndex(GridLayer.ANCHOR_CENTER);
+        }
+        if (slotId != Shared.INVALID) {
+            mCurrentScaleSlot = slotId;
+            mCurrentFocusSlot = slotId;
+        }
         return true;
     }
-    
+
     public void onScaleEnd(ScaleGestureDetector detector) {
         final GridLayer layer = mLayer;
+        boolean setValues = true;
         if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
             float currentScale = layer.getZoomValue();
             if (currentScale < 1.0f) {
@@ -718,6 +739,45 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             }
             layer.constrainCameraForSlot(mCurrentSelectedSlot);
             mLayer.getHud().hideZoomButtons(false);
+            if (mScale < 0.7f) {
+                layer.goBack();
+                setValues = false;
+            }
+        } else {
+            if (mScale > 3.0f) {
+                HudLayer hud = layer.getHud();
+                if (hud.getMode() == HudLayer.MODE_SELECT) {
+                    layer.addSlotToSelectedItems(mCurrentScaleSlot, true, true);
+                    setValues = false;
+                } else {
+                    boolean centerCamera = (mCurrentSelectedSlot == Shared.INVALID) ? layer.tapGesture(mCurrentScaleSlot, false) : true;
+                    if (centerCamera) {
+                        // We check if this item is a video or not.
+                        selectSlot(mCurrentScaleSlot);
+                        setValues = false;
+                    }
+                }
+            } else {
+                if (layer.getState() == GridLayer.STATE_GRID_VIEW) {
+                    if (mScale < 0.7f) {
+                        layer.goBack();
+                        setValues = false;
+                    }
+                }
+            }
         }
+        //if (setValues) 
+        {
+            resetScale();
+        }
+    }
+
+    public float getScale() {
+        return mScale;
+    }
+    
+    public void resetScale() {
+        mScale = 1.0f;
+        mCurrentScaleSlot = Shared.INVALID;
     }
 }

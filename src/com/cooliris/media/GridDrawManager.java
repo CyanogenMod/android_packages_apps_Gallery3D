@@ -40,6 +40,8 @@ public final class GridDrawManager {
     private float mCurrentFocusItemHeight;
     private boolean mCurrentFocusIsPressed;
     private final Texture mNoItemsTexture;
+    private int mCurrentScaleSlot;
+    private float mSpreadValue;
 
     private static final Comparator<DisplayItem> sDisplayItemComparator = new Comparator<DisplayItem>() {
         public int compare(DisplayItem a, DisplayItem b) {
@@ -78,12 +80,14 @@ public final class GridDrawManager {
     }
 
     public void prepareDraw(IndexRange bufferedVisibleRange, IndexRange visibleRange, int selectedSlot, int currentFocusSlot,
-            boolean currentFocusIsPressed) {
+            int currentScaleSlot, boolean currentFocusIsPressed, float spreadValue) {
         mBufferedVisibleRange = bufferedVisibleRange;
         mVisibleRange = visibleRange;
         mSelectedSlot = selectedSlot;
         mCurrentFocusSlot = currentFocusSlot;
         mCurrentFocusIsPressed = currentFocusIsPressed;
+        mCurrentScaleSlot = currentScaleSlot;
+        mSpreadValue = spreadValue;
     }
 
     public boolean update(float timeElapsed) {
@@ -105,6 +109,7 @@ public final class GridDrawManager {
         final int lastVisibleSlot = mVisibleRange.end;
         final int selectedSlotIndex = mSelectedSlot;
         final int currentFocusSlot = mCurrentFocusSlot;
+        final int currentScaleSlot = mCurrentScaleSlot;
         final DisplayItem[] itemsDrawn = mItemsDrawn;
         itemsDrawn[0] = null; // No items drawn yet.
         int drawnCounter = 0;
@@ -163,6 +168,17 @@ public final class GridDrawManager {
                         mTargetFocusMixRatio = 1.0f;
                     } else {
                         displayList.setHasFocus(displayItem, false, pushDown);
+                    }
+                    if (state == GridLayer.STATE_FULL_SCREEN) {
+                        displayList.setOffset(displayItem, false, false, 0, 0, 0, mSpreadValue);
+                    } else {
+                        if (currentScaleSlot == index) {
+                            displayList.setOffset(displayItem, true, false, 0, 0, 0, mSpreadValue);
+                        } else if (currentScaleSlot != Shared.INVALID) {
+                            displayList.setOffset(displayItem, true, true, 0, 0, 0, mSpreadValue);
+                        } else {
+                            displayList.setOffset(displayItem, false, false, 0, 0, 0, mSpreadValue);
+                        }
                     }
                     Texture texture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
                     if (texture != null) {
@@ -440,7 +456,8 @@ public final class GridDrawManager {
                         boolean displayItemPresentInMarkedItems = markedBucketList.find(itemDrawn.mItemRef);
                         Texture previousTexture = (displayItemPresentInSelectedItems) ? texturePressed : texture;
                         Texture textureToUse = (itemDrawn.getHasFocus()) ? (currentFocusIsPressed ? texturePressed : textureFocus)
-                                : ((displayItemPresentInSelectedItems) ? texturePressed : (displayItemPresentInMarkedItems) ? texture : textureGrid);
+                                : ((displayItemPresentInSelectedItems) ? texturePressed
+                                        : (displayItemPresentInMarkedItems) ? texture : textureGrid);
                         float ratio = timeElapsedSinceGridView;
                         if (itemDrawn.mAlive) {
                             if (state != GridLayer.STATE_GRID_VIEW) {
@@ -473,6 +490,8 @@ public final class GridDrawManager {
 
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                     itemsPresent = true;
+                    if (mSpreadValue > 3.0f)
+                        continue;
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {
                         DisplaySlot displaySlot = displaySlots[i - firstBufferedVisibleSlot];
@@ -484,7 +503,6 @@ public final class GridDrawManager {
                             }
                             drawDisplayItem(view, gl, displayItem, textureString, PASS_TEXT_LABEL, null, 0);
                         }
-
                     }
                 }
 
@@ -504,6 +522,8 @@ public final class GridDrawManager {
                 float yLocOffset = 0.2f;
                 gl.glTranslatef(0.0f, -yLocOffset, 0.0f);
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
+                    if (mSpreadValue > 3.0f)
+                        continue;
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {
                         DisplaySlot displaySlot = displaySlots[i - firstBufferedVisibleSlot];
@@ -519,6 +539,8 @@ public final class GridDrawManager {
                     Texture locationTexture = drawables.mTextureLocation;
                     final float yLocationLabelOffset = 0.19f;
                     for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
+                        if (mCurrentScaleSlot != Shared.INVALID)
+                            continue;
                         DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                         if (displayItem != null) {
                             if (displayItem.mAlive == true) {
@@ -545,6 +567,8 @@ public final class GridDrawManager {
                     Texture transparentTexture = drawables.mTextureTransparent;
                     for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                         DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
+                        if (mCurrentScaleSlot != Shared.INVALID)
+                            continue;
                         if (displayItem != null) {
                             if (displayItem.mAlive == true) {
                                 DisplaySlot displaySlot = displaySlots[i - firstBufferedVisibleSlot];
@@ -575,7 +599,8 @@ public final class GridDrawManager {
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {
-                        Texture textureToUse = selectedBucketList.find(displayItem.mItemRef) ? textureSelectedOn : textureSelectedOff;
+                        Texture textureToUse = selectedBucketList.find(displayItem.mItemRef) ? textureSelectedOn
+                                : textureSelectedOff;
                         drawDisplayItem(view, gl, displayItem, textureToUse, PASS_SELECTION_LABEL, null, 0);
                     }
                 }
@@ -612,7 +637,7 @@ public final class GridDrawManager {
             if ((pass == PASS_TEXT_LABEL || pass == PASS_LOCATION_LABEL || pass == PASS_SELECTION_LABEL) && !displayItem.isAlive()) {
                 translateZf = 0.0f;
             }
-            if (pass == PASS_TEXT_LABEL) {
+            if (pass == PASS_TEXT_LABEL && translateZf > 0) {
                 translateZf = 0.0f;
             }
         }

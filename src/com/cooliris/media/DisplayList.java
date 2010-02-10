@@ -36,6 +36,11 @@ public final class DisplayList {
             markIfDirty(item);
         }
     }
+    
+    public final void setOffset(DisplayItem item, boolean useOffset, boolean pushAway, float x, float y, float z, float spreadValue) {
+        item.setOffset(useOffset, pushAway, x, y, z, spreadValue);
+        markIfDirty(item);
+    }
 
     public ArrayList<DisplayItem> getAllDisplayItems() {
         return mItems;

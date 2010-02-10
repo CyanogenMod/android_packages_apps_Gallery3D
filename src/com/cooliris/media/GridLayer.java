@@ -598,18 +598,19 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     GridCameraManager.getSlotPositionForSlotIndex(i, camera, layout, deltaAnchorPosition, position);
                     MediaSet set = feed.getSetForSlot(i);
                     int indexIntoSlots = i - firstVisibleSlotIndex;
-
+                    
                     if (set != null && indexIntoSlots >= 0 && indexIntoSlots < numDisplaySlots) {
                         ArrayList<MediaItem> items = set.getItems();
                         displaySlots[indexIntoSlots].setMediaSet(set);
                         ArrayList<MediaItem> bestItems = sTempList;
-                        if (mTimeElapsedSinceTransition < 1.0f) {
+                        //if (mTimeElapsedSinceTransition < 1.0f) 
+                        {
                             // We always show the same top thumbnails for a
                             // stack of albums
-                            if (mState == STATE_MEDIA_SETS)
-                                ArrayUtils.computeSortedIntersection(items, visibleItems, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
-                            else
-                                ArrayUtils.computeSortedIntersection(visibleItems, items, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
+                            //if (mState == STATE_MEDIA_SETS)
+                            //    ArrayUtils.computeSortedIntersection(items, visibleItems, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
+                            //else
+                            ArrayUtils.computeSortedIntersection(visibleItems, items, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
                         }
 
                         int numItemsInSet = set.getNumItems();
@@ -759,7 +760,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mTargetAlpha = 1.0f;
         }
         mDrawManager.prepareDraw(sBufferedVisibleRange, sVisibleRange, selectedSlotIndex, mInputProcessor.getCurrentFocusSlot(),
-                mInputProcessor.isFocusItemPressed());
+                mInputProcessor.getCurrentScaledSlot(), mInputProcessor.isFocusItemPressed(), mInputProcessor.getScale());
         if (mSelectedAlpha != 0.0f) {
             mDrawManager.drawThumbnails(view, gl, mState);
         }

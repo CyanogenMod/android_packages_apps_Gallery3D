@@ -53,4 +53,16 @@ public final class Vector3f {
     public String toString() {
         return (new String("(" + x + ", " + y + ", " + z + ")"));
     }
+
+    public void add(float x, float y, float z) {
+        this.x += x;
+        this.y += y;
+        this.z += z;
+    }
+
+    public void scale(float spreadValueX, float spreadValueY, float spreadValueZ) {
+        x *= spreadValueX;
+        y *= spreadValueY;
+        z *= spreadValueZ;
+    }
 }
