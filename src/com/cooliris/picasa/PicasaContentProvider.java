@@ -181,6 +181,9 @@ public final class PicasaContentProvider extends TableContentProvider {
     }
 
     public static boolean isSyncEnabled(String accountName, SyncContext context) {
+        if (context.accounts == null) {
+            context.reloadAccounts();
+        }
         PicasaApi.AuthAccount[] accounts = context.accounts;
         int numAccounts = accounts.length;
         for (int i = 0; i < numAccounts; ++i) {
@@ -508,7 +511,6 @@ public final class PicasaContentProvider extends TableContentProvider {
 
         public SyncContext() {
             db = mDatabase.getWritableDatabase();
-            reloadAccounts();
         }
 
         public void reloadAccounts() {
@@ -529,7 +531,11 @@ public final class PicasaContentProvider extends TableContentProvider {
         }
 
         public boolean login(String user) {
-            for (PicasaApi.AuthAccount auth : accounts) {
+            if (accounts == null) {
+                reloadAccounts();
+            }
+            final PicasaApi.AuthAccount[] authAccounts = accounts;
+            for (PicasaApi.AuthAccount auth : authAccounts) {
                 if (auth.user.equals(user)) {
                     api.setAuth(auth);
                     return true;
