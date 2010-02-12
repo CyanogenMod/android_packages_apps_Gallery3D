@@ -780,4 +780,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mScale = 1.0f;
         mCurrentScaleSlot = Shared.INVALID;
     }
+
+    public ScaleGestureDetector getScaleGestureDetector() {
+        return mScaleGestureDetector;
+    }
 }

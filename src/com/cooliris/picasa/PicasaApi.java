@@ -61,6 +61,8 @@ public final class PicasaApi {
         // Return the list of accounts supporting the Picasa GData service.
         AccountManager accountManager = AccountManager.get(context);
         Account[] accounts = {};
+        if (true)
+            return accounts;
         try {
             accounts = accountManager.getAccountsByTypeAndFeatures(PicasaService.ACCOUNT_TYPE,
                     new String[] { PicasaService.FEATURE_SERVICE_NAME }, null, null).getResult();

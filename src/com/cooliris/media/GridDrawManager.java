@@ -42,6 +42,8 @@ public final class GridDrawManager {
     private final Texture mNoItemsTexture;
     private int mCurrentScaleSlot;
     private float mSpreadValue;
+    private ScaleGestureDetector mScaleGestureDetector;
+    private boolean mHoldPosition;
 
     private static final Comparator<DisplayItem> sDisplayItemComparator = new Comparator<DisplayItem>() {
         public int compare(DisplayItem a, DisplayItem b) {
@@ -80,14 +82,17 @@ public final class GridDrawManager {
     }
 
     public void prepareDraw(IndexRange bufferedVisibleRange, IndexRange visibleRange, int selectedSlot, int currentFocusSlot,
-            int currentScaleSlot, boolean currentFocusIsPressed, float spreadValue) {
+            int currentScaleSlot, boolean currentFocusIsPressed, float spreadValue, ScaleGestureDetector scaleGestureDetector,
+            boolean holdPosition) {
         mBufferedVisibleRange = bufferedVisibleRange;
         mVisibleRange = visibleRange;
         mSelectedSlot = selectedSlot;
         mCurrentFocusSlot = currentFocusSlot;
         mCurrentFocusIsPressed = currentFocusIsPressed;
         mCurrentScaleSlot = currentScaleSlot;
+        mScaleGestureDetector = scaleGestureDetector;
         mSpreadValue = spreadValue;
+        mHoldPosition = holdPosition;
     }
 
     public boolean update(float timeElapsed) {
@@ -169,15 +174,24 @@ public final class GridDrawManager {
                     } else {
                         displayList.setHasFocus(displayItem, false, pushDown);
                     }
+                    final float dx1 = mScaleGestureDetector.getTopFingerDeltaX();
+                    final float dy1 = mScaleGestureDetector.getTopFingerDeltaY();
+                    final float dx2 = mScaleGestureDetector.getBottomFingerDeltaX();
+                    final float dy2 = mScaleGestureDetector.getBottomFingerDeltaY();
                     if (state == GridLayer.STATE_FULL_SCREEN) {
-                        displayList.setOffset(displayItem, false, false, 0, 0, 0, mSpreadValue);
+                        displayList.setOffset(displayItem, false, true, dx1, dy1, dx2, dy2);
                     } else {
-                        if (currentScaleSlot == index) {
-                            displayList.setOffset(displayItem, true, false, 0, 0, 0, mSpreadValue);
-                        } else if (currentScaleSlot != Shared.INVALID) {
-                            displayList.setOffset(displayItem, true, true, 0, 0, 0, mSpreadValue);
-                        } else {
-                            displayList.setOffset(displayItem, false, false, 0, 0, 0, mSpreadValue);
+                        if (!mHoldPosition) {
+                            if (currentScaleSlot == index) {
+                                if (state != GridLayer.STATE_GRID_VIEW)
+                                    displayList.setOffset(displayItem, true, false, dx1, dy1, dx2, dy2);
+                                else
+                                    displayList.setSingleOffset(displayItem, true, false, 0, 0, 0, mSpreadValue);
+                            } else if (currentScaleSlot != Shared.INVALID) {
+                                displayList.setOffset(displayItem, true, true, dx1, dy1, dx2, dy2);
+                            } else {
+                                displayList.setOffset(displayItem, false, false, dx1, dy1, dx2, dy2);
+                            }
                         }
                     }
                     Texture texture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
@@ -477,7 +491,8 @@ public final class GridDrawManager {
                 }
             }
             GridDrawables.sFrame.unbindArrays(gl);
-            gl.glDepthFunc(GL10.GL_ALWAYS);
+            if (mSpreadValue <= 0.0f)
+                gl.glDepthFunc(GL10.GL_ALWAYS);
             if (state == GridLayer.STATE_MEDIA_SETS || state == GridLayer.STATE_TIMELINE) {
                 DisplaySlot[] displaySlots = mDisplaySlots;
                 GridDrawables.sTextGrid.bindArrays(gl);

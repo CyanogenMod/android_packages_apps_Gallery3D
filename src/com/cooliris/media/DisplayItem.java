@@ -202,12 +202,9 @@ public final class DisplayItem {
         }
     }
 
-    public final void setOffset(boolean useOffset, boolean pushAway, float x, float y, float z, float spreadValue) {
+    public final void setSingleOffset(boolean useOffset, boolean pushAway, float x, float y, float z, float spreadValue) {
         int seed = mStackId;
         if (useOffset) {
-            if (seed > 3) {
-                seed = 3;
-            }
             mTargetPosition.set(mStacktopPosition);
             if (spreadValue > 4.0f)
                 spreadValue = 4.0f + 0.1f * spreadValue;
@@ -228,10 +225,38 @@ public final class DisplayItem {
                 if (seed == 3) {
                     mTargetPosition.add(spreadValue * 32, 0, 0);
                 }
-                mTargetPosition.z = -0.4f * spreadValue + seed * STACK_SPACING * spreadValue;
+                mTargetPosition.z = -1.0f * spreadValue + seed * STACK_SPACING * spreadValue;
                 mTargetTheta = 0.0f;
             } else {
                 mTargetPosition.z = seed * STACK_SPACING + spreadValue * 0.5f;
+            }
+        } else {
+            if (seed > 3) {
+                seed = 3;
+            }
+            mTargetPosition.set(mStacktopPosition);
+            mTargetPosition.add(mJitteredPosition);
+            mTargetPosition.z = seed * STACK_SPACING;
+            if (seed != 0 && mTargetTheta == 0.0f) {
+                mTargetTheta = 30.0f * (0.5f - (float) Math.random());
+            }
+        }
+    }
+    
+    public final void setOffset(boolean useOffset, boolean pushDown, float dx1, float dy1, float dx2, float dy2) {
+        int seed = mStackId;
+        if (useOffset) {
+            mTargetPosition.set(mStacktopPosition);
+            if (!pushDown) {
+            // If it is the stacktop, we track the top finger, ie, x1, y1 else
+            // we track bottom finger x2, y2
+            float seedFactor = ((float) seed) / 3;
+            float dx = dx2 * seedFactor + (1.0f - seedFactor) * dx1;
+            float dy = dy2 * seedFactor + (1.0f - seedFactor) * dy1;
+            mTargetPosition.add(dx, dy, seed * 0.1f);
+            mTargetTheta = 0.0f;
+            } else {
+                mTargetPosition.z = seed * STACK_SPACING + 3.0f;
             }
         } else {
             if (seed > 3) {

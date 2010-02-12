@@ -37,8 +37,13 @@ public final class DisplayList {
         }
     }
     
-    public final void setOffset(DisplayItem item, boolean useOffset, boolean pushAway, float x, float y, float z, float spreadValue) {
-        item.setOffset(useOffset, pushAway, x, y, z, spreadValue);
+    public final void setOffset(DisplayItem item, boolean useOffset, boolean pushDown, float dx1, float dy1, float dx2, float dy2) {
+        item.setOffset(useOffset, pushDown, dx1, dy1, dx2, dy2);
+        markIfDirty(item);
+    }
+    
+    public final void setSingleOffset(DisplayItem item, boolean useOffset, boolean pushAway, float x, float y, float z, float spreadValue) {
+        item.setSingleOffset(useOffset, pushAway, x, y, z, spreadValue);
         markIfDirty(item);
     }
 

@@ -760,7 +760,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mTargetAlpha = 1.0f;
         }
         mDrawManager.prepareDraw(sBufferedVisibleRange, sVisibleRange, selectedSlotIndex, mInputProcessor.getCurrentFocusSlot(),
-                mInputProcessor.getCurrentScaledSlot(), mInputProcessor.isFocusItemPressed(), mInputProcessor.getScale());
+                mInputProcessor.getCurrentScaledSlot(), mInputProcessor.isFocusItemPressed(), mInputProcessor.getScale(), mInputProcessor.getScaleGestureDetector(), mFeedAboutToChange);
         if (mSelectedAlpha != 0.0f) {
             mDrawManager.drawThumbnails(view, gl, mState);
         }
