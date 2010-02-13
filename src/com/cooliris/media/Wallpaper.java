@@ -136,7 +136,7 @@ public class Wallpaper extends Activity {
         Uri imageToUse = getIntent().getData();
         if (imageToUse != null) {
             Intent intent = new Intent();
-            intent.setClassName("com.cooliris.media", "com.cooliris.media.CropImage");
+            intent.setClass(this, CropImage.class);
             intent.setData(imageToUse);
             formatIntent(intent);
             startActivityForResult(intent, CROP_DONE);
