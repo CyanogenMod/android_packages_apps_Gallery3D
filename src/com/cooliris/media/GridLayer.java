@@ -1177,6 +1177,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public boolean tapGesture(int slotIndex, boolean metadata) {
         MediaFeed feed = mMediaFeed;
+        if (feed == null)
+            return false;
         if (!feed.isClustered()) {
             // It is not clustering.
             if (!feed.hasExpandedMediaSet()) {
