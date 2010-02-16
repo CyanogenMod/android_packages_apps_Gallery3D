@@ -134,6 +134,8 @@ public final class PathBarLayer extends Layer {
         int numComponents = mComponents.size();
         for (int i = 0; i < numComponents; ++i) {
             Component component = mComponents.get(i);
+            if (component == null)
+                continue;
             float iconWidth = (component.icon == 0) ? 0 : component.getIconWidth();
             if (iconWidth == 0) {
                 iconWidth = 8 * Gallery.PIXEL_DENSITY;
