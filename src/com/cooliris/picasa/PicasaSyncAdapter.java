@@ -53,7 +53,12 @@ public class PicasaSyncAdapter extends AbstractThreadedSyncAdapter {
                 return;
             }
         }
-        PicasaService.performSync(mContext, account, extras, syncResult);
+        try {
+            PicasaService.performSync(mContext, account, extras, syncResult);
+        } catch (Exception e) {
+            // Report an error
+            ++syncResult.stats.numIoExceptions;
+        }
     }
 
     public static final class AccountChangeReceiver extends BroadcastReceiver {
