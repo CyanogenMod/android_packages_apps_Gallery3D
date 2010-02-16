@@ -654,7 +654,7 @@ public final class MediaFeed implements Runnable {
             mListener.onFeedAboutToChange(this);
         }
         MediaSet setToUse = null;
-        if (mExpandedMediaSetIndex != Shared.INVALID || mExpandedMediaSetIndex < mMediaSets.size()) {
+        if (mExpandedMediaSetIndex != Shared.INVALID && mExpandedMediaSetIndex < mMediaSets.size()) {
             setToUse = mMediaSets.get(mExpandedMediaSetIndex);
         }
         if (setToUse != null) {
