@@ -117,7 +117,11 @@ public final class Gallery extends Activity {
                 } else if (!isViewIntent()) {
                     final Intent intent = getIntent();
                     if (intent != null) {
-                        final String type = intent.resolveType(Gallery.this);
+                        String type = intent.resolveType(Gallery.this);
+                        if (type == null) {
+                            // By default, we include images
+                            type = "image/*";
+                        }
                         boolean includeImages = isImageType(type);
                         boolean includeVideos = isVideoType(type);
                         ((LocalDataSource) localDataSource).setMimeFilter(!includeImages, !includeVideos);
@@ -139,8 +143,9 @@ public final class Gallery extends Activity {
                     }
                 } else {
                     // View intent for images.
-                    Uri uri = getIntent().getData();
-                    boolean slideshow = getIntent().getBooleanExtra("slideshow", false);
+                    final Intent intent = getIntent();
+                    Uri uri = intent.getData();
+                    boolean slideshow = intent.getBooleanExtra("slideshow", false);
                     final SingleDataSource singleDataSource = new SingleDataSource(Gallery.this, uri.toString(), slideshow);
                     final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource, picasaDataSource);
                     mGridLayer.setDataSource(singleCombinedDataSource);
