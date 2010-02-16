@@ -779,6 +779,8 @@ public final class HudLayer extends Layer {
         int numBuckets = selection.size();
         for (int i = 0; i < numBuckets; ++i) {
             MediaBucket bucket = selection.get(i);
+            if (bucket == null || bucket.mediaSet == null)
+                continue;
             if (bucket.mediaSet.mPicasaAlbumId != Shared.INVALID) {
                 mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
                 break;
