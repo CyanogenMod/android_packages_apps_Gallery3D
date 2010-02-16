@@ -14,6 +14,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore.Images;
@@ -36,7 +37,7 @@ public final class Gallery extends Activity {
     private static final int CROP_MSG = 10;
     private RenderView mRenderView = null;
     private GridLayer mGridLayer;
-    private final Handler mHandler = new Handler();
+    private Handler mHandler;
     private ReverseGeocoder mReverseGeocoder;
     private boolean mPause;
     private MediaScannerConnection mConnection;
@@ -55,8 +56,7 @@ public final class Gallery extends Activity {
                 slideshowIntent = extras.getBoolean("slideshow", false);
             }
         }
-        if (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI)
-                && slideshowIntent) {
+        if (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI) && slideshowIntent) {
             if (!imageManagerHasStorage) {
                 Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
                 finish();
@@ -79,7 +79,15 @@ public final class Gallery extends Activity {
                 mRenderView);
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
-        
+        Thread handlerThread = new Thread() {
+            public void run() {
+                Looper.prepare();
+                mHandler = new Handler();
+                Looper.loop();
+            }
+        };
+        handlerThread.start();
+
         Thread t = new Thread() {
             public void run() {
                 int numRetries = 25;
@@ -88,7 +96,7 @@ public final class Gallery extends Activity {
                     do {
                         --numRetries;
                         try {
-                        Thread.sleep(200);
+                            Thread.sleep(200);
                         } catch (InterruptedException e) {
                             ;
                         }
@@ -147,7 +155,8 @@ public final class Gallery extends Activity {
                     Uri uri = intent.getData();
                     boolean slideshow = intent.getBooleanExtra("slideshow", false);
                     final SingleDataSource singleDataSource = new SingleDataSource(Gallery.this, uri.toString(), slideshow);
-                    final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource, picasaDataSource);
+                    final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource,
+                            picasaDataSource);
                     mGridLayer.setDataSource(singleCombinedDataSource);
                     mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
                     if (singleDataSource.isSingleImage()) {
@@ -160,11 +169,11 @@ public final class Gallery extends Activity {
             }
         };
         t.start();
-        //We record the set of enabled accounts for picasa.
+        // We record the set of enabled accounts for picasa.
         mAccountsEnabled = PicasaDataSource.getAccountStatus(this);
         Log.i(TAG, "onCreate");
     }
-    
+
     private void showToast(final String string, final int duration) {
         mHandler.post(new Runnable() {
             public void run() {
@@ -213,28 +222,32 @@ public final class Gallery extends Activity {
             mRenderView.onResume();
         }
         if (mPause) {
-            // We check to see if the authenticated accounts have changed, and
-            // if so, reload the datasource.
-            HashMap<String, Boolean> accountsEnabled = PicasaDataSource.getAccountStatus(this);
-            String[] keys = new String[accountsEnabled.size()];
-            keys = accountsEnabled.keySet().toArray(keys);
-            int numKeys = keys.length;
-            for (int i = 0; i < numKeys; ++i) {
-                String key = keys[i];
-                boolean newValue = accountsEnabled.get(key).booleanValue();
-                boolean oldValue = false;
-                Boolean oldValObj = mAccountsEnabled.get(key);
-                if (oldValObj != null) {
-                    oldValue = oldValObj.booleanValue();
+            mHandler.post(new Runnable() {
+                public void run() {
+                    // We check to see if the authenticated accounts have changed, and
+                    // if so, reload the datasource.
+                    HashMap<String, Boolean> accountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
+                    String[] keys = new String[accountsEnabled.size()];
+                    keys = accountsEnabled.keySet().toArray(keys);
+                    int numKeys = keys.length;
+                    for (int i = 0; i < numKeys; ++i) {
+                        String key = keys[i];
+                        boolean newValue = accountsEnabled.get(key).booleanValue();
+                        boolean oldValue = false;
+                        Boolean oldValObj = mAccountsEnabled.get(key);
+                        if (oldValObj != null) {
+                            oldValue = oldValObj.booleanValue();
+                        }
+                        if (oldValue != newValue) {
+                            // Reload the datasource.
+                            if (mGridLayer != null)
+                                mGridLayer.setDataSource(mGridLayer.getDataSource());
+                            break;
+                        }
+                    }
+                    mAccountsEnabled = accountsEnabled;
                 }
-                if (oldValue != newValue) {
-                    // Reload the datasource.
-                    if (mGridLayer != null)
-                        mGridLayer.setDataSource(mGridLayer.getDataSource());
-                    break;
-                }
-            }
-            mAccountsEnabled = accountsEnabled;
+            });
             mPause = false;
         }
     }

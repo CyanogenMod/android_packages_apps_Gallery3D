@@ -61,14 +61,14 @@ public final class PicasaApi {
         // Return the list of accounts supporting the Picasa GData service.
         AccountManager accountManager = AccountManager.get(context);
         Account[] accounts = {};
-        if (true)
-            return accounts;
         try {
             accounts = accountManager.getAccountsByTypeAndFeatures(PicasaService.ACCOUNT_TYPE,
                     new String[] { PicasaService.FEATURE_SERVICE_NAME }, null, null).getResult();
         } catch (OperationCanceledException e) {
         } catch (AuthenticatorException e) {
         } catch (IOException e) {
+        } catch (Exception e) {
+            ;
         }
         return accounts;
     }
@@ -76,6 +76,8 @@ public final class PicasaApi {
     public static AuthAccount[] getAuthenticatedAccounts(Context context) {
         AccountManager accountManager = AccountManager.get(context);
         Account[] accounts = getAccounts(context);
+        if (accounts == null)
+            accounts = new Account[0];
         int numAccounts = accounts.length;
 
         ArrayList<AuthAccount> authAccounts = new ArrayList<AuthAccount>(numAccounts);
@@ -104,6 +106,8 @@ public final class PicasaApi {
             } catch (OperationCanceledException e) {
             } catch (IOException e) {
             } catch (AuthenticatorException e) {
+            } catch (Exception e) {
+                ;
             }
         }
         AuthAccount[] authArray = new AuthAccount[authAccounts.size()];
