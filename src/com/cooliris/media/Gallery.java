@@ -366,6 +366,8 @@ public final class Gallery extends Activity {
         final Bundle myExtras = getIntent().getExtras();
         String cropValue = myExtras != null ? myExtras.getString("crop") : null;
         final String contentUri = item.mContentUri;
+        if (contentUri == null)
+            return;
         if (cropValue != null) {
             Bundle newExtras = new Bundle();
             if (cropValue.equals("circle")) {
