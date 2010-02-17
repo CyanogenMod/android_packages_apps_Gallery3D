@@ -11,7 +11,6 @@ import com.cooliris.media.FloatUtils;
  */
 public final class DisplayItem {
     private static final float STACK_SPACING = 0.2f;
-    private static final int MAX_RETRIES = 2;
     private DirectLinkedList.Entry<DisplayItem> mAnimatablesEntry = new DirectLinkedList.Entry<DisplayItem>(this);
     private static final Random random = new Random();
     private Vector3f mStacktopPosition = new Vector3f(-1.0f, -1.0f, -1.0f);
@@ -25,7 +24,6 @@ public final class DisplayItem {
     private Texture mScreennailImage = null;
     private UriTexture mHiResImage = null;
     private float mConvergenceSpeed = 1.0f;
-    private int mNumRetries;
 
     public final MediaItem mItemRef;
     public float mAnimatedTheta;
@@ -84,7 +82,7 @@ public final class DisplayItem {
                 mJitteredPosition.y = sign * 4 + ((sign == 1) ? -8.0f : sign * (random.nextFloat()) * 16.0f);
                 mJitteredPosition.x *= Gallery.PIXEL_DENSITY;
                 mJitteredPosition.y *= Gallery.PIXEL_DENSITY;
-                mJitteredPosition.z = seed * STACK_SPACING * 0.1f;
+                mJitteredPosition.z = seed * STACK_SPACING;
             }
         }
         mTargetPosition.add(mJitteredPosition);
@@ -109,23 +107,18 @@ public final class DisplayItem {
     public Texture getScreennailImage(Context context) {
         Texture texture = mScreennailImage;
         if (texture == null || texture.mState == Texture.STATE_ERROR) {
-            if (texture != null && texture.mState == Texture.STATE_ERROR) {
-                ++mNumRetries;
-            }
-            if (mNumRetries < Integer.MAX_VALUE) {
-                MediaSet parentMediaSet = mItemRef.mParentMediaSet;
-                if (parentMediaSet != null && parentMediaSet.mDataSource.getThumbnailCache() == LocalDataSource.sThumbnailCache) {
-                    if (mItemRef.mId != Shared.INVALID && mItemRef.mId != 0) {
-                        texture = new MediaItemTexture(context, null, mItemRef);
-                    } else if (mItemRef.mContentUri != null) {
-                        texture = new UriTexture(mItemRef.mContentUri);
-                    }
-                } else {
-                    texture = new UriTexture(mItemRef.mScreennailUri);
-                    ((UriTexture) texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
+            MediaSet parentMediaSet = mItemRef.mParentMediaSet;
+            if (parentMediaSet != null && parentMediaSet.mDataSource.getThumbnailCache() == LocalDataSource.sThumbnailCache) {
+                if (mItemRef.mId != Shared.INVALID && mItemRef.mId != 0) {
+                    texture = new MediaItemTexture(context, null, mItemRef);
+                } else if (mItemRef.mContentUri != null) {
+                    texture = new UriTexture(mItemRef.mContentUri);
                 }
-                mScreennailImage = texture;
+            } else {
+                texture = new UriTexture(mItemRef.mScreennailUri);
+                ((UriTexture) texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
             }
+            mScreennailImage = texture;
         }
         return texture;
     }

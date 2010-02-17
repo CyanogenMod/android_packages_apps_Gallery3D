@@ -61,6 +61,7 @@ public final class CacheService extends IntentService {
 
     private static final String TAG = "CacheService";
     private static ImageList sList = null;
+    private static final boolean DEBUG = false;
 
     // Wait 2 seconds to start the thumbnailer so that the application can load
     // without any overheads.
@@ -206,7 +207,7 @@ public final class CacheService extends IntentService {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
-                    Log.i(TAG, "Computing dirty sets.");
+                    if (DEBUG) Log.i(TAG, "Computing dirty sets.");
                     long ids[] = computeDirtySets(context);
                     processQueuedDirty(context);
                     if (ids != null && observer != null) {
@@ -214,7 +215,7 @@ public final class CacheService extends IntentService {
                     }
                     if (ids != null && ids.length > 0) {
                         sList = null;
-                        Log.i(TAG, "Done computing dirty sets for num " + ids.length);
+                        if (DEBUG) Log.i(TAG, "Done computing dirty sets for num " + ids.length);
                     }
                 }
             });
@@ -338,7 +339,7 @@ public final class CacheService extends IntentService {
                 putLocaleForAlbumCache(Locale.getDefault());
             }
         } else {
-            Log.d(TAG, "No albums found.");
+            if (DEBUG) Log.d(TAG, "No albums found.");
         }
     }
 
@@ -381,7 +382,7 @@ public final class CacheService extends IntentService {
                 putLocaleForAlbumCache(Locale.getDefault());
             }
         } else {
-            Log.d(TAG, "No album found for album id " + bucketId);
+            if (DEBUG) Log.d(TAG, "No album found for album id " + bucketId);
         }
     }
 
@@ -437,7 +438,7 @@ public final class CacheService extends IntentService {
                 putLocaleForAlbumCache(Locale.getDefault());
             }
         } else {
-            Log.d(TAG, "No items found for album " + set.mName);
+            if (DEBUG) Log.d(TAG, "No items found for album " + set.mName);
         }
         set.updateNumExpectedItems();
         set.generateTitle(true);
@@ -498,7 +499,7 @@ public final class CacheService extends IntentService {
         if (!item.isDateTakenValid() && !item.mTriedRetrievingExifDateTaken
                 && (item.mFilePath.endsWith(".jpg") || item.mFilePath.endsWith(".jpeg"))) {
             try {
-                Log.i(TAG, "Parsing date taken from exif");
+                if (DEBUG) Log.i(TAG, "Parsing date taken from exif");
                 final ExifInterface exif = new ExifInterface(item.mFilePath);
                 final String dateTakenStr = exif.getAttribute(ExifInterface.TAG_DATETIME);
                 if (dateTakenStr != null) {
@@ -510,12 +511,12 @@ public final class CacheService extends IntentService {
                             final Date dateTaken = mAltDateFormat.parse(dateTakenStr);
                             return dateTaken.getTime();
                         } catch (ParseException pe2) {
-                            Log.i(TAG, "Unable to parse date out of string - " + dateTakenStr);
+                            if (DEBUG) Log.i(TAG, "Unable to parse date out of string - " + dateTakenStr);
                         }
                     }
                 }
             } catch (Exception e) {
-                Log.i(TAG, "Error reading Exif information, probably not a jpeg.");
+                if (DEBUG) Log.i(TAG, "Error reading Exif information, probably not a jpeg.");
             }
 
             // Ensures that we only try retrieving EXIF date taken once.
@@ -584,13 +585,13 @@ public final class CacheService extends IntentService {
             final long time = SystemClock.uptimeMillis();
             bitmap = buildThumbnailForId(context, thumbnailCache, thumbId, origId, isVideo, DEFAULT_THUMBNAIL_WIDTH,
                     DEFAULT_THUMBNAIL_HEIGHT, timestamp);
-            Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
+            if (DEBUG) Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
         }
         return bitmap;
     }
 
     private static final void buildThumbnails(final Context context) {
-        Log.i(TAG, "Preparing DiskCache for all thumbnails.");
+        if (DEBUG) Log.i(TAG, "Preparing DiskCache for all thumbnails.");
         ImageList list = getImageList(context);
         final int size = (list.ids == null) ? 0 : list.ids.length;
         final long[] ids = list.ids;
@@ -616,7 +617,7 @@ public final class CacheService extends IntentService {
                 }
             }
         }
-        Log.i(TAG, "DiskCache ready for all thumbnails.");
+        if (DEBUG) Log.i(TAG, "DiskCache ready for all thumbnails.");
     }
 
     private static void addToThumbnailerSkipList(long thumbnailId) {
@@ -761,7 +762,7 @@ public final class CacheService extends IntentService {
 
     @Override
     protected void onHandleIntent(final Intent intent) {
-        Log.i(TAG, "Starting CacheService");
+        if (DEBUG) Log.i(TAG, "Starting CacheService");
         if (Environment.getExternalStorageState() == Environment.MEDIA_BAD_REMOVAL) {
             sAlbumCache.deleteAll();
             putLocaleForAlbumCache(Locale.getDefault());
@@ -808,7 +809,7 @@ public final class CacheService extends IntentService {
             bos.close();
         } catch (IOException e) {
             // Could not write locale to cache.
-            Log.i(TAG, "Error writing locale to cache.");
+            if (DEBUG) Log.i(TAG, "Error writing locale to cache.");
             ;
         }
     }
@@ -834,7 +835,7 @@ public final class CacheService extends IntentService {
                 return locale;
             } catch (IOException e) {
                 // Could not read locale in cache.
-                Log.i(TAG, "Error reading locale from cache.");
+                if (DEBUG) Log.i(TAG, "Error reading locale from cache.");
                 return null;
             }
         }
@@ -934,13 +935,13 @@ public final class CacheService extends IntentService {
     private final static void refresh(final Context context) {
         // First we build the album cache.
         // This is the meta-data about the albums / buckets on the SD card.
-        Log.i(TAG, "Refreshing cache.");
+        if (DEBUG) Log.i(TAG, "Refreshing cache.");
         sAlbumCache.deleteAll();
         putLocaleForAlbumCache(Locale.getDefault());
 
         final ArrayList<MediaSet> sets = new ArrayList<MediaSet>();
         LongSparseArray<MediaSet> acceleratedSets = new LongSparseArray<MediaSet>();
-        Log.i(TAG, "Building albums.");
+        if (DEBUG) Log.i(TAG, "Building albums.");
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true").build();
         final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true").build();
         final ContentResolver cr = context.getContentResolver();
@@ -986,7 +987,7 @@ public final class CacheService extends IntentService {
 
             sAlbumCache.put(ALBUM_CACHE_INCOMPLETE_INDEX, sDummyData, 0);
             writeSetsToCache(sets);
-            Log.i(TAG, "Done building albums.");
+            if (DEBUG) Log.i(TAG, "Done building albums.");
             // Now we must cache the items contained in every album / bucket.
             populateMediaItemsForSets(context, sets, acceleratedSets, false);
         } catch (Exception e) {
@@ -1010,7 +1011,7 @@ public final class CacheService extends IntentService {
                     sets.add(set);
                     acceleratedSets.put(set.mId, set);
                 }
-                Log.i(TAG, "Refreshing dirty albums");
+                if (DEBUG) Log.i(TAG, "Refreshing dirty albums");
                 populateMediaItemsForSets(context, sets, acceleratedSets, true);
             }
         }
@@ -1118,7 +1119,7 @@ public final class CacheService extends IntentService {
         if (sets == null || sets.size() == 0 || Thread.interrupted()) {
             return;
         }
-        Log.i(TAG, "Building items.");
+        if (DEBUG) Log.i(TAG, "Building items.");
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();
@@ -1135,7 +1136,7 @@ public final class CacheService extends IntentService {
             }
             whereString.append(")");
             whereClause = whereString.toString();
-            Log.i(TAG, "Updating dirty albums where " + whereClause);
+            if (DEBUG) Log.i(TAG, "Updating dirty albums where " + whereClause);
         }
         try {
             final Cursor cursorImages = cr.query(uriImages, PROJECTION_IMAGES, whereClause, null, DEFAULT_IMAGE_SORT_ORDER);
@@ -1184,7 +1185,7 @@ public final class CacheService extends IntentService {
         }
         if (sets.size() > 0) {
             writeItemsToCache(sets);
-            Log.i(TAG, "Done building items.");
+            if (DEBUG) Log.i(TAG, "Done building items.");
         }
     }
 

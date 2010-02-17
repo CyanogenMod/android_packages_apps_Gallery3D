@@ -306,7 +306,7 @@ public final class HudLayer extends Layer {
                             mGridLayer.deselectAll();
                             if (item.mParentMediaSet.mPicasaAlbumId != Shared.INVALID) {
                                 final Intent intent = new Intent("android.intent.action.ATTACH_DATA");
-                                intent.setClassName("com.cooliris.media", "com.cooliris.media.Photographs");
+                                intent.setClass(mContext, Photographs.class);
                                 intent.setData(Uri.parse(item.mContentUri));
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                 ((Gallery) mContext).startActivityForResult(intent, 0);
@@ -327,7 +327,7 @@ public final class HudLayer extends Layer {
                             mGridLayer.deselectAll();
                             if (item.mParentMediaSet.mPicasaAlbumId != Shared.INVALID) {
                                 final Intent intent = new Intent("android.intent.action.ATTACH_DATA");
-                                intent.setClassName("com.cooliris.media", "com.cooliris.media.Photographs");
+                                intent.setClass(mContext, Photographs.class);
                                 intent.setData(Uri.parse(item.mContentUri));
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                 ((Gallery) mContext).startActivityForResult(intent, 0);
@@ -349,7 +349,7 @@ public final class HudLayer extends Layer {
                             }
                             mGridLayer.deselectAll();
                             final Intent intent = new Intent("com.android.camera.action.CROP");
-                            intent.setClassName("com.cooliris.media", "com.cooliris.media.CropImage");
+                            intent.setClass(mContext, CropImage.class);
                             intent.setData(Uri.parse(item.mContentUri));
                             ((Gallery) mContext).startActivityForResult(intent, Gallery.CROP_MSG_INTERNAL);
                         }
