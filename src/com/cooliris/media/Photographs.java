@@ -136,7 +136,7 @@ public class Photographs extends Activity {
         Uri imageToUse = getIntent().getData();
         if (imageToUse != null) {
             Intent intent = new Intent();
-            intent.setClass(this, CropImage.class);
+            intent.setClassName("com.cooliris.media", "com.cooliris.media.CropImage");
             intent.setData(imageToUse);
             formatIntent(intent);
             startActivityForResult(intent, CROP_DONE);

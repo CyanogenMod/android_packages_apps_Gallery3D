@@ -28,31 +28,30 @@ public class PicasaSyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient providerClient,
             SyncResult syncResult) {
         if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_INITIALIZE, false)) {
-            try {
-                Account[] picasaAccounts = AccountManager.get(getContext())
-                        .getAccountsByTypeAndFeatures(
-                        PicasaService.ACCOUNT_TYPE,
-                        new String[] { PicasaService.FEATURE_SERVICE_NAME },
-                        null /* callback */, null /* handler */).getResult();
-                boolean isPicasaAccount = false;
-                for (Account picasaAccount : picasaAccounts) {
-                    if (account.equals(picasaAccount)) {
-                        isPicasaAccount = true;
-                        break;
+            boolean isPicasaAccount = false;
+                Account[] picasaAccounts;
+                try {
+                    picasaAccounts = AccountManager.get(getContext()).getAccountsByTypeAndFeatures(PicasaService.ACCOUNT_TYPE,
+                        new String[] { PicasaService.FEATURE_SERVICE_NAME }, null /* callback */, null /* handler */).getResult();
+                    for (Account picasaAccount : picasaAccounts) {
+                        if (account.equals(picasaAccount)) {
+                            isPicasaAccount = true;
+                            break;
+                        }
                     }
+                    isPicasaAccount = false;
+                } catch (OperationCanceledException e) {
+                    ;
+                } catch (IOException e) {
+                    ;
+                } catch (AuthenticatorException e) {
+                    ;
                 }
-                if (isPicasaAccount) {
-                    ContentResolver.setIsSyncable(account, authority, 1);
-                    ContentResolver.setSyncAutomatically(account, authority, true);
-                }
-            } catch (OperationCanceledException e) {
-                ;
-            } catch (IOException e) {
-                ;
-            } catch (AuthenticatorException e) {
-                ;
+            if (isPicasaAccount) {
+                ContentResolver.setIsSyncable(account, authority, 1);
+                ContentResolver.setSyncAutomatically(account, authority, true);
+                return;
             }
-            return;
         }
         PicasaService.performSync(mContext, account, extras, syncResult);
     }

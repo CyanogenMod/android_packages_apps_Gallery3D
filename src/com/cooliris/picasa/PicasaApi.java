@@ -96,7 +96,12 @@ public final class PicasaApi {
 
                 // Add the account information to the list of accounts.
                 if (authToken != null) {
-                    String username = canonicalizeUsername(account.name);
+                    String username = account.name;
+                    if (username.contains("@gmail.") || username.contains("@googlemail.")) {
+                        // Strip the domain from GMail accounts for
+                        // canonicalization. TODO: is there an official way?
+                        username = username.substring(0, username.indexOf('@'));
+                    }
                     authAccounts.add(new AuthAccount(username, authToken, account));
                 }
             } catch (OperationCanceledException e) {
@@ -107,26 +112,6 @@ public final class PicasaApi {
         AuthAccount[] authArray = new AuthAccount[authAccounts.size()];
         authAccounts.toArray(authArray);
         return authArray;
-    }
-
-    /**
-     * Returns a canonical username for a Gmail account.  Lowercases the username and
-     * strips off a "gmail.com" or "googlemail.com" domain, but leaves other domains alone.
-     *
-     * e.g., Passing in "User@gmail.com: will return "user".
-     *
-     * @param username The username to be canonicalized.
-     * @return The username, lowercased and possibly stripped of its domain if a "gmail.com" or
-     * "googlemail.com" domain.
-     */
-    public static String canonicalizeUsername(String username) {
-        username = username.toLowerCase();
-        if (username.contains("@gmail.") || username.contains("@googlemail.")) {
-            // Strip the domain from GMail accounts for
-            // canonicalization. TODO: is there an official way?
-            username = username.substring(0, username.indexOf('@'));
-        }
-        return username;
     }
 
     public PicasaApi() {

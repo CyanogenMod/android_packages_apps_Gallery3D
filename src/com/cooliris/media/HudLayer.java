@@ -1,7 +1,9 @@
 package com.cooliris.media;
 
-import com.cooliris.media.MenuBar.Menu;
-import com.cooliris.media.PopupMenu.Option;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.microedition.khronos.opengles.GL11;
 
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -12,14 +14,11 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.util.FloatMath;
 import android.view.MotionEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.microedition.khronos.opengles.GL11;
+import com.cooliris.media.MenuBar.Menu;
+import com.cooliris.media.PopupMenu.Option;
 
 public final class HudLayer extends Layer {
     public static final int MODE_NORMAL = 0;
@@ -53,7 +52,8 @@ public final class HudLayer extends Layer {
     private final Runnable mCameraButtonAction = new Runnable() {
         public void run() {
             // Launch the camera intent.
-            Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
+            Intent intent = new Intent();
+            intent.setClassName("com.android.camera", "com.android.camera.Camera");
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             mContext.startActivity(intent);
         }
@@ -306,7 +306,7 @@ public final class HudLayer extends Layer {
                             mGridLayer.deselectAll();
                             if (item.mParentMediaSet.mPicasaAlbumId != Shared.INVALID) {
                                 final Intent intent = new Intent("android.intent.action.ATTACH_DATA");
-                                intent.setClass(mContext, Photographs.class);
+                                intent.setClassName("com.cooliris.media", "com.cooliris.media.Photographs");
                                 intent.setData(Uri.parse(item.mContentUri));
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                 ((Gallery) mContext).startActivityForResult(intent, 0);
@@ -327,7 +327,7 @@ public final class HudLayer extends Layer {
                             mGridLayer.deselectAll();
                             if (item.mParentMediaSet.mPicasaAlbumId != Shared.INVALID) {
                                 final Intent intent = new Intent("android.intent.action.ATTACH_DATA");
-                                intent.setClass(mContext, Photographs.class);
+                                intent.setClassName("com.cooliris.media", "com.cooliris.media.Photographs");
                                 intent.setData(Uri.parse(item.mContentUri));
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                 ((Gallery) mContext).startActivityForResult(intent, 0);
@@ -349,7 +349,7 @@ public final class HudLayer extends Layer {
                             }
                             mGridLayer.deselectAll();
                             final Intent intent = new Intent("com.android.camera.action.CROP");
-                            intent.setClass(mContext, CropImage.class);
+                            intent.setClassName("com.cooliris.media", "com.cooliris.media.CropImage");
                             intent.setData(Uri.parse(item.mContentUri));
                             ((Gallery) mContext).startActivityForResult(intent, Gallery.CROP_MSG_INTERNAL);
                         }

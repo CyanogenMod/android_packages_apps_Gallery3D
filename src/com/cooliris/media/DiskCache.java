@@ -287,7 +287,7 @@ public final class DiskCache {
             // Close the file.
             dataOutput.close();
 
-            // Log.d(TAG, "Wrote index with " + numRecords + " records.");
+            Log.d(TAG, "Wrote index with " + numRecords + " records.");
 
             // Atomically overwrite the old index file.
             tempFile.renameTo(new File(indexFilePath));

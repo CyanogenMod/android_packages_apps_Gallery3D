@@ -141,7 +141,11 @@ public final class PicasaContentProvider extends TableContentProvider {
         // Synchronize albums for each user.
         String activeUsername = null;
         if (mActiveAccount != null) {
-            activeUsername = PicasaApi.canonicalizeUsername(mActiveAccount.name);
+            String username = mActiveAccount.name;
+            if (username.contains("@gmail.")) {
+                username = username.substring(0, username.indexOf('@'));
+            }
+            activeUsername = username;
         }
         boolean didSyncActiveUserName = false;
         for (int i = 0, numUsers = users.length; i != numUsers; ++i) {
@@ -181,9 +185,6 @@ public final class PicasaContentProvider extends TableContentProvider {
     }
 
     public static boolean isSyncEnabled(String accountName, SyncContext context) {
-        if (context.accounts == null) {
-            context.reloadAccounts();
-        }
         PicasaApi.AuthAccount[] accounts = context.accounts;
         int numAccounts = accounts.length;
         for (int i = 0; i < numAccounts; ++i) {
@@ -511,6 +512,7 @@ public final class PicasaContentProvider extends TableContentProvider {
 
         public SyncContext() {
             db = mDatabase.getWritableDatabase();
+            reloadAccounts();
         }
 
         public void reloadAccounts() {
@@ -531,11 +533,7 @@ public final class PicasaContentProvider extends TableContentProvider {
         }
 
         public boolean login(String user) {
-            if (accounts == null) {
-                reloadAccounts();
-            }
-            final PicasaApi.AuthAccount[] authAccounts = accounts;
-            for (PicasaApi.AuthAccount auth : authAccounts) {
+            for (PicasaApi.AuthAccount auth : accounts) {
                 if (auth.user.equals(user)) {
                     api.setAuth(auth);
                     return true;
