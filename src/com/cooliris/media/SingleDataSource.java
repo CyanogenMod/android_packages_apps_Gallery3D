@@ -8,10 +8,12 @@ import java.util.List;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
@@ -31,6 +33,8 @@ public class SingleDataSource implements DataSource {
     public final boolean mAllItems;
     public final DiskCache mDiskCache;
     private Context mContext;
+    private ContentObserver mObserver;
+    private static boolean sObserverActive;
 
     public SingleDataSource(final Context context, final String uri, final boolean slideshow) {
         this.mUri = uri;
@@ -228,7 +232,7 @@ public class SingleDataSource implements DataSource {
         }
     }
 
-    public void loadMediaSets(MediaFeed feed) {
+    public void loadMediaSets(final MediaFeed feed) {
         MediaSet set = null; // Dummy set.
         boolean loadOtherSets = true;
         if (mSingleUri) {
@@ -256,6 +260,7 @@ public class SingleDataSource implements DataSource {
             if (sets.size() > 0)
                 set = sets.get(0);
         }
+        stopListeners();
         // We also load the other MediaSets
         if (!mAllItems && set != null && loadOtherSets) {
             if (!CacheService.isPresentInCache(set.mId)) {
@@ -263,7 +268,75 @@ public class SingleDataSource implements DataSource {
             }
             CacheService.loadMediaSets(feed, this, true, false);
         }
+        Handler handler = ((Gallery) mContext).getHandler();
+        ContentObserver observer = new ContentObserver(handler) {
+            public void onChange(boolean selfChange) {
+                final boolean isPaused = ((Gallery) mContext).isPaused();
+                if (isPaused) {
+                    MediaSet mediaSet = feed.getCurrentSet();
+                    if (mediaSet != null) {
+                        CacheService.markDirtyImmediate(mediaSet.mId);
+                        refreshUI(feed, mediaSet.mId);
+                    }
+                }
+                CacheService.senseDirty(mContext, new CacheService.Observer() {
+                    public void onChange(long[] ids) {
+                        if (!isPaused)
+                            return;
+                        if (ids != null) {
+                            int numLongs = ids.length;
+                            for (int i = 0; i < numLongs; ++i) {
+                                refreshUI(feed, ids[i]);
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        // Start listening.
+        Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
+        Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
+        ContentResolver cr = mContext.getContentResolver();
+        mObserver = observer;
+        cr.registerContentObserver(uriImages, true, observer);
+        cr.registerContentObserver(uriVideos, true, observer);
+        sObserverActive = true;
     }
+    
+    private void stopListeners() {
+        ContentResolver cr = mContext.getContentResolver();
+        if (mObserver != null) {
+            cr.unregisterContentObserver(mObserver);
+            cr.unregisterContentObserver(mObserver);
+        }
+        sObserverActive = false;
+    }
+
+    protected void refreshUI(MediaFeed feed, long setIdToUse) {
+        if (setIdToUse == Shared.INVALID) {
+            return;
+        }
+        if (feed.getMediaSet(setIdToUse) == null) {
+            MediaSet mediaSet = feed.addMediaSet(setIdToUse, this);
+            if (setIdToUse == LocalDataSource.CAMERA_BUCKET_ID) {
+                mediaSet.mName = LocalDataSource.CAMERA_STRING;
+            } else if (setIdToUse == LocalDataSource.DOWNLOAD_BUCKET_ID) {
+                mediaSet.mName = LocalDataSource.DOWNLOAD_STRING;
+            }
+            mediaSet.generateTitle(true);
+        } else {
+            MediaSet mediaSet = feed.replaceMediaSet(setIdToUse, this);
+            Log.i(TAG, "Replacing mediaset " + mediaSet.mName + " id " + setIdToUse + " current Id " + mediaSet.mId);
+            if (setIdToUse == LocalDataSource.CAMERA_BUCKET_ID) {
+                mediaSet.mName = LocalDataSource.CAMERA_STRING;
+            } else if (setIdToUse == LocalDataSource.DOWNLOAD_BUCKET_ID) {
+                mediaSet.mName = LocalDataSource.DOWNLOAD_STRING;
+            }
+            mediaSet.generateTitle(true);
+        }
+    }
+
 
     private long getBucketId(String uriString) {
         if (uriString.startsWith("content://.")) {
