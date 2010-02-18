@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.FloatMath;
 import android.view.MotionEvent;
 
@@ -52,8 +53,7 @@ public final class HudLayer extends Layer {
     private final Runnable mCameraButtonAction = new Runnable() {
         public void run() {
             // Launch the camera intent.
-            Intent intent = new Intent();
-            intent.setClassName("com.android.camera", "com.android.camera.Camera");
+            Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             mContext.startActivity(intent);
         }
