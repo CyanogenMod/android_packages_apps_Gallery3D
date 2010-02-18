@@ -438,4 +438,21 @@ public final class Gallery extends Activity {
         setResult(RESULT_OK, result);
         finish();
     }
+
+    public void refreshUIForSet(MediaSet set) {
+        if (mGridLayer != null) {
+            final MediaFeed feed = mGridLayer.getFeed();
+            if (feed != null) {
+                final MediaSet currentSet = feed.getMediaSet(set.mId);
+                if (currentSet != null) {
+                    // We need to refresh the UI with this set if the number of items have changed
+                    if (currentSet.getNumItems() != set.getNumItems() || currentSet.mMaxAddedTimestamp != set.mMaxAddedTimestamp) {
+                        final MediaSet newSet = feed.replaceMediaSet(set.mId, currentSet.mDataSource);
+                        newSet.mName = currentSet.mName;
+                        newSet.generateTitle(true);
+                    }
+                }
+            }
+        }
+    }
 }
