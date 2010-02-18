@@ -1012,6 +1012,14 @@ public final class CacheService extends IntentService {
                 }
                 Log.i(TAG, "Refreshing dirty albums");
                 populateMediaItemsForSets(context, sets, acceleratedSets, true);
+                // Logic to refresh the UI for dirty sets
+                if (context instanceof Gallery) {
+                    int numSets = sets.size();
+                    for (int i = 0; i < numSets; ++i) {
+                        MediaSet set = sets.get(i);
+                        ((Gallery)context).refreshUIForSet(set);
+                    }
+                }
             }
         }
         sAlbumCache.delete(ALBUM_CACHE_DIRTY_BUCKET_INDEX);
