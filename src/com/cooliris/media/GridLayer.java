@@ -667,9 +667,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     if (mState == STATE_GRID_VIEW) {
                         MediaSet expandedSet = mMediaFeed.getExpandedMediaSet();
                         if (expandedSet != null) {
-                            if (!mHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
+                            if (mHud.getPathBar().getCurrentLabel() != null && !mHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
                                 mHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
                             }
+			    else if (mHud.getPathBar().getCurrentLabel() == null) {
+                                mHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
+			    }
                         }
                     }
                     if (mRequestFocusContentUri != null) {
