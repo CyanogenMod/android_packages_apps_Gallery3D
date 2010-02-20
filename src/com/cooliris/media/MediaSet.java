@@ -55,11 +55,13 @@ public class MediaSet {
 
     public String mEditUri = null;
     public long mPicasaAlbumId = Shared.INVALID;
+    public boolean mIsLocal = true;
 
     public DataSource mDataSource;
     public boolean mSyncPending = false;
 
     private ArrayList<MediaItem> mItems;
+    private LongSparseArray<MediaItem> mItemsLookup;
     public int mNumItemsLoaded = 0;
     // mNumExpectedItems is preset to how many items are expected to be in the
     // set as it is used to visually
@@ -74,6 +76,8 @@ public class MediaSet {
 
     public MediaSet(DataSource dataSource) {
         mItems = new ArrayList<MediaItem>(16);
+        mItemsLookup = new LongSparseArray<MediaItem>();
+        mItemsLookup.clear();
         mDataSource = dataSource;
         // TODO(Venkat): Can we move away from this dummy item setup?
         MediaItem item = new MediaItem();
@@ -118,6 +122,7 @@ public class MediaSet {
 
     public void clear() {
         mItems.clear();
+        mItemsLookup.clear();
         // TODO(Venkat): Can we move away from this dummy item setup?
         MediaItem item = new MediaItem();
         item.mId = Shared.INVALID;
@@ -156,6 +161,9 @@ public class MediaSet {
         // Important to not set the parentMediaSet in here as temporary
         // MediaSet's are occasionally
         // created and we do not want the MediaItem updated as a result of that.
+        if (item == null) {
+            return;
+        }
         if (mItems.size() == 0) {
             mItems.add(item);
         } else if (mItems.get(0).mId == -1L) {
@@ -163,10 +171,8 @@ public class MediaSet {
         } else {
             mItems.add(item);
         }
-        if (item == null) {
-            return;
-        }
         if (item.mId != Shared.INVALID) {
+            mItemsLookup.append(item.mId, item);
             ++mNumItemsLoaded;
         }
         if (item.isDateTakenValid()) {
@@ -226,6 +232,7 @@ public class MediaSet {
         if (mItems.remove(itemToRemove)) {
             --mNumExpectedItems;
             --mNumItemsLoaded;
+            mItemsLookup.remove(itemToRemove.mId);
             return true;
         }
         return false;
@@ -235,7 +242,12 @@ public class MediaSet {
      * @return true if this MediaSet contains the argument MediaItem.
      */
     public boolean containsItem(final MediaItem item) {
-        return ArrayUtils.contains(mItems, item);
+        MediaItem lookUp = mItemsLookup.get(item.mId);
+        if (lookUp != null) {
+           return true;
+        } else {
+            return false;
+        }
     }
 
     /**

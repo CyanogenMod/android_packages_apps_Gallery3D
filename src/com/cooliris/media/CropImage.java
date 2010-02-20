@@ -367,7 +367,7 @@ public class CropImage extends MonitoredActivity {
                     MediaItem item = mItem;
                     String finalFileName = fileName + "-" + x + ".jpg";
                     // TODO this is going to cause the orientation to reset.
-                    Uri newUri = ImageManager.addImage(mContentResolver, item.mCaption, item.mDateTakenInMs, item.mLatitude,
+                    Uri newUri = ImageManager.addImage(mContentResolver, item.mCaption, item.mDateAddedInSec, item.mDateTakenInMs, item.mLatitude,
                             item.mLongitude, 0, directory.toString(), finalFileName);
                     boolean complete = false;
                     try {

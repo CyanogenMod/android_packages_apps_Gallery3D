@@ -118,7 +118,6 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         super(context);
         setBackgroundDrawable(null);
         setFocusable(true);
-        setEGLConfigChooser(true);
         setRenderer(this);
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sCachedTextureLoadThread == null) {
@@ -313,10 +312,10 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     }
 
     private void queueLoad(final Texture texture, boolean highPriority) {
-        // Allow the texture to defer queuing.
+    	// Allow the texture to defer queuing.
         if (!texture.shouldQueue()) {
             return;
-        }
+        }       
 
         // Change the texture state to loading.
         texture.mState = Texture.STATE_LOADING;
@@ -328,6 +327,13 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         synchronized (inputQueue) {
             if (highPriority) {
                 inputQueue.addFirst(texture);
+                // Enforce the maximum loading count by removing something from the end of
+                // the loading queue, if necessary.
+                if (mLoadingCount >= MAX_LOADING_COUNT) {
+                	Texture unloadTexture = inputQueue.pollLast();
+                	unloadTexture.mState = Texture.STATE_UNLOADED;
+                	--mLoadingCount;
+                }
             } else {
                 inputQueue.addLast(texture);
             }
@@ -546,6 +552,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         if (sensorOrientation != null) {
             mSensorManager.registerListener(this, sensorOrientation, SensorManager.SENSOR_DELAY_UI);
         }
+        if (mRootLayer != null) {
+            mRootLayer.onResume();
+        }
     }
 
     @Override
@@ -553,6 +562,9 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         super.onPause();
         Log.i(TAG, "OnPause RenderView " + this);
         mSensorManager.unregisterListener(this);
+        if (mRootLayer != null) {
+            mRootLayer.onPause();
+        }
     }
 
     /** Renders a frame of the UI. */

@@ -1,28 +1,29 @@
 package com.cooliris.media;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
-import android.os.Handler;
+import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 
 import com.cooliris.cache.CacheService;
 
-public final class LocalDataSource implements DataSource {
+public class LocalDataSource implements DataSource {
     private static final String TAG = "LocalDataSource";
-
+    public static final String URI_ALL_MEDIA = MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString();
     public static final DiskCache sThumbnailCache = new DiskCache("local-image-thumbs");
     public static final DiskCache sThumbnailCacheVideo = new DiskCache("local-video-thumbs");
 
@@ -32,11 +33,7 @@ public final class LocalDataSource implements DataSource {
     public static final String DOWNLOAD_BUCKET_NAME = Environment.getExternalStorageDirectory().toString() + "/" + DOWNLOAD_STRING;
     public static final int CAMERA_BUCKET_ID = getBucketId(CAMERA_BUCKET_NAME);
     public static final int DOWNLOAD_BUCKET_ID = getBucketId(DOWNLOAD_BUCKET_NAME);
-
-    public static boolean sObserverActive = false;
-    private boolean mDisableImages;
-    private boolean mDisableVideos;
-
+    
     /**
      * Matches code in MediaProvider.computeBucketValues. Should be a common
      * function.
@@ -44,117 +41,271 @@ public final class LocalDataSource implements DataSource {
     public static int getBucketId(String path) {
         return (path.toLowerCase().hashCode());
     }
-
+    
+    private final String mUri;
+    private final String mBucketId;
+    private boolean mDone;;
+    private final boolean mSingleUri;
+    private final boolean mAllItems;
+    private final boolean mFlattenAllItems;
+    private final DiskCache mDiskCache;
+    private boolean mIncludeImages;
+    private boolean mIncludeVideos;
     private Context mContext;
-    private ContentObserver mObserver;
 
-    public LocalDataSource(Context context) {
+    public LocalDataSource(final Context context, final String uri, final boolean flattenAllItems) {
+        this.mUri = uri;
         mContext = context;
-    }
-
-    public void setMimeFilter(boolean disableImages, boolean disableVideos) {
-        mDisableImages = disableImages;
-        mDisableVideos = disableVideos;
-    }
-
-    public void loadMediaSets(final MediaFeed feed) {
-        if (mContext == null) {
-            return;
+        mIncludeImages = true;
+        mIncludeVideos = false;
+        String bucketId = Uri.parse(uri).getQueryParameter("bucketId");
+        if (bucketId != null && bucketId.length() > 0) {
+            mBucketId = bucketId;
+        } else {
+            mBucketId = null;
         }
-        stopListeners();
-        CacheService.loadMediaSets(feed, this, !mDisableImages, !mDisableVideos);
-        Handler handler = ((Gallery) mContext).getHandler();
-        ContentObserver observer = new ContentObserver(handler) {
-            public void onChange(boolean selfChange) {
-                final boolean isPaused = ((Gallery) mContext).isPaused();
-                if (isPaused) {
-                    MediaSet mediaSet = feed.getCurrentSet();
-                    if (mediaSet != null) {
-                        CacheService.markDirtyImmediate(mediaSet.mId);
-                        refreshUI(feed, mediaSet.mId);
-                    }
-                }
-                CacheService.senseDirty(mContext, new CacheService.Observer() {
-                    public void onChange(long[] ids) {
-                        if (!isPaused)
-                            return;
-                        if (ids != null) {
-                            int numLongs = ids.length;
-                            for (int i = 0; i < numLongs; ++i) {
-                                refreshUI(feed, ids[i]);
-                            }
-                        }
-                    }
-                });
+        mFlattenAllItems = flattenAllItems;
+        if (mBucketId == null) {
+            if (uri.equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())) {
+                mAllItems = true;
+            } else {
+                mAllItems = false;
             }
-        };
-
-        // Start listening.
-        Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
-        Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
-        ContentResolver cr = mContext.getContentResolver();
-        mObserver = observer;
-        cr.registerContentObserver(uriImages, true, observer);
-        cr.registerContentObserver(uriVideos, true, observer);
-        sObserverActive = true;
+        } else {
+            mAllItems = false;
+        }
+        mSingleUri = isSingleImageMode(uri) && mBucketId == null;
+        mDone = false;
+        mDiskCache = mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString()) || mUri.startsWith("file://") ? sThumbnailCache
+                : null;
+    }
+    
+    public void setMimeFilter(boolean includeImages, boolean includeVideos) {
+        mIncludeImages = includeImages;
+        mIncludeVideos = includeVideos;
     }
 
     public void shutdown() {
-        stopListeners();
+
     }
 
-    private void stopListeners() {
-        ContentResolver cr = mContext.getContentResolver();
-        if (mObserver != null) {
-            cr.unregisterContentObserver(mObserver);
-            cr.unregisterContentObserver(mObserver);
-        }
-        sObserverActive = false;
+    public boolean isSingleImage() {
+        return mSingleUri;
     }
 
-    protected void refreshUI(MediaFeed feed, long setIdToUse) {
-        if (setIdToUse == Shared.INVALID) {
+    private static boolean isSingleImageMode(String uriString) {
+        return !uriString.equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
+                && !uriString.equals(MediaStore.Images.Media.INTERNAL_CONTENT_URI.toString());
+    }
+
+    public DiskCache getThumbnailCache() {
+        return mDiskCache;
+    }
+
+    public void loadItemsForSet(MediaFeed feed, MediaSet parentSet, int rangeStart, int rangeEnd) {
+        if (parentSet.mNumItemsLoaded > 0 && mDone) {
             return;
         }
-        if (feed.getMediaSet(setIdToUse) == null) {
-            MediaSet mediaSet = feed.addMediaSet(setIdToUse, this);
-            if (setIdToUse == CAMERA_BUCKET_ID) {
-                mediaSet.mName = CAMERA_STRING;
-            } else if (setIdToUse == DOWNLOAD_BUCKET_ID) {
-                mediaSet.mName = DOWNLOAD_STRING;
+        if (mSingleUri && !mDone) {
+            MediaItem item = new MediaItem();
+            item.mId = 0;
+            item.mFilePath = "";
+            item.setMediaType((isImage(mUri)) ? MediaItem.MEDIA_TYPE_IMAGE : MediaItem.MEDIA_TYPE_VIDEO);
+            if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())) {
+                MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri));
+                if (newItem != null) {
+                    item = newItem;
+                    String fileUri = new File(item.mFilePath).toURI().toString();
+                    parentSet.mName = Utils.getBucketNameFromUri(Uri.parse(fileUri));
+                    parentSet.mId = parseBucketIdFromFileUri(fileUri);
+                    parentSet.generateTitle(true);
+                }
+            } else if (mUri.startsWith("file://")) {
+                MediaItem newItem = null;
+                int numRetries = 15;
+                do {
+                    newItem = createMediaItemFromFileUri(mContext, mUri);
+                    if (newItem == null) {
+                        --numRetries;
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            ;
+                        }
+                    }
+                } while (newItem == null && numRetries >= 0);
+                if (newItem != null) {
+                    item = newItem;
+                } else {
+                    item.mContentUri = mUri;
+                    item.mThumbnailUri = mUri;
+                    item.mScreennailUri = mUri;
+                    feed.setSingleImageMode(true);
+                }
+            } else {
+                item.mContentUri = mUri;
+                item.mThumbnailUri = mUri;
+                item.mScreennailUri = mUri;
+                feed.setSingleImageMode(true);
             }
-            mediaSet.generateTitle(true);
+            if (item != null) {
+                feed.addItemToMediaSet(item, parentSet);
+                // Parse EXIF orientation if a local file.
+                if (mUri.startsWith("file://")) {
+                    try {
+                        ExifInterface exif = new ExifInterface(Uri.parse(mUri).getPath());
+                        item.mRotation = Shared.exifOrientationToDegrees(exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                                ExifInterface.ORIENTATION_NORMAL));
+                    } catch (IOException e) {
+                        Log.i(TAG, "Error reading Exif information, probably not a jpeg.");
+                    }
+                }
+                // Try and get the date taken for this item.
+                long dateTaken = CacheService.fetchDateTaken(item);
+                if (dateTaken != -1L) {
+                    item.mDateTakenInMs = dateTaken;
+                }
+                CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages, mIncludeVideos);
+                ArrayList<MediaItem> items = parentSet.getItems();
+                int numItems = items.size();
+                if (numItems == 1 && parentSet.mNumItemsLoaded > 1) {
+                    parentSet.mNumItemsLoaded = 1;
+                }
+                for (int i = 1; i < numItems; ++i) {
+                    MediaItem thisItem = items.get(i);
+                    try {
+                        String filePath = Uri.fromFile(new File(thisItem.mFilePath)).toString();
+                        if (item.mId == thisItem.mId
+                                || ((item.mContentUri != null && thisItem.mContentUri != null) && (item.mContentUri
+                                        .equals(thisItem.mContentUri) || item.mContentUri.equals(filePath)))) {
+                            parentSet.removeItem(thisItem);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // NullPointerException at
+                        // java.io.File.fixSlashes(File.java:267)
+                        continue;
+                    }
+                }
+            }
+            parentSet.updateNumExpectedItems();
+            parentSet.generateTitle(true);
+        } else if (mUri.equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString()) & mFlattenAllItems) {
+            final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
+            final ContentResolver cr = mContext.getContentResolver();
+            String where = null;
+            try {
+                Cursor cursor = cr.query(uriImages, CacheService.PROJECTION_IMAGES, where, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    parentSet.setNumExpectedItems(cursor.getCount());
+                    do {
+                        if (Thread.interrupted()) {
+                            return;
+                        }
+                        final MediaItem item = new MediaItem();
+                        CacheService.populateMediaItemFromCursor(item, cr, cursor, CacheService.BASE_CONTENT_STRING_IMAGES);
+                        feed.addItemToMediaSet(item, parentSet);
+                    } while (cursor.moveToNext());
+                    if (cursor != null) {
+                        cursor.close();
+                        cursor = null;
+                    }
+                    parentSet.updateNumExpectedItems();
+                    parentSet.generateTitle(true);
+                }
+            } catch (Exception e) {
+                // If the database operation failed for any reason.
+                ;
+            }
         } else {
-            MediaSet mediaSet = feed.replaceMediaSet(setIdToUse, this);
-            Log.i(TAG, "Replacing mediaset " + mediaSet.mName + " id " + setIdToUse + " current Id " + mediaSet.mId);
-            if (setIdToUse == CAMERA_BUCKET_ID) {
-                mediaSet.mName = CAMERA_STRING;
-            } else if (setIdToUse == DOWNLOAD_BUCKET_ID) {
-                mediaSet.mName = DOWNLOAD_STRING;
+            CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages, mIncludeVideos);
+        }
+        mDone = true;
+    }
+
+    public static long parseBucketIdFromFileUri(String uriString) {
+        // This is a local folder.
+        final Uri uri = Uri.parse(uriString);
+        final List<String> paths = uri.getPathSegments();
+        final int numPaths = paths.size() - 1;
+        StringBuffer pathBuilder = new StringBuffer(Environment.getExternalStorageDirectory().toString());
+        if (numPaths > 1)
+            pathBuilder.append("/");
+        for (int i = 0; i < numPaths; ++i) {
+            String path = paths.get(i);
+            if (!"file".equals(path) && !"sdcard".equals(path)) {
+                pathBuilder.append(path);
+                if (i != numPaths - 1) {
+                    pathBuilder.append("/");
+                }
             }
-            mediaSet.generateTitle(true);
+        }
+        return getBucketId(pathBuilder.toString());
+    }
+
+    private static boolean isImage(String uriString) {
+        return !uriString.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
+    }
+
+    private static long parseIdFromContentUri(String uri) {
+        try {
+            long id = ContentUris.parseId(Uri.parse(uri));
+            return id;
+        } catch (Exception e) {
+            return 0;
         }
     }
 
-    public void loadItemsForSet(final MediaFeed feed, final MediaSet parentSet, int rangeStart, int rangeEnd) {
-        // Quick load from the cache.
-        if (mContext == null || parentSet == null) {
-            return;
+    public void loadMediaSets(final MediaFeed feed) {
+        MediaSet set = null; // Dummy set.
+        boolean loadOtherSets = true;
+        if (mSingleUri) {
+            String name = Utils.getBucketNameFromUri(Uri.parse(mUri));
+            long id = getBucketIdFromUri(mUri);
+            set = feed.addMediaSet(id, this);
+            set.mName = name;
+            set.setNumExpectedItems(2);
+            set.generateTitle(true);
+            set.mPicasaAlbumId = Shared.INVALID;
+            if (this.getThumbnailCache() != sThumbnailCache) {
+                loadOtherSets = false;
+            }
+        } else if (mBucketId == null) {
+            // All the buckets.
+            if (mFlattenAllItems) {
+                set = feed.addMediaSet(0, this); // Create dummy set.
+                set.mName = Utils.getBucketNameFromUri(Uri.parse(mUri));
+                set.mId = getBucketId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString() + "/" + set.mName);
+                set.setNumExpectedItems(1);
+                set.generateTitle(true);
+                set.mPicasaAlbumId = Shared.INVALID;
+            } else {
+                CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos);
+            }
+        } else {
+            CacheService.loadMediaSet(mContext, feed, this, Long.parseLong(mBucketId));
+            ArrayList<MediaSet> sets = feed.getMediaSets();
+            if (sets.size() > 0)
+                set = sets.get(0);
         }
-        loadMediaItemsIntoMediaFeed(feed, parentSet, rangeStart, rangeEnd);
+        // We also load the other MediaSets
+        if (!mAllItems && set != null && loadOtherSets) {
+            if (!CacheService.isPresentInCache(set.mId)) {
+                CacheService.markDirty();
+            }
+            CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos);
+        }
     }
 
-    private void loadMediaItemsIntoMediaFeed(final MediaFeed mediaFeed, final MediaSet set, int rangeStart, int rangeEnd) {
-        if (rangeEnd - rangeStart < 0) {
-            return;
-        }
-        CacheService.loadMediaItemsIntoMediaFeed(mediaFeed, set, rangeStart, rangeEnd, !mDisableImages, !mDisableVideos);
-        if (set.mId == CAMERA_BUCKET_ID) {
-            mediaFeed.moveSetToFront(set);
+    private long getBucketIdFromUri(String uriString) {
+        if (uriString.startsWith("content://.")) {
+            return parseIdFromContentUri(uriString);
+        } else {
+            return parseBucketIdFromFileUri(uriString);
         }
     }
 
-    public boolean performOperation(final int operation, final ArrayList<MediaBucket> mediaBuckets, final Object data) {
+    public boolean performOperation(int operation, ArrayList<MediaBucket> mediaBuckets, Object data) {
         int numBuckets = mediaBuckets.size();
         ContentResolver cr = mContext.getContentResolver();
         switch (operation) {
@@ -164,14 +315,15 @@ public final class LocalDataSource implements DataSource {
                 MediaSet set = bucket.mediaSet;
                 ArrayList<MediaItem> items = bucket.mediaItems;
                 if (set != null && items == null) {
-                    // Remove the entire bucket.
+                    // TODO bulk delete
+                    // remove the entire bucket
                     final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
                     final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
                     final String whereImages = Images.ImageColumns.BUCKET_ID + "=" + Long.toString(set.mId);
                     final String whereVideos = Video.VideoColumns.BUCKET_ID + "=" + Long.toString(set.mId);
                     cr.delete(uriImages, whereImages, null);
                     cr.delete(uriVideos, whereVideos, null);
-                    CacheService.markDirty(mContext);
+                    CacheService.markDirty();
                 }
                 if (set != null && items != null) {
                     // We need to remove these items from the set.
@@ -187,7 +339,7 @@ public final class LocalDataSource implements DataSource {
                     }
                     set.updateNumExpectedItems();
                     set.generateTitle(true);
-                    CacheService.markDirty(mContext, set.mId);
+                    CacheService.markDirty(set.mId);
                 }
             }
             break;
@@ -240,7 +392,7 @@ public final class LocalDataSource implements DataSource {
             }
 
             // Invalidate the cache entry.
-            CacheService.markDirty(mContext, item.mParentMediaSet.mId);
+            CacheService.markDirty(item.mParentMediaSet.mId);
 
             // Update the object representation of the item.
             item.mRotation = rotation;
@@ -248,11 +400,7 @@ public final class LocalDataSource implements DataSource {
             // System.out.println("Apparently not a JPEG");
         }
     }
-
-    public DiskCache getThumbnailCache() {
-        return sThumbnailCache;
-    }
-
+    
     public static MediaItem createMediaItemFromUri(Context context, Uri target) {
         MediaItem item = null;
         long id = ContentUris.parseId(target);
@@ -279,7 +427,7 @@ public final class LocalDataSource implements DataSource {
         MediaItem item = null;
         String filepath = new File(URI.create(fileUri)).toString();
         ContentResolver cr = context.getContentResolver();
-        long bucketId = SingleDataSource.parseBucketIdFromFileUri(fileUri);
+        long bucketId = LocalDataSource.parseBucketIdFromFileUri(fileUri);
         String whereClause = Images.ImageColumns.BUCKET_ID + "=" + bucketId + " AND " + Images.ImageColumns.DATA + "='" + filepath
                 + "'";
         try {
@@ -298,4 +446,26 @@ public final class LocalDataSource implements DataSource {
         }
         return item;
     }
+
+    public void refresh(final MediaFeed feed) {
+        // We check to see what has changed.
+        long[] ids = CacheService.computeDirtySets(mContext);
+        int numDirtySets = ids.length;
+        for (int i = 0; i < numDirtySets; ++i) {
+            long setId = ids[i];
+            if (feed.getMediaSet(setId) != null) {
+                MediaSet newSet = feed.replaceMediaSet(setId, this);
+                newSet.generateTitle(true);
+            } else {
+                MediaSet mediaSet = feed.addMediaSet(setId, this);
+                if (setId == CAMERA_BUCKET_ID) {
+                    mediaSet.mName = CAMERA_STRING;
+                } else if (setId == DOWNLOAD_BUCKET_ID) {
+                    mediaSet.mName = DOWNLOAD_STRING;
+                }
+                mediaSet.generateTitle(true);
+            }
+        }
+    }
+
 }

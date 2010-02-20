@@ -166,7 +166,7 @@ public final class MediaItemTexture extends Texture {
         } else {
             byte[] data = null;
             MediaSet parentMediaSet = item.mParentMediaSet;
-            if (parentMediaSet != null && parentMediaSet.mPicasaAlbumId != Shared.INVALID) {
+            if (parentMediaSet != null && !parentMediaSet.mIsLocal) {
                 DiskCache thumbnailCache = parentMediaSet.mDataSource.getThumbnailCache();
                 data = thumbnailCache.get(item.mId, 0);
                 if (data == null) {
@@ -182,8 +182,9 @@ public final class MediaItemTexture extends Texture {
                     }
                 }
             } else {
+                long dateToUse = (item.mDateAddedInSec > item.mDateModifiedInSec) ? item.mDateAddedInSec : item.mDateModifiedInSec;
                 data = CacheService.queryThumbnail(mContext, Utils.Crc64Long(item.mFilePath), item.mId,
-                        item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO, item.mDateModifiedInSec * 1000);
+                        item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO, dateToUse * 1000);
             }
             if (data != null) {
                 try {

@@ -28,4 +28,12 @@ public abstract class RootLayer extends Layer {
     public void handleLowMemory() {
 
     }
+    
+    public void onResume() {
+        
+    }
+    
+    public void onPause() {
+        
+    }
 }

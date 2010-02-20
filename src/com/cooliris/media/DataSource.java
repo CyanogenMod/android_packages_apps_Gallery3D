@@ -6,6 +6,7 @@ public interface DataSource {
     // Load the sets to be displayed.
     void loadMediaSets(final MediaFeed feed);
 
+    // rangeStart->rangeEnd is inclusive
     // Pass in Shared.INFINITY for the rangeEnd to load all items.
     void loadItemsForSet(final MediaFeed feed, final MediaSet parentSet, int rangeStart, int rangeEnd);
 
@@ -15,4 +16,7 @@ public interface DataSource {
     boolean performOperation(int operation, ArrayList<MediaBucket> mediaBuckets, Object data);
 
     DiskCache getThumbnailCache();
+
+    // Called when the user explicitly requests a refresh, or when the application is brough to the foreground.
+    void refresh(final MediaFeed feed);
 }

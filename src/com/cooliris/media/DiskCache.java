@@ -53,7 +53,8 @@ public final class DiskCache {
         }
         if (record != null) {
             // Read the chunk from the file.
-            if (record.timestamp != timestamp) {
+            if (record.timestamp < timestamp) {
+                Log.i(TAG, "File has been updated since the last time stored in cache.");
                 return null;
             }
             try {
@@ -79,7 +80,7 @@ public final class DiskCache {
         if (record == null) {
             return false;
         }
-        if (record.timestamp != timestamp) {
+        if (record.timestamp < timestamp) {
             return false;
         }
         if (record.size == 0)
@@ -104,6 +105,14 @@ public final class DiskCache {
                     synchronized (mIndexMap) {
                         mIndexMap.put(key, new Record(currentChunk, record.offset, data.length, record.sizeOnDisk, timestamp));
                     }
+                    if (++mNumInsertions == 32) { // CR: 32 => constant
+                        // Flush the index file at a regular interval. To avoid
+                        // writing the entire
+                        // index each time the format could be changed to an
+                        // append-only journal with
+                        // a snapshot generated on exit.
+                        flush();
+                    }
                     return;
                 }
             } catch (Exception e) {
@@ -125,7 +134,7 @@ public final class DiskCache {
                     ++mTailChunk;
                 }
 
-                if (++mNumInsertions == 64) { // CR: 64 => constant
+                if (++mNumInsertions == 32) { // CR: 32 => constant
                     // Flush the index file at a regular interval. To avoid
                     // writing the entire
                     // index each time the format could be changed to an

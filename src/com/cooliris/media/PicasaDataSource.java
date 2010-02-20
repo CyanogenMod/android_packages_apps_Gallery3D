@@ -122,6 +122,7 @@ public final class PicasaDataSource implements DataSource {
                             mediaSet.setNumExpectedItems(album.numPhotos);
                         }
                         mediaSet.mPicasaAlbumId = album.id;
+                        mediaSet.mIsLocal = false;
                         mediaSet.mSyncPending = album.photosDirty;
                         picasaSets.add(mediaSet);
                     }
@@ -255,5 +256,9 @@ public final class PicasaDataSource implements DataSource {
         public String contentType;
         @Column("html_page_url")
         public String htmlPageUrl;
+    }
+    
+    public void refresh(final MediaFeed feed) {
+        ;
     }
 }

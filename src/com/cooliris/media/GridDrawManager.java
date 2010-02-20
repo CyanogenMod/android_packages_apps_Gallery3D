@@ -180,19 +180,20 @@ public final class GridDrawManager {
                     final float dy1 = mScaleGestureDetector.getTopFingerDeltaY();
                     final float dx2 = mScaleGestureDetector.getBottomFingerDeltaX();
                     final float dy2 = mScaleGestureDetector.getBottomFingerDeltaY();
+                    final float span = mScaleGestureDetector.getCurrentSpan();
                     if (state == GridLayer.STATE_FULL_SCREEN) {
-                        displayList.setOffset(displayItem, false, true, dx1, dy1, dx2, dy2);
+                        displayList.setOffset(displayItem, false, true, span, dx1, dy1, dx2, dy2);
                     } else {
                         if (!mHoldPosition) {
                             if (currentScaleSlot == index) {
                                 if (state != GridLayer.STATE_GRID_VIEW)
-                                    displayList.setOffset(displayItem, true, false, dx1, dy1, dx2, dy2);
+                                    displayList.setOffset(displayItem, true, false, span, dx1, dy1, dx2, dy2);
                                 else
                                     displayList.setSingleOffset(displayItem, true, false, 0, 0, 0, mSpreadValue);
                             } else if (currentScaleSlot != Shared.INVALID) {
-                                displayList.setOffset(displayItem, true, true, dx1, dy1, dx2, dy2);
+                                displayList.setOffset(displayItem, true, true, span, dx1, dy1, dx2, dy2);
                             } else {
-                                displayList.setOffset(displayItem, false, false, dx1, dy1, dx2, dy2);
+                                displayList.setOffset(displayItem, false, false, span, dx1, dy1, dx2, dy2);
                             }
                         }
                     }
@@ -507,7 +508,7 @@ public final class GridDrawManager {
 
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                     itemsPresent = true;
-                    if (mSpreadValue > 3.0f)
+                    if (mSpreadValue > 1.0f)
                         continue;
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {
@@ -539,7 +540,7 @@ public final class GridDrawManager {
                 float yLocOffset = 0.2f;
                 gl.glTranslatef(0.0f, -yLocOffset, 0.0f);
                 for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
-                    if (mSpreadValue > 3.0f)
+                    if (mSpreadValue > 1.0f)
                         continue;
                     DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                     if (displayItem != null) {

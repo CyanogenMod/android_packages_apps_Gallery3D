@@ -276,7 +276,7 @@ public final class MediaFeed implements Runnable {
                 return mediaSetsSize;
             } else {
                 MediaSet setToUse = (mMediaFilteredSet == null) ? mediaSets.get(currentMediaSetIndex) : mMediaFilteredSet;
-                return setToUse.getNumItems();
+                return setToUse.getNumExpectedItems();
             }
         } else if (currentMediaSetIndex != Shared.INVALID && currentMediaSetIndex < mediaSetsSize) {
             MediaSet set = mediaSets.get(currentMediaSetIndex);
@@ -670,7 +670,6 @@ public final class MediaFeed implements Runnable {
                 }
             }
             mInClusteringMode = true;
-            mMediaFeedNeedsToRun = true;
             updateListener(true);
         }
     }
@@ -740,5 +739,12 @@ public final class MediaFeed implements Runnable {
         if (mExpandedMediaSetIndex >= mMediaSets.size())
             return null;
         return mMediaSets.get(mExpandedMediaSetIndex);
+    }
+
+    public void refresh() {
+        if (mDataSource != null) {
+            mDataSource.refresh(this);
+        }
+        updateListener(false);
     }
 }

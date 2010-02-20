@@ -123,7 +123,7 @@ public class ImageManager {
         cr.update(uri, values, null, null);
     }
 
-    public static Uri addImage(ContentResolver cr, String title, long dateTaken, double latitude, double longitude,
+    public static Uri addImage(ContentResolver cr, String title, long dateAdded, long dateTaken, double latitude, double longitude,
             int orientation, String directory, String filename) {
 
         ContentValues values = new ContentValues(7);
@@ -134,6 +134,8 @@ public class ImageManager {
         // "DISPLAY_NAME" field.
         values.put(Images.Media.DISPLAY_NAME, filename);
         values.put(Images.Media.DATE_TAKEN, dateTaken);
+        values.put(Images.Media.DATE_MODIFIED, dateTaken);
+        values.put(Images.Media.DATE_ADDED, dateAdded);
         values.put(Images.Media.MIME_TYPE, "image/jpeg");
         values.put(Images.Media.ORIENTATION, orientation);
 

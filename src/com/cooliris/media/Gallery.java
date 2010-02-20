@@ -104,13 +104,10 @@ public final class Gallery extends Activity {
                     } while (numRetries > 0 && !ImageManager.hasStorage());
                 }
                 final boolean imageManagerHasStorageAfterDelay = ImageManager.hasStorage();
-                CacheService.computeDirtySets(Gallery.this);
-                CacheService.startCache(Gallery.this, false);
-                final boolean isCacheReady = CacheService.isCacheReady(false);
-
+                
                 // Creating the DataSource objects.
                 final PicasaDataSource picasaDataSource = new PicasaDataSource(Gallery.this);
-                final LocalDataSource localDataSource = new LocalDataSource(Gallery.this);
+                final LocalDataSource localDataSource = new LocalDataSource(Gallery.this, LocalDataSource.URI_ALL_MEDIA, false);
                 final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(localDataSource, picasaDataSource);
 
                 // Depending upon the intent, we assign the right dataSource.
@@ -119,9 +116,6 @@ public final class Gallery extends Activity {
                         mGridLayer.setDataSource(combinedDataSource);
                     } else {
                         mGridLayer.setDataSource(picasaDataSource);
-                    }
-                    if (!isCacheReady && imageManagerHasStorageAfterDelay) {
-                        showToast(getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
                     }
                 } else if (!isViewIntent()) {
                     final Intent intent = getIntent();
@@ -133,7 +127,7 @@ public final class Gallery extends Activity {
                         }
                         boolean includeImages = isImageType(type);
                         boolean includeVideos = isVideoType(type);
-                        ((LocalDataSource) localDataSource).setMimeFilter(!includeImages, !includeVideos);
+                        ((LocalDataSource) localDataSource).setMimeFilter(includeImages, includeVideos);
                         if (includeImages) {
                             if (imageManagerHasStorageAfterDelay) {
                                 mGridLayer.setDataSource(combinedDataSource);
@@ -155,7 +149,7 @@ public final class Gallery extends Activity {
                     final Intent intent = getIntent();
                     Uri uri = intent.getData();
                     boolean slideshow = intent.getBooleanExtra("slideshow", false);
-                    final SingleDataSource singleDataSource = new SingleDataSource(Gallery.this, uri.toString(), slideshow);
+                    final LocalDataSource singleDataSource = new LocalDataSource(Gallery.this, uri.toString(), true);
                     final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource,
                             picasaDataSource);
                     mGridLayer.setDataSource(singleCombinedDataSource);
@@ -167,15 +161,15 @@ public final class Gallery extends Activity {
                         mGridLayer.startSlideshow();
                     }
                 }
+                // We record the set of enabled accounts for picasa.
+                mAccountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
             }
         };
         t.start();
-        // We record the set of enabled accounts for picasa.
-        mAccountsEnabled = PicasaDataSource.getAccountStatus(this);
         Log.i(TAG, "onCreate");
     }
 
-    private void showToast(final String string, final int duration) {
+    public void showToast(final String string, final int duration) {
         mHandler.post(new Runnable() {
             public void run() {
                 Toast.makeText(Gallery.this, string, duration).show();
@@ -215,17 +209,14 @@ public final class Gallery extends Activity {
             mWakeLock.acquire();
             return;
         }
-        if (ImageManager.hasStorage()) {
-            CacheService.computeDirtySets(this);
-            CacheService.startCache(this, false);
-        }
         if (mRenderView != null) {
             mRenderView.onResume();
         }
         if (mPause) {
             mHandler.post(new Runnable() {
                 public void run() {
-                    // We check to see if the authenticated accounts have changed, and
+                    // We check to see if the authenticated accounts have
+                    // changed, and
                     // if so, reload the datasource.
                     HashMap<String, Boolean> accountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
                     String[] keys = new String[accountsEnabled.size()];
@@ -264,6 +255,9 @@ public final class Gallery extends Activity {
             }
             mWakeLock = null;
         }
+        LocalDataSource.sThumbnailCache.flush();
+        LocalDataSource.sThumbnailCacheVideo.flush();
+        PicasaDataSource.sThumbnailCache.flush();
         mPause = true;
     }
 
@@ -279,9 +273,7 @@ public final class Gallery extends Activity {
         if (mReverseGeocoder != null) {
             mReverseGeocoder.flushCache();
         }
-        LocalDataSource.sThumbnailCache.flush();
-        LocalDataSource.sThumbnailCacheVideo.flush();
-        PicasaDataSource.sThumbnailCache.flush();
+        // Start the thumbnailer.
         CacheService.startCache(this, true);
     }
 

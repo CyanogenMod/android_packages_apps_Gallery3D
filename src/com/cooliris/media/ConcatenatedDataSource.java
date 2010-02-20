@@ -59,4 +59,9 @@ public final class ConcatenatedDataSource implements DataSource {
         mFirst.shutdown();
         mSecond.shutdown();
     }
+    
+    public void refresh(final MediaFeed feed) {
+        mFirst.refresh(feed);
+        mSecond.refresh(feed);
+    }
 }

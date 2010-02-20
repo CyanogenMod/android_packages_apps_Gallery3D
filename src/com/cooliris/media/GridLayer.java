@@ -24,7 +24,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public static final int ANCHOR_CENTER = 2;
 
     public static final int MAX_ITEMS_PER_SLOT = 12;
-    public static final int MAX_DISPLAYED_ITEMS_PER_SLOT = 4;
+    public static final int MAX_DISPLAYED_ITEMS_PER_SLOT = 8;
     public static final int MAX_DISPLAY_SLOTS = 96;
     public static final int MAX_ITEMS_DRAWABLE = MAX_ITEMS_PER_SLOT * MAX_DISPLAY_SLOTS;
 
@@ -57,8 +57,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private static final ArrayList<MediaItem> sTempList = new ArrayList<MediaItem>();
     private static final MediaItem[] sTempHash = new MediaItem[64];
 
-    private static final Vector3f sDeltaAnchorPositionUncommited = new Vector3f();
-    private static Vector3f sDeltaAnchorPosition = new Vector3f();
+    private final Vector3f sDeltaAnchorPositionUncommited = new Vector3f();
+    private Vector3f sDeltaAnchorPosition = new Vector3f();
 
     // The display primitives.
     final private GridDrawables mDrawables;
@@ -855,7 +855,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     // called on background thread
     public synchronized void onFeedChanged(MediaFeed feed, boolean needsLayout) {
-        if (!needsLayout) {
+        if (!needsLayout && !mFeedAboutToChange) {
             mFeedChanged = true;
             forceRecomputeVisibleRange();
             if (mState == STATE_GRID_VIEW || mState == STATE_FULL_SCREEN)
@@ -1232,7 +1232,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (items == null || set.getNumItems() == 0) {
                 return;
             }
-            if (items.contains(item)) {
+            if (set.containsItem(item)) {
                 centerCameraForSlot(i, 1.0f);
                 break;
             }
@@ -1445,5 +1445,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mRequestFocusContentUri = contentUri;
         mMediaFeed.updateListener(false);
     }
-
+    
+    public void onResume() {
+        if (mMediaFeed != null) {
+            mMediaFeed.refresh();
+        }
+    }
+    
+    public void onPause() {
+        ;
+    }
 }

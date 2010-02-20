@@ -37,8 +37,8 @@ public final class DisplayList {
         }
     }
     
-    public final void setOffset(DisplayItem item, boolean useOffset, boolean pushDown, float dx1, float dy1, float dx2, float dy2) {
-        item.setOffset(useOffset, pushDown, dx1, dy1, dx2, dy2);
+    public final void setOffset(DisplayItem item, boolean useOffset, boolean pushDown, float span, float dx1, float dy1, float dx2, float dy2) {
+        item.setOffset(useOffset, pushDown, span, dx1, dy1, dx2, dy2);
         markIfDirty(item);
     }
     
