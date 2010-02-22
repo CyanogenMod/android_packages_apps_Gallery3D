@@ -40,8 +40,6 @@
     <string name="resume_playing_message" msgid="5184414518126703481">"Retomar reprodução a partir de %s?"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"Retomar a reprodução"</string>
     <string name="resume_playing_restart" msgid="5471008499835769292">"Recomeçar"</string>
-    <string name="photos" msgid="3921471644099818826">"fotografias"</string>
-    <string name="videos" msgid="9168892901395116842">"vídeos"</string>
     <string name="camera" msgid="2730811566218090802">"Câmara"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"Guardar"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Rejeitar"</string>
@@ -54,18 +52,15 @@
     <!-- no translation found for set_image (2331476809308010401) -->
     <skip />
     <string name="wallpaper" msgid="9222901738515471972">"A definir a imagem de fundo, aguarde..."</string>
-    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"Imagens"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Imagem de fundo"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
     <string name="loading_new" msgid="7893793767294787579">"A carregar novos álbuns e fotografias"</string>
     <string name="initializing" msgid="2374228157398540466">"A carregar"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Escolha um item a partir da colecção"</string>
     <string name="no_items" msgid="3117870234034732172">"Não existem itens na sua colecção"</string>
-    <string name="home" msgid="3335112006212947568">"Página inicial"</string>
     <string name="pick" msgid="7248789132035843128">"Escolher"</string>
     <string name="delete" msgid="2839695998251824487">"Eliminar"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Confirmar eliminação"</string>
-    <string name="are_you_sure" msgid="6293680869731897736">"Tem a certeza?"</string>
     <string name="cancel" msgid="3637516880917356226">"Cancelar"</string>
     <string name="share" msgid="3619042788254195341">"Partilhar"</string>
     <!-- no translation found for no_sd_card (2666880203366429182) -->
@@ -74,7 +69,6 @@
     <string name="select_all" msgid="8623593677101437957">"Seleccionar tudo"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Desmarcar tudo"</string>
     <string name="slideshow" msgid="4355906903247112975">"Apresentação de diapositivos"</string>
-    <string name="play" msgid="8116587039599675035">"Reproduzir"</string>
     <string name="menu" msgid="1819649153380636719">"Menu"</string>
     <string name="details" msgid="8415120088556445230">"Detalhes"</string>
     <string name="album_selected" msgid="3441280740465738452">"álbum seleccionado"</string>
@@ -100,8 +94,6 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"Definir como imagem de fundo"</string>
     <string name="item" msgid="636303673288563698">"item"</string>
     <string name="items" msgid="6403254716052150916">"itens"</string>
-    <string name="set_as_contact_icon" msgid="749479412834888190">"Definir como ícone de contacto"</string>
-    <string name="miles_around" msgid="267745511737880822">"milhas aproximadas"</string>
     <!-- no translation found for around (2223906282110417412) -->
     <skip />
     <string name="date_unknown" msgid="4277113471036917386">"Data desconhecida"</string>

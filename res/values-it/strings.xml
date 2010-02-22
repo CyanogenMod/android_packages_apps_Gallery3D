@@ -39,8 +39,6 @@
     <string name="resume_playing_message" msgid="5184414518126703481">"Riprendi riproduzione da %s ?"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"Riprendi riproduzione"</string>
     <string name="resume_playing_restart" msgid="5471008499835769292">"Ricomincia"</string>
-    <string name="photos" msgid="3921471644099818826">"foto"</string>
-    <string name="videos" msgid="9168892901395116842">"video"</string>
     <string name="camera" msgid="2730811566218090802">"Fotocamera"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"Salva"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Annulla"</string>
@@ -50,18 +48,15 @@
     <string name="running_face_detection" msgid="4094707964259463039">"Attendi..."</string>
     <string name="set_image" msgid="2331476809308010401">"Imposta foto come"</string>
     <string name="wallpaper" msgid="9222901738515471972">"Impostazione sfondo, attendi..."</string>
-    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"Foto"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Sfondo"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
     <string name="loading_new" msgid="7893793767294787579">"Caricamento di nuovi album e foto in corso"</string>
     <string name="initializing" msgid="2374228157398540466">"Caricamento in corso"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Scegli un elemento dalla raccolta"</string>
     <string name="no_items" msgid="3117870234034732172">"Non sono presenti elementi nella tua raccolta"</string>
-    <string name="home" msgid="3335112006212947568">"Home"</string>
     <string name="pick" msgid="7248789132035843128">"Scegli"</string>
     <string name="delete" msgid="2839695998251824487">"Elimina"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Conferma eliminazione"</string>
-    <string name="are_you_sure" msgid="6293680869731897736">"Procedere?"</string>
     <string name="cancel" msgid="3637516880917356226">"Annulla"</string>
     <string name="share" msgid="3619042788254195341">"Condividi"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"Scheda SD non montata o non presente"</string>
@@ -69,7 +64,6 @@
     <string name="select_all" msgid="8623593677101437957">"Seleziona tutto"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Deseleziona tutto"</string>
     <string name="slideshow" msgid="4355906903247112975">"Presentazione"</string>
-    <string name="play" msgid="8116587039599675035">"Riproduci"</string>
     <string name="menu" msgid="1819649153380636719">"Menu"</string>
     <string name="details" msgid="8415120088556445230">"Dettagli"</string>
     <string name="album_selected" msgid="3441280740465738452">"album selezionato"</string>
@@ -93,8 +87,6 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"Imposta come sfondo"</string>
     <string name="item" msgid="636303673288563698">"elemento"</string>
     <string name="items" msgid="6403254716052150916">"elementi"</string>
-    <string name="set_as_contact_icon" msgid="749479412834888190">"Icona Imposta come contatto"</string>
-    <string name="miles_around" msgid="267745511737880822">"chilometri da"</string>
     <string name="around" msgid="2223906282110417412">"Nei pressi di"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Data sconosciuta"</string>
     <string name="video_err" msgid="7917736494827857757">"Impossibile riprodurre il video"</string>

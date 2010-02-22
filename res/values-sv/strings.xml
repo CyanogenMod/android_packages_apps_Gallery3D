@@ -39,8 +39,6 @@
     <string name="resume_playing_message" msgid="5184414518126703481">"Fortsätt spela upp från %s?"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"Fortsätt spela upp"</string>
     <string name="resume_playing_restart" msgid="5471008499835769292">"Börja om"</string>
-    <string name="photos" msgid="3921471644099818826">"foton"</string>
-    <string name="videos" msgid="9168892901395116842">"videor"</string>
     <string name="camera" msgid="2730811566218090802">"Kamera"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"Spara"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Ignorera"</string>
@@ -50,18 +48,15 @@
     <string name="running_face_detection" msgid="4094707964259463039">"Vänta…"</string>
     <string name="set_image" msgid="2331476809308010401">"Använd bild som"</string>
     <string name="wallpaper" msgid="9222901738515471972">"Anger bakgrund, vänta…"</string>
-    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"Bilder"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Bakgrund"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
     <string name="loading_new" msgid="7893793767294787579">"Läser in nya album och foton"</string>
     <string name="initializing" msgid="2374228157398540466">"Läser in"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Välj ett objekt i din samling"</string>
     <string name="no_items" msgid="3117870234034732172">"Det finns inga objekt i din samling"</string>
-    <string name="home" msgid="3335112006212947568">"Startsida"</string>
     <string name="pick" msgid="7248789132035843128">"Välj"</string>
     <string name="delete" msgid="2839695998251824487">"Ta bort"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Bekräfta borttagning"</string>
-    <string name="are_you_sure" msgid="6293680869731897736">"Är du säker?"</string>
     <string name="cancel" msgid="3637516880917356226">"Avbryt"</string>
     <string name="share" msgid="3619042788254195341">"Dela"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-kortet är inte initierat eller saknas"</string>
@@ -69,7 +64,6 @@
     <string name="select_all" msgid="8623593677101437957">"Markera alla"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Avmarkera alla"</string>
     <string name="slideshow" msgid="4355906903247112975">"Bildspel"</string>
-    <string name="play" msgid="8116587039599675035">"Spela"</string>
     <string name="menu" msgid="1819649153380636719">"Meny"</string>
     <string name="details" msgid="8415120088556445230">"Information"</string>
     <string name="album_selected" msgid="3441280740465738452">"album har markerats"</string>
@@ -93,8 +87,6 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"Använd som bakgrund"</string>
     <string name="item" msgid="636303673288563698">"objekt"</string>
     <string name="items" msgid="6403254716052150916">"objekt"</string>
-    <string name="set_as_contact_icon" msgid="749479412834888190">"Använd som kontaktikon"</string>
-    <string name="miles_around" msgid="267745511737880822">"miles från"</string>
     <string name="around" msgid="2223906282110417412">"Vid"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Datum okänt"</string>
     <string name="video_err" msgid="7917736494827857757">"Det gick inte att spela videon"</string>

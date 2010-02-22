@@ -39,8 +39,6 @@
     <string name="resume_playing_message" msgid="5184414518126703481">"Продолжить воспроизведение с %s?"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"Продолжить воспроизведение"</string>
     <string name="resume_playing_restart" msgid="5471008499835769292">"Начать с начала"</string>
-    <string name="photos" msgid="3921471644099818826">"фото"</string>
-    <string name="videos" msgid="9168892901395116842">"видео"</string>
     <string name="camera" msgid="2730811566218090802">"Камера"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"Сохранить"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Отменить"</string>
@@ -50,18 +48,15 @@
     <string name="running_face_detection" msgid="4094707964259463039">"Подождите..."</string>
     <string name="set_image" msgid="2331476809308010401">"Установить картинку как"</string>
     <string name="wallpaper" msgid="9222901738515471972">"Установка обоев, подождите..."</string>
-    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"Картинки"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Обои"</string>
     <string name="details_ok" msgid="6848594369924424312">"ОК"</string>
     <string name="loading_new" msgid="7893793767294787579">"Загрузка новых альбомов и фотографий"</string>
     <string name="initializing" msgid="2374228157398540466">"Загрузка"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Выбрать элемент из коллекции"</string>
     <string name="no_items" msgid="3117870234034732172">"В вашей коллекции ничего нет."</string>
-    <string name="home" msgid="3335112006212947568">"Главная"</string>
     <string name="pick" msgid="7248789132035843128">"Выбрать"</string>
     <string name="delete" msgid="2839695998251824487">"Удалить"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Подтвердить удаление"</string>
-    <string name="are_you_sure" msgid="6293680869731897736">"Вы уверены?"</string>
     <string name="cancel" msgid="3637516880917356226">"Отмена"</string>
     <string name="share" msgid="3619042788254195341">"Отправить"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-карта извлечена или не вставлена"</string>
@@ -69,7 +64,6 @@
     <string name="select_all" msgid="8623593677101437957">"Выбрать все"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Снять все выделения"</string>
     <string name="slideshow" msgid="4355906903247112975">"Слайд-шоу"</string>
-    <string name="play" msgid="8116587039599675035">"Воспроизвести"</string>
     <string name="menu" msgid="1819649153380636719">"Меню"</string>
     <string name="details" msgid="8415120088556445230">"Сведения"</string>
     <string name="album_selected" msgid="3441280740465738452">"альбом выбран"</string>
@@ -93,8 +87,6 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"Установить как фоновый рисунок"</string>
     <string name="item" msgid="636303673288563698">"элемент"</string>
     <string name="items" msgid="6403254716052150916">"элем."</string>
-    <string name="set_as_contact_icon" msgid="749479412834888190">"Задать как значок контакта"</string>
-    <string name="miles_around" msgid="267745511737880822">"км от:"</string>
     <string name="around" msgid="2223906282110417412">"Возле"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Дата неизвестна"</string>
     <string name="video_err" msgid="7917736494827857757">"Не удается воспроизвести видео"</string>

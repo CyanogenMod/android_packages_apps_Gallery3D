@@ -36,8 +36,6 @@
 
     <!-- Movie View Start Playing button "Beginning" -->
     <string name="resume_playing_restart">Start over</string>
-    <string name="photos">photos</string>
-	<string name="videos">videos</string>
 	<string name="camera">Camera</string>
 
 	<!-- Button indicating that the cropped image should be saved -->
@@ -58,10 +56,6 @@
 	<string name="set_image">Set picture as</string>
 	<!-- Toast/alert after saving wallpaper -->
 	<string name="wallpaper">Setting wallpaper, please wait\u2026</string>
-	<!-- String indicating an action of picking a picture to use as wallpaper
-		 (e.g. set wallpaper from "Pictures") -->
-	<string name="camera_pick_wallpaper">Pictures</string>
-	<string name="camera_setas_wallpaper">Wallpaper</string>
 
     <!-- Details dialog "OK" button. Dismisses dialog. -->
     <string name="details_ok">OK</string>
@@ -69,11 +63,9 @@
     <string name="initializing">Loading</string>
     <string name="pick_prompt">Pick an item from your collection</string>
     <string name="no_items">There are no items in your collection</string>
-    <string name="home">Home</string>
     <string name="pick">Pick</string>
     <string name="delete">Delete</string>
     <string name="confirm_delete">Confirm Delete</string>
-    <string name="are_you_sure">Are you sure?</string>
     <string name="cancel">Cancel</string>
     <string name="share">Share</string>
     <string name="no_sd_card">SD Card unmounted or not present</string>
@@ -84,8 +76,6 @@
     <string name="deselect_all">Deselect All</string>
     <string name="slideshow">Slideshow</string>
 
-    <!-- String to play a video -->
-    <string name="play">Play</string>
     <string name="menu">Menu</string>
     <string name="details">Details</string>
 
@@ -114,10 +104,7 @@
     <string name="set_as_wallpaper">Set as wallpaper</string>
     <string name="item">item</string>
     <string name="items">items</string>
-    <string name="set_as_contact_icon">Set as contact icon</string>
 
-    <!-- String indicating rough location eg. 25 miles around San Francisco -->
-    <string name="miles_around">miles around</string>
     <!-- String indicating an approximate location eg. Around Palo Alto, CA -->
     <string name="around">Around</string>
     <string name="date_unknown">Date unknown</string>

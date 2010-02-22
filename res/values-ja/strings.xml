@@ -39,8 +39,6 @@
     <string name="resume_playing_message" msgid="5184414518126703481">"再生を%sから再開しますか？"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"再生を再開"</string>
     <string name="resume_playing_restart" msgid="5471008499835769292">"最初から再生"</string>
-    <string name="photos" msgid="3921471644099818826">"写真"</string>
-    <string name="videos" msgid="9168892901395116842">"動画"</string>
     <string name="camera" msgid="2730811566218090802">"カメラ"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"保存"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"キャンセル"</string>
@@ -50,18 +48,15 @@
     <string name="running_face_detection" msgid="4094707964259463039">"お待ちください..."</string>
     <string name="set_image" msgid="2331476809308010401">"写真を設定:"</string>
     <string name="wallpaper" msgid="9222901738515471972">"壁紙を設定しています。しばらくお待ちください..."</string>
-    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"カメラで撮影した画像"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"壁紙"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
     <string name="loading_new" msgid="7893793767294787579">"新しいアルバムと写真を読み込み中"</string>
     <string name="initializing" msgid="2374228157398540466">"読み込み中"</string>
     <string name="pick_prompt" msgid="576608096149718121">"コレクションからアイテムをしてください"</string>
     <string name="no_items" msgid="3117870234034732172">"コレクションにアイテムが含まれていません"</string>
-    <string name="home" msgid="3335112006212947568">"自宅"</string>
     <string name="pick" msgid="7248789132035843128">"選択"</string>
     <string name="delete" msgid="2839695998251824487">"削除"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"削除の確認"</string>
-    <string name="are_you_sure" msgid="6293680869731897736">"よろしいですか？"</string>
     <string name="cancel" msgid="3637516880917356226">"キャンセル"</string>
     <string name="share" msgid="3619042788254195341">"共有"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SDカードがマウントされていないか挿入されていません"</string>
@@ -69,7 +64,6 @@
     <string name="select_all" msgid="8623593677101437957">"すべて選択"</string>
     <string name="deselect_all" msgid="7397531298370285581">"選択をすべて解除"</string>
     <string name="slideshow" msgid="4355906903247112975">"スライドショー"</string>
-    <string name="play" msgid="8116587039599675035">"再生"</string>
     <string name="menu" msgid="1819649153380636719">"メニュー"</string>
     <string name="details" msgid="8415120088556445230">"詳細情報"</string>
     <string name="album_selected" msgid="3441280740465738452">"冊のアルバムを選択済み"</string>
@@ -93,8 +87,6 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"壁紙として設定"</string>
     <string name="item" msgid="636303673288563698">"アイテム"</string>
     <string name="items" msgid="6403254716052150916">"アイテム"</string>
-    <string name="set_as_contact_icon" msgid="749479412834888190">"連絡先のアイコンとして設定"</string>
-    <string name="miles_around" msgid="267745511737880822">"マイル範囲"</string>
     <string name="around" msgid="2223906282110417412">"エリア:"</string>
     <string name="date_unknown" msgid="4277113471036917386">"日付が不明"</string>
     <string name="video_err" msgid="7917736494827857757">"動画を再生できません"</string>

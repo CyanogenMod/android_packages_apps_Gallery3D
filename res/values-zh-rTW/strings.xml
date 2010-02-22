@@ -39,8 +39,6 @@
     <string name="resume_playing_message" msgid="5184414518126703481">"要從 %s 繼續播放嗎？"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"繼續播放"</string>
     <string name="resume_playing_restart" msgid="5471008499835769292">"重新開始"</string>
-    <string name="photos" msgid="3921471644099818826">"張相片"</string>
-    <string name="videos" msgid="9168892901395116842">"部影片"</string>
     <string name="camera" msgid="2730811566218090802">"相機"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"儲存"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"放棄"</string>
@@ -50,18 +48,15 @@
     <string name="running_face_detection" msgid="4094707964259463039">"請稍候..."</string>
     <string name="set_image" msgid="2331476809308010401">"將相片設為"</string>
     <string name="wallpaper" msgid="9222901738515471972">"設定桌布中，請稍候…"</string>
-    <string name="camera_pick_wallpaper" msgid="7026385960511811641">"圖片"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"桌布"</string>
     <string name="details_ok" msgid="6848594369924424312">"確定"</string>
     <string name="loading_new" msgid="7893793767294787579">"正在載入新相簿和相片"</string>
     <string name="initializing" msgid="2374228157398540466">"載入中"</string>
     <string name="pick_prompt" msgid="576608096149718121">"從圖片集中挑選一個項目"</string>
     <string name="no_items" msgid="3117870234034732172">"您的圖片集裡並沒有任何項目"</string>
-    <string name="home" msgid="3335112006212947568">"主螢幕鍵"</string>
     <string name="pick" msgid="7248789132035843128">"挑選"</string>
     <string name="delete" msgid="2839695998251824487">"刪除"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"確認刪除"</string>
-    <string name="are_you_sure" msgid="6293680869731897736">"您確定嗎？"</string>
     <string name="cancel" msgid="3637516880917356226">"取消"</string>
     <string name="share" msgid="3619042788254195341">"分享"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"已取出或未插入 SD 卡"</string>
@@ -69,7 +64,6 @@
     <string name="select_all" msgid="8623593677101437957">"全選"</string>
     <string name="deselect_all" msgid="7397531298370285581">"取消選取全部"</string>
     <string name="slideshow" msgid="4355906903247112975">"投影播放"</string>
-    <string name="play" msgid="8116587039599675035">"播放"</string>
     <string name="menu" msgid="1819649153380636719">"選單"</string>
     <string name="details" msgid="8415120088556445230">"詳細資料"</string>
     <string name="album_selected" msgid="3441280740465738452">"本相簿已選取"</string>
@@ -93,8 +87,6 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"設為桌布"</string>
     <string name="item" msgid="636303673288563698">"個項目"</string>
     <string name="items" msgid="6403254716052150916">"個項目"</string>
-    <string name="set_as_contact_icon" msgid="749479412834888190">"設為聯絡人圖示"</string>
-    <string name="miles_around" msgid="267745511737880822">"距離 (英哩數)"</string>
     <string name="around" msgid="2223906282110417412">"靠近"</string>
     <string name="date_unknown" msgid="4277113471036917386">"未知日期"</string>
     <string name="video_err" msgid="7917736494827857757">"無法播放影片"</string>
