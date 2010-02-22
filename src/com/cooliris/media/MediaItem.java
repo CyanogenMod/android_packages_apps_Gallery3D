@@ -60,6 +60,7 @@ public final class MediaItem {
     public String mFilePath;
 
     public MediaSet mParentMediaSet;
+    public boolean mFlagForDelete;
 
     public MediaItem() {
         mCaption = "";

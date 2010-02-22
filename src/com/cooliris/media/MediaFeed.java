@@ -125,8 +125,10 @@ public final class MediaFeed implements Runnable {
             try {
                 int mMediaSetsSize = mMediaSets.size();
                 for (int i = 0; i < mMediaSetsSize; i++) {
-                    if (mMediaSets.get(i).mId == setId) {
-                        return mMediaSets.get(i);
+                    final MediaSet set = mMediaSets.get(i);
+                    if (set.mId == setId) {
+                        set.mFlagForDelete = false;
+                        return set;
                     }
                 }
             } catch (Exception e) {
@@ -351,7 +353,7 @@ public final class MediaFeed implements Runnable {
                 // We must wait while the SD card is mounted or the MediaScanner
                 // is running.
                 if (dataSource != null) {
-                    dataSource.loadMediaSets(feed);
+                    loadMediaSets();
                 }
                 mWaitingForMediaScanner = false;
                 while (ImageManager.isMediaScannerScanning(mContext.getContentResolver())) {
@@ -363,7 +365,10 @@ public final class MediaFeed implements Runnable {
                         if (mContext == null)
                             return;
                         showToast(mContext.getResources().getString(Res.string.initializing), Toast.LENGTH_LONG);
-                        Thread.sleep(6000);
+                        if (dataSource != null) {
+                            loadMediaSets();
+                        }
+                        Thread.sleep(10000);
                     } catch (InterruptedException e) {
                         return;
                     }
@@ -371,15 +376,33 @@ public final class MediaFeed implements Runnable {
                 if (mWaitingForMediaScanner) {
                     showToast(mContext.getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
                     mWaitingForMediaScanner = false;
-                    if (dataSource != null) {
-                        dataSource.loadMediaSets(feed);
-                    }
+                    loadMediaSets();
                 }
                 mLoading = false;
             }
         });
         mAlbumSourceThread.setName("MediaSets");
         mAlbumSourceThread.start();
+    }
+    
+    private void loadMediaSets() {
+        if (mDataSource == null)
+            return;
+        final ArrayList<MediaSet> sets = mMediaSets;
+        final int numSets = sets.size();
+        for (int i = 0; i < numSets; ++i) {
+            final MediaSet set = sets.get(i);
+            set.mFlagForDelete = true;
+        }
+        mDataSource.refresh(MediaFeed.this);
+        mDataSource.loadMediaSets(MediaFeed.this);
+        for (int i = 0; i < numSets; ++i) {
+            final MediaSet set = sets.get(i);
+            if (set.mFlagForDelete) {
+                removeMediaSet(set);
+            }
+        }
+        updateListener(false);
     }
 
     private void showToast(final String string, final int duration) {
@@ -418,11 +441,6 @@ public final class MediaFeed implements Runnable {
                         return;
                     }
                 } else {
-                    if (mWaitingForMediaScanner) {
-                        synchronized (mMediaSets) {
-                            mMediaSets.clear();
-                        }
-                    }
                     try {
                         Thread.sleep(sleepMs);
                     } catch (InterruptedException e) {
@@ -707,22 +725,9 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet replaceMediaSet(long setId, DataSource dataSource) {
-        MediaSet mediaSet = new MediaSet(dataSource);
-        mediaSet.mId = setId;
-        ArrayList<MediaSet> mediaSets = mMediaSets;
-        int numSets = mediaSets.size();
-        for (int i = 0; i < numSets; ++i) {
-            final MediaSet thisSet = mediaSets.get(i);
-            if (thisSet.mId == setId) {
-                mediaSet.mName = thisSet.mName;
-                mediaSet.mHasImages = thisSet.mHasImages;
-                mediaSet.mHasVideos = thisSet.mHasVideos;
-                mediaSets.set(i, mediaSet);
-                break;
-            }
-        }
-        mMediaFeedNeedsToRun = true;
-        return mediaSet;
+        final MediaSet set = getMediaSet(setId);
+        set.refresh();
+        return set;
     }
 
     public void setSingleImageMode(boolean singleImageMode) {
@@ -745,6 +750,7 @@ public final class MediaFeed implements Runnable {
         if (mDataSource != null) {
             mDataSource.refresh(this);
         }
+        mMediaFeedNeedsToRun = true;
         updateListener(false);
     }
 }

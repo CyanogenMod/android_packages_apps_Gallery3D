@@ -9,6 +9,8 @@ public class MediaSet {
 
     public long mId;
     public String mName;
+    
+    public boolean mFlagForDelete;
 
     public boolean mHasImages;
     public boolean mHasVideos;
@@ -122,15 +124,13 @@ public class MediaSet {
 
     public void clear() {
         mItems.clear();
-        mItemsLookup.clear();
-        // TODO(Venkat): Can we move away from this dummy item setup?
         MediaItem item = new MediaItem();
         item.mId = Shared.INVALID;
         item.mParentMediaSet = this;
         mItems.add(item);
         mNumExpectedItems = 16;
-        mNumExpectedItemsCountAccurate = false;
-        mNumItemsLoaded = 0;
+        refresh();
+        mItemsLookup.clear();
     }
 
     /**
@@ -157,13 +157,16 @@ public class MediaSet {
      * Additionally, it also recomputes the location bounds and time range of
      * the media set.
      */
-    public void addItem(final MediaItem item) {
+    public void addItem(final MediaItem itemToAdd) {
         // Important to not set the parentMediaSet in here as temporary
         // MediaSet's are occasionally
         // created and we do not want the MediaItem updated as a result of that.
-        if (item == null) {
+        if (itemToAdd == null) {
             return;
         }
+        final MediaItem lookupItem = mItemsLookup.get(itemToAdd.mId); 
+        final MediaItem item = (lookupItem == null) ? itemToAdd : lookupItem;
+        item.mFlagForDelete = false;
         if (mItems.size() == 0) {
             mItems.add(item);
         } else if (mItems.get(0).mId == -1L) {
@@ -172,7 +175,9 @@ public class MediaSet {
             mItems.add(item);
         }
         if (item.mId != Shared.INVALID) {
-            mItemsLookup.append(item.mId, item);
+            if (lookupItem == null) {
+                mItemsLookup.append(item.mId, item);
+            }
             ++mNumItemsLoaded;
         }
         if (item.isDateTakenValid()) {
@@ -241,7 +246,7 @@ public class MediaSet {
     /**
      * @return true if this MediaSet contains the argument MediaItem.
      */
-    public boolean containsItem(final MediaItem item) {
+    public boolean lookupContainsItem(final MediaItem item) {
         MediaItem lookUp = mItemsLookup.get(item.mId);
         if (lookUp != null) {
            return true;
@@ -297,5 +302,26 @@ public class MediaSet {
      */
     public boolean isPicassaAlbum() {
         return (mPicasaAlbumId != Shared.INVALID);
+    }
+
+    public void refresh() {
+        mNumItemsLoaded = 0;
+        final ArrayList<MediaItem> items = mItems;
+        final int numItems = items.size();
+        for (int i = 0; i < numItems; ++i) {
+            MediaItem item = items.get(i);
+            item.mFlagForDelete = true;
+        }
+    }
+    
+    public void checkForDeletedItems() {
+        final ArrayList<MediaItem> items = mItems;
+        final int numItems = items.size();
+        for (int i = 0; i < numItems; ++i) {
+            MediaItem item = items.get(i);
+            if (item.mFlagForDelete) {
+                removeItem(item);
+            }
+        }
     }
 }

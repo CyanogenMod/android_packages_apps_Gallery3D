@@ -239,6 +239,8 @@ public final class CacheService extends IntentService {
                     MediaSet mediaSet = feed.getMediaSet(setId);
                     if (mediaSet == null) {
                         mediaSet = feed.addMediaSet(setId, source);
+                    } else {
+                        mediaSet.refresh();
                     }
                     if ((includeImages && hasImages) || (includeVideos && hasVideos)) {
                         mediaSet.mName = name;
@@ -309,7 +311,6 @@ public final class CacheService extends IntentService {
                 MediaItem reuseItem = null;
                 for (int i = 0; i < numItems; ++i) {
                     MediaItem item = (reuseItem == null) ? new MediaItem() : reuseItem;
-                    reuseItem = null;
                     // Must preserve order with method that writes to cache.
                     item.mId = dis.readLong();
                     item.mCaption = Utils.readUTF(dis);
@@ -327,17 +328,19 @@ public final class CacheService extends IntentService {
 
                     // We are done reading. Now lets check to see if this item
                     // is already present in the set.
-                    if (!set.containsItem(item)) {
-                        int itemMediaType = item.getMediaType();
-                        if ((itemMediaType == MediaItem.MEDIA_TYPE_IMAGE && includeImages)
-                                || (itemMediaType == MediaItem.MEDIA_TYPE_VIDEO && includeVideos)) {
-                            String baseUri = (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) ? BASE_CONTENT_STRING_IMAGES
-                                    : BASE_CONTENT_STRING_VIDEOS;
-                            item.mContentUri = baseUri + item.mId;
-                            feed.addItemToMediaSet(item, set);
-                        }
-                    } else {
+                    boolean setLookupContainsItem = set.lookupContainsItem(item);
+                    if (setLookupContainsItem) {
                         reuseItem = item;
+                    } else {
+                        reuseItem = null;
+                    }
+                    int itemMediaType = item.getMediaType();
+                    if ((itemMediaType == MediaItem.MEDIA_TYPE_IMAGE && includeImages)
+                            || (itemMediaType == MediaItem.MEDIA_TYPE_VIDEO && includeVideos)) {
+                        String baseUri = (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) ? BASE_CONTENT_STRING_IMAGES
+                                : BASE_CONTENT_STRING_VIDEOS;
+                        item.mContentUri = baseUri + item.mId;
+                        feed.addItemToMediaSet(item, set);
                     }
                 }
                 dis.close();

@@ -104,6 +104,8 @@ public final class Gallery extends Activity {
                     } while (numRetries > 0 && !ImageManager.hasStorage());
                 }
                 final boolean imageManagerHasStorageAfterDelay = ImageManager.hasStorage();
+                if (!imageManagerHasStorageAfterDelay)
+                    return;
                 
                 // Creating the DataSource objects.
                 final PicasaDataSource picasaDataSource = new PicasaDataSource(Gallery.this);

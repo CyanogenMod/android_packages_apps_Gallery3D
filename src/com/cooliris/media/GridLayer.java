@@ -537,15 +537,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mFramesDirty > 0) {
             --mFramesDirty;
         }
-        try {
-            if (mMediaFeed != null && (mMediaFeed.getWaitingForMediaScanner())) {
-                // We limit the drawing of the frame so that the MediaScanner
-                // thread can do its work
-                Thread.sleep(200);
-            }
-        } catch (InterruptedException e) {
-
-        }
         if (sDisplayList.getNumAnimatables() != 0 || mCamera.isAnimating()
                 || (mTimeElapsedSinceTransition > 0.0f && mTimeElapsedSinceTransition < 1.0f) || mSelectedAlpha != mTargetAlpha
                 // || (mAnimatedFov != mTargetFov)
@@ -677,19 +668,21 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     }
                     if (mRequestFocusContentUri != null) {
                         // We have to find the item that has this contentUri
-                        if (mState == STATE_FULL_SCREEN) {
-                            int numSlots = sCompleteRange.end + 1;
-                            for (int i = 0; i < numSlots; ++i) {
-                                MediaSet set = feed.getSetForSlot(i);
-                                ArrayList<MediaItem> items = set.getItems();
-                                int numItems = items.size();
-                                for (int j = 0; j < numItems; ++j) {
-                                    String itemUri = items.get(j).mContentUri;
-                                    if (itemUri != null && mRequestFocusContentUri != null) {
-                                        if (itemUri.equals(mRequestFocusContentUri)) {
+                        int numSlots = sCompleteRange.end + 1;
+                        for (int i = 0; i < numSlots; ++i) {
+                            MediaSet set = feed.getSetForSlot(i);
+                            ArrayList<MediaItem> items = set.getItems();
+                            int numItems = items.size();
+                            for (int j = 0; j < numItems; ++j) {
+                                String itemUri = items.get(j).mContentUri;
+                                if (itemUri != null && mRequestFocusContentUri != null) {
+                                    if (itemUri.equals(mRequestFocusContentUri)) {
+                                        if (mState == STATE_FULL_SCREEN) {
                                             mInputProcessor.setCurrentSelectedSlot(i);
-                                            break;
+                                        } else {
+                                            centerCameraForSlot(i, 1.0f);
                                         }
+                                        break;
                                     }
                                 }
                             }
@@ -922,7 +915,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             int numSlots = feed.getNumSlots();
             for (int i = 0; i < numSlots; ++i) {
                 MediaSet set = feed.getSetForSlot(i);
-                if (set != null && set.containsItem(anchorItem)) {
+                if (set != null && set.lookupContainsItem(anchorItem)) {
                     newSlotIndex = i;
                     break;
                 }
@@ -1232,7 +1225,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (items == null || set.getNumItems() == 0) {
                 return;
             }
-            if (set.containsItem(item)) {
+            if (set.lookupContainsItem(item)) {
                 centerCameraForSlot(i, 1.0f);
                 break;
             }
