@@ -42,9 +42,8 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
     @SuppressWarnings("unused")
     private static final String TAG = "MovieViewControl";
 
-    private static final int ONE_MINUTE = 60 * 1000;
-    private static final int TWO_MINUTES = 2 * ONE_MINUTE;
-    private static final int FIVE_MINUTES = 5 * ONE_MINUTE;
+    private static final int HALF_MINUTE = 30 * 1000;
+    private static final int TWO_MINUTES = 4 * HALF_MINUTE;
 
     // Copied from MediaPlaybackService in the Music Player app. Should be
     // public, but isn't.
@@ -56,10 +55,6 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
     private final View mProgressView;
     private final Uri mUri;
     private final ContentResolver mContentResolver;
-
-    // State maintained for proper onPause/OnResume behaviour.
-    private int mPositionWhenPaused = -1;
-    private boolean mWasPlayingWhenPaused = false;
 
     Handler mHandler = new Handler();
 
@@ -164,7 +159,8 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
                     if (cursor.moveToFirst()) {
                         int duration = getCursorInteger(cursor, 0);
                         int bookmark = getCursorInteger(cursor, 1);
-                        if ((bookmark < TWO_MINUTES) || (duration < FIVE_MINUTES) || (bookmark > (duration - ONE_MINUTE))) {
+                        if ((bookmark < HALF_MINUTE) || (duration < TWO_MINUTES)
+                                || (bookmark > (duration - HALF_MINUTE))) {
                             return null;
                         }
                         return Integer.valueOf(bookmark);
@@ -191,13 +187,14 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
 
     }
 
-    private void setBookmark(int bookmark) {
+    private void setBookmark(int bookmark, int duration) {
         if (!uriSupportsBookmarks(mUri)) {
             return;
         }
 
         ContentValues values = new ContentValues();
         values.put(Video.VideoColumns.BOOKMARK, Integer.toString(bookmark));
+        values.put(Video.VideoColumns.DURATION, Integer.toString(duration));
         try {
             mContentResolver.update(mUri, values, null, null);
         } catch (SecurityException ex) {
@@ -213,21 +210,17 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
 
     public void onPause() {
         mHandler.removeCallbacksAndMessages(null);
-        setBookmark(mVideoView.getCurrentPosition());
+        setBookmark(mVideoView.getCurrentPosition(), mVideoView.getDuration());
 
-        mPositionWhenPaused = mVideoView.getCurrentPosition();
-        mWasPlayingWhenPaused = mVideoView.isPlaying();
-        mVideoView.stopPlayback();
+        mVideoView.suspend();
     }
 
     public void onResume() {
-        if (mPositionWhenPaused >= 0) {
-            mVideoView.setVideoURI(mUri);
-            mVideoView.seekTo(mPositionWhenPaused);
-            if (mWasPlayingWhenPaused) {
-                mVideoView.start();
-            }
-        }
+        mVideoView.resume();
+    }
+
+    public void onDestroy() {
+        mVideoView.stopPlayback();
     }
 
     public boolean onError(MediaPlayer player, int arg1, int arg2) {

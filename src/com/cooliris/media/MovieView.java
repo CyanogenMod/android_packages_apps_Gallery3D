@@ -77,6 +77,7 @@ public class MovieView extends Activity {
     
     @Override
     public void onDestroy() {
+        mControl.onDestroy();
     	mApp.shutdown();
     	super.onDestroy();
     }
