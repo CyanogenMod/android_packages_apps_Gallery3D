@@ -1005,12 +1005,14 @@ public final class CacheService extends IntentService {
             Cursor[] cursors = new Cursor[2];
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
-            final MergeCursor cursor = new MergeCursor(cursors);
-            try {
-                if (cursor.moveToFirst()) {
+//            final MergeCursor cursor = new MergeCursor(cursors);
+         for(int i=0;i<2;i++)
+         {
+          try {
+                if (cursors[i].moveToFirst()) {
                     boolean allDirty = false;
                     do {
-                        long setId = cursor.getLong(0);
+                        long setId = cursors[i].getLong(0);
                         if (allDirty) {
                             addNoDupe(retVal, setId);
                         } else {
@@ -1022,9 +1024,9 @@ public final class CacheService extends IntentService {
                                 allDirty = true;
                             }
                             if (!allDirty) {
-                                long maxAdded = cursor.getLong(1);
-                                int count = cursor.getInt(2);
-                                byte[] data = sMetaAlbumCache.get(setId, 0);
+                                long maxAdded = cursors[i].getLong(1);
+                                int count = cursors[i].getInt(2);
+                                byte[] data = sMetaAlbumCache.get(setId+i, 0);
                                 long[] dataLong = new long[2];
                                 if (data != null) {
                                     dataLong = toLongArray(data);
@@ -1036,15 +1038,16 @@ public final class CacheService extends IntentService {
                                     addNoDupe(retVal, setId);
                                     dataLong[0] = maxAdded;
                                     dataLong[1] = count;
-                                    sMetaAlbumCache.put(setId, longArrayToByteArray(dataLong), 0);
+                                    sMetaAlbumCache.put(setId+i, longArrayToByteArray(dataLong), 0);
                                 }
                             }
                         }
-                    } while (cursor.moveToNext());
+                    } while (cursors[i].moveToNext());
                 }
             } finally {
-                cursor.close();
+                cursors[i].close();
             }
+        }
             sMetaAlbumCache.flush();
         } catch (Exception e) {
             // If the database operation failed for any reason.
