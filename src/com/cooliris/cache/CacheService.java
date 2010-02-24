@@ -402,6 +402,7 @@ public final class CacheService extends IntentService {
             final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
             try {
                 final int numItems = dis.readInt();
+                Log.i(TAG, "Loading " + numItems + " into set " + set.mName + ":" + set);
                 set.setNumExpectedItems(numItems);
                 set.mMinTimestamp = dis.readLong();
                 set.mMaxTimestamp = dis.readLong();
@@ -498,7 +499,6 @@ public final class CacheService extends IntentService {
         if (!item.isDateTakenValid() && !item.mTriedRetrievingExifDateTaken
                 && (item.mFilePath.endsWith(".jpg") || item.mFilePath.endsWith(".jpeg"))) {
             try {
-                Log.i(TAG, "Parsing date taken from exif");
                 final ExifInterface exif = new ExifInterface(item.mFilePath);
                 final String dateTakenStr = exif.getAttribute(ExifInterface.TAG_DATETIME);
                 if (dateTakenStr != null) {
@@ -1012,12 +1012,14 @@ public final class CacheService extends IntentService {
                 }
                 Log.i(TAG, "Refreshing dirty albums");
                 populateMediaItemsForSets(context, sets, acceleratedSets, true);
-                // Logic to refresh the UI for dirty sets
-                if (context instanceof Gallery) {
-                    int numSets = sets.size();
-                    for (int i = 0; i < numSets; ++i) {
-                        MediaSet set = sets.get(i);
-                        ((Gallery)context).refreshUIForSet(set);
+                if (!Thread.interrupted()) {
+                    // Logic to refresh the UI for dirty sets
+                    if (context instanceof Gallery) {
+                        int numSets = sets.size();
+                        for (int i = 0; i < numSets; ++i) {
+                            MediaSet set = sets.get(i);
+                            ((Gallery) context).refreshUIForSet(set);
+                        }
                     }
                 }
             }
