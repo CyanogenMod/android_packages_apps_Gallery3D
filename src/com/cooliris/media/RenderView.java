@@ -381,7 +381,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_ALPHA, GL11.GL_INTERPOLATE);
 
         // Specify the interpolation factor via the alpha component of
-        // GL_TEXTURE_ENV_COLOR.
+        // GL_TEXTURE_ENV_COLORes.
         final float[] color = { 1f, 1f, 1f, ratio };
         gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, color, 0);
 
@@ -422,7 +422,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
                 gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_ALPHA, GL11.GL_INTERPOLATE);
 
                 // Specify the interpolation factor via the alpha component of
-                // GL_TEXTURE_ENV_COLOR.
+                // GL_TEXTURE_ENV_COLORes.
                 final float[] color = { 1f, 1f, 1f, ratio };
                 gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, color, 0);
 

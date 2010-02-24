@@ -52,6 +52,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
+import com.cooliris.app.Res;
+
 /**
  * The activity can crop specific region of interest from an image.
  */
@@ -92,9 +94,9 @@ public class CropImage extends MonitoredActivity {
         super.onCreate(icicle);
         mContentResolver = getContentResolver();
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.cropimage);
+        setContentView(Res.layout.cropimage);
 
-        mImageView = (CropImageView) findViewById(R.id.image);
+        mImageView = (CropImageView) findViewById(Res.id.image);
 
         // CR: remove TODO's.
         // TODO: we may need to show this indicator for the main gallery
@@ -166,14 +168,14 @@ public class CropImage extends MonitoredActivity {
         // Make UI fullscreen.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        findViewById(R.id.discard).setOnClickListener(new View.OnClickListener() {
+        findViewById(Res.id.discard).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 setResult(RESULT_CANCELED);
                 finish();
             }
         });
 
-        findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
+        findViewById(Res.id.save).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 onSaveClicked();
             }
@@ -189,7 +191,7 @@ public class CropImage extends MonitoredActivity {
 
         mImageView.setImageBitmapResetBase(mBitmap, true);
 
-        Util.startBackgroundJob(this, null, getResources().getString(R.string.running_face_detection), new Runnable() {
+        Util.startBackgroundJob(this, null, getResources().getString(Res.string.running_face_detection), new Runnable() {
             public void run() {
                 final CountDownLatch latch = new CountDownLatch(1);
                 final Bitmap b = mBitmap;
@@ -249,7 +251,7 @@ public class CropImage extends MonitoredActivity {
             // Bitmaps are inherently rectangular but we want to return
             // something that's basically a circle. So we fill in the
             // area around the circle with alpha. Note the all important
-            // PortDuff.Mode.CLEAR.
+            // PortDuff.Mode.CLEARes.
             Canvas c = new Canvas(croppedImage);
             Path p = new Path();
             p.addCircle(width / 2F, height / 2F, width / 2F, Path.Direction.CW);
@@ -314,7 +316,7 @@ public class CropImage extends MonitoredActivity {
                     saveOutput(b);
                 }
             };
-            Util.startBackgroundJob(this, null, getResources().getString(R.string.saving_image), save, mHandler);
+            Util.startBackgroundJob(this, null, getResources().getString(Res.string.saving_image), save, mHandler);
         }
     }
 
@@ -551,7 +553,7 @@ public class CropImage extends MonitoredActivity {
                     if (mNumFaces > 1) {
                         // CR: no need for the variable t. just do
                         // Toast.makeText(...).show().
-                        Toast t = Toast.makeText(CropImage.this, R.string.multiface_crop_help, Toast.LENGTH_SHORT);
+                        Toast t = Toast.makeText(CropImage.this, Res.string.multiface_crop_help, Toast.LENGTH_SHORT);
                         t.show();
                     }
                 }

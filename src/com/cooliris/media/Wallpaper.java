@@ -35,6 +35,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.cooliris.app.Res;
+
 /**
  * Wallpaper picker for the camera application. This just redirects to the
  * standard pick action.
@@ -59,7 +61,7 @@ public class Wallpaper extends Activity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
             case SHOW_PROGRESS: {
-                CharSequence c = getText(R.string.wallpaper);
+                CharSequence c = getText(Res.string.wallpaper);
                 mProgressDialog = ProgressDialog.show(Wallpaper.this, "", c, true, false);
                 break;
             }

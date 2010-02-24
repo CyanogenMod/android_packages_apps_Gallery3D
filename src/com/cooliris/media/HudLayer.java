@@ -18,6 +18,7 @@ import android.provider.MediaStore;
 import android.util.FloatMath;
 import android.view.MotionEvent;
 
+import com.cooliris.app.Res;
 import com.cooliris.media.MenuBar.Menu;
 import com.cooliris.media.PopupMenu.Option;
 
@@ -43,12 +44,12 @@ public final class HudLayer extends Layer {
     private int mMode = MODE_NORMAL;
 
     // Camera button - launches the camera intent when pressed.
-    private static final int CAMERA_BUTTON_ICON = R.drawable.btn_camera;
-    private static final int CAMERA_BUTTON_ICON_PRESSED = R.drawable.btn_camera_pressed;
-    private static final int ZOOM_IN_ICON = R.drawable.btn_hud_zoom_in_normal;
-    private static final int ZOOM_IN_ICON_PRESSED = R.drawable.btn_hud_zoom_in_pressed;
-    private static final int ZOOM_OUT_ICON = R.drawable.btn_hud_zoom_out_normal;
-    private static final int ZOOM_OUT_ICON_PRESSED = R.drawable.btn_hud_zoom_out_pressed;
+    private static final int CAMERA_BUTTON_ICON = Res.drawable.btn_camera;
+    private static final int CAMERA_BUTTON_ICON_PRESSED = Res.drawable.btn_camera_pressed;
+    private static final int ZOOM_IN_ICON = Res.drawable.btn_hud_zoom_in_normal;
+    private static final int ZOOM_IN_ICON_PRESSED = Res.drawable.btn_hud_zoom_in_pressed;
+    private static final int ZOOM_OUT_ICON = Res.drawable.btn_hud_zoom_out_normal;
+    private static final int ZOOM_OUT_ICON_PRESSED = Res.drawable.btn_hud_zoom_out_pressed;
 
     private final Runnable mCameraButtonAction = new Runnable() {
         public void run() {
@@ -60,8 +61,8 @@ public final class HudLayer extends Layer {
     };
 
     // Grid mode button - switches the media browser to grid mode.
-    private static final int GRID_MODE_ICON = R.drawable.mode_stack;
-    private static final int GRID_MODE_PRESSED_ICON = R.drawable.mode_stack;
+    private static final int GRID_MODE_ICON = Res.drawable.mode_stack;
+    private static final int GRID_MODE_PRESSED_ICON = Res.drawable.mode_stack;
 
     private final Runnable mZoomInButtonAction = new Runnable() {
         public void run() {
@@ -86,8 +87,8 @@ public final class HudLayer extends Layer {
     /**
      * Stack mode button - switches the media browser to grid mode.
      */
-    private static final int STACK_MODE_ICON = R.drawable.mode_grid;
-    private static final int STACK_MODE_PRESSED_ICON = R.drawable.mode_grid;
+    private static final int STACK_MODE_ICON = Res.drawable.mode_grid;
+    private static final int STACK_MODE_PRESSED_ICON = Res.drawable.mode_grid;
     private final Runnable mStackModeButtonAction = new Runnable() {
         public void run() {
             mGridLayer.setState(GridLayer.STATE_TIMELINE);
@@ -119,32 +120,32 @@ public final class HudLayer extends Layer {
         // The Share submenu is populated dynamically when opened.
         Resources resources = context.getResources();
         PopupMenu.Option[] deleteOptions = {
-                new PopupMenu.Option(context.getResources().getString(R.string.confirm_delete), resources
-                        .getDrawable(R.drawable.icon_delete), new Runnable() {
+                new PopupMenu.Option(context.getResources().getString(Res.string.confirm_delete), resources
+                        .getDrawable(Res.drawable.icon_delete), new Runnable() {
                     public void run() {
                         deleteSelection();
                     }
                 }),
-                new PopupMenu.Option(context.getResources().getString(R.string.cancel), resources
-                        .getDrawable(R.drawable.icon_cancel), new Runnable() {
+                new PopupMenu.Option(context.getResources().getString(Res.string.cancel), resources
+                        .getDrawable(Res.drawable.icon_cancel), new Runnable() {
                     public void run() {
 
                     }
                 }), };
         mSelectionMenuBottom = new MenuBar(context);
 
-        MenuBar.Menu shareMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.share)).icon(
-                R.drawable.icon_share).onSelect(new Runnable() {
+        MenuBar.Menu shareMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.share)).icon(
+                Res.drawable.icon_share).onSelect(new Runnable() {
             public void run() {
                 updateShareMenu();
             }
         }).build();
 
-        MenuBar.Menu deleteMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.delete)).icon(
-                R.drawable.icon_delete).options(deleteOptions).build();
+        MenuBar.Menu deleteMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.delete)).icon(
+                Res.drawable.icon_delete).options(deleteOptions).build();
 
-        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(R.string.more))
-                .icon(R.drawable.icon_more).onSelect(new Runnable() {
+        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.more))
+                .icon(Res.drawable.icon_more).onSelect(new Runnable() {
                     public void run() {
                         buildMoreOptions();
                     }
@@ -156,19 +157,19 @@ public final class HudLayer extends Layer {
         mSelectionMenuBottom.setMenus(mNormalBottomMenu);
         mSelectionMenuTop = new MenuBar(context);
         mSelectionMenuTop.setMenus(new MenuBar.Menu[] {
-                new MenuBar.Menu.Builder(context.getResources().getString(R.string.select_all)).onSelect(new Runnable() {
+                new MenuBar.Menu.Builder(context.getResources().getString(Res.string.select_all)).onSelect(new Runnable() {
                     public void run() {
                         mGridLayer.selectAll();
                     }
                 }).build(), new MenuBar.Menu.Builder("").build(),
-                new MenuBar.Menu.Builder(context.getResources().getString(R.string.deselect_all)).onSelect(new Runnable() {
+                new MenuBar.Menu.Builder(context.getResources().getString(Res.string.deselect_all)).onSelect(new Runnable() {
                     public void run() {
                         mGridLayer.deselectOrCancelSelectMode();
                     }
                 }).build() });
         mFullscreenMenu = new MenuBar(context);
         mFullscreenMenu.setMenus(new MenuBar.Menu[] {
-                new MenuBar.Menu.Builder(context.getResources().getString(R.string.slideshow)).icon(R.drawable.icon_play)
+                new MenuBar.Menu.Builder(context.getResources().getString(Res.string.slideshow)).icon(Res.drawable.icon_play)
                         .onSingleTapUp(new Runnable() {
                             public void run() {
                                 if (getAlpha() == 1.0f)
@@ -177,7 +178,7 @@ public final class HudLayer extends Layer {
                                     setAlpha(1.0f);
                             }
                         }).build(), /* new MenuBar.Menu.Builder("").build(), */
-                new MenuBar.Menu.Builder(context.getResources().getString(R.string.menu)).icon(R.drawable.icon_more).onSingleTapUp(
+                new MenuBar.Menu.Builder(context.getResources().getString(Res.string.menu)).icon(Res.drawable.icon_more).onSingleTapUp(
                         new Runnable() {
                             public void run() {
                                 if (getAlpha() == 1.0f)
@@ -232,12 +233,12 @@ public final class HudLayer extends Layer {
             }
         }
 
-        Option[] optionAll = new Option[] { new PopupMenu.Option(mContext.getResources().getString(R.string.details), mContext
-                .getResources().getDrawable(R.drawable.ic_menu_view_details), new Runnable() {
+        Option[] optionAll = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.details), mContext
+                .getResources().getDrawable(Res.drawable.ic_menu_view_details), new Runnable() {
             public void run() {
                 ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                 final AlertDialog.Builder builder = new AlertDialog.Builder((Gallery) mContext);
-                builder.setTitle(mContext.getResources().getString(R.string.details));
+                builder.setTitle(mContext.getResources().getString(Res.string.details));
                 boolean foundDataToDisplay = true;
 
                 if (buckets == null) {
@@ -253,7 +254,7 @@ public final class HudLayer extends Layer {
 
                 mGridLayer.deselectAll();
                 if (foundDataToDisplay) {
-                    builder.setNeutralButton(R.string.details_ok, null);
+                    builder.setNeutralButton(Res.string.details_ok, null);
                     ((Gallery) mContext).getHandler().post(new Runnable() {
                         public void run() {
                             builder.show();
@@ -263,8 +264,8 @@ public final class HudLayer extends Layer {
             }
         }) };
 
-        Option[] optionSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(R.string.show_on_map),
-                mContext.getResources().getDrawable(R.drawable.ic_menu_mapmode), new Runnable() {
+        Option[] optionSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.show_on_map),
+                mContext.getResources().getDrawable(Res.drawable.ic_menu_mapmode), new Runnable() {
                     public void run() {
                         ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                         MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -277,14 +278,14 @@ public final class HudLayer extends Layer {
                 }), };
 
         Option[] optionImageMultiple = new Option[] {
-                new PopupMenu.Option(mContext.getResources().getString(R.string.rotate_left), mContext.getResources().getDrawable(
-                        R.drawable.ic_menu_rotate_left), new Runnable() {
+                new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_left), mContext.getResources().getDrawable(
+                        Res.drawable.ic_menu_rotate_left), new Runnable() {
                     public void run() {
                         mGridLayer.rotateSelectedItems(-90.0f);
                     }
                 }),
-                new PopupMenu.Option(mContext.getResources().getString(R.string.rotate_right), mContext.getResources().getDrawable(
-                        R.drawable.ic_menu_rotate_right), new Runnable() {
+                new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_right), mContext.getResources().getDrawable(
+                        Res.drawable.ic_menu_rotate_right), new Runnable() {
                     public void run() {
                         mGridLayer.rotateSelectedItems(90.0f);
                     }
@@ -295,8 +296,8 @@ public final class HudLayer extends Layer {
         }
         Option[] optionImageSingle;
         if (isPicasa) {
-            optionImageSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(R.string.set_as_wallpaper),
-                    mContext.getResources().getDrawable(R.drawable.ic_menu_set_as), new Runnable() {
+            optionImageSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.set_as_wallpaper),
+                    mContext.getResources().getDrawable(Res.drawable.ic_menu_set_as), new Runnable() {
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -315,9 +316,9 @@ public final class HudLayer extends Layer {
                     }) };
         } else {
             optionImageSingle = new Option[] {
-                    new PopupMenu.Option((isPicasa) ? mContext.getResources().getString(R.string.set_as_wallpaper) : mContext
-                            .getResources().getString(R.string.set_as), mContext.getResources().getDrawable(
-                            R.drawable.ic_menu_set_as), new Runnable() {
+                    new PopupMenu.Option((isPicasa) ? mContext.getResources().getString(Res.string.set_as_wallpaper) : mContext
+                            .getResources().getString(Res.string.set_as), mContext.getResources().getDrawable(
+                            Res.drawable.ic_menu_set_as), new Runnable() {
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -335,12 +336,12 @@ public final class HudLayer extends Layer {
                                 Intent intent = Util.createSetAsIntent(Uri.parse(item.mContentUri), item.mMimeType);
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                 ((Gallery) mContext).startActivity(Intent.createChooser(intent, ((Gallery) mContext)
-                                        .getText(R.string.set_image)));
+                                        .getText(Res.string.set_image)));
                             }
                         }
                     }),
-                    new PopupMenu.Option(mContext.getResources().getString(R.string.crop), mContext.getResources().getDrawable(
-                            R.drawable.ic_menu_crop), new Runnable() {
+                    new PopupMenu.Option(mContext.getResources().getString(Res.string.crop), mContext.getResources().getDrawable(
+                            Res.drawable.ic_menu_crop), new Runnable() {
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -386,7 +387,7 @@ public final class HudLayer extends Layer {
     }
 
     public void updateNumItemsSelected(int numItems) {
-        String items = " " + ((numItems == 1) ? mContext.getString(R.string.item) : mContext.getString(R.string.items));
+        String items = " " + ((numItems == 1) ? mContext.getString(Res.string.item) : mContext.getString(Res.string.items));
         Menu menu = new MenuBar.Menu.Builder(numItems + items).config(MenuBar.MENU_TITLE_STYLE_TEXT).build();
         mSelectionMenuTop.updateMenu(menu, 1);
     }

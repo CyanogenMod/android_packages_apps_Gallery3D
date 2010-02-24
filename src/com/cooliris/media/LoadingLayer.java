@@ -5,123 +5,124 @@ import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
 import javax.microedition.khronos.opengles.GL11;
-import com.cooliris.media.R;
 
 import android.os.SystemClock;
+
+import com.cooliris.app.Res;
 
 public final class LoadingLayer extends Layer {
     private static final float FADE_INTERVAL = 0.5f;
     private static final float GRAY_VALUE = 0.1f;
-    private static final int[] PRELOAD_RESOURCES_ASYNC_UNSCALED = { R.drawable.stack_frame, R.drawable.grid_frame,
-            R.drawable.stack_frame_focus, R.drawable.stack_frame_gold, R.drawable.btn_location_filter_unscaled,
-            R.drawable.videooverlay, R.drawable.grid_check_on, R.drawable.grid_check_off, R.drawable.icon_camera_small_unscaled,
-            R.drawable.icon_picasa_small_unscaled };
+    private static final int[] PRELOAD_RESOURCES_ASYNC_UNSCALED = { Res.drawable.stack_frame, Res.drawable.grid_frame,
+            Res.drawable.stack_frame_focus, Res.drawable.stack_frame_gold, Res.drawable.btn_location_filter_unscaled,
+            Res.drawable.videooverlay, Res.drawable.grid_check_on, Res.drawable.grid_check_off, Res.drawable.icon_camera_small_unscaled,
+            Res.drawable.icon_picasa_small_unscaled };
 
     private static final int[] PRELOAD_RESOURCES_ASYNC_SCALED = {/*
-                                                                  * R.drawable.btn_camera_pressed
+                                                                  * Res.drawable.btn_camera_pressed
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * btn_camera_focus
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * fullscreen_hud_bg
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_delete,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_edit,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_more,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_share,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * selection_bg_upper
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * selection_menu_bg
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * selection_menu_bg_pressed
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * selection_menu_bg_pressed_left
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * selection_menu_bg_pressed_right
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * selection_menu_divider
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * timebar_bg,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * timebar_knob
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * timebar_knob_pressed
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * timebar_prev
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * timebar_next
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * mode_grid,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * mode_stack,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_camera_small
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_location_small
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_picasa_small
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_folder_small
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * scroller_new
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * scroller_pressed_new
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * btn_camera,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * btn_play,
-                                                                  * R.drawable
+                                                                  * Res.drawable
                                                                   * .pathbar_bg,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * pathbar_cap,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * pathbar_join
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * transparent,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * icon_home_small
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_fs_details
                                                                   * ,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner1,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner2,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner3,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner4,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner5,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner6,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner7,
-                                                                  * R.drawable.
+                                                                  * Res.drawable.
                                                                   * ic_spinner8
                                                                   */};
 

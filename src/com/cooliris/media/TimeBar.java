@@ -19,6 +19,7 @@ import android.graphics.Rect;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 
+import com.cooliris.app.Res;
 import com.cooliris.media.RenderView.Lists;
 
 public final class TimeBar extends Layer implements MediaFeed.Listener {
@@ -39,8 +40,8 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     private ArrayList<Marker> mMarkers = new ArrayList<Marker>();
     private ArrayList<Marker> mMarkersCopy = new ArrayList<Marker>();
 
-    private static final int KNOB = R.drawable.scroller_new;
-    private static final int KNOB_PRESSED = R.drawable.scroller_pressed_new;
+    private static final int KNOB = Res.drawable.scroller_new;
+    private static final int KNOB_PRESSED = Res.drawable.scroller_pressed_new;
     private final StringTexture.Config mMonthYearFormat = new StringTexture.Config();
     private final StringTexture.Config mDayFormat = new StringTexture.Config();
     private final SparseArray<StringTexture> mYearLabels = new SparseArray<StringTexture>();
@@ -70,7 +71,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
         mDayFormat.fontSize = 17f * Gallery.PIXEL_DENSITY;
         mDayFormat.a = 0.61f;
         regenerateStringsForContext(context);
-        Bitmap background = BitmapFactory.decodeResource(context.getResources(), R.drawable.popup);
+        Bitmap background = BitmapFactory.decodeResource(context.getResources(), Res.drawable.popup);
         mBackground = new NinePatch(background, background.getNinePatchChunk(), null);
         mBackgroundRect = new Rect();
         SRC_PAINT.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
@@ -78,7 +79,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
 
     public void regenerateStringsForContext(Context context) {
         // Create textures for month names.
-        String[] months = context.getResources().getStringArray(R.array.months_abbreviated);
+        String[] months = context.getResources().getStringArray(Res.array.months_abbreviated);
         for (int i = 0; i < months.length; ++i) {
             mMonthLabels[i] = new StringTexture(months[i], mMonthYearFormat);
         }
@@ -87,7 +88,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
             mDayLabels[i] = new StringTexture(Integer.toString(i), mDayFormat);
             mOpaqueDayLabels[i] = new StringTexture(Integer.toString(i), mMonthYearFormat);
         }
-        mDateUnknown = new StringTexture(context.getResources().getString(R.string.date_unknown), mMonthYearFormat);
+        mDateUnknown = new StringTexture(context.getResources().getString(Res.string.date_unknown), mMonthYearFormat);
         mBackgroundTexture = null;
     }
 

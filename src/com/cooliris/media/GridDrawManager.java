@@ -9,6 +9,8 @@ import javax.microedition.khronos.opengles.GL11;
 
 import android.content.Context;
 
+import com.cooliris.app.Res;
+
 public final class GridDrawManager {
     public static final int PASS_THUMBNAIL_CONTENT = 0;
     public static final int PASS_FOCUS_CONTENT = 1;
@@ -77,7 +79,7 @@ public final class GridDrawManager {
         stc.fontSize = 16 * Gallery.PIXEL_DENSITY;
         stc.sizeMode = StringTexture.Config.SIZE_EXACT;
         stc.overflowMode = StringTexture.Config.OVERFLOW_FADE;
-        mNoItemsTexture = new StringTexture(context.getResources().getString(R.string.no_items), stc);
+        mNoItemsTexture = new StringTexture(context.getResources().getString(Res.string.no_items), stc);
 
     }
 

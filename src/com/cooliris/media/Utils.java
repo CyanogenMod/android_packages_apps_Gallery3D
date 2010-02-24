@@ -17,6 +17,8 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.widget.Toast;
 
+import com.cooliris.app.Res;
+
 public class Utils {
     public static void playVideo(final Context context, final MediaItem item) {
         // this is a video
@@ -27,7 +29,7 @@ public class Utils {
                     intent.setDataAndType(Uri.parse(item.mContentUri), item.mMimeType);
                     context.startActivity(intent);
                 } catch (ActivityNotFoundException e) {
-                    Toast.makeText(context, context.getResources().getString(R.string.video_err), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, context.getResources().getString(Res.string.video_err), Toast.LENGTH_SHORT).show();
                 }
             }
         });

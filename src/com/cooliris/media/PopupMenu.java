@@ -2,8 +2,6 @@ package com.cooliris.media;
 
 import javax.microedition.khronos.opengles.GL11;
 
-import com.cooliris.media.R;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -18,6 +16,8 @@ import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
 import android.text.TextPaint;
 import android.view.MotionEvent;
+
+import com.cooliris.app.Res;
 
 public final class PopupMenu extends Layer {
     private static final int POPUP_TRIANGLE_EXTRA_HEIGHT = 14;
@@ -280,11 +280,11 @@ public final class PopupMenu extends Layer {
         public PopupTexture(Context context) {
             super(Bitmap.Config.ARGB_8888);
             Resources resources = context.getResources();
-            Bitmap background = BitmapFactory.decodeResource(resources, R.drawable.popup);
+            Bitmap background = BitmapFactory.decodeResource(resources, Res.drawable.popup);
             mBackground = new NinePatch(background, background.getNinePatchChunk(), null);
-            Bitmap highlightSelected = BitmapFactory.decodeResource(resources, R.drawable.popup_option_selected);
+            Bitmap highlightSelected = BitmapFactory.decodeResource(resources, Res.drawable.popup_option_selected);
             mHighlightSelected = new NinePatch(highlightSelected, highlightSelected.getNinePatchChunk(), null);
-            mTriangleBottom = BitmapFactory.decodeResource(resources, R.drawable.popup_triangle_bottom);
+            mTriangleBottom = BitmapFactory.decodeResource(resources, Res.drawable.popup_triangle_bottom);
         }
 
         @Override

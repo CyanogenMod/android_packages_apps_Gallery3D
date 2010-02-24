@@ -2,11 +2,11 @@ package com.cooliris.media;
 
 import javax.microedition.khronos.opengles.GL11;
 
-import com.cooliris.media.R;
-import com.cooliris.media.RenderView.Lists;
-
 import android.os.SystemClock;
 import android.view.MotionEvent;
+
+import com.cooliris.app.Res;
+import com.cooliris.media.RenderView.Lists;
 
 public final class ImageButton extends Layer {
     private static final float TRACKING_MARGIN = 30.0f;
@@ -24,7 +24,7 @@ public final class ImageButton extends Layer {
     private int mPreviousImage = 0;
     private boolean mPressed = false;
 
-    private final int mTransparent = R.drawable.transparent;
+    private final int mTransparent = Res.drawable.transparent;
 
     public void setImages(int image, int pressedImage) {
         mImage = image;

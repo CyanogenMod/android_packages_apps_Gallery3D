@@ -7,12 +7,14 @@ import javax.microedition.khronos.opengles.GL11;
 import android.graphics.Typeface;
 import android.view.MotionEvent;
 
+import com.cooliris.app.Res;
+
 public final class PathBarLayer extends Layer {
     private static final StringTexture.Config sPathFormat = new StringTexture.Config();
     private final ArrayList<Component> mComponents = new ArrayList<Component>();
-    private static final int FILL = R.drawable.pathbar_bg;
-    private static final int JOIN = R.drawable.pathbar_join;
-    private static final int CAP = R.drawable.pathbar_cap;
+    private static final int FILL = Res.drawable.pathbar_bg;
+    private static final int JOIN = Res.drawable.pathbar_join;
+    private static final int CAP = Res.drawable.pathbar_cap;
     private Component mTouchItem = null;
 
     static {

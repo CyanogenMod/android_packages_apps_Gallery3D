@@ -7,6 +7,8 @@ import javax.microedition.khronos.opengles.GL11;
 import android.content.Context;
 import android.view.MotionEvent;
 
+import com.cooliris.app.Res;
+
 public final class MenuBar extends Layer implements PopupMenu.Listener {
     public static final int HEIGHT = 45;
 
@@ -35,11 +37,11 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
     private boolean mTouchActive = false;
     private boolean mTouchOverMenu = false;
     private final PopupMenu mSubmenu;
-    private static final int BACKGROUND = R.drawable.selection_menu_bg;
-    private static final int SEPERATOR = R.drawable.selection_menu_divider;
-    private static final int MENU_HIGHLIGHT_LEFT = R.drawable.selection_menu_bg_pressed_left;
-    private static final int MENU_HIGHLIGHT_MIDDLE = R.drawable.selection_menu_bg_pressed;
-    private static final int MENU_HIGHLIGHT_RIGHT = R.drawable.selection_menu_bg_pressed_right;
+    private static final int BACKGROUND = Res.drawable.selection_menu_bg;
+    private static final int SEPERATOR = Res.drawable.selection_menu_divider;
+    private static final int MENU_HIGHLIGHT_LEFT = Res.drawable.selection_menu_bg_pressed_left;
+    private static final int MENU_HIGHLIGHT_MIDDLE = Res.drawable.selection_menu_bg_pressed;
+    private static final int MENU_HIGHLIGHT_RIGHT = Res.drawable.selection_menu_bg_pressed_right;
     private final HashMap<String, Texture> mTextureMap = new HashMap<String, Texture>();
     private GL11 mGL;
 

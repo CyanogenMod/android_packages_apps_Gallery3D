@@ -8,6 +8,8 @@ import android.content.Context;
 
 import android.content.res.Resources;
 
+import com.cooliris.app.Res;
+
 /**
  * Implementation of an agglomerative based clustering where all items within a
  * certain time cutoff are grouped into the same cluster. Small adjacent
@@ -322,7 +324,7 @@ public final class MediaClustering {
                         mName = DateUtils.formatDateRange(context, minTimestamp, maxTimestamp, flags);
                     }
                 } else {
-                    mName = resources.getString(R.string.date_unknown);
+                    mName = resources.getString(Res.string.date_unknown);
                 }
                 updateNumExpectedItems();
                 generateTitle(false);

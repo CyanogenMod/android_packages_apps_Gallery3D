@@ -11,6 +11,8 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.Context;
 
+import com.cooliris.app.Res;
+
 public final class GridLayer extends RootLayer implements MediaFeed.Listener, TimeBar.Listener {
     public static final int STATE_MEDIA_SETS = 0;
     public static final int STATE_GRID_VIEW = 1;
@@ -137,7 +139,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mHud.getPathBar().clear();
         mHud.setGridLayer(this);
         mHud.getTimeBar().setListener(this);
-        mHud.getPathBar().pushLabel(R.drawable.icon_home_small, context.getResources().getString(R.string.app_name),
+        mHud.getPathBar().pushLabel(Res.drawable.icon_home_small, context.getResources().getString(Res.string.app_name),
                 new Runnable() {
                     public void run() {
                         if (mHud.getAlpha() == 1.0f) {
@@ -272,7 +274,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             layoutInterface.mSpacingX = (int) (40 * Gallery.PIXEL_DENSITY);
             layoutInterface.mSpacingY = (int) (40 * Gallery.PIXEL_DENSITY);
             if (mState != STATE_FULL_SCREEN) {
-                mHud.getPathBar().pushLabel(R.drawable.ic_fs_details, "", new Runnable() {
+                mHud.getPathBar().pushLabel(Res.drawable.ic_fs_details, "", new Runnable() {
                     public void run() {
                         if (mHud.getAlpha() == 1.0f) {
                             mHud.swapFullscreenLabel();
@@ -318,7 +320,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     protected void enableLocationFiltering(String label) {
         if (mLocationFilter == false) {
             mLocationFilter = true;
-            mHud.getPathBar().pushLabel(R.drawable.icon_location_small, label, new Runnable() {
+            mHud.getPathBar().pushLabel(Res.drawable.icon_location_small, label, new Runnable() {
                 public void run() {
                     if (mHud.getAlpha() == 1.0f) {
                         if (mState == STATE_FULL_SCREEN) {
@@ -1378,7 +1380,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public void setPickIntent(boolean b) {
         mPickIntent = b;
         mHud.getPathBar().popLabel();
-        mHud.getPathBar().pushLabel(R.drawable.icon_location_small, mContext.getResources().getString(R.string.pick),
+        mHud.getPathBar().pushLabel(Res.drawable.icon_location_small, mContext.getResources().getString(Res.string.pick),
                 new Runnable() {
                     public void run() {
                         if (mHud.getAlpha() == 1.0f) {
@@ -1403,7 +1405,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             setState(STATE_GRID_VIEW);
             // We need to make sure we haven't pushed the same label twice
             if (mHud.getPathBar().getNumLevels() == 1) {
-                mHud.getPathBar().pushLabel(R.drawable.icon_folder_small, setName, new Runnable() {
+                mHud.getPathBar().pushLabel(Res.drawable.icon_folder_small, setName, new Runnable() {
                     public void run() {
                         if (mFeedAboutToChange) {
                             return;

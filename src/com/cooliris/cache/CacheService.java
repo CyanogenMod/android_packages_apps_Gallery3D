@@ -39,6 +39,7 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 
+import com.cooliris.app.Res;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
 import com.cooliris.media.Gallery;
@@ -47,7 +48,6 @@ import com.cooliris.media.LongSparseArray;
 import com.cooliris.media.MediaFeed;
 import com.cooliris.media.MediaItem;
 import com.cooliris.media.MediaSet;
-import com.cooliris.media.R;
 import com.cooliris.media.Shared;
 import com.cooliris.media.SortCursor;
 import com.cooliris.media.UriTexture;
@@ -959,7 +959,7 @@ public final class CacheService extends IntentService {
                     acceleratedSets = new LongSparseArray<MediaSet>(sortCursor.getCount());
                     MediaSet cameraSet = new MediaSet();
                     cameraSet.mId = LocalDataSource.CAMERA_BUCKET_ID;
-                    cameraSet.mName = context.getResources().getString(R.string.camera);
+                    cameraSet.mName = context.getResources().getString(Res.string.camera);
                     sets.add(cameraSet);
                     acceleratedSets.put(cameraSet.mId, cameraSet);
                     do {

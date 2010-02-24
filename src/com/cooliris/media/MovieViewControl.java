@@ -35,6 +35,8 @@ import android.view.View;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
+import com.cooliris.app.Res;
+
 public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
 
     @SuppressWarnings("unused")
@@ -78,17 +80,17 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
         int s = duration - (h * 3600 + m * 60);
         String durationValue;
         if (h == 0) {
-            durationValue = String.format(context.getString(R.string.details_ms), m, s);
+            durationValue = String.format(context.getString(Res.string.details_ms), m, s);
         } else {
-            durationValue = String.format(context.getString(R.string.details_hms), h, m, s);
+            durationValue = String.format(context.getString(Res.string.details_hms), h, m, s);
         }
         return durationValue;
     }
 
     public MovieViewControl(View rootView, Context context, Uri videoUri) {
         mContentResolver = context.getContentResolver();
-        mVideoView = (VideoView) rootView.findViewById(R.id.surface_view);
-        mProgressView = rootView.findViewById(R.id.progress_indicator);
+        mVideoView = (VideoView) rootView.findViewById(Res.id.surface_view);
+        mProgressView = rootView.findViewById(Res.id.progress_indicator);
 
         mUri = videoUri;
 
@@ -116,22 +118,22 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
         final Integer bookmark = getBookmark();
         if (bookmark != null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setTitle(R.string.resume_playing_title);
+            builder.setTitle(Res.string.resume_playing_title);
             builder
                     .setMessage(String
-                            .format(context.getString(R.string.resume_playing_message), formatDuration(context, bookmark)));
+                            .format(context.getString(Res.string.resume_playing_message), formatDuration(context, bookmark)));
             builder.setOnCancelListener(new OnCancelListener() {
                 public void onCancel(DialogInterface dialog) {
                     onCompletion();
                 }
             });
-            builder.setPositiveButton(R.string.resume_playing_resume, new OnClickListener() {
+            builder.setPositiveButton(Res.string.resume_playing_resume, new OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     mVideoView.seekTo(bookmark);
                     mVideoView.start();
                 }
             });
-            builder.setNegativeButton(R.string.resume_playing_restart, new OnClickListener() {
+            builder.setNegativeButton(Res.string.resume_playing_restart, new OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     mVideoView.start();
                 }

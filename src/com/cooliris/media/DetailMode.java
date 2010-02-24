@@ -7,7 +7,7 @@ import java.util.Date;
 import android.content.Context;
 import android.content.res.Resources;
 
-;
+import com.cooliris.app.Res;
 
 public final class DetailMode {
     public static CharSequence[] populateDetailModeStrings(Context context, ArrayList<MediaBucket> buckets) {
@@ -55,17 +55,17 @@ public final class DetailMode {
 
         // Number of albums selected.
         if (numOriginalSets == 1) {
-            strings.add("1 " + resources.getString(R.string.album_selected));
+            strings.add("1 " + resources.getString(Res.string.album_selected));
         } else {
-            strings.add(Integer.toString(numOriginalSets) + " " + resources.getString(R.string.albums_selected));
+            strings.add(Integer.toString(numOriginalSets) + " " + resources.getString(Res.string.albums_selected));
         }
 
         // Number of items selected.
         int numItems = selectedItemsSet.mNumItemsLoaded;
         if (numItems == 1) {
-            strings.add("1 " + resources.getString(R.string.item_selected));
+            strings.add("1 " + resources.getString(Res.string.item_selected));
         } else {
-            strings.add(Integer.toString(numItems) + " " + resources.getString(R.string.items_selected));
+            strings.add(Integer.toString(numItems) + " " + resources.getString(Res.string.items_selected));
         }
 
         DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
@@ -78,8 +78,8 @@ public final class DetailMode {
                 minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
                 maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
-            strings.add(resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
-            strings.add(resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
+            strings.add(resources.getString(Res.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
+            strings.add(resources.getString(Res.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
         } else if (selectedItemsSet.areAddedTimestampsAvailable()) {
             long minTimestamp = selectedItemsSet.mMinAddedTimestamp;
             long maxTimestamp = selectedItemsSet.mMaxAddedTimestamp;
@@ -87,11 +87,11 @@ public final class DetailMode {
                 minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
                 maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
-            strings.add(resources.getString(R.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
-            strings.add(resources.getString(R.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
+            strings.add(resources.getString(Res.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
+            strings.add(resources.getString(Res.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
         } else {
-            strings.add(resources.getString(R.string.start) + ": " + resources.getString(R.string.date_unknown));
-            strings.add(resources.getString(R.string.end) + ": " + resources.getString(R.string.date_unknown));
+            strings.add(resources.getString(Res.string.start) + ": " + resources.getString(Res.string.date_unknown));
+            strings.add(resources.getString(Res.string.end) + ": " + resources.getString(Res.string.date_unknown));
         }
 
         // The location of the selected items.
@@ -105,7 +105,7 @@ public final class DetailMode {
             }
         }
         if (locationString != null && locationString.length() > 0) {
-            strings.add(resources.getString(R.string.location) + ": " + locationString);
+            strings.add(resources.getString(Res.string.location) + ": " + locationString);
         }
         int numStrings = strings.size();
         CharSequence[] stringsArr = new CharSequence[numStrings];
@@ -121,8 +121,8 @@ public final class DetailMode {
         }
         Resources resources = context.getResources();
         CharSequence[] strings = new CharSequence[5];
-        strings[0] = resources.getString(R.string.title) + ": " + item.mCaption;
-        strings[1] = resources.getString(R.string.type) + ": " + item.getDisplayMimeType();
+        strings[0] = resources.getString(Res.string.title) + ": " + item.mCaption;
+        strings[1] = resources.getString(Res.string.type) + ": " + item.getDisplayMimeType();
 
         DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
 
@@ -131,31 +131,31 @@ public final class DetailMode {
             if (item.isPicassaItem()) {
                 dateTaken -= Gallery.CURRENT_TIME_ZONE.getOffset(dateTaken);
             }
-            strings[2] = resources.getString(R.string.taken_on) + ": " + dateTimeFormat.format(new Date(dateTaken));
+            strings[2] = resources.getString(Res.string.taken_on) + ": " + dateTimeFormat.format(new Date(dateTaken));
         } else if (item.isDateAddedValid()) {
             long dateAdded = item.mDateAddedInSec * 1000;
             if (item.isPicassaItem()) {
                 dateAdded -= Gallery.CURRENT_TIME_ZONE.getOffset(dateAdded);
             }
             // TODO: Make this added_on as soon as translations are ready.
-            // strings[2] = resources.getString(R.string.added_on) + ": " +
+            // strings[2] = resources.getString(Res.string.added_on) + ": " +
             // DateFormat.format("h:mmaa MMM dd yyyy", dateAdded);
-            strings[2] = resources.getString(R.string.taken_on) + ": " + dateTimeFormat.format(new Date(dateAdded));
+            strings[2] = resources.getString(Res.string.taken_on) + ": " + dateTimeFormat.format(new Date(dateAdded));
         } else {
-            strings[2] = resources.getString(R.string.taken_on) + ": " + resources.getString(R.string.date_unknown);
+            strings[2] = resources.getString(Res.string.taken_on) + ": " + resources.getString(Res.string.date_unknown);
         }
         MediaSet parentMediaSet = item.mParentMediaSet;
         if (parentMediaSet == null) {
-            strings[3] = resources.getString(R.string.album) + ":";
+            strings[3] = resources.getString(Res.string.album) + ":";
         } else {
-            strings[3] = resources.getString(R.string.album) + ": " + parentMediaSet.mName;
+            strings[3] = resources.getString(Res.string.album) + ": " + parentMediaSet.mName;
         }
         ReverseGeocoder reverseGeocoder = ((Gallery) context).getReverseGeocoder();
         String locationString = item.getReverseGeocodedLocation(reverseGeocoder);
         if (locationString == null || locationString.length() == 0) {
-            locationString = context.getResources().getString(R.string.location_unknown);
+            locationString = context.getResources().getString(Res.string.location_unknown);
         }
-        strings[4] = resources.getString(R.string.location) + ": " + locationString;
+        strings[4] = resources.getString(Res.string.location) + ": " + locationString;
         return strings;
     }
 }

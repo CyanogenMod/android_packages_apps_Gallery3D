@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.widget.Toast;
 import android.os.Process;
 
+import com.cooliris.app.Res;
 import com.cooliris.media.MediaClustering.Cluster;
 
 public final class MediaFeed implements Runnable {
@@ -361,14 +362,14 @@ public final class MediaFeed implements Runnable {
                     try {
                         if (mContext == null)
                             return;
-                        showToast(mContext.getResources().getString(R.string.initializing), Toast.LENGTH_LONG);
+                        showToast(mContext.getResources().getString(Res.string.initializing), Toast.LENGTH_LONG);
                         Thread.sleep(6000);
                     } catch (InterruptedException e) {
                         return;
                     }
                 }
                 if (mWaitingForMediaScanner) {
-                    showToast(mContext.getResources().getString(R.string.loading_new), Toast.LENGTH_LONG);
+                    showToast(mContext.getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
                     mWaitingForMediaScanner = false;
                     if (dataSource != null) {
                         dataSource.loadMediaSets(feed);

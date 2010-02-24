@@ -23,6 +23,8 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 
+import com.cooliris.app.Res;
+
 /**
  * This activity plays a video from a specified URI.
  */
@@ -36,8 +38,8 @@ public class MovieView extends Activity {
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
-        setContentView(R.layout.movie_view);
-        View rootView = findViewById(R.id.root);
+        setContentView(Res.layout.movie_view);
+        View rootView = findViewById(Res.id.root);
         Intent intent = getIntent();
         mControl = new MovieViewControl(rootView, this, intent.getData()) {
             @Override

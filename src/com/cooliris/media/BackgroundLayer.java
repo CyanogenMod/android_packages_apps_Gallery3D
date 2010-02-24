@@ -3,6 +3,8 @@ package com.cooliris.media;
 import java.util.HashMap;
 import javax.microedition.khronos.opengles.GL11;
 import android.util.Log;
+
+import com.cooliris.app.Res;
 import com.cooliris.media.RenderView.Lists;
 
 public class BackgroundLayer extends Layer {
@@ -77,7 +79,7 @@ public class BackgroundLayer extends Layer {
     public void renderOpaque(RenderView view, GL11 gl) {
         gl.glClear(GL11.GL_COLOR_BUFFER_BIT);
         if (mFallbackBackground == null) {
-            mFallbackBackground = view.getResource(R.drawable.default_background, false);
+            mFallbackBackground = view.getResource(Res.drawable.default_background, false);
             view.loadTexture(mFallbackBackground);
         }
     }

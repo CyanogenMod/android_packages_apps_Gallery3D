@@ -26,6 +26,8 @@ import android.graphics.Region;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
+import com.cooliris.app.Res;
+
 // This class is used by CropImage to display a highlighted cropping rectangle
 // overlayed with the image. There are two coordinate spaces in use. One is
 // image, another is screen. computeLayout() uses mMatrix to map from image
@@ -49,9 +51,9 @@ class HighlightView {
 
     private void init() {
         android.content.res.Resources resources = mContext.getResources();
-        mResizeDrawableWidth = resources.getDrawable(R.drawable.camera_crop_width);
-        mResizeDrawableHeight = resources.getDrawable(R.drawable.camera_crop_height);
-        mResizeDrawableDiagonal = resources.getDrawable(R.drawable.indicator_autocrop);
+        mResizeDrawableWidth = resources.getDrawable(Res.drawable.camera_crop_width);
+        mResizeDrawableHeight = resources.getDrawable(Res.drawable.camera_crop_height);
+        mResizeDrawableDiagonal = resources.getDrawable(Res.drawable.indicator_autocrop);
     }
 
     boolean mIsFocused;

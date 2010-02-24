@@ -367,9 +367,9 @@ public final class ReverseGeocoder extends Thread {
         if (localityAdminStr != null && !("null".equals(localityAdminStr))) {
             if (approxLocation) {
                 // TODO: Uncomment these lines as soon as we may translations
-                // for R.string.around.
+                // for Res.string.around.
                 // localityAdminStr =
-                // mContext.getResources().getString(R.string.around) + " " +
+                // mContext.getResources().getString(Res.string.around) + " " +
                 // localityAdminStr;
             }
             String adminArea = addr.getAdminArea();

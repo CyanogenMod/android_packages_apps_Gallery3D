@@ -32,6 +32,8 @@ import android.widget.RemoteViews;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import com.cooliris.app.Res;
+
 /**
  * Simple widget to show a user-selected picture.
  */
@@ -71,8 +73,8 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
         RemoteViews views = null;
         Bitmap bitmap = helper.getPhoto(appWidgetId);
         if (bitmap != null) {
-            views = new RemoteViews(context.getPackageName(), R.layout.photo_frame);
-            views.setImageViewBitmap(R.id.photo, bitmap);
+            views = new RemoteViews(context.getPackageName(), Res.layout.photo_frame);
+            views.setImageViewBitmap(Res.id.photo, bitmap);
         }
         return views;
     }

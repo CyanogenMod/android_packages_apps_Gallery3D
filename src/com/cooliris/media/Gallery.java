@@ -24,6 +24,7 @@ import android.view.KeyEvent;
 import android.widget.Toast;
 import android.media.MediaScannerConnection;
 
+import com.cooliris.app.Res;
 import com.cooliris.cache.CacheService;
 import com.cooliris.wallpaper.RandomDataSource;
 import com.cooliris.wallpaper.Slideshow;
@@ -58,7 +59,7 @@ public final class Gallery extends Activity {
         }
         if (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI) && slideshowIntent) {
             if (!imageManagerHasStorage) {
-                Toast.makeText(this, getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG).show();
                 finish();
             } else {
                 Slideshow slideshow = new Slideshow(this);
@@ -92,7 +93,7 @@ public final class Gallery extends Activity {
             public void run() {
                 int numRetries = 25;
                 if (!imageManagerHasStorage) {
-                    showToast(getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG);
+                    showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
                     do {
                         --numRetries;
                         try {
@@ -120,7 +121,7 @@ public final class Gallery extends Activity {
                         mGridLayer.setDataSource(picasaDataSource);
                     }
                     if (!isCacheReady && imageManagerHasStorageAfterDelay) {
-                        showToast(getResources().getString(R.string.loading_new), Toast.LENGTH_LONG);
+                        showToast(getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
                     }
                 } else if (!isViewIntent()) {
                     final Intent intent = getIntent();
@@ -144,9 +145,9 @@ public final class Gallery extends Activity {
                         }
                         mGridLayer.setPickIntent(true);
                         if (!imageManagerHasStorageAfterDelay) {
-                            showToast(getResources().getString(R.string.no_sd_card), Toast.LENGTH_LONG);
+                            showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
                         } else {
-                            showToast(getResources().getString(R.string.pick_prompt), Toast.LENGTH_LONG);
+                            showToast(getResources().getString(Res.string.pick_prompt), Toast.LENGTH_LONG);
                         }
                     }
                 } else {
@@ -287,7 +288,7 @@ public final class Gallery extends Activity {
     @Override
     public void onDestroy() {
         // Force GLThread to exit.
-        setContentView(R.layout.main);
+        setContentView(Res.layout.main);
         if (mGridLayer != null) {
             DataSource dataSource = mGridLayer.getDataSource();
             if (dataSource != null) {
@@ -397,8 +398,8 @@ public final class Gallery extends Activity {
             if (contentUri.startsWith("http://")) {
                 // This is a http uri, we must save it locally first and
                 // generate a content uri from it.
-                final ProgressDialog dialog = ProgressDialog.show(this, this.getResources().getString(R.string.initializing),
-                        getResources().getString(R.string.running_face_detection), true, false);
+                final ProgressDialog dialog = ProgressDialog.show(this, this.getResources().getString(Res.string.initializing),
+                        getResources().getString(Res.string.running_face_detection), true, false);
                 if (contentUri != null) {
                     MediaScannerConnection.MediaScannerConnectionClient client = new MediaScannerConnection.MediaScannerConnectionClient() {
                         public void onMediaScannerConnected() {

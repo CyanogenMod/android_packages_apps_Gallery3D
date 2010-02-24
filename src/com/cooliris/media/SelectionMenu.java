@@ -26,25 +26,25 @@ package com.cooliris.media;
 //    private static final int BUTTON_SELECT_ALL = 3;
 //    private static final int BUTTON_DESELECT_ALL = 4;
 //
-//    private static final int[] BUTTON_LABELS = { R.string.Share, R.string.Delete,
-//                                                R.string.More };
-//    private static final int[] BUTTON_ICONS = { R.drawable.icon_share,
-//                                               R.drawable.icon_delete, R.drawable.icon_more };
+//    private static final int[] BUTTON_LABELS = { Res.string.Share, Res.string.Delete,
+//                                                Res.string.More };
+//    private static final int[] BUTTON_ICONS = { Res.drawable.icon_share,
+//                                               Res.drawable.icon_delete, Res.drawable.icon_more };
 //    private static final float BUTTON_ICON_SIZE = 34f;
 //
 //    protected static final String TAG = "SelectionMenu";
 //
 //    private final Context mContext;
 //    private final HudLayer mHud;
-//    private final Texture mLowerBackground = ResourceTexture.get(R.drawable.selection_lower_bg);
+//    private final Texture mLowerBackground = ResourceTexture.get(Res.drawable.selection_lower_bg);
 //    private final ResourceTexture mDividerImage = ResourceTexture
-//                    .get(R.drawable.selection_menu_divider);
+//                    .get(Res.drawable.selection_menu_divider);
 //    private final ResourceTexture mSelectionLeft = ResourceTexture
-//                    .get(R.drawable.selection_menu_bg_pressed_left);
+//                    .get(Res.drawable.selection_menu_bg_pressed_left);
 //    private final ResourceTexture mSelectionFill = ResourceTexture
-//                    .get(R.drawable.selection_menu_bg_pressed);
+//                    .get(Res.drawable.selection_menu_bg_pressed);
 //    private final ResourceTexture mSelectionRight = ResourceTexture
-//                    .get(R.drawable.selection_menu_bg_pressed_right);
+//                    .get(Res.drawable.selection_menu_bg_pressed_right);
 //    private final Button[] mButtons = new Button[BUTTON_LABELS.length];
 //    private float mDividerSpacing = 0f;
 //    private boolean mDrawButtonIcons = true;
