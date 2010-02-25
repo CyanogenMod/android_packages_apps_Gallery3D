@@ -427,8 +427,8 @@ public final class PicasaContentProvider extends TableContentProvider {
 
         // Mark that photos changed.
         // context.photosChanged = true;
-        getContext().getContentResolver().notifyChange(ALBUMS_URI, null);
-        getContext().getContentResolver().notifyChange(PHOTOS_URI, null);
+        getContext().getContentResolver().notifyChange(ALBUMS_URI, null, false);
+        getContext().getContentResolver().notifyChange(PHOTOS_URI, null, false);
     }
 
     private void deleteUser(SQLiteDatabase db, String account) {
@@ -523,10 +523,10 @@ public final class PicasaContentProvider extends TableContentProvider {
             // Send notifications if needed and reset state.
             ContentResolver cr = getContext().getContentResolver();
             if (albumsChanged) {
-                cr.notifyChange(ALBUMS_URI, null);
+                cr.notifyChange(ALBUMS_URI, null, false);
             }
             if (photosChanged) {
-                cr.notifyChange(PHOTOS_URI, null);
+                cr.notifyChange(PHOTOS_URI, null, false);
             }
             albumsChanged = false;
             photosChanged = false;

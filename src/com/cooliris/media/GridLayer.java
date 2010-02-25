@@ -781,9 +781,11 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public void renderBlended(RenderView view, GL11 gl) {
         // We draw the placeholder for all visible slots.
         if (mHud != null && mDrawManager != null) {
-            mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, mHud.getMode(), mTimeElapsedSinceStackViewReady,
-                    mTimeElapsedSinceGridViewReady, sSelectedBucketList, sMarkedBucketList, mMediaFeed.getWaitingForMediaScanner()
-                            || mFeedAboutToChange || mMediaFeed.isLoading());
+            if (mMediaFeed != null) {
+                mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, mHud.getMode(),
+                        mTimeElapsedSinceStackViewReady, mTimeElapsedSinceGridViewReady, sSelectedBucketList, sMarkedBucketList,
+                        mMediaFeed.getWaitingForMediaScanner() || mFeedAboutToChange || mMediaFeed.isLoading());
+            }
         }
     }
 
