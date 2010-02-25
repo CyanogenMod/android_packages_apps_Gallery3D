@@ -176,7 +176,7 @@ public class MediaSet {
         }
         if (item.mId != Shared.INVALID) {
             if (lookupItem == null) {
-                mItemsLookup.append(item.mId, item);
+                mItemsLookup.put(item.mId, item);
             }
             ++mNumItemsLoaded;
         }

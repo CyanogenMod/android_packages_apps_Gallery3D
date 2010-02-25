@@ -187,6 +187,7 @@ public final class StringTexture extends Texture {
             LinearGradient gradient = new LinearGradient(gradientLeft, 0, backWidth, 0, 0xffffffff, 0x00ffffff,
                     Shader.TileMode.CLAMP);
             paint = new Paint();
+            paint.setSubpixelText(true);
             paint.setShader(gradient);
             paint.setDither(true);
             paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));

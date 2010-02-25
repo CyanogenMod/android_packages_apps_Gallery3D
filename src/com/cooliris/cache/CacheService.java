@@ -136,10 +136,6 @@ public final class CacheService extends IntentService {
     private static final byte[] sDummyData = new byte[] { 1 };
     private static final Object sCacheLock = new Object();
 
-    public interface Observer {
-        void onChange(long[] bucketIds);
-    }
-
     public static final String getCachePath(final String subFolderName) {
         return Environment.getExternalStorageDirectory() + "/Android/data/com.cooliris.media/cache/" + subFolderName;
     }
@@ -241,6 +237,9 @@ public final class CacheService extends IntentService {
                         mediaSet = feed.addMediaSet(setId, source);
                     } else {
                         mediaSet.refresh();
+                    }
+                    if (mediaSet.mId == LocalDataSource.CAMERA_BUCKET_ID) {
+                        feed.moveSetToFront(mediaSet);
                     }
                     if ((includeImages && hasImages) || (includeVideos && hasVideos)) {
                         mediaSet.mName = name;
@@ -667,6 +666,7 @@ public final class CacheService extends IntentService {
         final Bitmap finalBitmap = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.RGB_565);
         final Canvas canvas = new Canvas(finalBitmap);
         final Paint paint = new Paint();
+        paint.setDither(true);
         paint.setFilterBitmap(true);
         canvas.drawColor(0);
         canvas.drawBitmap(bitmap, new Rect(cropX, cropY, cropX + cropWidth, cropY + cropHeight), new Rect(0, 0, thumbnailWidth,

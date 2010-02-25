@@ -76,6 +76,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         GridLayer layer = mLayer;
         layer.setState(GridLayer.STATE_FULL_SCREEN);
         mCamera.mConvergenceSpeed = 2.0f;
+        mCamera.mFriction = 0.0f;
         DisplayItem displayItem = layer.getDisplayItemForSlotId(slot);
         MediaItem item = null;
         if (displayItem != null)
@@ -317,7 +318,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 pool.delete(worldPosDelta);
             }
             if (layer.getZoomValue() == 1.0f) {
-                if (camera.computeConstraints(false, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition, lastPosition)) {
+                if (camera
+                        .computeConstraints(false, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition, lastPosition)) {
                     deltaX = 0.0f;
                     // vibrate
                     if (!mTouchFeedbackDelivered) {
@@ -470,6 +472,9 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
 
     public void update(float timeElapsed) {
         mDpadIgnoreTime += timeElapsed;
+        if (mCamera.mFriction != 0.0f) {
+            constrainCamera(true);
+        }
     }
 
     public void setCurrentFocusSlot(int slotId) {
@@ -486,13 +491,14 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             mCamera.moveYTo(0);
             mCamera.moveZTo(0);
             mCamera.mConvergenceSpeed = 1.0f;
+            mCamera.mFriction = 0.0f;
             float normalizedVelocity = velocityX * mCamera.mOneByScale;
             // mCamera.moveBy(-velocityX * mCamera.mOneByScale * 0.25f, 0, 0);
             // constrainCamera(true);
             IndexRange visibleRange = mLayer.getVisibleRange();
             int numVisibleSlots = visibleRange.end - visibleRange.begin;
             if (numVisibleSlots > 0) {
-                float fastFlingVelocity = 20.0f;
+                float fastFlingVelocity = 10.0f;
                 int slotsToSkip = (int) (numVisibleSlots * (-normalizedVelocity / fastFlingVelocity));
                 int maxSlots = numVisibleSlots;
                 if (slotsToSkip > maxSlots)
@@ -559,6 +565,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         if (mCurrentSelectedSlot != Shared.INVALID) {
             // Fullscreen mode.
             mCamera.mConvergenceSpeed = 2.0f;
+            mCamera.mFriction = 0.0f;
             int slotId = mCurrentSelectedSlot;
             if (layer.getZoomValue() == 1.0f) {
                 layer.centerCameraForSlot(slotId, 1.0f);
@@ -638,6 +645,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     layer.endSlideshow();
                     layer.setState(GridLayer.STATE_FULL_SCREEN);
                     mCamera.mConvergenceSpeed = 2.0f;
+                    mCamera.mFriction = 0.0f;
                     layer.getHud().fullscreenSelectionChanged(item, mCurrentSelectedSlot + 1, layer.getCompleteRange().end + 1);
                 }
             }
@@ -663,6 +671,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 layer.setZoomValue(1.0f);
             }
             mCamera.mConvergenceSpeed = 2.0f;
+            mCamera.mFriction = 0.0f;
         } else {
             return onSingleTapConfirmed(e);
         }
@@ -724,58 +733,53 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
-    public void onScaleEnd(ScaleGestureDetector detector) {
-        final GridLayer layer = mLayer;
-        boolean setValues = true;
-        if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
-            float currentScale = layer.getZoomValue();
-            if (currentScale < 1.0f) {
-                currentScale = 1.0f;
-            } else if (currentScale > 6.0f) {
-                currentScale = 6.0f;
-            }
-            if (currentScale != layer.getZoomValue()) {
-                layer.setZoomValue(currentScale);
-            }
-            layer.constrainCameraForSlot(mCurrentSelectedSlot);
-            mLayer.getHud().hideZoomButtons(false);
-            if (mScale < 0.7f) {
-                layer.goBack();
-                setValues = false;
-            }
-        } else {
-            if (mScale > 3.0f) {
-                HudLayer hud = layer.getHud();
-                if (hud.getMode() == HudLayer.MODE_SELECT) {
-                    layer.addSlotToSelectedItems(mCurrentScaleSlot, true, true);
-                    setValues = false;
-                } else {
-                    boolean centerCamera = (mCurrentSelectedSlot == Shared.INVALID) ? layer.tapGesture(mCurrentScaleSlot, false) : true;
-                    if (centerCamera) {
-                        // We check if this item is a video or not.
-                        selectSlot(mCurrentScaleSlot);
-                        setValues = false;
-                    }
+    public void onScaleEnd(ScaleGestureDetector detector, boolean cancel) {
+        if (!cancel) {
+            final GridLayer layer = mLayer;
+            if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
+                float currentScale = layer.getZoomValue();
+                if (currentScale < 1.0f) {
+                    currentScale = 1.0f;
+                } else if (currentScale > 6.0f) {
+                    currentScale = 6.0f;
+                }
+                if (currentScale != layer.getZoomValue()) {
+                    layer.setZoomValue(currentScale);
+                }
+                layer.constrainCameraForSlot(mCurrentSelectedSlot);
+                mLayer.getHud().hideZoomButtons(false);
+                if (mScale < 0.7f) {
+                    layer.goBack();
                 }
             } else {
-                if (layer.getState() == GridLayer.STATE_GRID_VIEW) {
-                    if (mScale < 0.7f) {
-                        layer.goBack();
-                        setValues = false;
+                if (mScale > 3.0f) {
+                    HudLayer hud = layer.getHud();
+                    if (hud.getMode() == HudLayer.MODE_SELECT) {
+                        layer.addSlotToSelectedItems(mCurrentScaleSlot, true, true);
+                    } else {
+                        boolean centerCamera = (mCurrentSelectedSlot == Shared.INVALID) ? layer
+                                .tapGesture(mCurrentScaleSlot, false) : true;
+                        if (centerCamera) {
+                            // We check if this item is a video or not.
+                            selectSlot(mCurrentScaleSlot);
+                        }
+                    }
+                } else {
+                    if (layer.getState() == GridLayer.STATE_GRID_VIEW) {
+                        if (mScale < 0.7f) {
+                            layer.goBack();
+                        }
                     }
                 }
             }
         }
-        //if (setValues) 
-        {
-            resetScale();
-        }
+        resetScale();
     }
 
     public float getScale() {
         return mScale;
     }
-    
+
     public void resetScale() {
         mScale = 1.0f;
         mCurrentScaleSlot = Shared.INVALID;

@@ -26,6 +26,7 @@ public final class GridCameraManager {
             final int portrait = (theta / 90) % 2;
             if (slotIndex == selectedSlotIndex) {
                 camera.mConvergenceSpeed = baseConvergence * (zoomin ? 2.0f : 2.0f);
+                camera.mFriction = 0.0f;
             }
             final float oneByZoom = 1.0f / zoomValue;
             if (slotIndex >= 0) {
@@ -91,7 +92,7 @@ public final class GridCameraManager {
                     float leftExtent = topLeft.x - imgTopLeft.x;
                     float rightExtent = bottomRight.x - imgBottomRight.x;
                     camera.mConvergenceSpeed = 2.0f;
-
+                    camera.mFriction = 0.0f;
                     if (leftExtent < 0) {
                         retVal = true;
                         camera.moveBy(-leftExtent, 0, 0);

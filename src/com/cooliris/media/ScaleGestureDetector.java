@@ -96,7 +96,7 @@ public class ScaleGestureDetector {
          *            The detector reporting the event - use this to retrieve
          *            extended info about event state.
          */
-        public void onScaleEnd(ScaleGestureDetector detector);
+        public void onScaleEnd(ScaleGestureDetector detector, boolean cancel);
     }
 
     /**
@@ -117,7 +117,7 @@ public class ScaleGestureDetector {
             return true;
         }
 
-        public void onScaleEnd(ScaleGestureDetector detector) {
+        public void onScaleEnd(ScaleGestureDetector detector, boolean cancel) {
             // Intentionally empty
         }
     }
@@ -156,6 +156,8 @@ public class ScaleGestureDetector {
     private float mBottomFingerCurrY;
 
     private boolean mTopFingerIsPointer1;
+    private boolean mPointerOneUp;
+    private boolean mPointerTwoUp;
 
     private static final String TAG = "ScaleGestureDetector";
 
@@ -174,15 +176,18 @@ public class ScaleGestureDetector {
 
             }
             if (action == MotionEvent.ACTION_POINTER_2_DOWN) {
+
+            }
+            if ((action == MotionEvent.ACTION_POINTER_1_DOWN || action == MotionEvent.ACTION_POINTER_2_DOWN)
+                    && event.getPointerCount() >= 2) {
+                // We have a new multi-finger gesture
                 mTopFingerBeginX = event.getX(0);
                 mTopFingerBeginY = event.getY(0);
                 mBottomFingerBeginX = event.getX(1);
                 mBottomFingerBeginY = event.getY(1);
                 mTopFingerIsPointer1 = true;
-            }
-            if ((action == MotionEvent.ACTION_POINTER_1_DOWN || action == MotionEvent.ACTION_POINTER_2_DOWN)
-                    && event.getPointerCount() >= 2) {
-                // We have a new multi-finger gesture
+                mPointerOneUp = false;
+                mPointerTwoUp = false;
 
                 // Be paranoid in case we missed an event
                 reset();
@@ -201,24 +206,39 @@ public class ScaleGestureDetector {
         } else {
             // Transform gesture in progress - attempt to handle it
             switch (action) {
+            case MotionEvent.ACTION_UP:
+                mPointerOneUp = true;
+                mPointerTwoUp = true;
             case MotionEvent.ACTION_POINTER_1_UP:
+                if (mPointerOneUp) {
+                    mPointerTwoUp = true;
+                }
+                mPointerOneUp = true;
             case MotionEvent.ACTION_POINTER_2_UP:
+                if (action == MotionEvent.ACTION_POINTER_2_UP) {
+                    if (mPointerTwoUp == true) {
+                        mPointerOneUp = true;
+                    }
+                    mPointerTwoUp = true;
+                }
                 // Gesture ended
-                setContext(event);
+                if (mPointerOneUp && mPointerTwoUp) {
+                    setContext(event);
 
-                // Set focus point to the remaining finger
-                int id = (((action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT) == 0) ? 1 : 0;
-                mFocusX = event.getX(id);
-                mFocusY = event.getY(id);
+                    // Set focus point to the remaining finger
+                    int id = (((action & MotionEvent.ACTION_POINTER_ID_MASK) >> MotionEvent.ACTION_POINTER_ID_SHIFT) == 0) ? 1 : 0;
+                    mFocusX = event.getX(id);
+                    mFocusY = event.getY(id);
 
-                mListener.onScaleEnd(this);
-                mGestureInProgress = false;
+                    mListener.onScaleEnd(this, false);
+                    mGestureInProgress = false;
 
-                reset();
+                    reset();
+                }
                 break;
 
             case MotionEvent.ACTION_CANCEL:
-                mListener.onScaleEnd(this);
+                mListener.onScaleEnd(this, true);
                 mGestureInProgress = false;
 
                 reset();

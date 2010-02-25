@@ -68,4 +68,30 @@ public final class ArrayUtils {
         }
         return false;
     }
+
+    public static final Object[] addAll(final Object[] first, final Object[] second) {
+        if (first == null && second == null)
+            return null;
+        if (first == null)
+            return second;
+        if (second == null)
+            return first;
+        final int numFirst = first.length;
+        final int numSecond = second.length;
+        Object[] newArray;
+        try {
+            newArray = (Object[])first.getClass().newInstance();
+        } catch (IllegalAccessException e) {
+            return null;
+        } catch (InstantiationException e) {
+            return null;
+        }
+        for (int i = 0; i < numFirst; ++i) {
+            newArray[i] = first[i];
+        }
+        for (int i = 0; i < numSecond; ++i) {
+            newArray[numFirst + i] = second[i];
+        }
+        return newArray;
+    }
 }

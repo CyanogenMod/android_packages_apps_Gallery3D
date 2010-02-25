@@ -23,6 +23,16 @@ public class FloatUtils {
         timeElapsed = timeElapsed * ANIMATION_SPEED;
         return animateAfterFactoringSpeed(prevVal, targetVal, timeElapsed);
     }
+    
+    public static final float animateWithMaxSpeed(float prevVal, float targetVal, float timeElapsed, float maxSpeed) {
+        float newTargetVal = targetVal;
+        float delta = newTargetVal - prevVal;
+        if (Math.abs(delta) > maxSpeed) {
+            newTargetVal = prevVal + (Math.signum(delta) * maxSpeed);
+        }
+        timeElapsed = timeElapsed * ANIMATION_SPEED;
+        return animateAfterFactoringSpeed(prevVal, newTargetVal, timeElapsed);
+    }
 
     /**
      * This function animates a Tuple3f value to another Tuple3f value

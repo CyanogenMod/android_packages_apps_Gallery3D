@@ -3,6 +3,7 @@ package com.cooliris.media;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Observer;
 import java.util.TimeZone;
 
 import android.app.Activity;
@@ -10,6 +11,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -45,7 +47,7 @@ public final class Gallery extends Activity {
     private WakeLock mWakeLock;
     private HashMap<String, Boolean> mAccountsEnabled = new HashMap<String, Boolean>();
     private boolean mDockSlideshow = false;
-
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -184,6 +186,10 @@ public final class Gallery extends Activity {
     }
 
     public Handler getHandler() {
+        while (mHandler == null) {
+            // Wait till the handler is created.
+            ;
+        }
         return mHandler;
     }
 
@@ -214,6 +220,7 @@ public final class Gallery extends Activity {
         if (mRenderView != null) {
             mRenderView.onResume();
         }
+        
         if (mPause) {
             mHandler.post(new Runnable() {
                 public void run() {

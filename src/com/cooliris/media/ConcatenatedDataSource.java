@@ -60,8 +60,15 @@ public final class ConcatenatedDataSource implements DataSource {
         mSecond.shutdown();
     }
     
-    public void refresh(final MediaFeed feed) {
-        mFirst.refresh(feed);
-        mSecond.refresh(feed);
+    public void refresh(final MediaFeed feed, final String[] databaseUris) {
+        mFirst.refresh(feed, databaseUris);
+        mSecond.refresh(feed, databaseUris);
+    }
+    
+    public String[] getDatabaseUris() {
+        String[] first = mFirst.getDatabaseUris();
+        String[] second = mSecond.getDatabaseUris();
+        // We concatenate
+        return (String[])ArrayUtils.addAll(first, second);
     }
 }

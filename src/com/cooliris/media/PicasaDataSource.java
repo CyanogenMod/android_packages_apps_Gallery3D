@@ -17,6 +17,7 @@ import android.util.Log;
 import com.cooliris.picasa.AlbumEntry;
 import com.cooliris.picasa.Entry;
 import com.cooliris.picasa.EntrySchema;
+import com.cooliris.picasa.PhotoEntry;
 import com.cooliris.picasa.PicasaApi;
 import com.cooliris.picasa.PicasaContentProvider;
 import com.cooliris.picasa.PicasaService;
@@ -258,7 +259,38 @@ public final class PicasaDataSource implements DataSource {
         public String htmlPageUrl;
     }
     
-    public void refresh(final MediaFeed feed) {
-        ;
+    public String[] getDatabaseUris() {
+        return new String[] { PicasaContentProvider.ALBUMS_URI.toString(), PicasaContentProvider.PHOTOS_URI.toString()};
+    }
+    
+    public void refresh(final MediaFeed feed, final String[] databaseUris) {
+        // Depending on what URI changed, we either need to update the mediasets or the mediaitems of a set.
+        if (databaseUris != null && databaseUris.length > 0) {
+            final String firstString = databaseUris[0];
+            if (databaseUris.length == 2 || firstString.equals(PicasaContentProvider.ALBUMS_URI)) {
+                // We need to refresh all mediasets of this datasource type.
+                final ArrayList<MediaSet> mediaSets = feed.getMediaSets();
+                final int numMediaSets = mediaSets.size();
+                for (int i = 0; i < numMediaSets; ++i) {
+                    final MediaSet set = mediaSets.get(i);
+                    if (set.mDataSource instanceof PicasaDataSource) {
+                        set.mDataSource = this;
+                        set.refresh();
+                    }
+                }
+            } else {
+                // We need to update just the one set that has these photos.
+                // This operation is not yet supported, so we might as well refresh everything.
+                final ArrayList<MediaSet> mediaSets = feed.getMediaSets();
+                final int numMediaSets = mediaSets.size();
+                for (int i = 0; i < numMediaSets; ++i) {
+                    final MediaSet set = mediaSets.get(i);
+                    if (set.mDataSource instanceof PicasaDataSource) {
+                        set.mDataSource = this;
+                        set.refresh();
+                    }
+                }
+            }
+        }
     }
 }

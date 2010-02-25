@@ -85,7 +85,7 @@ public class UriTexture extends Texture {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
         options.inPreferredConfig = Bitmap.Config.RGB_565;
-        options.inDither = false;
+        options.inDither = true;
         long crc64 = 0;
         Bitmap bitmap = null;
         if (uri.startsWith(ContentResolver.SCHEME_CONTENT)) {
@@ -203,10 +203,6 @@ public class UriTexture extends Texture {
 
     public static boolean isCached(long crc64, int maxResolution) {
         String file = null;
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
-        options.inDither = false;
         if (crc64 != 0) {
             file = createFilePathFromCrc64(crc64, maxResolution);
             try {
@@ -226,7 +222,7 @@ public class UriTexture extends Texture {
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
             options.inPreferredConfig = Bitmap.Config.RGB_565;
-            options.inDither = false;
+            options.inDither = true;
             if (crc64 != 0) {
                 file = createFilePathFromCrc64(crc64, maxResolution);
                 bitmap = BitmapFactory.decodeFile(file, options);

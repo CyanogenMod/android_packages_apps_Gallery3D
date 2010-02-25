@@ -446,8 +446,12 @@ public class LocalDataSource implements DataSource {
         }
         return item;
     }
+    
+    public String[] getDatabaseUris() {
+        return new String[] {Images.Media.EXTERNAL_CONTENT_URI.toString(), Video.Media.EXTERNAL_CONTENT_URI.toString()};
+    }
 
-    public void refresh(final MediaFeed feed) {
+    public void refresh(final MediaFeed feed, final String[] databaseUris) {
         // We check to see what has changed.
         long[] ids = CacheService.computeDirtySets(mContext);
         int numDirtySets = ids.length;

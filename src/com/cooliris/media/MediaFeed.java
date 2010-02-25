@@ -2,10 +2,15 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.view.Gravity;
 import android.widget.Toast;
+import android.net.Uri;
+import android.os.Handler;
 import android.os.Process;
 
 import com.cooliris.app.Res;
@@ -38,6 +43,7 @@ public final class MediaFeed implements Runnable {
     private boolean mWaitingForMediaScanner;
     private boolean mSingleImageMode;
     private boolean mLoading;
+    private HashMap<String, ContentObserver> mContentObservers = new HashMap<String, ContentObserver>();
 
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
@@ -384,7 +390,7 @@ public final class MediaFeed implements Runnable {
         mAlbumSourceThread.setName("MediaSets");
         mAlbumSourceThread.start();
     }
-    
+
     private void loadMediaSets() {
         if (mDataSource == null)
             return;
@@ -394,7 +400,7 @@ public final class MediaFeed implements Runnable {
             final MediaSet set = sets.get(i);
             set.mFlagForDelete = true;
         }
-        mDataSource.refresh(MediaFeed.this);
+        mDataSource.refresh(MediaFeed.this, mDataSource.getDatabaseUris());
         mDataSource.loadMediaSets(MediaFeed.this);
         for (int i = 0; i < numSets; ++i) {
             final MediaSet set = sets.get(i);
@@ -509,7 +515,7 @@ public final class MediaFeed implements Runnable {
                                         scanMediaSets = false;
                                     }
                                 }
-                            } else if (i < bufferedRange.begin || i > bufferedRange.end) {
+                            } else if (!mListenerNeedsUpdate && (i < bufferedRange.begin || i > bufferedRange.end)) {
                                 // Purge this set to its initial status.
                                 MediaClustering clustering = mClusterSets.get(set);
                                 if (clustering != null) {
@@ -532,7 +538,7 @@ public final class MediaFeed implements Runnable {
                                     clustering.clear();
                                     mClusterSets.remove(set);
                                 }
-                                if (set.getNumItems() != 0)
+                                if (set.mNumItemsLoaded != 0)
                                     set.clear();
                             }
                         }
@@ -553,8 +559,10 @@ public final class MediaFeed implements Runnable {
                         }
                         MediaSet set = mediaSets.get(expandedSetIndex);
                         if (numItemsLoaded < set.getNumExpectedItems()) {
-                            // We perform calculations for a window that gets anchored to a multiple of NUM_ITEMS_LOOKAHEAD.
-                            // The start of the window is 0, x, 2x, 3x ... etc where x = NUM_ITEMS_LOOKAHEAD.
+                            // We perform calculations for a window that gets
+                            // anchored to a multiple of NUM_ITEMS_LOOKAHEAD.
+                            // The start of the window is 0, x, 2x, 3x ... etc
+                            // where x = NUM_ITEMS_LOOKAHEAD.
                             dataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
                                     * NUM_ITEMS_LOOKAHEAD + NUM_ITEMS_LOOKAHEAD);
                             if (set.getNumExpectedItems() == 0) {
@@ -748,9 +756,62 @@ public final class MediaFeed implements Runnable {
 
     public void refresh() {
         if (mDataSource != null) {
-            mDataSource.refresh(this);
+            refresh(mDataSource.getDatabaseUris());
+        }
+    }
+
+    private void refresh(final String[] databaseUris) {
+        if (mDataSource != null) {
+            mDataSource.refresh(this, databaseUris);
         }
         mMediaFeedNeedsToRun = true;
         updateListener(false);
+    }
+
+    public void onPause() {
+        final HashMap<String, ContentObserver> observers = mContentObservers;
+        String[] uris = new String[observers.size()];
+        uris = observers.keySet().toArray(uris);
+        final int numUris = uris.length;
+        final ContentResolver cr = mContext.getContentResolver();
+        for (int i = 0; i < numUris; ++i) {
+            final String uri = uris[i];
+            if (uri != null) {
+                final ContentObserver observer = observers.get(uri);
+                cr.unregisterContentObserver(observer);
+                observers.remove(uri);
+            }
+        }
+        observers.clear();
+    }
+
+    public void onResume() {
+        // We setup the listeners for this datasource
+        final String[] uris = mDataSource.getDatabaseUris();
+        final HashMap<String, ContentObserver> observers = mContentObservers;
+        if (mContext instanceof Gallery) {
+            final Gallery gallery = (Gallery) mContext;
+            final ContentResolver cr = mContext.getContentResolver();
+            if (uris != null) {
+                final int numUris = uris.length;
+                for (int i = 0; i < numUris; ++i) {
+                    final String uri = uris[i];
+                    final ContentObserver presentObserver = observers.get(uri);
+                    if (presentObserver == null) {
+                        final Handler handler = gallery.getHandler();
+                        final ContentObserver observer = new ContentObserver(handler) {
+                            public void onChange(boolean selfChange) {
+                                if (!mWaitingForMediaScanner) {
+                                    MediaFeed.this.refresh(new String[] { uri });
+                                }
+                            }
+                        };
+                        cr.registerContentObserver(Uri.parse(uri), true, observer);
+                        observers.put(uri, observer);
+                    }
+                }
+            }
+        }
+        refresh();
     }
 }

@@ -57,11 +57,13 @@ public final class GridCamera {
     private int mWidthBy2;
     private int mHeightBy2;
     private float mTanFovBy2;
+    public float mFriction;
 
     public GridCamera(int width, int height, int itemWidth, int itemHeight) {
         reset();
         viewportChanged(width, height, itemWidth, itemHeight);
         mConvergenceSpeed = 1.0f;
+        mFriction = 0.0f;
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -215,6 +217,7 @@ public final class GridCamera {
             mPosX = minX;
             if (applyConstraints) {
                 mTargetPosX = minX;
+                mFriction = 0.0f;
             }
             retVal = true;
         }
@@ -224,6 +227,7 @@ public final class GridCamera {
             mPosX = maxX;
             if (applyConstraints) {
                 mTargetPosX = maxX;
+                mFriction = 0.0f;
             }
             retVal = true;
         }
@@ -247,7 +251,7 @@ public final class GridCamera {
                 mAmountExceeding = -maxBounceBack;
             if (mAmountExceeding > maxBounceBack)
                 mAmountExceeding = maxBounceBack;
-            mTargetPosX -= mAmountExceeding * 0.8f;
+            //mTargetPosX -= mAmountExceeding * 0.8f;
             if (mTargetPosX > maxX)
                 mTargetPosX = maxX;
             if (mTargetPosX < minX)
@@ -297,7 +301,12 @@ public final class GridCamera {
     public void update(float timeElapsed) {
         float factor = mConvergenceSpeed;
         timeElapsed = (timeElapsed * factor);
+        float oldPosX = mPosX;
         mPosX = FloatUtils.animate(mPosX, mTargetPosX, timeElapsed);
+        float diff = mPosX - oldPosX;
+        if (diff == 0)
+            mFriction = 0.0f;
+        mTargetPosX += (diff * mFriction);
         mPosY = FloatUtils.animate(mPosY, mTargetPosY, timeElapsed);
         mPosZ = FloatUtils.animate(mPosZ, mTargetPosZ, timeElapsed);
         if (mEyeZ != EYE_Z) {

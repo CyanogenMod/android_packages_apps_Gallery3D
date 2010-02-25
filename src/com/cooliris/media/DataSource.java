@@ -16,7 +16,12 @@ public interface DataSource {
     boolean performOperation(int operation, ArrayList<MediaBucket> mediaBuckets, Object data);
 
     DiskCache getThumbnailCache();
+    
+    // This method is called so that we can setup listeners for any databases that the datasource uses
+    String[] getDatabaseUris();
 
-    // Called when the user explicitly requests a refresh, or when the application is brough to the foreground.
-    void refresh(final MediaFeed feed);
+    // Called when the user explicitly requests a refresh, or when the application is brought to the foreground.
+    // Alternatively, when one or more of the database's data changes, this method will be called.
+    void refresh(final MediaFeed feed, final String[] databaseUris);
+    
 }

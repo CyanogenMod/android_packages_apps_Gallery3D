@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.opengl.GLU;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.Context;
@@ -24,7 +25,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public static final int ANCHOR_CENTER = 2;
 
     public static final int MAX_ITEMS_PER_SLOT = 12;
-    public static final int MAX_DISPLAYED_ITEMS_PER_SLOT = 8;
+    public static final int MAX_DISPLAYED_ITEMS_PER_SLOT = 4;
+    public static final int MAX_DISPLAYED_ITEMS_PER_FOCUSED_SLOT = 12;
     public static final int MAX_DISPLAY_SLOTS = 96;
     public static final int MAX_ITEMS_DRAWABLE = MAX_ITEMS_PER_SLOT * MAX_DISPLAY_SLOTS;
 
@@ -110,6 +112,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private int mFramesDirty;
     private String mRequestFocusContentUri;
     private int mFrameCount;
+    private static final String TAG = "GridLayer";
 
     public GridLayer(Context context, int itemWidth, int itemHeight, LayoutInterface layoutInterface, RenderView view) {
         mBackground = new BackgroundLayer(this);
@@ -203,6 +206,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void setState(int state) {
         boolean feedUnchanged = false;
+        mCamera.mFriction = 0.0f;
         if (mState == state) {
             feedUnchanged = true;
         }
@@ -892,7 +896,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
         // We want to add items from the middle.
         int numItems = lastBufferedVisibleSlotIndex - firstBufferedVisibleSlotIndex + 1;
-        int midPoint = (lastBufferedVisibleSlotIndex - firstBufferedVisibleSlotIndex) / 2;
+        int midPoint = currentlyVisibleSlotIndex;
         int length = displayItems.length;
         for (int i = 0; i < numItems; ++i) {
             int index = midPoint + Shared.midPointIterator(i);
@@ -915,7 +919,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             int numSlots = feed.getNumSlots();
             for (int i = 0; i < numSlots; ++i) {
                 MediaSet set = feed.getSetForSlot(i);
-                if (set != null && set.lookupContainsItem(anchorItem)) {
+                if (set != null && ArrayUtils.contains(set.getItems(), anchorItem)) {
                     newSlotIndex = i;
                     break;
                 }
@@ -935,6 +939,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
 
         // We must create a new display store now since the data has changed.
+        Log.i(TAG, "Slot changing from " + currentlyVisibleSlotIndex + " to " + newSlotIndex);
         if (newSlotIndex != Shared.INVALID) {
             if (mState == STATE_MEDIA_SETS) {
                 sDisplayList.clearExcept(displayItems);
@@ -1225,7 +1230,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (items == null || set.getNumItems() == 0) {
                 return;
             }
-            if (set.lookupContainsItem(item)) {
+            if (ArrayUtils.contains(items, item)) {
                 centerCameraForSlot(i, 1.0f);
                 break;
             }
@@ -1441,11 +1446,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     
     public void onResume() {
         if (mMediaFeed != null) {
-            mMediaFeed.refresh();
+            mMediaFeed.onResume();
         }
     }
     
     public void onPause() {
-        ;
+        if (mMediaFeed != null) {
+            mMediaFeed.onPause();
+        }
     }
 }
