@@ -1,49 +1,32 @@
 package com.cooliris.media;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.Observer;
-import java.util.TimeZone;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.database.ContentObserver;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore.Images;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
-import android.media.MediaScannerConnection;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 import com.cooliris.cache.CacheService;
 import com.cooliris.wallpaper.RandomDataSource;
 import com.cooliris.wallpaper.Slideshow;
 
 public final class Gallery extends Activity {
-    public static final TimeZone CURRENT_TIME_ZONE = TimeZone.getDefault();
-    public static float PIXEL_DENSITY = 0.0f;
-    public static final int CROP_MSG_INTERNAL = 100;
-
     private static final String TAG = "Gallery";
-    private static final int CROP_MSG = 10;
+    
+    private App mApp = null;   
     private RenderView mRenderView = null;
     private GridLayer mGridLayer;
-    private Handler mHandler;
-    private ReverseGeocoder mReverseGeocoder;
-    private boolean mPause;
-    private MediaScannerConnection mConnection;
     private WakeLock mWakeLock;
     private HashMap<String, Boolean> mAccountsEnabled = new HashMap<String, Boolean>();
     private boolean mDockSlideshow = false;
@@ -51,6 +34,7 @@ public final class Gallery extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mApp = new App(Gallery.this);
         final boolean imageManagerHasStorage = ImageManager.hasStorage();
         boolean slideshowIntent = false;
         if (isViewIntent()) {
@@ -71,31 +55,17 @@ public final class Gallery extends Activity {
             }
             return;
         }
-        if (PIXEL_DENSITY == 0.0f) {
-            DisplayMetrics metrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            PIXEL_DENSITY = metrics.density;
-        }
-        mReverseGeocoder = new ReverseGeocoder(this);
         mRenderView = new RenderView(this);
-        mGridLayer = new GridLayer(this, (int) (96.0f * PIXEL_DENSITY), (int) (72.0f * PIXEL_DENSITY), new GridLayoutInterface(4),
+        mGridLayer = new GridLayer(this, (int) (96.0f * App.PIXEL_DENSITY), (int) (72.0f * App.PIXEL_DENSITY), new GridLayoutInterface(4),
                 mRenderView);
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
-        Thread handlerThread = new Thread() {
-            public void run() {
-                Looper.prepare();
-                mHandler = new Handler();
-                Looper.loop();
-            }
-        };
-        handlerThread.start();
 
         Thread t = new Thread() {
             public void run() {
                 int numRetries = 25;
                 if (!imageManagerHasStorage) {
-                    showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
+                    mApp.showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
                     do {
                         --numRetries;
                         try {
@@ -143,9 +113,9 @@ public final class Gallery extends Activity {
                         }
                         mGridLayer.setPickIntent(true);
                         if (!imageManagerHasStorageAfterDelay) {
-                            showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
+                            mApp.showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
                         } else {
-                            showToast(getResources().getString(Res.string.pick_prompt), Toast.LENGTH_LONG);
+                            mApp.showToast(getResources().getString(Res.string.pick_prompt), Toast.LENGTH_LONG);
                         }
                     }
                 } else {
@@ -171,26 +141,6 @@ public final class Gallery extends Activity {
         };
         t.start();
         Log.i(TAG, "onCreate");
-    }
-
-    public void showToast(final String string, final int duration) {
-        mHandler.post(new Runnable() {
-            public void run() {
-                Toast.makeText(Gallery.this, string, duration).show();
-            }
-        });
-    }
-
-    public ReverseGeocoder getReverseGeocoder() {
-        return mReverseGeocoder;
-    }
-
-    public Handler getHandler() {
-        while (mHandler == null) {
-            // Wait till the handler is created.
-            ;
-        }
-        return mHandler;
     }
 
     @Override
@@ -220,9 +170,8 @@ public final class Gallery extends Activity {
         if (mRenderView != null) {
             mRenderView.onResume();
         }
-        
-        if (mPause) {
-            mHandler.post(new Runnable() {
+        if (mApp.isPaused()) {
+            mApp.getHandler().post(new Runnable() {
                 public void run() {
                     // We check to see if the authenticated accounts have
                     // changed, and
@@ -249,7 +198,7 @@ public final class Gallery extends Activity {
                     mAccountsEnabled = accountsEnabled;
                 }
             });
-            mPause = false;
+        	mApp.onResume();
         }
     }
 
@@ -267,11 +216,7 @@ public final class Gallery extends Activity {
         LocalDataSource.sThumbnailCache.flush();
         LocalDataSource.sThumbnailCacheVideo.flush();
         PicasaDataSource.sThumbnailCache.flush();
-        mPause = true;
-    }
-
-    public boolean isPaused() {
-        return mPause;
+    	mApp.onPause();
     }
 
     @Override
@@ -279,9 +224,7 @@ public final class Gallery extends Activity {
         super.onStop();
         if (mGridLayer != null)
             mGridLayer.stop();
-        if (mReverseGeocoder != null) {
-            mReverseGeocoder.flushCache();
-        }
+
         // Start the thumbnailer.
         CacheService.startCache(this, true);
     }
@@ -297,13 +240,12 @@ public final class Gallery extends Activity {
             }
             mGridLayer.shutdown();
         }
-        if (mReverseGeocoder != null)
-            mReverseGeocoder.shutdown();
         if (mRenderView != null) {
             mRenderView.shutdown();
             mRenderView = null;
         }
         mGridLayer = null;
+        mApp.shutdown();
         super.onDestroy();
         Log.i(TAG, "onDestroy");
     }
@@ -349,14 +291,14 @@ public final class Gallery extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-        case CROP_MSG: {
+        case CropImage.CROP_MSG: {
             if (resultCode == RESULT_OK) {
                 setResult(resultCode, data);
                 finish();
             }
             break;
         }
-        case CROP_MSG_INTERNAL: {
+        case CropImage.CROP_MSG_INTERNAL: {
             // We cropped an image, we must try to set the focus of the camera
             // to that image.
             if (resultCode == RESULT_OK) {
@@ -375,89 +317,5 @@ public final class Gallery extends Activity {
         if (mRenderView != null) {
             mRenderView.handleLowMemory();
         }
-    }
-
-    public void launchCropperOrFinish(final MediaItem item) {
-        final Bundle myExtras = getIntent().getExtras();
-        String cropValue = myExtras != null ? myExtras.getString("crop") : null;
-        final String contentUri = item.mContentUri;
-        if (contentUri == null)
-            return;
-        if (cropValue != null) {
-            Bundle newExtras = new Bundle();
-            if (cropValue.equals("circle")) {
-                newExtras.putString("circleCrop", "true");
-            }
-            Intent cropIntent = new Intent();
-            cropIntent.setData(Uri.parse(contentUri));
-            cropIntent.setClass(this, CropImage.class);
-            cropIntent.putExtras(newExtras);
-            // Pass through any extras that were passed in.
-            cropIntent.putExtras(myExtras);
-            startActivityForResult(cropIntent, CROP_MSG);
-        } else {
-            if (contentUri.startsWith("http://")) {
-                // This is a http uri, we must save it locally first and
-                // generate a content uri from it.
-                final ProgressDialog dialog = ProgressDialog.show(this, this.getResources().getString(Res.string.initializing),
-                        getResources().getString(Res.string.running_face_detection), true, false);
-                if (contentUri != null) {
-                    MediaScannerConnection.MediaScannerConnectionClient client = new MediaScannerConnection.MediaScannerConnectionClient() {
-                        public void onMediaScannerConnected() {
-                            if (mConnection != null) {
-                                try {
-                                    final String path = UriTexture.writeHttpDataInDirectory(Gallery.this, contentUri,
-                                            LocalDataSource.DOWNLOAD_BUCKET_NAME);
-                                    if (path != null) {
-                                        mConnection.scanFile(path, item.mMimeType);
-                                    } else {
-                                        shutdown("");
-                                    }
-                                } catch (Exception e) {
-                                    shutdown("");
-                                }
-                            }
-                        }
-
-                        public void onScanCompleted(String path, Uri uri) {
-                            shutdown(uri.toString());
-                        }
-
-                        public void shutdown(String uri) {
-                            dialog.dismiss();
-                            performReturn(myExtras, uri.toString());
-                            if (mConnection != null) {
-                                mConnection.disconnect();
-                            }
-                        }
-                    };
-                    MediaScannerConnection connection = new MediaScannerConnection(Gallery.this, client);
-                    connection.connect();
-                    mConnection = connection;
-                }
-            } else {
-                performReturn(myExtras, contentUri);
-            }
-        }
-    }
-
-    private void performReturn(Bundle myExtras, String contentUri) {
-        Intent result = new Intent(null, Uri.parse(contentUri));
-        if (myExtras != null && myExtras.getBoolean("return-data")) {
-            // The size of a transaction should be below 100K.
-            Bitmap bitmap = null;
-            try {
-                bitmap = UriTexture.createFromUri(this, contentUri, 1024, 1024, 0, null);
-            } catch (IOException e) {
-                ;
-            } catch (URISyntaxException e) {
-                ;
-            }
-            if (bitmap != null) {
-                result.putExtra("data", bitmap);
-            }
-        }
-        setResult(RESULT_OK, result);
-        finish();
     }
 }

@@ -12,6 +12,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.Context;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class GridLayer extends RootLayer implements MediaFeed.Listener, TimeBar.Listener {
@@ -234,8 +235,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 }
             }
             layoutInterface.mNumRows = numMaxRows;
-            layoutInterface.mSpacingX = (int) (10 * Gallery.PIXEL_DENSITY);
-            layoutInterface.mSpacingY = (int) (10 * Gallery.PIXEL_DENSITY);
+            layoutInterface.mSpacingX = (int) (10 * App.PIXEL_DENSITY);
+            layoutInterface.mSpacingY = (int) (10 * App.PIXEL_DENSITY);
             if (mState == STATE_MEDIA_SETS) {
                 // Entering album.
                 mInAlbum = true;
@@ -270,13 +271,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             }
             disableLocationFiltering();
             layoutInterface.mNumRows = numMaxRows - 1;
-            layoutInterface.mSpacingX = (int) (100 * Gallery.PIXEL_DENSITY);
-            layoutInterface.mSpacingY = (int) (70 * Gallery.PIXEL_DENSITY * yStretch);
+            layoutInterface.mSpacingX = (int) (100 * App.PIXEL_DENSITY);
+            layoutInterface.mSpacingY = (int) (70 * App.PIXEL_DENSITY * yStretch);
             break;
         case STATE_FULL_SCREEN:
             layoutInterface.mNumRows = 1;
-            layoutInterface.mSpacingX = (int) (40 * Gallery.PIXEL_DENSITY);
-            layoutInterface.mSpacingY = (int) (40 * Gallery.PIXEL_DENSITY);
+            layoutInterface.mSpacingX = (int) (40 * App.PIXEL_DENSITY);
+            layoutInterface.mSpacingY = (int) (40 * App.PIXEL_DENSITY);
             if (mState != STATE_FULL_SCREEN) {
                 mHud.getPathBar().pushLabel(Res.drawable.ic_fs_details, "", new Runnable() {
                     public void run() {
@@ -299,8 +300,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             disableLocationFiltering();
             mInputProcessor.clearSelection();
             layoutInterface.mNumRows = numMaxRows - 1;
-            layoutInterface.mSpacingX = (int) (100 * Gallery.PIXEL_DENSITY);
-            layoutInterface.mSpacingY = (int) (70 * Gallery.PIXEL_DENSITY * yStretch);
+            layoutInterface.mSpacingX = (int) (100 * App.PIXEL_DENSITY);
+            layoutInterface.mSpacingY = (int) (70 * App.PIXEL_DENSITY * yStretch);
             if (mInAlbum) {
                 if (mState == STATE_FULL_SCREEN) {
                     mHud.getPathBar().popLabel();
@@ -1149,8 +1150,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public int getMetadataSlotIndexForScreenPosition(int posX, int posY) {
-        return getSlotForScreenPosition(posX, posY, mCamera.mItemWidth + (int) (100 * Gallery.PIXEL_DENSITY), mCamera.mItemHeight
-                + (int) (100 * Gallery.PIXEL_DENSITY));
+        return getSlotForScreenPosition(posX, posY, mCamera.mItemWidth + (int) (100 * App.PIXEL_DENSITY), mCamera.mItemHeight
+                + (int) (100 * App.PIXEL_DENSITY));
     }
 
     public int getSlotIndexForScreenPosition(int posX, int posY) {

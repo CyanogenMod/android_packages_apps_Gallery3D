@@ -16,6 +16,7 @@ package com.cooliris.media;
  * limitations under the License.
  */
 
+import com.cooliris.app.App;
 import com.cooliris.media.PhotoAppWidgetProvider.PhotoDatabaseHelper;
 
 import android.app.Activity;
@@ -32,9 +33,12 @@ public class PhotoAppWidgetBind extends Activity {
     private static final String TAG = "PhotoAppWidgetBind";
     private static final String EXTRA_APPWIDGET_BITMAPS = "com.android.camera.appwidgetbitmaps";
 
+    private App mApp = null;    
+    
     @Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        mApp = new App(PhotoAppWidgetBind.this);        
         finish();
 
         // The caller has requested that we bind a given bitmap to a specific
@@ -67,4 +71,22 @@ public class PhotoAppWidgetBind extends Activity {
         }
         helper.close();
     }
+    
+    @Override
+    public void onPause() {
+        super.onPause();
+    	mApp.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    	mApp.onResume();
+    }
+    
+    @Override
+    public void onDestroy() {
+    	mApp.shutdown();
+    	super.onDestroy();
+    }       
 }

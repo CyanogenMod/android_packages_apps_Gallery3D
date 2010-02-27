@@ -3,7 +3,9 @@ package com.cooliris.media;
 import java.util.Random;
 
 import android.content.Context;
+import android.util.Log;
 
+import com.cooliris.app.App;
 import com.cooliris.media.FloatUtils;
 
 /**
@@ -31,6 +33,12 @@ public final class DisplayItem {
     public float mAnimatedPlaceholderFade = 0f;
     public boolean mAlive;
     public Vector3f mAnimatedPosition = new Vector3f();
+    public int mCurrentSlotIndex;
+    private boolean mPerformingScale;
+    private float mSpan;
+    private float mSpanDirection;
+    private float mStartOffset;
+    private static final String TAG = "DisplayItem";
 
     public DisplayItem(MediaItem item) {
         mItemRef = item;
@@ -38,6 +46,7 @@ public final class DisplayItem {
         mImageTheta = item.mRotation;
         if (item == null)
             throw new UnsupportedOperationException("Cannot create a displayitem from a null MediaItem.");
+        mCurrentSlotIndex = Shared.INVALID;
     }
 
     public DirectLinkedList.Entry<DisplayItem> getAnimatablesEntry() {
@@ -84,13 +93,14 @@ public final class DisplayItem {
                 mTargetTheta = 30.0f * (0.5f - (float) Math.random());
                 mJitteredPosition.x = sign * 12.0f * seed + (0.5f - random.nextFloat()) * 4 * seed;
                 mJitteredPosition.y = sign * 4 + ((sign == 1) ? -8.0f : sign * (random.nextFloat()) * 16.0f);
-                mJitteredPosition.x *= Gallery.PIXEL_DENSITY;
-                mJitteredPosition.y *= Gallery.PIXEL_DENSITY;
+                mJitteredPosition.x *= App.PIXEL_DENSITY;
+                mJitteredPosition.y *= App.PIXEL_DENSITY;
                 mJitteredPosition.z = seed * STACK_SPACING;
             }
         }
         mTargetPosition.add(mJitteredPosition);
         mStacktopPosition.set(position);
+        mStartOffset = 0.0f;
     }
 
     public int getStackIndex() {
@@ -149,7 +159,8 @@ public final class DisplayItem {
      */
     public boolean isAnimating() {
         return mAlive
-                && (!mAnimatedPosition.equals(mTargetPosition) || mAnimatedTheta != mTargetTheta
+                && (mPerformingScale ||
+                        !mAnimatedPosition.equals(mTargetPosition) || mAnimatedTheta != mTargetTheta
                         || mAnimatedImageTheta != mImageTheta || mAnimatedPlaceholderFade != 1f);
     }
 
@@ -237,12 +248,26 @@ public final class DisplayItem {
             if (seed != 0 && mTargetTheta == 0.0f) {
                 mTargetTheta = 30.0f * (0.5f - (float) Math.random());
             }
+            mStartOffset = 0.0f;
         }
     }
 
     public final void setOffset(boolean useOffset, boolean pushDown, float span, float dx1, float dy1, float dx2, float dy2) {
         int seed = mStackId;
         if (useOffset) {
+            mPerformingScale = true;
+            float spanDelta = span - mSpan;
+            float maxSlots = mItemRef.mParentMediaSet.getNumExpectedItems();
+            maxSlots = FloatUtils.clamp(maxSlots, 0, GridLayer.MAX_ITEMS_PER_SLOT);
+            if (Math.abs(spanDelta) < 10 * App.PIXEL_DENSITY) {
+                // almost the same span
+                mStartOffset += (mSpanDirection * 0.1f);
+                mStartOffset = FloatUtils.clamp(mStartOffset, 0, maxSlots);
+            } else {
+                mSpanDirection = Math.signum(spanDelta);
+                Log.i(TAG, "Span Direction " + mSpanDirection);
+            }
+            mSpan = span;
             mTargetPosition.set(mStacktopPosition);
             if (!pushDown) {
                 // If it is the stacktop, we track the top finger, ie, x1, y1
@@ -251,21 +276,23 @@ public final class DisplayItem {
                 // Instead of using linear interpolation, we will also try to
                 // look at the spread value to decide how many move at a given
                 // point of time.
-                int maxSeedVal = (int)(span / (100 * Gallery.PIXEL_DENSITY));
-                if (maxSeedVal < 2) {
-                    maxSeedVal = 2;
-                }
-                float seedFactor = ((float) seed) / maxSeedVal;
-                if (seedFactor > 1.0f)
-                    seedFactor = 1.0f;
+                int maxSeedVal = (int)(span / (125 * App.PIXEL_DENSITY));
+                maxSeedVal = (int)FloatUtils.clamp(maxSeedVal, 2, maxSlots - 1);
+                float startOffset = FloatUtils.clamp(mStartOffset, 0, maxSlots - maxSeedVal - 1);
+                float offsetSeed = seed - startOffset;
+                float seedFactor = offsetSeed / maxSeedVal;
+                seedFactor = FloatUtils.clamp(seedFactor, 0.0f, 1.0f);
                 float dx = dx2 * seedFactor + (1.0f - seedFactor) * dx1;
                 float dy = dy2 * seedFactor + (1.0f - seedFactor) * dy1;
                 mTargetPosition.add(dx, dy, seed * 0.1f);
                 mTargetTheta = 0.0f;
             } else {
+                mStartOffset = 0.0f;
                 mTargetPosition.z = seed * STACK_SPACING + 3.0f;
             }
         } else {
+            mPerformingScale = false;
+            mStartOffset = 0.0f;
             if (seed > 3) {
                 seed = 3;
             }

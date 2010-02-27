@@ -8,6 +8,7 @@ import android.content.Context;
 
 import android.content.res.Resources;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 /**
@@ -286,8 +287,8 @@ public final class MediaClustering {
 
                 if (minTimestamp != -1L) {
                     if (mIsPicassaAlbum) {
-                        minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
-                        maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
+                        minTimestamp -= App.CURRENT_TIME_ZONE.getOffset(minTimestamp);
+                        maxTimestamp -= App.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
                     }
                     String minDay = DateFormat.format(MMDDYY_FORMAT, minTimestamp).toString();
                     String maxDay = DateFormat.format(MMDDYY_FORMAT, maxTimestamp).toString();

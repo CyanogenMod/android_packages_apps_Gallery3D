@@ -8,6 +8,8 @@ import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import com.cooliris.app.App;
+
 public final class GridInputProcessor implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener,
         ScaleGestureDetector.OnScaleGestureListener {
     private int mCurrentFocusSlot;
@@ -631,9 +633,9 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 final MediaItem item = displayItem.mItemRef;
                 if (layer.getPickIntent()) {
                     // we need to return this item
-                    ((Gallery) mContext).getHandler().post(new Runnable() {
+                    App.get(mContext).getHandler().post(new Runnable() {
                         public void run() {
-                            ((Gallery) mContext).launchCropperOrFinish(item);
+                            CropImage.launchCropperOrFinish(mContext, item);
                         }
                     });
                     return;

@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.microedition.khronos.opengles.GL11;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,6 +19,7 @@ import android.provider.MediaStore;
 import android.util.FloatMath;
 import android.view.MotionEvent;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 import com.cooliris.media.MenuBar.Menu;
 import com.cooliris.media.PopupMenu.Option;
@@ -108,10 +110,10 @@ public final class HudLayer extends Layer {
             mTimeBar = new TimeBar(context);
             mPathBar = new PathBarLayer();
         }
-        mTopRightButton.setSize((int) (100 * Gallery.PIXEL_DENSITY), (int) (94 * Gallery.PIXEL_DENSITY));
+        mTopRightButton.setSize((int) (100 * App.PIXEL_DENSITY), (int) (94 * App.PIXEL_DENSITY));
 
-        mZoomInButton.setSize(43 * Gallery.PIXEL_DENSITY, 43 * Gallery.PIXEL_DENSITY);
-        mZoomOutButton.setSize(43 * Gallery.PIXEL_DENSITY, 43 * Gallery.PIXEL_DENSITY);
+        mZoomInButton.setSize(43 * App.PIXEL_DENSITY, 43 * App.PIXEL_DENSITY);
+        mZoomOutButton.setSize(43 * App.PIXEL_DENSITY, 43 * App.PIXEL_DENSITY);
         mZoomInButton.setImages(ZOOM_IN_ICON, ZOOM_IN_ICON_PRESSED);
         mZoomInButton.setAction(mZoomInButtonAction);
         mZoomOutButton.setImages(ZOOM_OUT_ICON, ZOOM_OUT_ICON_PRESSED);
@@ -237,7 +239,7 @@ public final class HudLayer extends Layer {
                 .getResources().getDrawable(Res.drawable.ic_menu_view_details), new Runnable() {
             public void run() {
                 ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
-                final AlertDialog.Builder builder = new AlertDialog.Builder((Gallery) mContext);
+                final AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
                 builder.setTitle(mContext.getResources().getString(Res.string.details));
                 boolean foundDataToDisplay = true;
 
@@ -255,7 +257,7 @@ public final class HudLayer extends Layer {
                 mGridLayer.deselectAll();
                 if (foundDataToDisplay) {
                     builder.setNeutralButton(Res.string.details_ok, null);
-                    ((Gallery) mContext).getHandler().post(new Runnable() {
+                    App.get(mContext).getHandler().post(new Runnable() {
                         public void run() {
                             builder.show();
                         }
@@ -310,7 +312,7 @@ public final class HudLayer extends Layer {
                                 intent.setClass(mContext, Photographs.class);
                                 intent.setData(Uri.parse(item.mContentUri));
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                ((Gallery) mContext).startActivityForResult(intent, 0);
+                                ((Activity) mContext).startActivityForResult(intent, 0);
                             }
                         }
                     }) };
@@ -331,11 +333,11 @@ public final class HudLayer extends Layer {
                                 intent.setClass(mContext, Photographs.class);
                                 intent.setData(Uri.parse(item.mContentUri));
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                ((Gallery) mContext).startActivityForResult(intent, 0);
+                                ((Activity) mContext).startActivityForResult(intent, 0);
                             } else {
                                 Intent intent = Util.createSetAsIntent(Uri.parse(item.mContentUri), item.mMimeType);
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                ((Gallery) mContext).startActivity(Intent.createChooser(intent, ((Gallery) mContext)
+                                ((Activity) mContext).startActivity(Intent.createChooser(intent, mContext
                                         .getText(Res.string.set_image)));
                             }
                         }
@@ -352,7 +354,7 @@ public final class HudLayer extends Layer {
                             final Intent intent = new Intent("com.android.camera.action.CROP");
                             intent.setClass(mContext, CropImage.class);
                             intent.setData(Uri.parse(item.mContentUri));
-                            ((Gallery) mContext).startActivityForResult(intent, Gallery.CROP_MSG_INTERNAL);
+                            ((Activity) mContext).startActivityForResult(intent, CropImage.CROP_MSG_INTERNAL);
                         }
                     }) };
         }
@@ -418,17 +420,17 @@ public final class HudLayer extends Layer {
         final float height = mHeight;
         closeSelectionMenu();
 
-        mTimeBar.setPosition(0f, height - TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
-        mTimeBar.setSize(width, TimeBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        mTimeBar.setPosition(0f, height - TimeBar.HEIGHT * App.PIXEL_DENSITY);
+        mTimeBar.setSize(width, TimeBar.HEIGHT * App.PIXEL_DENSITY);
         mSelectionMenuTop.setPosition(0f, 0);
-        mSelectionMenuTop.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
-        mSelectionMenuBottom.setPosition(0f, height - MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
-        mSelectionMenuBottom.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        mSelectionMenuTop.setSize(width, MenuBar.HEIGHT * App.PIXEL_DENSITY);
+        mSelectionMenuBottom.setPosition(0f, height - MenuBar.HEIGHT * App.PIXEL_DENSITY);
+        mSelectionMenuBottom.setSize(width, MenuBar.HEIGHT * App.PIXEL_DENSITY);
 
-        mFullscreenMenu.setPosition(0f, height - MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
-        mFullscreenMenu.setSize(width, MenuBar.HEIGHT * Gallery.PIXEL_DENSITY);
+        mFullscreenMenu.setPosition(0f, height - MenuBar.HEIGHT * App.PIXEL_DENSITY);
+        mFullscreenMenu.setSize(width, MenuBar.HEIGHT * App.PIXEL_DENSITY);
 
-        mPathBar.setPosition(0f, -4f * Gallery.PIXEL_DENSITY);
+        mPathBar.setPosition(0f, -4f * App.PIXEL_DENSITY);
         computeSizeForPathbar();
 
         mTopRightButton.setPosition(width - mTopRightButton.getWidth(), 0f);
@@ -438,9 +440,9 @@ public final class HudLayer extends Layer {
 
     private void computeSizeForPathbar() {
         float pathBarWidth = mWidth
-                - ((mGridLayer.getState() == GridLayer.STATE_FULL_SCREEN) ? 32 * Gallery.PIXEL_DENSITY
-                        : 120 * Gallery.PIXEL_DENSITY);
-        mPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * Gallery.PIXEL_DENSITY));
+                - ((mGridLayer.getState() == GridLayer.STATE_FULL_SCREEN) ? 32 * App.PIXEL_DENSITY
+                        : 120 * App.PIXEL_DENSITY);
+        mPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * App.PIXEL_DENSITY));
         mPathBar.recomputeComponents();
     }
 
@@ -481,7 +483,7 @@ public final class HudLayer extends Layer {
         int pressedImage = 0;
         Runnable action = null;
         final ImageButton topRightButton = mTopRightButton;
-        int height = (int) (94 * Gallery.PIXEL_DENSITY);
+        int height = (int) (94 * App.PIXEL_DENSITY);
         switch (state) {
         case GridLayer.STATE_MEDIA_SETS:
             image = CAMERA_BUTTON_ICON;
@@ -502,7 +504,7 @@ public final class HudLayer extends Layer {
         default:
             break;
         }
-        topRightButton.setSize((int) (100 * Gallery.PIXEL_DENSITY), height);
+        topRightButton.setSize((int) (100 * App.PIXEL_DENSITY), height);
         topRightButton.setImages(image, pressedImage);
         topRightButton.setAction(action);
     }
@@ -739,7 +741,7 @@ public final class HudLayer extends Layer {
         final Intent resolvedIntent = new Intent(intent);
         ActivityInfo ai = info.activityInfo;
         resolvedIntent.setComponent(new ComponentName(ai.applicationInfo.packageName, ai.name));
-        ((Gallery) mContext).getHandler().post(new Runnable() {
+        App.get(mContext).getHandler().post(new Runnable() {
             public void run() {
                 mContext.startActivity(resolvedIntent);
             }

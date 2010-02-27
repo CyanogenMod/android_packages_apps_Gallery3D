@@ -7,6 +7,7 @@ import javax.microedition.khronos.opengles.GL11;
 import android.graphics.Typeface;
 import android.view.MotionEvent;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class PathBarLayer extends Layer {
@@ -18,7 +19,7 @@ public final class PathBarLayer extends Layer {
     private Component mTouchItem = null;
 
     static {
-        sPathFormat.fontSize = 18f * Gallery.PIXEL_DENSITY;
+        sPathFormat.fontSize = 18f * App.PIXEL_DENSITY;
     }
 
     public PathBarLayer() {
@@ -129,7 +130,7 @@ public final class PathBarLayer extends Layer {
         }
 
         public float getIconWidth() {
-            return ICON_WIDTH * Gallery.PIXEL_DENSITY;
+            return ICON_WIDTH * App.PIXEL_DENSITY;
         }
     }
 
@@ -149,9 +150,9 @@ public final class PathBarLayer extends Layer {
                     continue;
                 float iconWidth = (component.icon == 0) ? 0 : component.getIconWidth();
                 if (iconWidth == 0) {
-                    iconWidth = 8 * Gallery.PIXEL_DENSITY;
+                    iconWidth = 8 * App.PIXEL_DENSITY;
                 }
-                float offset = 5 * Gallery.PIXEL_DENSITY;
+                float offset = 5 * App.PIXEL_DENSITY;
                 float thisComponentWidth = (i != numComponents - 1) ? iconWidth + offset : component.texture.computeTextWidth()
                         + iconWidth + offset;
                 component.width = thisComponentWidth;
@@ -180,7 +181,7 @@ public final class PathBarLayer extends Layer {
         final Texture join = view.getResource(JOIN);
         final Texture cap = view.getResource(CAP);
         final float y = mY + 3;
-        int x = (int) (3 * Gallery.PIXEL_DENSITY);
+        int x = (int) (3 * App.PIXEL_DENSITY);
         float height = mHeight;
         synchronized (mComponents) {
             int numComponents = mComponents.size();
@@ -203,7 +204,7 @@ public final class PathBarLayer extends Layer {
                     // Draw the cap on the right edge.
                     view.draw2D(cap, x + width, y);
                 }
-                float xOffset = 5 * Gallery.PIXEL_DENSITY;
+                float xOffset = 5 * App.PIXEL_DENSITY;
                 // Draw the label.
                 final int[] icons = component.animatedIcons;
 
@@ -213,18 +214,18 @@ public final class PathBarLayer extends Layer {
                 final Texture icon = view.getResource(iconId);
                 if (icon != null) {
                     view.loadTexture(icon);
-                    view.draw2D(icon, x + xOffset, y - 2 * Gallery.PIXEL_DENSITY);
+                    view.draw2D(icon, x + xOffset, y - 2 * App.PIXEL_DENSITY);
                 }
                 if (i == numComponents - 1) {
                     final StringTexture texture = component.texture;
                     view.loadTexture(texture);
                     float iconWidth = component.getIconWidth();
                     if (texture.computeTextWidth() <= (width - iconWidth)) {
-                        float textOffset = (iconWidth == 0) ? 8 * Gallery.PIXEL_DENSITY : iconWidth;
+                        float textOffset = (iconWidth == 0) ? 8 * App.PIXEL_DENSITY : iconWidth;
                         view.draw2D(texture, x + textOffset, y + 5);
                     }
                 }
-                x += (int) (width + (21 * Gallery.PIXEL_DENSITY + 0.5f));
+                x += (int) (width + (21 * App.PIXEL_DENSITY + 0.5f));
             }
         }
     }
@@ -268,12 +269,12 @@ public final class PathBarLayer extends Layer {
 
     public void recomputeComponents() {
         float width = mWidth;
-        width -= 20f * Gallery.PIXEL_DENSITY;
+        width -= 20f * App.PIXEL_DENSITY;
         synchronized (mComponents) {
             int numComponents = mComponents.size();
             for (int i = 0; i < numComponents; i++) {
                 Component component = mComponents.get(i);
-                width -= (component.getIconWidth() + 20.0f * Gallery.PIXEL_DENSITY);
+                width -= (component.getIconWidth() + 20.0f * App.PIXEL_DENSITY);
                 component.computeLabel(width);
             }
         }

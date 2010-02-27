@@ -17,6 +17,7 @@ import android.os.SystemClock;
 import android.text.TextPaint;
 import android.view.MotionEvent;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class PopupMenu extends Layer {
@@ -42,10 +43,10 @@ public final class PopupMenu extends Layer {
 
     static {
         TextPaint paint = new TextPaint();
-        paint.setTextSize(17f * Gallery.PIXEL_DENSITY);
+        paint.setTextSize(17f * App.PIXEL_DENSITY);
         paint.setColor(0xffffffff);
         paint.setAntiAlias(true);
-        ICON_TITLE_CONFIG = new IconTitleDrawable.Config((int) (45 * Gallery.PIXEL_DENSITY), (int) (34 * Gallery.PIXEL_DENSITY),
+        ICON_TITLE_CONFIG = new IconTitleDrawable.Config((int) (45 * App.PIXEL_DENSITY), (int) (34 * App.PIXEL_DENSITY),
                 paint);
         SRC_PAINT.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
     }
@@ -203,7 +204,7 @@ public final class PopupMenu extends Layer {
         // Measure the menu options.
         Option[] options = mOptions;
         int numOptions = options.length;
-        int maxWidth = (int) (ICON_TITLE_MIN_WIDTH * Gallery.PIXEL_DENSITY);
+        int maxWidth = (int) (ICON_TITLE_MIN_WIDTH * App.PIXEL_DENSITY);
         for (int i = 0; i != numOptions; ++i) {
             Option option = options[i];
             IconTitleDrawable drawable = option.mDrawable;
@@ -218,9 +219,9 @@ public final class PopupMenu extends Layer {
         }
 
         // Layout the menu options.
-        int rowHeight = (int) (mRowHeight * Gallery.PIXEL_DENSITY);
-        int left = (int) (PADDING_LEFT * Gallery.PIXEL_DENSITY);
-        int top = (int) (PADDING_TOP * Gallery.PIXEL_DENSITY);
+        int rowHeight = (int) (mRowHeight * App.PIXEL_DENSITY);
+        int left = (int) (PADDING_LEFT * App.PIXEL_DENSITY);
+        int top = (int) (PADDING_TOP * App.PIXEL_DENSITY);
         int right = left + maxWidth;
         for (int i = 0; i != numOptions; ++i) {
             Option option = options[i];
@@ -231,7 +232,7 @@ public final class PopupMenu extends Layer {
         }
 
         // Resize the popup menu.
-        setSize(right + PADDING_RIGHT * Gallery.PIXEL_DENSITY, top + PADDING_BOTTOM * Gallery.PIXEL_DENSITY);
+        setSize(right + PADDING_RIGHT * App.PIXEL_DENSITY, top + PADDING_BOTTOM * App.PIXEL_DENSITY);
 
     }
 
@@ -289,7 +290,7 @@ public final class PopupMenu extends Layer {
 
         @Override
         protected void onSizeChanged() {
-            mBackgroundRect.set(0, 0, getWidth(), getHeight() - (int) (POPUP_TRIANGLE_EXTRA_HEIGHT * Gallery.PIXEL_DENSITY));
+            mBackgroundRect.set(0, 0, getWidth(), getHeight() - (int) (POPUP_TRIANGLE_EXTRA_HEIGHT * App.PIXEL_DENSITY));
         }
 
         @Override

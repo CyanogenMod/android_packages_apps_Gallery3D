@@ -16,6 +16,7 @@ package com.cooliris.media;
  * limitations under the License.
  */
 
+import com.cooliris.app.App;
 import com.cooliris.media.PhotoAppWidgetProvider.PhotoDatabaseHelper;
 
 import android.app.Activity;
@@ -31,11 +32,13 @@ public class PhotoAppWidgetConfigure extends Activity {
     private static final String TAG = "PhotoAppWidgetConfigure";
     static final int REQUEST_GET_PHOTO = 2;
 
+    private App mApp = null; 
     int mAppWidgetId = -1;
 
     @Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        mApp = new App(PhotoAppWidgetConfigure.this);
 
         // Someone is requesting that we configure the given mAppWidgetId, which
         // means we prompt the user to pick and crop a photo.
@@ -61,6 +64,24 @@ public class PhotoAppWidgetConfigure extends Activity {
         startActivityForResult(intent, REQUEST_GET_PHOTO);
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+    	mApp.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    	mApp.onResume();
+    }
+    
+    @Override
+    public void onDestroy() {
+    	mApp.shutdown();
+    	super.onDestroy();
+    }    
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK && mAppWidgetId != -1) {

@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Process;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 import com.cooliris.media.MediaClustering.Cluster;
 
@@ -416,8 +417,8 @@ public final class MediaFeed implements Runnable {
     }
 
     private void showToast(final String string, final int duration, final boolean centered) {
-        if (mContext != null && !((Gallery) mContext).isPaused()) {
-            ((Gallery) mContext).getHandler().post(new Runnable() {
+        if (mContext != null && !App.get(mContext).isPaused()) {
+           App.get(mContext).getHandler().post(new Runnable() {
                 public void run() {
                     if (mContext != null) {
                         Toast toast = Toast.makeText(mContext, string, duration);
@@ -456,8 +457,9 @@ public final class MediaFeed implements Runnable {
                 sleepMs = 300;
                 if (!mMediaFeedNeedsToRun)
                     continue;
-                if (((Gallery) mContext).isPaused())
-                    continue;
+                App app = App.get(mContext);
+                if(app == null || app.isPaused())
+                	continue;
                 mMediaFeedNeedsToRun = false;
                 ArrayList<MediaSet> mediaSets = mMediaSets;
                 synchronized (mediaSets) {
@@ -798,7 +800,7 @@ public final class MediaFeed implements Runnable {
                     final String uri = uris[i];
                     final ContentObserver presentObserver = observers.get(uri);
                     if (presentObserver == null) {
-                        final Handler handler = gallery.getHandler();
+                        final Handler handler = App.get(mContext).getHandler();
                         final ContentObserver observer = new ContentObserver(handler) {
                             public void onChange(boolean selfChange) {
                                 if (!mWaitingForMediaScanner) {

@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import javax.microedition.khronos.opengles.GL11;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class GridDrawables {
@@ -82,11 +83,11 @@ public final class GridDrawables {
 
             // We create supplementary quads for the checkmarks, video overlay
             // and location button
-            float sizeOfSelectedIcon = 32 * Gallery.PIXEL_DENSITY; // In pixels.
+            float sizeOfSelectedIcon = 32 * App.PIXEL_DENSITY; // In pixels.
             sizeOfSelectedIcon /= itemHeight;
-            float sizeOfLocationIcon = 52 * Gallery.PIXEL_DENSITY; // In pixels.
+            float sizeOfLocationIcon = 52 * App.PIXEL_DENSITY; // In pixels.
             sizeOfLocationIcon /= itemHeight;
-            float sizeOfSourceIcon = 76 * Gallery.PIXEL_DENSITY; // In pixels.
+            float sizeOfSourceIcon = 76 * App.PIXEL_DENSITY; // In pixels.
             sizeOfSourceIcon /= itemHeight;
             sSelectedGrid = GridQuad.createGridQuad(sizeOfSelectedIcon, sizeOfSelectedIcon, -0.5f, 0.25f, 1.0f, 1.0f, false);
             sVideoGrid = GridQuad.createGridQuad(sizeOfSelectedIcon, sizeOfSelectedIcon, -0.08f, -0.09f, 1.0f, 1.0f, false);
@@ -94,9 +95,9 @@ public final class GridDrawables {
             sSourceIconGrid = GridQuad.createGridQuad(sizeOfSourceIcon, sizeOfSourceIcon, 0, 0, 1.0f, 1.0f, false);
 
             // We create the quad for the text label.
-            float seedTextWidth = (Gallery.PIXEL_DENSITY < 1.5f) ? 128.0f : 256.0f;
+            float seedTextWidth = (App.PIXEL_DENSITY < 1.5f) ? 128.0f : 256.0f;
             float textWidth = (seedTextWidth / (float) itemWidth) * width;
-            float textHeightPow2 = (Gallery.PIXEL_DENSITY < 1.5f) ? 32.0f : 64.0f;
+            float textHeightPow2 = (App.PIXEL_DENSITY < 1.5f) ? 32.0f : 64.0f;
             float textHeight = (textHeightPow2 / (float) itemHeight) * height;
             float textOffsetY = 0.0f;
             sTextGrid = GridQuad.createGridQuad(textWidth, textHeight, 0, textOffsetY, 1.0f, 1.0f, false);

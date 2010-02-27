@@ -7,6 +7,7 @@ import java.util.Date;
 import android.content.Context;
 import android.content.res.Resources;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class DetailMode {
@@ -75,8 +76,8 @@ public final class DetailMode {
             long minTimestamp = selectedItemsSet.mMinTimestamp;
             long maxTimestamp = selectedItemsSet.mMaxTimestamp;
             if (selectedItemsSet.isPicassaSet()) {
-                minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
-                maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
+                minTimestamp -= App.CURRENT_TIME_ZONE.getOffset(minTimestamp);
+                maxTimestamp -= App.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
             strings.add(resources.getString(Res.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
             strings.add(resources.getString(Res.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
@@ -84,8 +85,8 @@ public final class DetailMode {
             long minTimestamp = selectedItemsSet.mMinAddedTimestamp;
             long maxTimestamp = selectedItemsSet.mMaxAddedTimestamp;
             if (selectedItemsSet.isPicassaSet()) {
-                minTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(minTimestamp);
-                maxTimestamp -= Gallery.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
+                minTimestamp -= App.CURRENT_TIME_ZONE.getOffset(minTimestamp);
+                maxTimestamp -= App.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
             }
             strings.add(resources.getString(Res.string.start) + ": " + dateTimeFormat.format(new Date(minTimestamp)));
             strings.add(resources.getString(Res.string.end) + ": " + dateTimeFormat.format(new Date(maxTimestamp)));
@@ -100,7 +101,7 @@ public final class DetailMode {
             locationString = selectedItemsSet.mReverseGeocodedLocation;
             if (locationString == null) {
                 // Try computing the location if it does not exist.
-                ReverseGeocoder reverseGeocoder = ((Gallery) context).getReverseGeocoder();
+                ReverseGeocoder reverseGeocoder = App.get(context).getReverseGeocoder();
                 locationString = reverseGeocoder.computeMostGranularCommonLocation(selectedItemsSet);
             }
         }
@@ -129,13 +130,13 @@ public final class DetailMode {
         if (item.isDateTakenValid()) {
             long dateTaken = item.mDateTakenInMs;
             if (item.isPicassaItem()) {
-                dateTaken -= Gallery.CURRENT_TIME_ZONE.getOffset(dateTaken);
+                dateTaken -= App.CURRENT_TIME_ZONE.getOffset(dateTaken);
             }
             strings[2] = resources.getString(Res.string.taken_on) + ": " + dateTimeFormat.format(new Date(dateTaken));
         } else if (item.isDateAddedValid()) {
             long dateAdded = item.mDateAddedInSec * 1000;
             if (item.isPicassaItem()) {
-                dateAdded -= Gallery.CURRENT_TIME_ZONE.getOffset(dateAdded);
+                dateAdded -= App.CURRENT_TIME_ZONE.getOffset(dateAdded);
             }
             // TODO: Make this added_on as soon as translations are ready.
             // strings[2] = resources.getString(Res.string.added_on) + ": " +
@@ -150,7 +151,7 @@ public final class DetailMode {
         } else {
             strings[3] = resources.getString(Res.string.album) + ": " + parentMediaSet.mName;
         }
-        ReverseGeocoder reverseGeocoder = ((Gallery) context).getReverseGeocoder();
+        ReverseGeocoder reverseGeocoder = App.get(context).getReverseGeocoder();
         String locationString = item.getReverseGeocodedLocation(reverseGeocoder);
         if (locationString == null || locationString.length() == 0) {
             locationString = context.getResources().getString(Res.string.location_unknown);

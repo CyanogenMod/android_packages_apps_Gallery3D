@@ -9,6 +9,7 @@ import javax.microedition.khronos.opengles.GL11;
 
 import android.content.Context;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class GridDrawManager {
@@ -76,7 +77,7 @@ public final class GridDrawManager {
 
         StringTexture.Config stc = new StringTexture.Config();
         stc.bold = true;
-        stc.fontSize = 16 * Gallery.PIXEL_DENSITY;
+        stc.fontSize = 16 * App.PIXEL_DENSITY;
         stc.sizeMode = StringTexture.Config.SIZE_EXACT;
         stc.overflowMode = StringTexture.Config.OVERFLOW_FADE;
         mNoItemsTexture = new StringTexture(context.getResources().getString(Res.string.no_items), stc);
@@ -128,11 +129,14 @@ public final class GridDrawManager {
             int index = itrSlotIndex;
             boolean priority = !(index < firstVisibleSlot || index > lastVisibleSlot);
             int startSlotIndex = 0;
-            for (int j = GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT - 1; j >= 0; --j) {
+            final int maxDisplayedItemsPerSlot = (index == mCurrentScaleSlot) ? GridLayer.MAX_DISPLAYED_ITEMS_PER_FOCUSED_SLOT
+                    : GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT;
+            for (int j = maxDisplayedItemsPerSlot - 1; j >= 0; --j) {
                 DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + j];
                 if (displayItem == null) {
                     continue;
                 } else {
+                    displayItem.mCurrentSlotIndex = index;
                     Texture texture = displayItem.getThumbnailImage(context, sThumbnailConfig);
                     if (texture != null && texture.isLoaded() == false) {
                         startSlotIndex = j;
@@ -141,7 +145,7 @@ public final class GridDrawManager {
                 }
             }
             // Prime the textures in the reverse order.
-            for (int j = 0; j < GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT; ++j) {
+            for (int j = 0; j < maxDisplayedItemsPerSlot; ++j) {
                 DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + j];
                 if (displayItem == null) {
                     continue;
@@ -165,7 +169,7 @@ public final class GridDrawManager {
             view.prime(drawables.mTexturePlaceholder, true);
             Texture placeholder = (state == GridLayer.STATE_GRID_VIEW) ? drawables.mTexturePlaceholder : null;
             final boolean pushDown = (state == GridLayer.STATE_GRID_VIEW || state == GridLayer.STATE_FULL_SCREEN) ? false : true;
-            for (int j = startSlotIndex; j < GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT; ++j) {
+            for (int j = startSlotIndex; j < GridLayer.MAX_ITEMS_PER_SLOT; ++j) {
                 DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + j];
                 if (displayItem == null) {
                     break;
@@ -197,6 +201,8 @@ public final class GridDrawManager {
                             }
                         }
                     }
+                    if (j >= maxDisplayedItemsPerSlot)
+                        continue;
                     Texture texture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
                     if (texture != null) {
                         if ((!displayItem.isAnimating() || !texture.isLoaded())
@@ -297,7 +303,7 @@ public final class GridDrawManager {
                     Texture hiRes = (zoomValue != 1.0f && i == 0 && item.getMediaType() != MediaItem.MEDIA_TYPE_VIDEO) ? displayItem
                             .getHiResImage(view.getContext())
                             : null;
-                    if (Gallery.PIXEL_DENSITY > 1.0f) {
+                    if (App.PIXEL_DENSITY > 1.0f) {
                         hiRes = texture;
                     }
                     if (i != 0) {
@@ -437,8 +443,10 @@ public final class GridDrawManager {
                     continue;
                 }
                 boolean slotIsAlive = false;
+                final int maxDisplayedItemsPerSlot = (i == mCurrentScaleSlot) ? GridLayer.MAX_DISPLAYED_ITEMS_PER_FOCUSED_SLOT
+                        : GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT;
                 if (state != GridLayer.STATE_MEDIA_SETS && state != GridLayer.STATE_TIMELINE) {
-                    for (int j = 0; j < GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT; ++j) {
+                    for (int j = 0; j < maxDisplayedItemsPerSlot; ++j) {
                         DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + j];
                         if (displayItem != null) {
                             slotIsAlive |= displayItem.mAlive;
@@ -502,7 +510,7 @@ public final class GridDrawManager {
                 final float textOffsetY = 0.82f;
                 gl.glTranslatef(0.0f, -textOffsetY, 0.0f);
                 HashMap<String, StringTexture> stringTextureTable = GridDrawables.sStringTextureTable;
-                ReverseGeocoder reverseGeocoder = ((Gallery) view.getContext()).getReverseGeocoder();
+                ReverseGeocoder reverseGeocoder = App.get(view.getContext()).getReverseGeocoder();
 
                 boolean itemsPresent = false;
 
@@ -647,6 +655,8 @@ public final class GridDrawManager {
         float translateYf = animatedPosition.y * camera.mOneByScale;
         float translateZf = -animatedPosition.z;
         int stackId = displayItem.getStackIndex();
+        final int maxDisplayedItemsPerSlot = (displayItem.mCurrentSlotIndex == mCurrentScaleSlot && mCurrentScaleSlot != Shared.INVALID) ? GridLayer.MAX_DISPLAYED_ITEMS_PER_FOCUSED_SLOT
+                : GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT;
         if (pass == PASS_PLACEHOLDER || pass == PASS_FRAME_PLACEHOLDER) {
             translateZf = -0.04f;
         } else {
@@ -662,7 +672,7 @@ public final class GridDrawManager {
         boolean usingMixedTextures = false;
         boolean bind = false;
         if ((pass != PASS_THUMBNAIL_CONTENT)
-                || (stackId < GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT && texture.isLoaded() && (previousTexture == null || previousTexture
+                || (stackId < maxDisplayedItemsPerSlot && texture.isLoaded() && (previousTexture == null || previousTexture
                         .isLoaded()))) {
             if (mixRatio == 1.0f || previousTexture == null || texture == previousTexture) {
                 bind = view.bind(texture);
@@ -678,7 +688,7 @@ public final class GridDrawManager {
             } else {
                 bind = view.bind(previousTexture);
             }
-        } else if (stackId >= GridLayer.MAX_DISPLAYED_ITEMS_PER_SLOT && pass == PASS_THUMBNAIL_CONTENT) {
+        } else if (stackId >= maxDisplayedItemsPerSlot && pass == PASS_THUMBNAIL_CONTENT) {
             mDisplayList.setAlive(displayItem, true);
         }
         if (!texture.isLoaded() || !bind) {

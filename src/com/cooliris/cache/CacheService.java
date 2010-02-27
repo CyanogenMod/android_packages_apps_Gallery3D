@@ -40,6 +40,7 @@ import android.provider.MediaStore.Video;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
@@ -360,7 +361,7 @@ public final class CacheService extends IntentService {
         if (!isCacheReady(true)) {
             // In this case, we should try to show a toast
             if (context instanceof Gallery) {
-                ((Gallery) context).showToast(context.getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
+                App.get(context).showToast(context.getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
             }
             if (DEBUG)
                 Log.d(TAG, "Refreshing Cache for all items");
@@ -508,7 +509,7 @@ public final class CacheService extends IntentService {
 
     private static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final boolean isVideo,
             final DiskCache thumbnailCache, final long timestamp) {
-        if (!((Gallery) context).isPaused()) {
+        if (!App.get(context).isPaused()) {
             final Thread thumbnailThread = THUMBNAIL_THREAD.getAndSet(null);
             if (thumbnailThread != null) {
                 thumbnailThread.interrupt();

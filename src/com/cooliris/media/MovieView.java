@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 /**
@@ -32,12 +33,14 @@ public class MovieView extends Activity {
     @SuppressWarnings("unused")
     private static final String TAG = "MovieView";
 
+    private App mApp = null; 
     private MovieViewControl mControl;
     private boolean mFinishOnCompletion;
 
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        mApp = new App(MovieView.this);
         setContentView(Res.layout.movie_view);
         View rootView = findViewById(Res.id.root);
         Intent intent = getIntent();
@@ -62,11 +65,19 @@ public class MovieView extends Activity {
     public void onPause() {
         mControl.onPause();
         super.onPause();
+    	mApp.onPause();
     }
 
     @Override
     public void onResume() {
         mControl.onResume();
         super.onResume();
+    	mApp.onResume();
+    }
+    
+    @Override
+    public void onDestroy() {
+    	mApp.shutdown();
+    	super.onDestroy();
     }
 }

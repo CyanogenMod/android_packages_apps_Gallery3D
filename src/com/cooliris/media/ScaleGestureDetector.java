@@ -181,11 +181,15 @@ public class ScaleGestureDetector {
             if ((action == MotionEvent.ACTION_POINTER_1_DOWN || action == MotionEvent.ACTION_POINTER_2_DOWN)
                     && event.getPointerCount() >= 2) {
                 // We have a new multi-finger gesture
-                mTopFingerBeginX = event.getX(0);
-                mTopFingerBeginY = event.getY(0);
-                mBottomFingerBeginX = event.getX(1);
-                mBottomFingerBeginY = event.getY(1);
-                mTopFingerIsPointer1 = true;
+                mBottomFingerBeginX = event.getX(0);
+                mBottomFingerBeginY = event.getY(0);
+                mTopFingerBeginX = event.getX(1);
+                mTopFingerBeginY = event.getY(1);
+                
+                mTopFingerCurrX = mTopFingerBeginX;
+                mTopFingerCurrY = mTopFingerBeginY;
+                mBottomFingerCurrX = mBottomFingerBeginX;
+                mBottomFingerCurrY = mBottomFingerBeginY;
                 mPointerOneUp = false;
                 mPointerTwoUp = false;
 
@@ -195,6 +199,8 @@ public class ScaleGestureDetector {
                 // We decide which finger should be designated as the top finger
                 if (mTopFingerBeginY > mBottomFingerBeginY) {
                     mTopFingerIsPointer1 = false;
+                } else {
+                    mTopFingerIsPointer1 = true;
                 }
 
                 mPrevEvent = MotionEvent.obtain(event);
@@ -246,12 +252,6 @@ public class ScaleGestureDetector {
 
             case MotionEvent.ACTION_MOVE:
                 setContext(event);
-
-                // Update the correct finger.
-                mTopFingerCurrX = event.getX(0);
-                mTopFingerCurrY = event.getY(0);
-                mBottomFingerCurrX = event.getX(1);
-                mBottomFingerCurrY = event.getY(1);
 
                 // Only accept the event if our relative pressure is within
                 // a certain limit - this can help filter shaky data as a
@@ -305,8 +305,14 @@ public class ScaleGestureDetector {
         mTimeDelta = curr.getEventTime() - prev.getEventTime();
         mCurrPressure = curr.getPressure(0) + curr.getPressure(1);
         mPrevPressure = prev.getPressure(0) + prev.getPressure(1);
+        
+        // Update the correct finger.
+        mBottomFingerCurrX = cx0;
+        mBottomFingerCurrY = cy0;
+        mTopFingerCurrX = cx1;
+        mTopFingerCurrY = cy1;
     }
-
+    
     private void reset() {
         if (mPrevEvent != null) {
             mPrevEvent.recycle();

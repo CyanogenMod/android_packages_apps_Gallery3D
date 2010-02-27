@@ -7,6 +7,7 @@ import javax.microedition.khronos.opengles.GL11;
 import android.content.Context;
 import android.view.MotionEvent;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class MenuBar extends Layer implements PopupMenu.Listener {
@@ -20,11 +21,11 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
     private static final int HIT_TEST_MARGIN = 15;
 
     static {
-        MENU_TITLE_STYLE.fontSize = 17 * Gallery.PIXEL_DENSITY;
+        MENU_TITLE_STYLE.fontSize = 17 * App.PIXEL_DENSITY;
         MENU_TITLE_STYLE.sizeMode = StringTexture.Config.SIZE_EXACT;
         MENU_TITLE_STYLE.overflowMode = StringTexture.Config.OVERFLOW_FADE;
 
-        MENU_TITLE_STYLE_TEXT.fontSize = 15 * Gallery.PIXEL_DENSITY;
+        MENU_TITLE_STYLE_TEXT.fontSize = 15 * App.PIXEL_DENSITY;
         MENU_TITLE_STYLE_TEXT.xalignment = StringTexture.Config.ALIGN_HCENTER;
         MENU_TITLE_STYLE_TEXT.sizeMode = StringTexture.Config.SIZE_EXACT;
         MENU_TITLE_STYLE_TEXT.overflowMode = StringTexture.Config.OVERFLOW_FADE;
@@ -102,7 +103,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
         // Draw the background.
         Texture background = view.getResource(BACKGROUND);
         int backgroundHeight = background.getHeight();
-        int menuHeight = (int) (HEIGHT * Gallery.PIXEL_DENSITY + 0.5f);
+        int menuHeight = (int) (HEIGHT * App.PIXEL_DENSITY + 0.5f);
         int extra = background.getHeight() - menuHeight;
         view.draw2D(background, mX, mY - extra, mWidth, backgroundHeight);
 
@@ -154,25 +155,25 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
         Texture highlightRight = view.getResource(MENU_HIGHLIGHT_RIGHT);
 
         int height = highlightLeft.getHeight();
-        int extra = height - (int) (HEIGHT * Gallery.PIXEL_DENSITY);
+        int extra = height - (int) (HEIGHT * App.PIXEL_DENSITY);
         Menu menu = mMenus[touchMenu];
-        int x = menu.x + (int) (MENU_HIGHLIGHT_EDGE_INSET * Gallery.PIXEL_DENSITY);
-        int width = menu.mWidth - (int) ((MENU_HIGHLIGHT_EDGE_INSET * 2) * Gallery.PIXEL_DENSITY);
+        int x = menu.x + (int) (MENU_HIGHLIGHT_EDGE_INSET * App.PIXEL_DENSITY);
+        int width = menu.mWidth - (int) ((MENU_HIGHLIGHT_EDGE_INSET * 2) * App.PIXEL_DENSITY);
         int y = (int) mY - extra;
 
         // Draw left edge.
-        view.draw2D(highlightLeft, x - MENU_HIGHLIGHT_EDGE_WIDTH * Gallery.PIXEL_DENSITY, y, MENU_HIGHLIGHT_EDGE_WIDTH
-                * Gallery.PIXEL_DENSITY, height);
+        view.draw2D(highlightLeft, x - MENU_HIGHLIGHT_EDGE_WIDTH * App.PIXEL_DENSITY, y, MENU_HIGHLIGHT_EDGE_WIDTH
+                * App.PIXEL_DENSITY, height);
 
         // Draw middle.
         view.draw2D(highlightMiddle, x, y, width, height);
 
         // Draw right edge.
-        view.draw2D(highlightRight, x + width, y, MENU_HIGHLIGHT_EDGE_WIDTH * Gallery.PIXEL_DENSITY, height);
+        view.draw2D(highlightRight, x + width, y, MENU_HIGHLIGHT_EDGE_WIDTH * App.PIXEL_DENSITY, height);
     }
 
     private int hitTestMenu(int x, int y) {
-        if (y > mY - HIT_TEST_MARGIN * Gallery.PIXEL_DENSITY) {
+        if (y > mY - HIT_TEST_MARGIN * App.PIXEL_DENSITY) {
             Menu[] menus = mMenus;
             for (int i = menus.length - 1; i >= 0; --i) {
                 if (x > menus[i].x) {
@@ -486,7 +487,7 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
         public int computeRequiredWidth() {
             int width = 0;
             if (icon != 0) {
-                width += (ICON_WIDTH); // * Gallery.PIXEL_DENSITY);
+                width += (ICON_WIDTH); // * App.PIXEL_DENSITY);
             }
             if (title != null) {
                 width += StringTexture.computeTextWidthForConfig(title, config);// title.computeTextWidth();

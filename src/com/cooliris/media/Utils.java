@@ -17,12 +17,13 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.widget.Toast;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public class Utils {
     public static void playVideo(final Context context, final MediaItem item) {
         // this is a video
-        ((Gallery) context).getHandler().post(new Runnable() {
+        App.get(context).getHandler().post(new Runnable() {
             public void run() {
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.mContentUri));

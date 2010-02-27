@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.cooliris.app.App;
 import com.cooliris.picasa.AlbumEntry;
 import com.cooliris.picasa.Entry;
 import com.cooliris.picasa.EntrySchema;
@@ -62,7 +63,7 @@ public final class PicasaDataSource implements DataSource {
         // Ensure that users are up to date. TODO: also listen for accounts
         // changed broadcast.
         PicasaService.requestSync(mContext, PicasaService.TYPE_USERS_ALBUMS, 0);
-        final Handler handler = ((Gallery) mContext).getHandler();
+        final Handler handler = App.get(mContext).getHandler();
         final ContentObserver albumObserver = new ContentObserver(handler) {
             public void onChange(boolean selfChange) {
                 loadMediaSetsIntoFeed(feed, true);

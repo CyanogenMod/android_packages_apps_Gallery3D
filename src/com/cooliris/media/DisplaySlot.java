@@ -2,6 +2,8 @@ package com.cooliris.media;
 
 import java.util.HashMap;
 
+import com.cooliris.app.App;
+
 // CR: this stuff needs comments really badly.
 public final class DisplaySlot {
     private MediaSet mSetRef;
@@ -16,26 +18,26 @@ public final class DisplaySlot {
 
     static {
         CAPTION_STYLE.sizeMode = StringTexture.Config.SIZE_TEXT_TO_BOUNDS;
-        CAPTION_STYLE.fontSize = 16 * Gallery.PIXEL_DENSITY;
+        CAPTION_STYLE.fontSize = 16 * App.PIXEL_DENSITY;
         CAPTION_STYLE.bold = true;
-        CAPTION_STYLE.width = (Gallery.PIXEL_DENSITY < 1.5f) ? 128 : 256;
-        CAPTION_STYLE.height = (Gallery.PIXEL_DENSITY < 1.5f) ? 32 : 64;
+        CAPTION_STYLE.width = (App.PIXEL_DENSITY < 1.5f) ? 128 : 256;
+        CAPTION_STYLE.height = (App.PIXEL_DENSITY < 1.5f) ? 32 : 64;
         CAPTION_STYLE.yalignment = StringTexture.Config.ALIGN_TOP;
         CAPTION_STYLE.xalignment = StringTexture.Config.ALIGN_HCENTER;
 
         CLUSTER_STYLE.sizeMode = StringTexture.Config.SIZE_TEXT_TO_BOUNDS;
-        CLUSTER_STYLE.width = (Gallery.PIXEL_DENSITY < 1.5f) ? 128 : 256;
-        CLUSTER_STYLE.height = (Gallery.PIXEL_DENSITY < 1.5f) ? 32 : 64;
+        CLUSTER_STYLE.width = (App.PIXEL_DENSITY < 1.5f) ? 128 : 256;
+        CLUSTER_STYLE.height = (App.PIXEL_DENSITY < 1.5f) ? 32 : 64;
         CLUSTER_STYLE.yalignment = StringTexture.Config.ALIGN_TOP;
-        CLUSTER_STYLE.fontSize = 16 * Gallery.PIXEL_DENSITY;
+        CLUSTER_STYLE.fontSize = 16 * App.PIXEL_DENSITY;
         CLUSTER_STYLE.bold = true;
         CLUSTER_STYLE.xalignment = StringTexture.Config.ALIGN_HCENTER;
 
         LOCATION_STYLE.sizeMode = StringTexture.Config.SIZE_TEXT_TO_BOUNDS;
-        LOCATION_STYLE.fontSize = 12 * Gallery.PIXEL_DENSITY;
-        LOCATION_STYLE.width = (Gallery.PIXEL_DENSITY < 1.5f) ? 128 : 256;
-        LOCATION_STYLE.height = (Gallery.PIXEL_DENSITY < 1.5f) ? 32 : 64;
-        LOCATION_STYLE.fontSize = 12 * Gallery.PIXEL_DENSITY;
+        LOCATION_STYLE.fontSize = 12 * App.PIXEL_DENSITY;
+        LOCATION_STYLE.width = (App.PIXEL_DENSITY < 1.5f) ? 128 : 256;
+        LOCATION_STYLE.height = (App.PIXEL_DENSITY < 1.5f) ? 32 : 64;
+        LOCATION_STYLE.fontSize = 12 * App.PIXEL_DENSITY;
         LOCATION_STYLE.xalignment = StringTexture.Config.ALIGN_HCENTER;
     }
 

@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 /**
@@ -52,6 +53,7 @@ public class Photographs extends Activity {
     static final String DO_LAUNCH_ICICLE = "do_launch";
     static final String TEMP_FILE_PATH_ICICLE = "temp_file_path";
 
+    private App mApp = null; 
     private ProgressDialog mProgressDialog = null;
     private boolean mDoLaunch = true;
     private File mTempFile;
@@ -111,6 +113,7 @@ public class Photographs extends Activity {
     @Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+        mApp = new App(Photographs.this);
         if (icicle != null) {
             mDoLaunch = icicle.getBoolean(DO_LAUNCH_ICICLE);
             mTempFile = new File(icicle.getString(TEMP_FILE_PATH_ICICLE));
@@ -127,11 +130,13 @@ public class Photographs extends Activity {
     protected void onPause() {
         closeProgressDialog();
         super.onPause();
+        mApp.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        mApp.onResume();
         if (!mDoLaunch) {
             return;
         }
@@ -150,6 +155,12 @@ public class Photographs extends Activity {
             startActivityForResult(intent, PHOTO_PICKED);
         }
     }
+    
+    @Override
+    protected void onDestroy() {
+    	mApp.shutdown();
+    	super.onDestroy();
+    }   
 
     protected void formatIntent(Intent intent) {
         // TODO: A temporary file is NOT necessary

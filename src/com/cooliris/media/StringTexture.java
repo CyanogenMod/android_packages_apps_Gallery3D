@@ -13,6 +13,8 @@ import android.graphics.Typeface;
 import android.graphics.Paint.Align;
 import android.util.FloatMath;
 
+import com.cooliris.app.App;
+
 public final class StringTexture extends Texture {
     private String mString;
     private Config mConfig;
@@ -32,7 +34,7 @@ public final class StringTexture extends Texture {
             paint.setTypeface(typeface);
             paint.setTextSize(textSize);
             // 10 pixel buffer to compensate for the shade at the end.
-            return (int) (10.0f * Gallery.PIXEL_DENSITY) + (int) FloatMath.ceil(paint.measureText(string));
+            return (int) (10.0f * App.PIXEL_DENSITY) + (int) FloatMath.ceil(paint.measureText(string));
         }
     }
 
@@ -224,7 +226,7 @@ public final class StringTexture extends Texture {
         public float g = 1f;
         public float b = 1f;
         public float a = 1f;
-        public int shadowRadius = 4 * (int) Gallery.PIXEL_DENSITY;
+        public int shadowRadius = 4 * (int) App.PIXEL_DENSITY;
         public boolean underline = false;
         public boolean bold = false;
         public boolean italic = false;
