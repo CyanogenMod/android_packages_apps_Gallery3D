@@ -56,6 +56,7 @@
 	<string name="set_image">Set picture as</string>
 	<!-- Toast/alert after saving wallpaper -->
 	<string name="wallpaper">Setting wallpaper, please wait\u2026</string>
+    <string name="camera_setas_wallpaper">Wallpaper</string>
 
     <!-- Details dialog "OK" button. Dismisses dialog. -->
     <string name="details_ok">OK</string>
