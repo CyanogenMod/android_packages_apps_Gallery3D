@@ -33,8 +33,7 @@
     <string name="gadget_title" msgid="259405922673466798">"Frame da imagem"</string>
     <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
     <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
-    <!-- no translation found for movie_view_label (3697303290960009886) -->
-    <skip />
+    <string name="movie_view_label" msgid="3697303290960009886">"Filmes\n"</string>
     <string name="loading_video" msgid="4013492720121891585">"Carregando vídeo..."</string>
     <string name="resume_playing_title" msgid="8996677350649355013">"Retomar vídeo"</string>
     <string name="resume_playing_message" msgid="5184414518126703481">"Retomar reprodução de %s ?"</string>
@@ -44,13 +43,10 @@
     <string name="crop_save_text" msgid="8140440041190264400">"Salvar"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Descartar"</string>
     <string name="multiface_crop_help" msgid="3127018992717032779">"Toque em uma face para começar."</string>
-    <!-- no translation found for saving_image (7270334453636349407) -->
-    <skip />
+    <string name="saving_image" msgid="7270334453636349407">"Salvando imagem…"</string>
     <string name="crop_label" msgid="521114301871349328">"Cortar imagem"</string>
-    <!-- no translation found for running_face_detection (4094707964259463039) -->
-    <skip />
-    <!-- no translation found for set_image (2331476809308010401) -->
-    <skip />
+    <string name="running_face_detection" msgid="4094707964259463039">"Aguarde..."</string>
+    <string name="set_image" msgid="2331476809308010401">"Definir imagem como\n"</string>
     <string name="wallpaper" msgid="9222901738515471972">"Configurando o papel de parede, aguarde…"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Papel de parede"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
@@ -63,8 +59,7 @@
     <string name="confirm_delete" msgid="5731757674837098707">"Confirmar exclusão"</string>
     <string name="cancel" msgid="3637516880917356226">"Cancelar"</string>
     <string name="share" msgid="3619042788254195341">"Compartilhar"</string>
-    <!-- no translation found for no_sd_card (2666880203366429182) -->
-    <skip />
+    <string name="no_sd_card" msgid="2666880203366429182">"Cartão SD desmontado ou ausente"</string>
     <string name="more" msgid="1526449516720792387">"Mais"</string>
     <string name="select_all" msgid="8623593677101437957">"Selecionar todos"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Desmarcar tudo"</string>
@@ -79,13 +74,11 @@
     <string name="start" msgid="4316892252528232165">"Iniciar"</string>
     <string name="end" msgid="3645506196012005500">"Finalizar"</string>
     <string name="location" msgid="3432705876921618314">"Local"</string>
-    <!-- no translation found for location_unknown (6310139243003315255) -->
-    <skip />
+    <string name="location_unknown" msgid="6310139243003315255">"Local desconhecido\n"</string>
     <string name="title" msgid="7622928349908052569">"Título"</string>
     <string name="type" msgid="4329478642546287192">"Tipo"</string>
     <string name="taken_on" msgid="3269486910757192479">"Feito(a) em"</string>
-    <!-- no translation found for added_on (5194321063173381814) -->
-    <skip />
+    <string name="added_on" msgid="5194321063173381814">"Adicionado em"</string>
     <string name="show_on_map" msgid="6157544221201750980">"Mostrar no mapa"</string>
     <string name="rotate_left" msgid="7412075232752726934">"Girar para a esquerda"</string>
     <string name="rotate_right" msgid="7340681085011826618">"Girar para a direita"</string>
@@ -94,8 +87,7 @@
     <string name="set_as_wallpaper" msgid="5704970402417438945">"Definir como plano de fundo"</string>
     <string name="item" msgid="636303673288563698">"item"</string>
     <string name="items" msgid="6403254716052150916">"itens"</string>
-    <!-- no translation found for around (2223906282110417412) -->
-    <skip />
+    <string name="around" msgid="2223906282110417412">"Perto de"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Data desconhecida"</string>
     <string name="video_err" msgid="7917736494827857757">"Não é possível reproduzir o vídeo"</string>
 </resources>

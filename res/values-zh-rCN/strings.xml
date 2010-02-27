@@ -66,10 +66,10 @@
     <string name="slideshow" msgid="4355906903247112975">"播放幻灯片"</string>
     <string name="menu" msgid="1819649153380636719">"菜单"</string>
     <string name="details" msgid="8415120088556445230">"详细信息"</string>
-    <string name="album_selected" msgid="3441280740465738452">"个相册已选定"</string>
-    <string name="item_selected" msgid="6137767503817908841">"已选定  个项"</string>
-    <string name="albums_selected" msgid="1815225920157190983">"已选定  个相册"</string>
-    <string name="items_selected" msgid="8548754404879264861">"已选定  个项"</string>
+    <string name="album_selected" msgid="3441280740465738452">"本相册已选定"</string>
+    <string name="item_selected" msgid="6137767503817908841">"项已选定"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"本相册已选定"</string>
+    <string name="items_selected" msgid="8548754404879264861">"项已选定"</string>
     <string name="album" msgid="5198388817734336004">"相册"</string>
     <string name="start" msgid="4316892252528232165">"启动"</string>
     <string name="end" msgid="3645506196012005500">"结束"</string>
