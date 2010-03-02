@@ -25,9 +25,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public static final int ANCHOR_RIGHT = 1;
     public static final int ANCHOR_CENTER = 2;
 
-    public static final int MAX_ITEMS_PER_SLOT = 12;
+    public static final int MAX_ITEMS_PER_SLOT = 32;
     public static final int MAX_DISPLAYED_ITEMS_PER_SLOT = 4;
-    public static final int MAX_DISPLAYED_ITEMS_PER_FOCUSED_SLOT = 12;
+    public static final int MAX_DISPLAYED_ITEMS_PER_FOCUSED_SLOT = 32;
     public static final int MAX_DISPLAY_SLOTS = 96;
     public static final int MAX_ITEMS_DRAWABLE = MAX_ITEMS_PER_SLOT * MAX_DISPLAY_SLOTS;
 

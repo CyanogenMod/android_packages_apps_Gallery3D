@@ -732,6 +732,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             mCurrentScaleSlot = slotId;
             mCurrentFocusSlot = slotId;
         }
+        constrainCamera(true);
         return true;
     }
 

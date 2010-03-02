@@ -48,10 +48,10 @@ public final class HudLayer extends Layer {
     // Camera button - launches the camera intent when pressed.
     private static final int CAMERA_BUTTON_ICON = Res.drawable.btn_camera;
     private static final int CAMERA_BUTTON_ICON_PRESSED = Res.drawable.btn_camera_pressed;
-    private static final int ZOOM_IN_ICON = Res.drawable.btn_hud_zoom_in_normal;
-    private static final int ZOOM_IN_ICON_PRESSED = Res.drawable.btn_hud_zoom_in_pressed;
-    private static final int ZOOM_OUT_ICON = Res.drawable.btn_hud_zoom_out_normal;
-    private static final int ZOOM_OUT_ICON_PRESSED = Res.drawable.btn_hud_zoom_out_pressed;
+    private static final int ZOOM_IN_ICON = Res.drawable.gallery_zoom_in;
+    private static final int ZOOM_IN_ICON_PRESSED = Res.drawable.gallery_zoom_in_touch;
+    private static final int ZOOM_OUT_ICON = Res.drawable.gallery_zoom_out;
+    private static final int ZOOM_OUT_ICON_PRESSED = Res.drawable.gallery_zoom_out_touch;
 
     private final Runnable mCameraButtonAction = new Runnable() {
         public void run() {
@@ -112,8 +112,8 @@ public final class HudLayer extends Layer {
         }
         mTopRightButton.setSize((int) (100 * App.PIXEL_DENSITY), (int) (94 * App.PIXEL_DENSITY));
 
-        mZoomInButton.setSize(43 * App.PIXEL_DENSITY, 43 * App.PIXEL_DENSITY);
-        mZoomOutButton.setSize(43 * App.PIXEL_DENSITY, 43 * App.PIXEL_DENSITY);
+        mZoomInButton.setSize(66.666f * App.PIXEL_DENSITY, 42 * App.PIXEL_DENSITY);
+        mZoomOutButton.setSize(66.666f * App.PIXEL_DENSITY, 42 * App.PIXEL_DENSITY);
         mZoomInButton.setImages(ZOOM_IN_ICON, ZOOM_IN_ICON_PRESSED);
         mZoomInButton.setAction(mZoomInButtonAction);
         mZoomOutButton.setImages(ZOOM_OUT_ICON, ZOOM_OUT_ICON_PRESSED);
@@ -434,8 +434,9 @@ public final class HudLayer extends Layer {
         computeSizeForPathbar();
 
         mTopRightButton.setPosition(width - mTopRightButton.getWidth(), 0f);
-        mZoomInButton.setPosition(width - mZoomInButton.getWidth(), 0f);
-        mZoomOutButton.setPosition(width - mZoomInButton.getWidth(), mZoomInButton.getHeight());
+        float zoomY = height - MenuBar.HEIGHT * App.PIXEL_DENSITY - mZoomInButton.getHeight();
+        mZoomInButton.setPosition(width - mZoomInButton.getWidth(), zoomY);
+        mZoomOutButton.setPosition(width - mZoomInButton.getWidth() * 2.0f, zoomY);
     }
 
     private void computeSizeForPathbar() {
