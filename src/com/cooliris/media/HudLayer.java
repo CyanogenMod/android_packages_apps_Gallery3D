@@ -146,12 +146,12 @@ public final class HudLayer extends Layer {
         MenuBar.Menu deleteMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.delete)).icon(
                 Res.drawable.icon_delete).options(deleteOptions).build();
 
-        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.more))
-                .icon(Res.drawable.icon_more).onSelect(new Runnable() {
-                    public void run() {
-                        buildMoreOptions();
-                    }
-                }).build();
+        MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.more)).icon(
+                Res.drawable.icon_more).onSelect(new Runnable() {
+            public void run() {
+                buildMoreOptions();
+            }
+        }).build();
 
         mNormalBottomMenu = new MenuBar.Menu[] { shareMenu, deleteMenu, moreMenu };
         mSingleViewIntentBottomMenu = new MenuBar.Menu[] { shareMenu, moreMenu };
@@ -180,8 +180,8 @@ public final class HudLayer extends Layer {
                                     setAlpha(1.0f);
                             }
                         }).build(), /* new MenuBar.Menu.Builder("").build(), */
-                new MenuBar.Menu.Builder(context.getResources().getString(Res.string.menu)).icon(Res.drawable.icon_more).onSingleTapUp(
-                        new Runnable() {
+                new MenuBar.Menu.Builder(context.getResources().getString(Res.string.menu)).icon(Res.drawable.icon_more)
+                        .onSingleTapUp(new Runnable() {
                             public void run() {
                                 if (getAlpha() == 1.0f)
                                     mGridLayer.enterSelectionMode();
@@ -280,14 +280,14 @@ public final class HudLayer extends Layer {
                 }), };
 
         Option[] optionImageMultiple = new Option[] {
-                new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_left), mContext.getResources().getDrawable(
-                        Res.drawable.ic_menu_rotate_left), new Runnable() {
+                new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_left), mContext.getResources()
+                        .getDrawable(Res.drawable.ic_menu_rotate_left), new Runnable() {
                     public void run() {
                         mGridLayer.rotateSelectedItems(-90.0f);
                     }
                 }),
-                new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_right), mContext.getResources().getDrawable(
-                        Res.drawable.ic_menu_rotate_right), new Runnable() {
+                new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_right), mContext.getResources()
+                        .getDrawable(Res.drawable.ic_menu_rotate_right), new Runnable() {
                     public void run() {
                         mGridLayer.rotateSelectedItems(90.0f);
                     }
@@ -441,8 +441,7 @@ public final class HudLayer extends Layer {
 
     private void computeSizeForPathbar() {
         float pathBarWidth = mWidth
-                - ((mGridLayer.getState() == GridLayer.STATE_FULL_SCREEN) ? 32 * App.PIXEL_DENSITY
-                        : 120 * App.PIXEL_DENSITY);
+                - ((mGridLayer.getState() == GridLayer.STATE_FULL_SCREEN) ? 32 * App.PIXEL_DENSITY : 120 * App.PIXEL_DENSITY);
         mPathBar.setSize(pathBarWidth, FloatMath.ceil(39 * App.PIXEL_DENSITY));
         mPathBar.recomputeComponents();
     }
@@ -501,6 +500,16 @@ public final class HudLayer extends Layer {
             image = GRID_MODE_ICON;
             pressedImage = GRID_MODE_PRESSED_ICON;
             action = mGridModeButtonAction;
+            break;
+        case GridLayer.STATE_FULL_SCREEN:
+            if (getGridLayer() != null && getGridLayer().getFeed() != null && getGridLayer().getFeed().getExpandedMediaSet() != null) {
+                if (getGridLayer().getFeed().getExpandedMediaSet().mId == LocalDataSource.CAMERA_BUCKET_ID) {
+                    image = CAMERA_BUTTON_ICON;
+                    pressedImage = CAMERA_BUTTON_ICON_PRESSED;
+                    action = mCameraButtonAction;
+                    topRightButton.setHidden(false);
+                }
+            }
             break;
         default:
             break;

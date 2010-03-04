@@ -261,15 +261,16 @@ public final class DisplayItem {
             maxSlots = FloatUtils.clamp(maxSlots, 0, GridLayer.MAX_ITEMS_PER_SLOT);
             if (Math.abs(spanDelta) < 10 * App.PIXEL_DENSITY) {
                 // almost the same span
-                mStartOffset += (mSpanDirection * 0.05f);
+                mStartOffset += (mSpanDirection * 0.06f);
                 mStartOffset = FloatUtils.clamp(mStartOffset, 0, maxSlots);
             } else {
                 mSpanDirection = Math.signum(spanDelta);
-                Log.i(TAG, "Span Direction " + mSpanDirection);
             }
             mSpan = span;
             mTargetPosition.set(mStacktopPosition);
             if (!pushDown) {
+                if (maxSlots < 2)
+                    return;
                 // If it is the stacktop, we track the top finger, ie, x1, y1
                 // else
                 // we track bottom finger x2, y2

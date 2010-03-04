@@ -516,7 +516,8 @@ public final class GridDrawManager {
                 }
             }
             GridDrawables.sFrame.unbindArrays(gl);
-            gl.glDepthFunc(GL10.GL_ALWAYS);
+            if (mSpreadValue <= 1.0f)
+                gl.glDepthFunc(GL10.GL_ALWAYS);
             if (state == GridLayer.STATE_MEDIA_SETS || state == GridLayer.STATE_TIMELINE) {
                 DisplaySlot[] displaySlots = mDisplaySlots;
                 GridDrawables.sTextGrid.bindArrays(gl);

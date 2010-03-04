@@ -300,13 +300,13 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             try {
                 deltaAnchorPosition.set(layer.getDeltaAnchorPosition());
                 LayoutInterface layout = layer.getLayoutInterface();
-                GridCameraManager.getSlotPositionForSlotIndex(0, camera, layout, deltaAnchorPosition, firstPosition);
+                GridCameraManager.getSlotPositionForSlotIndex(0, camera, layout, deltaAnchorPosition, firstPosition, layer.mBreakSlots);
                 int lastSlotIndex = 0;
                 IndexRange completeRange = layer.getCompleteRange();
                 synchronized (completeRange) {
                     lastSlotIndex = completeRange.end;
                 }
-                GridCameraManager.getSlotPositionForSlotIndex(lastSlotIndex, camera, layout, deltaAnchorPosition, lastPosition);
+                GridCameraManager.getSlotPositionForSlotIndex(lastSlotIndex, camera, layout, deltaAnchorPosition, lastPosition, layer.mBreakSlots);
 
                 camera.convertToRelativeCameraSpace(deltaX, deltaY, 0, worldPosDelta);
                 deltaX = worldPosDelta.x;
@@ -446,13 +446,13 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             deltaAnchorPosition.set(layer.getDeltaAnchorPosition());
             GridCamera camera = mCamera;
             LayoutInterface layout = layer.getLayoutInterface();
-            GridCameraManager.getSlotPositionForSlotIndex(0, camera, layout, deltaAnchorPosition, firstPosition);
+            GridCameraManager.getSlotPositionForSlotIndex(0, camera, layout, deltaAnchorPosition, firstPosition, layer.mBreakSlots);
             int lastSlotIndex = 0;
             IndexRange completeRange = layer.getCompleteRange();
             synchronized (completeRange) {
                 lastSlotIndex = completeRange.end;
             }
-            GridCameraManager.getSlotPositionForSlotIndex(lastSlotIndex, camera, layout, deltaAnchorPosition, lastPosition);
+            GridCameraManager.getSlotPositionForSlotIndex(lastSlotIndex, camera, layout, deltaAnchorPosition, lastPosition, layer.mBreakSlots);
             camera.computeConstraints(true, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition, lastPosition);
         } finally {
             pool.delete(firstPosition);

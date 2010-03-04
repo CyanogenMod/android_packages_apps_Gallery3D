@@ -956,11 +956,35 @@ public final class CacheService extends IntentService {
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
             final MergeCursor cursor = new MergeCursor(cursors);
+            final ArrayList<Long> setIds = new ArrayList<Long>();
+            final ArrayList<Long> maxAdded = new ArrayList<Long>();
+            final ArrayList<Integer> counts = new ArrayList<Integer>();
             try {
                 if (cursor.moveToFirst()) {
+                    do {
+                        final long setId = cursor.getLong(0);
+                        final long maxAdd = cursor.getLong(1);
+                        final int count = cursor.getInt(2);
+                        // We check to see if this id is already present.
+                        if (setIds.contains(setId)) {
+                            int index = setIds.indexOf(setId);
+                            if (maxAdded.get(index) < maxAdd) {
+                                maxAdded.set(index, maxAdd);
+                            }
+                            counts.set(index, counts.get(index) + count);
+                        } else {
+                            setIds.add(setId);
+                            maxAdded.add(maxAdd);
+                            counts.add(count);
+                        }
+                    } while (cursor.moveToNext());
+                }
+                final int numSets = setIds.size();
+                int ctr = 0;
+                if (numSets > 0) {
                     boolean allDirty = false;
                     do {
-                        long setId = cursor.getLong(0);
+                        long setId = setIds.get(ctr);
                         if (allDirty) {
                             addNoDupe(retVal, setId);
                         } else {
@@ -972,8 +996,8 @@ public final class CacheService extends IntentService {
                                 allDirty = true;
                             }
                             if (!allDirty) {
-                                long maxAdded = cursor.getLong(1);
-                                int count = cursor.getInt(2);
+                                long maxAdd = maxAdded.get(ctr);
+                                int count = counts.get(ctr);
                                 byte[] data = sMetaAlbumCache.get(setId, 0);
                                 long[] dataLong = new long[2];
                                 if (data != null) {
@@ -981,16 +1005,17 @@ public final class CacheService extends IntentService {
                                 }
                                 long oldMaxAdded = dataLong[0];
                                 long oldCount = dataLong[1];
-                                if (maxAdded > oldMaxAdded || oldCount != count) {
+                                if (maxAdd > oldMaxAdded || oldCount != count) {
                                     markDirty(setId);
                                     addNoDupe(retVal, setId);
-                                    dataLong[0] = maxAdded;
+                                    dataLong[0] = maxAdd;
                                     dataLong[1] = count;
                                     sMetaAlbumCache.put(setId, longArrayToByteArray(dataLong), 0);
                                 }
                             }
                         }
-                    } while (cursor.moveToNext());
+                        ++ctr;
+                    } while (ctr < numSets);
                 }
             } finally {
                 cursor.close();

@@ -170,7 +170,10 @@ public class MediaSet {
             return;
         }
         final LongSparseArray<MediaItem> lookup = (itemToAdd.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
-        final MediaItem lookupItem = lookup.get(itemToAdd.mId); 
+        MediaItem lookupItem = lookup.get(itemToAdd.mId); 
+        if (lookupItem != null && !lookupItem.mFilePath.equals(itemToAdd.mFilePath)) {
+            lookupItem = null;
+        }
         final MediaItem item = (lookupItem == null) ? itemToAdd : lookupItem;
         item.mFlagForDelete = false;
         if (mItems.size() == 0) {
@@ -241,15 +244,17 @@ public class MediaSet {
      *         not present in the set.
      */
     public boolean removeItem(final MediaItem itemToRemove) {
-        if (mItems.remove(itemToRemove)) {
-            --mNumExpectedItems;
-            --mNumItemsLoaded;
-            --mCurrentLocation;
-            final LongSparseArray<MediaItem> lookup = (itemToRemove.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
-            lookup.remove(itemToRemove.mId);
-            return true;
+        synchronized (mItems) {
+            if (mItems.remove(itemToRemove)) {
+                --mNumExpectedItems;
+                --mNumItemsLoaded;
+                --mCurrentLocation;
+                final LongSparseArray<MediaItem> lookup = (itemToRemove.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
+                lookup.remove(itemToRemove.mId);
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
     /**
@@ -258,7 +263,7 @@ public class MediaSet {
     public boolean lookupContainsItem(final MediaItem item) {
         final LongSparseArray<MediaItem> lookupTable = (item.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
         MediaItem lookUp = lookupTable.get(item.mId);
-        if (lookUp != null) {
+        if (lookUp != null && lookUp.mFilePath.equals(item.mFilePath)) {
            return true;
         } else {
             return false;
@@ -327,11 +332,13 @@ public class MediaSet {
     
     public void checkForDeletedItems() {
         final ArrayList<MediaItem> items = mItems;
-        final int numItems = items.size();
-        for (int i = 0; i < numItems; ++i) {
-            MediaItem item = items.get(i);
-            if (item.mFlagForDelete) {
-                removeItem(item);
+        synchronized (items) {
+            final int numItems = items.size();
+            for (int i = 0; i < numItems; ++i) {
+                MediaItem item = items.get(i);
+                if (item.mFlagForDelete) {
+                    removeItem(item);
+                }
             }
         }
     }

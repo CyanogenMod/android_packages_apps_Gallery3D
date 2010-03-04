@@ -295,6 +295,32 @@ public final class MediaFeed implements Runnable {
         }
         return 0;
     }
+    
+    public ArrayList<Integer> getBreaks() {
+        if (true)
+            return null;
+        int currentMediaSetIndex = mExpandedMediaSetIndex;
+        ArrayList<MediaSet> mediaSets = mMediaSets;
+        int mediaSetsSize = mediaSets.size();
+        if (currentMediaSetIndex == Shared.INVALID || currentMediaSetIndex >= mediaSetsSize)
+            return null;
+        MediaSet set = mediaSets.get(currentMediaSetIndex);
+        MediaClustering clustering = mClusterSets.get(set);
+        if (clustering != null) {
+            clustering.compute(null, true);
+            final ArrayList<Cluster> clusters = clustering.getClustersForDisplay();
+            int numClusters = clusters.size();
+            final ArrayList<Integer> retVal = new ArrayList<Integer>(numClusters);
+            int size = 0;
+            for (int i = 0; i < numClusters; ++i) {
+                size += clusters.get(i).getItems().size();
+                retVal.add(size);
+            }
+            return retVal;
+        } else {
+            return null;
+        }
+    }
 
     public MediaSet getSetForSlot(int slotIndex) {
         if (slotIndex < 0) {
@@ -818,7 +844,7 @@ public final class MediaFeed implements Runnable {
                                 }
                             }
                         };
-                        cr.registerContentObserver(Uri.parse(uri), true, observer);
+                        //cr.registerContentObserver(Uri.parse(uri), true, observer);
                         observers.put(uri, observer);
                     }
                 }

@@ -16,6 +16,7 @@ import com.cooliris.app.App;
 import com.cooliris.app.Res;
 
 public final class GridLayer extends RootLayer implements MediaFeed.Listener, TimeBar.Listener {
+    private static final String TAG = "GridLayer";
     public static final int STATE_MEDIA_SETS = 0;
     public static final int STATE_GRID_VIEW = 1;
     public static final int STATE_FULL_SCREEN = 2;
@@ -113,7 +114,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private int mFramesDirty;
     private String mRequestFocusContentUri;
     private int mFrameCount;
-    private static final String TAG = "GridLayer";
+    public ArrayList<Integer> mBreakSlots = new ArrayList<Integer>();
+    private ArrayList<Integer> mOldBreakSlots;
 
     public GridLayer(Context context, int itemWidth, int itemHeight, LayoutInterface layoutInterface, RenderView view) {
         mBackground = new BackgroundLayer(this);
@@ -441,7 +443,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         try {
             deltaAnchorPosition.set(sDeltaAnchorPosition);
             for (int i = firstSlotIndex; i <= lastSlotIndex; ++i) {
-                GridCameraManager.getSlotPositionForSlotIndex(i, mCamera, mLayoutInterface, deltaAnchorPosition, position);
+                GridCameraManager.getSlotPositionForSlotIndex(i, mCamera, mLayoutInterface, deltaAnchorPosition, position, mBreakSlots);
                 if (FloatUtils.boundsContainsPoint(position.x - itemWidthBy2, position.x + itemWidthBy2,
                         position.y - itemHeightBy2, position.y + itemHeightBy2, worldPos.x, worldPos.y)) {
                     retVal = i;
@@ -462,12 +464,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             imageTheta = displayItem.getImageTheta();
         }
         mCameraManager.centerCameraForSlot(mLayoutInterface, slotIndex, baseConvergence, sDeltaAnchorPositionUncommited,
-                mInputProcessor.getCurrentSelectedSlot(), mZoomValue, imageTheta, mState);
+                mInputProcessor.getCurrentSelectedSlot(), mZoomValue, imageTheta, mState, mBreakSlots);
     }
 
     boolean constrainCameraForSlot(int slotIndex) {
         return mCameraManager.constrainCameraForSlot(mLayoutInterface, slotIndex, sDeltaAnchorPosition, mCurrentFocusItemWidth,
-                mCurrentFocusItemHeight);
+                mCurrentFocusItemHeight, mBreakSlots);
     }
 
     // Called on render thread before rendering.
@@ -558,7 +560,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             sDeltaAnchorPosition.set(sDeltaAnchorPositionUncommited);
         }
         mCameraManager.computeVisibleRange(mMediaFeed, mLayoutInterface, sDeltaAnchorPosition, sVisibleRange,
-                sBufferedVisibleRange, sCompleteRange, mState);
+                sBufferedVisibleRange, sCompleteRange, mState, mBreakSlots);
     }
 
     private void computeVisibleItems() {
@@ -593,7 +595,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 LayoutInterface layout = mLayoutInterface;
                 GridCamera camera = mCamera;
                 for (int i = firstVisibleSlotIndex; i <= lastVisibleSlotIndex; ++i) {
-                    GridCameraManager.getSlotPositionForSlotIndex(i, camera, layout, deltaAnchorPosition, position);
+                    GridCameraManager.getSlotPositionForSlotIndex(i, camera, layout, deltaAnchorPosition, position, mBreakSlots);
                     MediaSet set = feed.getSetForSlot(i);
                     int indexIntoSlots = i - firstVisibleSlotIndex;
                     
@@ -791,7 +793,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mPerformingLayoutChange || !sDeltaAnchorPosition.equals(sDeltaAnchorPositionUncommited)) {
             return;
         }
-
+        mOldBreakSlots = mBreakSlots;
+        if (mState == STATE_GRID_VIEW) {
+            mBreakSlots = mMediaFeed.getBreaks();
+        } else {
+            mBreakSlots = null;
+        }
         mTimeElapsedSinceTransition = 0.0f;
         mPerformingLayoutChange = true;
         LayoutInterface layout = mLayoutInterface;
@@ -820,8 +827,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         try {
             deltaAnchorPosition.set(0, 0, 0);
             if (currentAnchorSlotIndex != Shared.INVALID && newAnchorSlotIndex != Shared.INVALID) {
-                layout.getPositionForSlotIndex(newAnchorSlotIndex, itemWidth, itemHeight, deltaAnchorPosition);
-                oldLayout.getPositionForSlotIndex(currentAnchorSlotIndex, itemWidth, itemHeight, currentSlotPosition);
+                layout.getPositionForSlotIndex(newAnchorSlotIndex, itemWidth, itemHeight, mBreakSlots, deltaAnchorPosition);
+                oldLayout.getPositionForSlotIndex(currentAnchorSlotIndex, itemWidth, itemHeight, mOldBreakSlots, currentSlotPosition);
                 currentSlotPosition.subtract(sDeltaAnchorPosition);
                 deltaAnchorPosition.subtract(currentSlotPosition);
                 deltaAnchorPosition.y = 0;
@@ -874,7 +881,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         DisplayItem[] displayItems = sDisplayItems;
         int firstBufferedVisibleSlotIndex = sBufferedVisibleRange.begin;
         int lastBufferedVisibleSlotIndex = sBufferedVisibleRange.end;
-        int currentlyVisibleSlotIndex = getAnchorSlotIndex(ANCHOR_LEFT);
+        int currentlyVisibleSlotIndex = (mState == STATE_MEDIA_SETS) ? getAnchorSlotIndex(ANCHOR_LEFT) : getAnchorSlotIndex(ANCHOR_CENTER);
         if (mCurrentExpandedSlot != Shared.INVALID) {
             currentlyVisibleSlotIndex = mCurrentExpandedSlot;
         }
@@ -938,7 +945,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 }
             }
         }
-
         // We must create a new display store now since the data has changed.
         Log.i(TAG, "Slot changing from " + currentlyVisibleSlotIndex + " to " + newSlotIndex);
         if (newSlotIndex != Shared.INVALID) {
@@ -1000,7 +1006,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         Vector3f position = pool.create();
         try {
             for (int i = left; i < right; ++i) {
-                gridInterface.getPositionForSlotIndex(i, itemWidth, itemHeight, position);
+                gridInterface.getPositionForSlotIndex(i, itemWidth, itemHeight, mBreakSlots, position);
                 retSlot = i;
                 if (position.x >= absolutePosX) {
                     break;
