@@ -69,7 +69,7 @@ public final class ArrayUtils {
         return false;
     }
 
-    public static final Object[] addAll(final Object[] first, final Object[] second) {
+    public static final String[] addAll(final String[] first, final String[] second) {
         if (first == null && second == null)
             return null;
         if (first == null)
@@ -78,14 +78,7 @@ public final class ArrayUtils {
             return first;
         final int numFirst = first.length;
         final int numSecond = second.length;
-        Object[] newArray;
-        try {
-            newArray = (Object[])first.getClass().newInstance();
-        } catch (IllegalAccessException e) {
-            return null;
-        } catch (InstantiationException e) {
-            return null;
-        }
+        String[] newArray = new String[numFirst + numSecond];
         for (int i = 0; i < numFirst; ++i) {
             newArray[i] = first[i];
         }

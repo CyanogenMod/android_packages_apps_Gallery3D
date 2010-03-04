@@ -116,8 +116,8 @@ public class LocalDataSource implements DataSource {
                 if (newItem != null) {
                     item = newItem;
                     String fileUri = new File(item.mFilePath).toURI().toString();
-                    parentSet.mName = Utils.getBucketNameFromUri(Uri.parse(fileUri));
-                    parentSet.mId = parseBucketIdFromFileUri(fileUri);
+                    parentSet.mName = Utils.getBucketNameFromUri(mContext.getContentResolver(), Uri.parse(fileUri));
+                    parentSet.mId = Utils.getBucketIdFromUri(mContext.getContentResolver(), Uri.parse(fileUri));
                     parentSet.generateTitle(true);
                 }
             } else if (mUri.startsWith("file://")) {
@@ -223,47 +223,19 @@ public class LocalDataSource implements DataSource {
         mDone = true;
     }
 
-    public static long parseBucketIdFromFileUri(String uriString) {
-        // This is a local folder.
-        final Uri uri = Uri.parse(uriString);
-        final List<String> paths = uri.getPathSegments();
-        final int numPaths = paths.size() - 1;
-        StringBuffer pathBuilder = new StringBuffer(Environment.getExternalStorageDirectory().toString());
-        if (numPaths > 1)
-            pathBuilder.append("/");
-        for (int i = 0; i < numPaths; ++i) {
-            String path = paths.get(i);
-            if (!"file".equals(path) && !"sdcard".equals(path)) {
-                pathBuilder.append(path);
-                if (i != numPaths - 1) {
-                    pathBuilder.append("/");
-                }
-            }
-        }
-        return getBucketId(pathBuilder.toString());
-    }
-
     private static boolean isImage(String uriString) {
         return !uriString.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
-    }
-
-    private static long parseIdFromContentUri(String uri) {
-        try {
-            long id = ContentUris.parseId(Uri.parse(uri));
-            return id;
-        } catch (Exception e) {
-            return 0;
-        }
     }
 
     public void loadMediaSets(final MediaFeed feed) {
         MediaSet set = null; // Dummy set.
         boolean loadOtherSets = true;
         if (mSingleUri) {
-            String name = Utils.getBucketNameFromUri(Uri.parse(mUri));
-            long id = getBucketIdFromUri(mUri);
+            String name = Utils.getBucketNameFromUri(mContext.getContentResolver(), Uri.parse(mUri));
+            long id = Utils.getBucketIdFromUri(mContext.getContentResolver(), Uri.parse(mUri));
             set = feed.addMediaSet(id, this);
             set.mName = name;
+            set.mId = id;
             set.setNumExpectedItems(2);
             set.generateTitle(true);
             set.mPicasaAlbumId = Shared.INVALID;
@@ -274,7 +246,7 @@ public class LocalDataSource implements DataSource {
             // All the buckets.
             if (mFlattenAllItems) {
                 set = feed.addMediaSet(0, this); // Create dummy set.
-                set.mName = Utils.getBucketNameFromUri(Uri.parse(mUri));
+                set.mName = Utils.getBucketNameFromUri(mContext.getContentResolver(), Uri.parse(mUri));
                 set.mId = getBucketId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString() + "/" + set.mName);
                 set.setNumExpectedItems(1);
                 set.generateTitle(true);
@@ -290,18 +262,12 @@ public class LocalDataSource implements DataSource {
         }
         // We also load the other MediaSets
         if (!mAllItems && set != null && loadOtherSets) {
-            if (!CacheService.isPresentInCache(set.mId)) {
+            final long setId = set.mId;
+            if (!CacheService.isPresentInCache(setId)) {
                 CacheService.markDirty();
             }
             CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos);
-        }
-    }
-
-    private long getBucketIdFromUri(String uriString) {
-        if (uriString.startsWith("content://.")) {
-            return parseIdFromContentUri(uriString);
-        } else {
-            return parseBucketIdFromFileUri(uriString);
+            feed.moveSetToFront(set);
         }
     }
 
@@ -323,7 +289,6 @@ public class LocalDataSource implements DataSource {
                     final String whereVideos = Video.VideoColumns.BUCKET_ID + "=" + Long.toString(set.mId);
                     cr.delete(uriImages, whereImages, null);
                     cr.delete(uriVideos, whereVideos, null);
-                    CacheService.markDirty();
                 }
                 if (set != null && items != null) {
                     // We need to remove these items from the set.
@@ -339,7 +304,6 @@ public class LocalDataSource implements DataSource {
                     }
                     set.updateNumExpectedItems();
                     set.generateTitle(true);
-                    CacheService.markDirty(set.mId);
                 }
             }
             break;
@@ -427,7 +391,7 @@ public class LocalDataSource implements DataSource {
         MediaItem item = null;
         String filepath = new File(URI.create(fileUri)).toString();
         ContentResolver cr = context.getContentResolver();
-        long bucketId = LocalDataSource.parseBucketIdFromFileUri(fileUri);
+        long bucketId = Utils.getBucketIdFromUri(context.getContentResolver(), Uri.parse(fileUri));
         String whereClause = Images.ImageColumns.BUCKET_ID + "=" + bucketId + " AND " + Images.ImageColumns.DATA + "='" + filepath
                 + "'";
         try {

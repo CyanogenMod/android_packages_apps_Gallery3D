@@ -64,6 +64,7 @@ public class MediaSet {
 
     private ArrayList<MediaItem> mItems;
     private LongSparseArray<MediaItem> mItemsLookup;
+    private LongSparseArray<MediaItem> mItemsLookupVideo;
     public int mNumItemsLoaded = 0;
     // mNumExpectedItems is preset to how many items are expected to be in the
     // set as it is used to visually
@@ -71,6 +72,7 @@ public class MediaSet {
     // keep changing as items get loaded.
     private int mNumExpectedItems = 0;
     private boolean mNumExpectedItemsCountAccurate = false;
+    private int mCurrentLocation = 0;
 
     public MediaSet() {
         this(null);
@@ -80,6 +82,8 @@ public class MediaSet {
         mItems = new ArrayList<MediaItem>(16);
         mItemsLookup = new LongSparseArray<MediaItem>();
         mItemsLookup.clear();
+        mItemsLookupVideo = new LongSparseArray<MediaItem>();
+        mItemsLookupVideo.clear();
         mDataSource = dataSource;
         // TODO(Venkat): Can we move away from this dummy item setup?
         MediaItem item = new MediaItem();
@@ -131,6 +135,7 @@ public class MediaSet {
         mNumExpectedItems = 16;
         refresh();
         mItemsLookup.clear();
+        mItemsLookupVideo.clear();
     }
 
     /**
@@ -164,7 +169,8 @@ public class MediaSet {
         if (itemToAdd == null) {
             return;
         }
-        final MediaItem lookupItem = mItemsLookup.get(itemToAdd.mId); 
+        final LongSparseArray<MediaItem> lookup = (itemToAdd.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
+        final MediaItem lookupItem = lookup.get(itemToAdd.mId); 
         final MediaItem item = (lookupItem == null) ? itemToAdd : lookupItem;
         item.mFlagForDelete = false;
         if (mItems.size() == 0) {
@@ -172,13 +178,14 @@ public class MediaSet {
         } else if (mItems.get(0).mId == -1L) {
             mItems.set(0, item);
         } else {
-            mItems.add(item);
+            mItems.add(mCurrentLocation, item);
         }
         if (item.mId != Shared.INVALID) {
             if (lookupItem == null) {
-                mItemsLookup.put(item.mId, item);
+                lookup.put(item.mId, item);
             }
             ++mNumItemsLoaded;
+            ++mCurrentLocation;
         }
         if (item.isDateTakenValid()) {
             long dateTaken = item.mDateTakenInMs;
@@ -237,7 +244,9 @@ public class MediaSet {
         if (mItems.remove(itemToRemove)) {
             --mNumExpectedItems;
             --mNumItemsLoaded;
-            mItemsLookup.remove(itemToRemove.mId);
+            --mCurrentLocation;
+            final LongSparseArray<MediaItem> lookup = (itemToRemove.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
+            lookup.remove(itemToRemove.mId);
             return true;
         }
         return false;
@@ -247,7 +256,8 @@ public class MediaSet {
      * @return true if this MediaSet contains the argument MediaItem.
      */
     public boolean lookupContainsItem(final MediaItem item) {
-        MediaItem lookUp = mItemsLookup.get(item.mId);
+        final LongSparseArray<MediaItem> lookupTable = (item.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
+        MediaItem lookUp = lookupTable.get(item.mId);
         if (lookUp != null) {
            return true;
         } else {
@@ -306,6 +316,7 @@ public class MediaSet {
 
     public void refresh() {
         mNumItemsLoaded = 0;
+        mCurrentLocation = 0;
         final ArrayList<MediaItem> items = mItems;
         final int numItems = items.size();
         for (int i = 0; i < numItems; ++i) {

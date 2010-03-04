@@ -11,10 +11,14 @@ import java.io.OutputStream;
 import java.util.List;
 
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.widget.Toast;
 
 import com.cooliris.app.App;
@@ -138,18 +142,79 @@ public class Utils {
         return outVal;
     }
 
-    public static String getBucketNameFromUri(Uri uri) {
-        String string = "";
-        if (string == null || string.length() == 0) {
-            List<String> paths = uri.getPathSegments();
-            int numPaths = paths.size();
-            if (numPaths > 1) {
-                string = paths.get(paths.size() - 2);
+    public static String getBucketNameFromUri(final ContentResolver cr, final Uri uri) {
+        if (uri.getScheme().equals("file")) {
+            String string = "";
+            if (string == null || string.length() == 0) {
+                List<String> paths = uri.getPathSegments();
+                int numPaths = paths.size();
+                if (numPaths > 1) {
+                    string = paths.get(paths.size() - 2);
+                }
+                if (string == null)
+                    string = "";
             }
-            if (string == null)
-                string = "";
+            return string;
+        } else {
+            Cursor cursor = null;
+            try {
+                long id = ContentUris.parseId(uri);
+                cursor = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        new String[] { MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME }, MediaStore.Images.ImageColumns._ID
+                                + "=" + id, null, null);
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        String setVal = cursor.getString(0);
+                        cursor.close();
+                        return setVal;
+                    }
+                }
+                cursor = cr.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                        new String[] { MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME }, MediaStore.Images.ImageColumns._ID
+                                + "=" + id, null, null);
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        String setVal = cursor.getString(0);
+                        cursor.close();
+                        return setVal;
+                    }
+                }
+            } catch (Exception e) {
+                ;
+            }
+            return "";
         }
-        return string;
+    }
+    
+    public static long getBucketIdFromUri(final ContentResolver cr, final Uri uri) {
+        final String bucketName = getBucketNameFromUri(cr, uri);
+        if (bucketName != null) {
+            try {
+                Cursor cursor = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        new String[] { MediaStore.Images.ImageColumns.BUCKET_ID }, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
+                                + "='" + bucketName + "'", null, null);
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        long setId = cursor.getLong(0);
+                        cursor.close();
+                        return setId;
+                    }
+                }
+                cursor = cr.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                        new String[] { MediaStore.Video.VideoColumns.BUCKET_ID }, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
+                                + "='" + bucketName + "'", null, null);
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        long setId = cursor.getLong(0);
+                        cursor.close();
+                        return setId;
+                    }
+                }
+            } catch (Exception e) {
+                ;
+            }
+        }
+        return Shared.INVALID;
     }
 
     // Copies src file to dst file.

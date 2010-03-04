@@ -3,6 +3,7 @@ package com.cooliris.cache;
 import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.PicasaDataSource;
 import com.cooliris.media.LocalDataSource;
+import com.cooliris.media.Utils;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -23,7 +24,7 @@ public class BootReceiver extends BroadcastReceiver {
             ;
         } else if (action.equals(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)) {
             final Uri fileUri = intent.getData();
-            final long bucketId = LocalDataSource.parseBucketIdFromFileUri(fileUri.toString());
+            final long bucketId = Utils.getBucketIdFromUri(context.getContentResolver(), fileUri);
             if (!CacheService.isPresentInCache(bucketId)) {
                 CacheService.markDirty();
             }

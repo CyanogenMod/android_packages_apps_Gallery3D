@@ -343,6 +343,7 @@ public final class CacheService extends IntentService {
                         feed.addItemToMediaSet(item, set);
                     }
                 }
+                set.checkForDeletedItems();
                 dis.close();
             } catch (IOException e) {
                 Log.e(TAG, "Error loading items for album " + set.mName);

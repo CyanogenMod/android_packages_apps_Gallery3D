@@ -59,6 +59,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mScaleGestureDetector = new ScaleGestureDetector(context, this);
         mGestureDetector.setIsLongpressEnabled(true);
         mZoomGesture = false;
+        mScale = 1.0f;
     }
 
     public int getCurrentFocusSlot() {
@@ -715,6 +716,10 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             }
             layer.setZoomValue(currentScale * scale);
         }
+        if (mLayer.getState() == GridLayer.STATE_GRID_VIEW) {
+            mCurrentScaleSlot = Shared.INVALID;
+            mCurrentFocusSlot = Shared.INVALID;
+        }
         return true;
     }
 
@@ -731,6 +736,10 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         if (slotId != Shared.INVALID) {
             mCurrentScaleSlot = slotId;
             mCurrentFocusSlot = slotId;
+        }
+        if (mLayer.getState() == GridLayer.STATE_GRID_VIEW) {
+            mCurrentScaleSlot = Shared.INVALID;
+            mCurrentFocusSlot = Shared.INVALID;
         }
         constrainCamera(true);
         return true;
@@ -751,11 +760,11 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 }
                 layer.constrainCameraForSlot(mCurrentSelectedSlot);
                 mLayer.getHud().hideZoomButtons(false);
-                if (mScale < 0.7f) {
+                if (mScale < 0.7f && false) {
                     layer.goBack();
                 }
             } else {
-                if (mScale > 3.0f) {
+                if (mScale > 3.0f && false) {
                     HudLayer hud = layer.getHud();
                     if (hud.getMode() == HudLayer.MODE_SELECT) {
                         layer.addSlotToSelectedItems(mCurrentScaleSlot, true, true);
@@ -769,7 +778,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     }
                 } else {
                     if (layer.getState() == GridLayer.STATE_GRID_VIEW) {
-                        if (mScale < 0.7f) {
+                        if (mScale < 0.7f && false) {
                             layer.goBack();
                         }
                     }

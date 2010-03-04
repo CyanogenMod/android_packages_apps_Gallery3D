@@ -148,7 +148,8 @@ public final class GridDrawManager {
             // Prime the textures in the reverse order.
             for (int j = 0; j < maxDisplayedItemsPerSlot; ++j) {
                 int stackIndex = (index == mCurrentScaleSlot) ? maxDisplayedItemsPerSlot - j - 1 : j;
-                DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + stackIndex];
+                DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT
+                        + stackIndex];
                 if (displayItem == null) {
                     continue;
                 } else {
@@ -195,15 +196,20 @@ public final class GridDrawManager {
                         displayList.setOffset(displayItem, false, true, span, dx1, dy1, dx2, dy2);
                     } else {
                         if (!mHoldPosition) {
-                            if (currentScaleSlot == index) {
-                                if (state != GridLayer.STATE_GRID_VIEW)
+                            if (state != GridLayer.STATE_GRID_VIEW) {
+                                if (currentScaleSlot == index) {
                                     displayList.setOffset(displayItem, true, false, span, dx1, dy1, dx2, dy2);
-                                else
-                                    displayList.setSingleOffset(displayItem, true, false, 0, 0, 0, mSpreadValue);
-                            } else if (currentScaleSlot != Shared.INVALID) {
-                                displayList.setOffset(displayItem, true, true, span, dx1, dy1, dx2, dy2);
+                                } else if (currentScaleSlot != Shared.INVALID) {
+                                    displayList.setOffset(displayItem, true, true, span, dx1, dy1, dx2, dy2);
+                                } else {
+                                    displayList.setOffset(displayItem, false, false, span, dx1, dy1, dx2, dy2);
+                                }
                             } else {
-                                displayList.setOffset(displayItem, false, false, span, dx1, dy1, dx2, dy2);
+                                float minVal = -1.0f;
+                                float maxVal = GridCamera.EYE_Z * 0.5f;
+                                float zVal = minVal + mSpreadValue;
+                                zVal = FloatUtils.clamp(zVal, minVal, maxVal);
+                                mCamera.moveZTo(-zVal);
                             }
                         }
                     }

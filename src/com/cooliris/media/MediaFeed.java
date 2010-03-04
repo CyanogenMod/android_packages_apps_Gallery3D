@@ -48,7 +48,6 @@ public final class MediaFeed implements Runnable {
 
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
-
         public abstract void onFeedChanged(MediaFeed feed, boolean needsLayout);
     }
 
@@ -348,6 +347,7 @@ public final class MediaFeed implements Runnable {
 
     public void start() {
         final MediaFeed feed = this;
+        onResume();
         mLoading = true;
         mDataSourceThread = new Thread(this);
         mDataSourceThread.setName("MediaFeed");
@@ -401,8 +401,10 @@ public final class MediaFeed implements Runnable {
             final MediaSet set = sets.get(i);
             set.mFlagForDelete = true;
         }
-        mDataSource.refresh(MediaFeed.this, mDataSource.getDatabaseUris());
-        mDataSource.loadMediaSets(MediaFeed.this);
+        synchronized (sets) {
+            mDataSource.refresh(MediaFeed.this, mDataSource.getDatabaseUris());
+            mDataSource.loadMediaSets(MediaFeed.this);
+        }
         for (int i = 0; i < numSets; ++i) {
             final MediaSet set = sets.get(i);
             if (set.mFlagForDelete) {
@@ -418,7 +420,7 @@ public final class MediaFeed implements Runnable {
 
     private void showToast(final String string, final int duration, final boolean centered) {
         if (mContext != null && !App.get(mContext).isPaused()) {
-           App.get(mContext).getHandler().post(new Runnable() {
+            App.get(mContext).getHandler().post(new Runnable() {
                 public void run() {
                     if (mContext != null) {
                         Toast toast = Toast.makeText(mContext, string, duration);
@@ -458,8 +460,8 @@ public final class MediaFeed implements Runnable {
                 if (!mMediaFeedNeedsToRun)
                     continue;
                 App app = App.get(mContext);
-                if(app == null || app.isPaused())
-                	continue;
+                if (app == null || app.isPaused())
+                    continue;
                 mMediaFeedNeedsToRun = false;
                 ArrayList<MediaSet> mediaSets = mMediaSets;
                 synchronized (mediaSets) {
@@ -478,7 +480,9 @@ public final class MediaFeed implements Runnable {
                                 MediaSet set = mediaSets.get(i);
                                 int numItemsLoaded = set.mNumItemsLoaded;
                                 if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
-                                    dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                    synchronized (set) {
+                                        dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                    }
                                     if (set.getNumExpectedItems() == 0) {
                                         mediaSets.remove(set);
                                         break;
@@ -505,7 +509,9 @@ public final class MediaFeed implements Runnable {
                                 if (scanMediaSets) {
                                     int numItemsLoaded = set.mNumItemsLoaded;
                                     if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
-                                        dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                        synchronized (set) {
+                                            dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                        }
                                         if (set.getNumExpectedItems() == 0) {
                                             mediaSets.remove(set);
                                             break;
@@ -565,8 +571,10 @@ public final class MediaFeed implements Runnable {
                             // anchored to a multiple of NUM_ITEMS_LOOKAHEAD.
                             // The start of the window is 0, x, 2x, 3x ... etc
                             // where x = NUM_ITEMS_LOOKAHEAD.
-                            dataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
-                                    * NUM_ITEMS_LOOKAHEAD + NUM_ITEMS_LOOKAHEAD);
+                            synchronized (set) {
+                                dataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
+                                        * NUM_ITEMS_LOOKAHEAD + NUM_ITEMS_LOOKAHEAD);
+                            }
                             if (set.getNumExpectedItems() == 0) {
                                 mediaSets.remove(set);
                                 mListener.onFeedChanged(this, false);
@@ -763,11 +771,13 @@ public final class MediaFeed implements Runnable {
     }
 
     private void refresh(final String[] databaseUris) {
-        if (mDataSource != null) {
-            mDataSource.refresh(this, databaseUris);
+        synchronized (mMediaSets) {
+            if (mDataSource != null) {
+                mDataSource.refresh(this, databaseUris);
+            }
+            mMediaFeedNeedsToRun = true;
+            updateListener(false);
         }
-        mMediaFeedNeedsToRun = true;
-        updateListener(false);
     }
 
     public void onPause() {
