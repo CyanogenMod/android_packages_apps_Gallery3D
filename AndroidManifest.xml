@@ -13,7 +13,6 @@
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:configChanges="keyboardHidden|orientation"
             android:clearTaskOnLaunch="true" android:noHistory="false"
-            android:launchMode="singleInstance"
             android:stateNotNeeded="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
