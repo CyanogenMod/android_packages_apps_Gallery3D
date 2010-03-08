@@ -47,10 +47,11 @@ public final class MediaFeed implements Runnable {
     private boolean mSingleImageMode;
     private boolean mLoading;
     private HashMap<String, ContentObserver> mContentObservers = new HashMap<String, ContentObserver>();
-    private boolean mRefreshRequested;
+    private ArrayList<String[]> mRequestedRefresh = new ArrayList<String[]>();
 
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
+
         public abstract void onFeedChanged(MediaFeed feed, boolean needsLayout);
     }
 
@@ -298,7 +299,7 @@ public final class MediaFeed implements Runnable {
         }
         return 0;
     }
-    
+
     public ArrayList<Integer> getBreaks() {
         if (true)
             return null;
@@ -469,11 +470,34 @@ public final class MediaFeed implements Runnable {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         if (dataSource != null) {
             while (!Thread.interrupted()) {
-                if (mRefreshRequested) {
-                    mRefreshRequested = false;
+                String[] databaseUris = null;
+                boolean performRefresh = false;
+                synchronized (mRequestedRefresh) {
+                    if (mRequestedRefresh.size() > 0) {
+                        // We prune this first.
+                        int numRequests = mRequestedRefresh.size();
+                        for (int i = 0; i < numRequests; ++i) {
+                            databaseUris = ArrayUtils.addAll(databaseUris, mRequestedRefresh.get(i));
+                        }
+                        mRequestedRefresh.clear();
+                        performRefresh = true;
+                        // We need to eliminate duplicate uris in this array
+                        final HashMap<String, String> uris = new HashMap<String, String>();
+                        if (databaseUris != null) {
+                            int numUris = databaseUris.length;
+                            for (int i = 0; i < numUris; ++i) {
+                                final String uri = databaseUris[i];
+                                if (uri != null)
+                                    uris.put(uri, uri);
+                            }
+                        }
+                        databaseUris = new String[0];
+                        databaseUris = (String[]) uris.keySet().toArray(databaseUris);
+                    }
+                }
+                if (performRefresh) {
                     if (dataSource != null) {
-                        refresh(dataSource.getDatabaseUris());
-                        mMediaFeedNeedsToRun = true;
+                        dataSource.refresh(this, databaseUris);
                     }
                 }
                 if (mListenerNeedsUpdate && !mMediaFeedNeedsToRun) {
@@ -812,13 +836,19 @@ public final class MediaFeed implements Runnable {
     }
 
     public void refresh() {
-        mRefreshRequested = true;
+        if (mDataSource != null) {
+            synchronized (mRequestedRefresh) {
+                mRequestedRefresh.add(mDataSource.getDatabaseUris());
+            }
+        }
     }
 
     private void refresh(final String[] databaseUris) {
         synchronized (mMediaSets) {
             if (mDataSource != null) {
-                mDataSource.refresh(this, databaseUris);
+                synchronized (mRequestedRefresh) {
+                    mRequestedRefresh.add(databaseUris);
+                }
             }
         }
     }
@@ -861,7 +891,7 @@ public final class MediaFeed implements Runnable {
                                 }
                             }
                         };
-                        //cr.registerContentObserver(Uri.parse(uri), true, observer);
+                        cr.registerContentObserver(Uri.parse(uri), true, observer);
                         observers.put(uri, observer);
                     }
                 }

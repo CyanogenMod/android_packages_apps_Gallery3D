@@ -293,7 +293,7 @@ public class LocalDataSource implements DataSource {
                     final String whereVideos = Video.VideoColumns.BUCKET_ID + "=" + Long.toString(set.mId);
                     cr.delete(uriImages, whereImages, null);
                     cr.delete(uriVideos, whereVideos, null);
-                    CacheService.markDirty();
+                    //CacheService.markDirty();
                 }
                 if (set != null && items != null) {
                     // We need to remove these items from the set.
@@ -309,7 +309,7 @@ public class LocalDataSource implements DataSource {
                     }
                     set.updateNumExpectedItems();
                     set.generateTitle(true);
-                    CacheService.markDirty(set.mId);
+                    //CacheService.markDirty(set.mId);
                 }
             }
             break;
