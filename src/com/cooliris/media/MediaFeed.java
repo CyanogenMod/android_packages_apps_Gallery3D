@@ -7,6 +7,7 @@ import java.util.HashSet;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.ContentObserver;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
 import android.net.Uri;
@@ -18,6 +19,7 @@ import com.cooliris.app.Res;
 import com.cooliris.media.MediaClustering.Cluster;
 
 public final class MediaFeed implements Runnable {
+    private final String TAG = "MediaFeed";
     public static final int OPERATION_DELETE = 0;
     public static final int OPERATION_ROTATE = 1;
     public static final int OPERATION_CROP = 2;
@@ -45,6 +47,7 @@ public final class MediaFeed implements Runnable {
     private boolean mSingleImageMode;
     private boolean mLoading;
     private HashMap<String, ContentObserver> mContentObservers = new HashMap<String, ContentObserver>();
+    private boolean mRefreshRequested;
 
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
@@ -466,7 +469,14 @@ public final class MediaFeed implements Runnable {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         if (dataSource != null) {
             while (!Thread.interrupted()) {
-                if (mListenerNeedsUpdate) {
+                if (mRefreshRequested) {
+                    mRefreshRequested = false;
+                    if (dataSource != null) {
+                        refresh(dataSource.getDatabaseUris());
+                        mMediaFeedNeedsToRun = true;
+                    }
+                }
+                if (mListenerNeedsUpdate && !mMediaFeedNeedsToRun) {
                     mListenerNeedsUpdate = false;
                     if (mListener != null)
                         mListener.onFeedChanged(this, mListenerNeedsLayout);
@@ -514,7 +524,9 @@ public final class MediaFeed implements Runnable {
                                         break;
                                     }
                                     if (mListener != null) {
-                                        mListener.onFeedChanged(this, false);
+                                        mListenerNeedsUpdate = false;
+                                        mListener.onFeedChanged(this, mListenerNeedsLayout);
+                                        mListenerNeedsLayout = false;
                                     }
                                     sleepMs = 100;
                                     scanMediaSets = false;
@@ -522,7 +534,9 @@ public final class MediaFeed implements Runnable {
                                 if (!set.setContainsValidItems()) {
                                     mediaSets.remove(set);
                                     if (mListener != null) {
-                                        mListener.onFeedChanged(this, false);
+                                        mListenerNeedsUpdate = false;
+                                        mListener.onFeedChanged(this, mListenerNeedsLayout);
+                                        mListenerNeedsLayout = false;
                                     }
                                     break;
                                 }
@@ -543,7 +557,9 @@ public final class MediaFeed implements Runnable {
                                             break;
                                         }
                                         if (mListener != null) {
-                                            mListener.onFeedChanged(this, false);
+                                            mListenerNeedsUpdate = false;
+                                            mListener.onFeedChanged(this, mListenerNeedsLayout);
+                                            mListenerNeedsLayout = false;
                                         }
                                         sleepMs = 100;
                                         scanMediaSets = false;
@@ -603,10 +619,14 @@ public final class MediaFeed implements Runnable {
                             }
                             if (set.getNumExpectedItems() == 0) {
                                 mediaSets.remove(set);
-                                mListener.onFeedChanged(this, false);
+                                mListenerNeedsUpdate = false;
+                                mListener.onFeedChanged(this, mListenerNeedsLayout);
+                                mListenerNeedsLayout = false;
                             }
                             if (numItemsLoaded != set.mNumItemsLoaded && mListener != null) {
-                                mListener.onFeedChanged(this, false);
+                                mListenerNeedsUpdate = false;
+                                mListener.onFeedChanged(this, mListenerNeedsLayout);
+                                mListenerNeedsLayout = false;
                             }
                         }
                     }
@@ -769,6 +789,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet replaceMediaSet(long setId, DataSource dataSource) {
+        Log.i(TAG, "Replacing media set " + setId);
         final MediaSet set = getMediaSet(setId);
         set.refresh();
         return set;
@@ -791,9 +812,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void refresh() {
-        if (mDataSource != null) {
-            refresh(mDataSource.getDatabaseUris());
-        }
+        mRefreshRequested = true;
     }
 
     private void refresh(final String[] databaseUris) {
@@ -801,8 +820,6 @@ public final class MediaFeed implements Runnable {
             if (mDataSource != null) {
                 mDataSource.refresh(this, databaseUris);
             }
-            mMediaFeedNeedsToRun = true;
-            updateListener(false);
         }
     }
 

@@ -67,7 +67,6 @@
                 <category android:name="android.intent.category.SELECTED_ALTERNATIVE" />
             </intent-filter>
         </activity>
-
         <activity android:name="com.cooliris.media.MovieView"
             android:label="@string/movie_view_label"
             android:screenOrientation="landscape"
