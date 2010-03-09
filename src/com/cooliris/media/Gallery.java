@@ -217,11 +217,11 @@ public final class Gallery extends Activity {
     }
 
     private boolean isImageType(String type) {
-        return type.equals("vnd.android.cursor.dir/image") || type.equals("image/*");
+        return type.contains("*/") || type.equals("vnd.android.cursor.dir/image") || type.equals("image/*");
     }
 
     private boolean isVideoType(String type) {
-        return type.equals("vnd.android.cursor.dir/video") || type.equals("video/*");
+        return type.contains("*/") || type.equals("vnd.android.cursor.dir/video") || type.equals("video/*");
     }
 
     @Override
