@@ -267,7 +267,11 @@ public class LocalDataSource implements DataSource {
                 CacheService.markDirty();
             }
             CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos);
-            feed.moveSetToFront(set);
+
+            // not re-ordering media sets in the case of displaying a single image
+            if (!mSingleUri) {
+              feed.moveSetToFront(set);
+            }
         }
     }
 
