@@ -498,6 +498,7 @@ public final class MediaFeed implements Runnable {
                 if (performRefresh) {
                     if (dataSource != null) {
                         dataSource.refresh(this, databaseUris);
+                        mMediaFeedNeedsToRun = true;
                     }
                 }
                 if (mListenerNeedsUpdate && !mMediaFeedNeedsToRun) {
