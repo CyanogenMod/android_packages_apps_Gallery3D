@@ -142,39 +142,37 @@ public class Utils {
         return outVal;
     }
 
-    public static String getBucketNameFromUri(final ContentResolver cr, final Uri uri) {
+    public static long getBucketIdFromUri(final ContentResolver cr, final Uri uri) {
         if (uri.getScheme().equals("file")) {
-            String string = "";
-            if (string == null || string.length() == 0) {
-                List<String> paths = uri.getPathSegments();
-                int numPaths = paths.size();
-                if (numPaths > 1) {
-                    string = paths.get(paths.size() - 2);
-                }
-                if (string == null)
-                    string = "";
+            String string = "/";
+            List<String> paths = uri.getPathSegments();
+            int numPaths = paths.size();
+            for (int i = 0; i < numPaths - 1; ++i) {
+                string += paths.get(i);
+                if (i != numPaths - 2)
+                    string += "/";
             }
-            return string;
+            return LocalDataSource.getBucketId(string);
         } else {
             Cursor cursor = null;
             try {
                 long id = ContentUris.parseId(uri);
                 cursor = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        new String[] { MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME }, MediaStore.Images.ImageColumns._ID
-                                + "=" + id, null, null);
+                        new String[] { MediaStore.Images.ImageColumns.BUCKET_ID }, MediaStore.Images.ImageColumns._ID + "=" + id,
+                        null, null);
                 if (cursor != null) {
                     if (cursor.moveToFirst()) {
-                        String setVal = cursor.getString(0);
+                        long setVal = cursor.getLong(0);
                         cursor.close();
                         return setVal;
                     }
                 }
                 cursor = cr.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                        new String[] { MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME }, MediaStore.Images.ImageColumns._ID
-                                + "=" + id, null, null);
+                        new String[] { MediaStore.Video.VideoColumns.BUCKET_ID }, MediaStore.Images.ImageColumns._ID + "=" + id,
+                        null, null);
                 if (cursor != null) {
                     if (cursor.moveToFirst()) {
-                        String setVal = cursor.getString(0);
+                        long setVal = cursor.getLong(0);
                         cursor.close();
                         return setVal;
                     }
@@ -182,39 +180,39 @@ public class Utils {
             } catch (Exception e) {
                 ;
             }
-            return "";
+            return Shared.INVALID;
         }
     }
-    
-    public static long getBucketIdFromUri(final ContentResolver cr, final Uri uri) {
-        final String bucketName = getBucketNameFromUri(cr, uri);
-        if (bucketName != null) {
+
+    public static String getBucketNameFromUri(final ContentResolver cr, final Uri uri) {
+        final long bucketId = getBucketIdFromUri(cr, uri);
+        if (bucketId != Shared.INVALID) {
             try {
                 Cursor cursor = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        new String[] { MediaStore.Images.ImageColumns.BUCKET_ID }, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
-                                + "='" + bucketName + "'", null, null);
+                        new String[] { MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME },
+                        MediaStore.Images.ImageColumns.BUCKET_ID + "='" + bucketId + "'", null, null);
                 if (cursor != null) {
                     if (cursor.moveToFirst()) {
-                        long setId = cursor.getLong(0);
+                        String setName = cursor.getString(0);
                         cursor.close();
-                        return setId;
+                        return setName;
                     }
                 }
                 cursor = cr.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                        new String[] { MediaStore.Video.VideoColumns.BUCKET_ID }, MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
-                                + "='" + bucketName + "'", null, null);
+                        new String[] { MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME }, MediaStore.Video.VideoColumns.BUCKET_ID
+                                + "='" + bucketId + "'", null, null);
                 if (cursor != null) {
                     if (cursor.moveToFirst()) {
-                        long setId = cursor.getLong(0);
+                        String setName = cursor.getString(0);
                         cursor.close();
-                        return setId;
+                        return setName;
                     }
                 }
             } catch (Exception e) {
                 ;
             }
         }
-        return Shared.INVALID;
+        return "";
     }
 
     // Copies src file to dst file.
