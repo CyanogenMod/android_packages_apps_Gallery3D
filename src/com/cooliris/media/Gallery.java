@@ -319,6 +319,9 @@ public final class Gallery extends Activity {
             Uri uri = intent.getData();
             boolean slideshow = intent.getBooleanExtra("slideshow", false);
             final LocalDataSource singleDataSource = new LocalDataSource(Gallery.this, uri.toString(), true);
+            // Display both image and video.
+            singleDataSource.setMimeFilter(true, true);
+
             final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource,
                     picasaDataSource);
             mGridLayer.setDataSource(singleCombinedDataSource);
