@@ -2,6 +2,7 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
+
 public class MediaSet {
     public static final int TYPE_SMART = 0;
     public static final int TYPE_FOLDER = 1;

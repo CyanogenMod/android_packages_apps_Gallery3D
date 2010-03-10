@@ -625,7 +625,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                             int itemsRemaining = MAX_ITEMS_PER_SLOT - numBestItems;
                             for (int currItemPos = 0; currItemPos < numItemsInSet; currItemPos++) {
                                 MediaItem item = items.get(currItemPos);
-                                if (mTimeElapsedSinceTransition >= 1.0f || !bestItems.contains(item)) {
+                                if (!bestItems.contains(item)) {
                                     bestItems.add(item);
                                     if (--itemsRemaining == 0) {
                                         break;
