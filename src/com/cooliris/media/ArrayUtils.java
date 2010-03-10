@@ -25,7 +25,7 @@ public final class ArrayUtils {
                 continue;
             MediaItem hashItem = (hash != null) ? hash[firstListItem.hashCode() & mask] : null;
             if (hashItem != null
-                    && ((hashItem.mId != Shared.INVALID && hashItem.mId == firstListItem.mId) || contains(secondList, firstListItem))) {
+                    && ((hashItem.mId != Shared.INVALID && hashItem.hashCode() == firstListItem.hashCode()) || contains(secondList, firstListItem))) {
                 intersectionList.add(firstListItem);
                 if (--maxSize == 0) {
                     break;
@@ -63,7 +63,7 @@ public final class ArrayUtils {
             return false;
         for (int i = 0; i < numItems; ++i) {
             MediaItem thisItem = items.get(i);
-            if (item.mId == thisItem.mId)
+            if (item.hashCode() == thisItem.hashCode())
                 return true;
         }
         return false;
