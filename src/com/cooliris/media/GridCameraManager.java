@@ -19,7 +19,7 @@ public final class GridCameraManager {
     }
 
     public void centerCameraForSlot(LayoutInterface layout, int slotIndex, float baseConvergence, Vector3f deltaAnchorPositionIn,
-            int selectedSlotIndex, float zoomValue, float imageTheta, int state, ArrayList<Integer> breakSlots) {
+            int selectedSlotIndex, float zoomValue, float imageTheta, int state) {
         final GridCamera camera = mCamera;
         final Pool<Vector3f> pool = sPool;
         synchronized (camera) {
@@ -36,7 +36,7 @@ public final class GridCameraManager {
                 final Vector3f deltaAnchorPosition = pool.create();
                 try {
                     deltaAnchorPosition.set(deltaAnchorPositionIn);
-                    GridCameraManager.getSlotPositionForSlotIndex(slotIndex, camera, layout, deltaAnchorPosition, position, breakSlots);
+                    GridCameraManager.getSlotPositionForSlotIndex(slotIndex, camera, layout, deltaAnchorPosition, position);
                     position.x = (zoomValue == 1.0f) ? ((position.x) * camera.mOneByScale) : camera.mLookAtX;
                     position.y = (zoomValue == 1.0f) ? 0 : camera.mLookAtY;
                     if (state == GridLayer.STATE_MEDIA_SETS || state == GridLayer.STATE_TIMELINE) {
@@ -67,7 +67,7 @@ public final class GridCameraManager {
     /**
      */
     public boolean constrainCameraForSlot(LayoutInterface layout, int slotIndex, Vector3f deltaAnchorPositionIn,
-            float currentFocusItemWidth, float currentFocusItemHeight, ArrayList<Integer> breakSlots) {
+            float currentFocusItemWidth, float currentFocusItemHeight) {
         final GridCamera camera = mCamera;
         final Pool<Vector3f> pool = sPool;
         boolean retVal = false;
@@ -82,7 +82,7 @@ public final class GridCameraManager {
             try {
                 if (slotIndex >= 0) {
                     deltaAnchorPosition.set(deltaAnchorPositionIn);
-                    GridCameraManager.getSlotPositionForSlotIndex(slotIndex, camera, layout, deltaAnchorPosition, position, breakSlots);
+                    GridCameraManager.getSlotPositionForSlotIndex(slotIndex, camera, layout, deltaAnchorPosition, position);
                     position.x *= camera.mOneByScale;
                     position.y = 0.0f;
                     float width = (currentFocusItemWidth / 2);
@@ -125,7 +125,7 @@ public final class GridCameraManager {
     }
 
     public void computeVisibleRange(MediaFeed feed, LayoutInterface layout, Vector3f deltaAnchorPositionIn,
-            IndexRange outVisibleRange, IndexRange outBufferedVisibleRange, IndexRange outCompleteRange, int state, ArrayList<Integer> breakSlots) {
+            IndexRange outVisibleRange, IndexRange outBufferedVisibleRange, IndexRange outCompleteRange, int state) {
         GridCamera camera = mCamera;
         Pool<Vector3f> pool = sPool;
         float offset = (camera.mLookAtX * camera.mScale);
@@ -158,7 +158,7 @@ public final class GridCameraManager {
             lastVisibleSlotIndex = firstVisibleSlotIndex;
             deltaAnchorPosition.set(deltaAnchorPositionIn);
             while (index != leftEdge) {
-                GridCameraManager.getSlotPositionForSlotIndex(index, camera, layout, deltaAnchorPosition, position, breakSlots);
+                GridCameraManager.getSlotPositionForSlotIndex(index, camera, layout, deltaAnchorPosition, position);
                 if (FloatUtils.boundsContainsPoint(left, right, top, bottom, position.x, position.y)) {
                     // this index is visible
                     firstVisibleSlotIndex = index;
@@ -175,7 +175,7 @@ public final class GridCameraManager {
             }
             // CR: comments would make me a happy panda.
             while (firstVisibleSlotIndex >= 0 && firstVisibleSlotIndex < numSlots) {
-                GridCameraManager.getSlotPositionForSlotIndex(firstVisibleSlotIndex, camera, layout, deltaAnchorPosition, position, breakSlots);
+                GridCameraManager.getSlotPositionForSlotIndex(firstVisibleSlotIndex, camera, layout, deltaAnchorPosition, position);
                 // CR: !fubar instead of fubar == false.
                 if (FloatUtils.boundsContainsPoint(left, right, top, bottom, position.x, position.y) == false) {
                     ++firstVisibleSlotIndex;
@@ -185,7 +185,7 @@ public final class GridCameraManager {
                 }
             }
             while (lastVisibleSlotIndex >= 0 && lastVisibleSlotIndex < numSlots) {
-                GridCameraManager.getSlotPositionForSlotIndex(lastVisibleSlotIndex, camera, layout, deltaAnchorPosition, position, breakSlots);
+                GridCameraManager.getSlotPositionForSlotIndex(lastVisibleSlotIndex, camera, layout, deltaAnchorPosition, position);
                 if (FloatUtils.boundsContainsPoint(left, right, top, bottom, position.x, position.y) == false) {
                     --lastVisibleSlotIndex;
                     break;
@@ -223,8 +223,8 @@ public final class GridCameraManager {
     }
 
     public static final void getSlotPositionForSlotIndex(int slotIndex, GridCamera camera, LayoutInterface layout,
-            Vector3f deltaAnchorPosition, Vector3f outVal, ArrayList<Integer> breakSlots) {
-        layout.getPositionForSlotIndex(slotIndex, camera.mItemWidth, camera.mItemHeight, breakSlots, outVal);
+            Vector3f deltaAnchorPosition, Vector3f outVal) {
+        layout.getPositionForSlotIndex(slotIndex, camera.mItemWidth, camera.mItemHeight, outVal);
         outVal.subtract(deltaAnchorPosition);
     }
 

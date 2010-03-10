@@ -43,7 +43,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     private final Pool<Vector3f> mTempVec;
     private final Pool<Vector3f> mTempVecAlt;
-    
+
     private final ArrayList<MediaItem> mTempList = new ArrayList<MediaItem>();
     private final MediaItem[] mTempHash = new MediaItem[64];
 
@@ -100,14 +100,18 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private int mFramesDirty;
     private String mRequestFocusContentUri;
     private int mFrameCount;
-    public ArrayList<Integer> mBreakSlots = new ArrayList<Integer>();
-    private ArrayList<Integer> mOldBreakSlots;
+
+    // private ArrayList<Integer> mBreakSlots = new ArrayList<Integer>();
+    // private ArrayList<Integer> mOldBreakSlots;
+    // private LongSparseArray<Integer> mBreakSlots = new
+    // LongSparseArray<Integer>();
+    // private LongSparseArray<Integer> mOldBreakSlots;
 
     public GridLayer(Context context, int itemWidth, int itemHeight, LayoutInterface layoutInterface, RenderView view) {
         mBackground = new BackgroundLayer(this);
         mContext = context;
         mView = view;
-        
+
         Vector3f[] vectorPool = new Vector3f[128];
         int length = vectorPool.length;
         for (int i = 0; i < length; ++i) {
@@ -442,7 +446,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         try {
             deltaAnchorPosition.set(mDeltaAnchorPosition);
             for (int i = firstSlotIndex; i <= lastSlotIndex; ++i) {
-                GridCameraManager.getSlotPositionForSlotIndex(i, mCamera, mLayoutInterface, deltaAnchorPosition, position, mBreakSlots);
+                GridCameraManager.getSlotPositionForSlotIndex(i, mCamera, mLayoutInterface, deltaAnchorPosition, position);
                 if (FloatUtils.boundsContainsPoint(position.x - itemWidthBy2, position.x + itemWidthBy2,
                         position.y - itemHeightBy2, position.y + itemHeightBy2, worldPos.x, worldPos.y)) {
                     retVal = i;
@@ -463,12 +467,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             imageTheta = displayItem.getImageTheta();
         }
         mCameraManager.centerCameraForSlot(mLayoutInterface, slotIndex, baseConvergence, mDeltaAnchorPositionUncommited,
-                mInputProcessor.getCurrentSelectedSlot(), mZoomValue, imageTheta, mState, mBreakSlots);
+                mInputProcessor.getCurrentSelectedSlot(), mZoomValue, imageTheta, mState);
     }
 
     boolean constrainCameraForSlot(int slotIndex) {
         return mCameraManager.constrainCameraForSlot(mLayoutInterface, slotIndex, mDeltaAnchorPosition, mCurrentFocusItemWidth,
-                mCurrentFocusItemHeight, mBreakSlots);
+                mCurrentFocusItemHeight);
     }
 
     // Called on render thread before rendering.
@@ -559,7 +563,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mDeltaAnchorPosition.set(mDeltaAnchorPositionUncommited);
         }
         mCameraManager.computeVisibleRange(mMediaFeed, mLayoutInterface, mDeltaAnchorPosition, mVisibleRange,
-                mBufferedVisibleRange, mCompleteRange, mState, mBreakSlots);
+                mBufferedVisibleRange, mCompleteRange, mState);
     }
 
     private void computeVisibleItems() {
@@ -594,21 +598,23 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 LayoutInterface layout = mLayoutInterface;
                 GridCamera camera = mCamera;
                 for (int i = firstVisibleSlotIndex; i <= lastVisibleSlotIndex; ++i) {
-                    GridCameraManager.getSlotPositionForSlotIndex(i, camera, layout, deltaAnchorPosition, position, mBreakSlots);
+                    GridCameraManager.getSlotPositionForSlotIndex(i, camera, layout, deltaAnchorPosition, position);
                     MediaSet set = feed.getSetForSlot(i);
                     int indexIntoSlots = i - firstVisibleSlotIndex;
-                    
+
                     if (set != null && indexIntoSlots >= 0 && indexIntoSlots < numDisplaySlots) {
                         ArrayList<MediaItem> items = set.getItems();
                         displaySlots[indexIntoSlots].setMediaSet(set);
                         ArrayList<MediaItem> bestItems = mTempList;
-                        //if (mTimeElapsedSinceTransition < 1.0f) 
+                        // if (mTimeElapsedSinceTransition < 1.0f)
                         {
                             // We always show the same top thumbnails for a
                             // stack of albums
-                            //if (mState == STATE_MEDIA_SETS)
-                            //    ArrayUtils.computeSortedIntersection(items, visibleItems, MAX_ITEMS_PER_SLOT, bestItems, sTempHash);
-                            //else
+                            // if (mState == STATE_MEDIA_SETS)
+                            // ArrayUtils.computeSortedIntersection(items,
+                            // visibleItems, MAX_ITEMS_PER_SLOT, bestItems,
+                            // sTempHash);
+                            // else
                             ArrayUtils.computeSortedIntersection(visibleItems, items, MAX_ITEMS_PER_SLOT, bestItems, mTempHash);
                         }
 
@@ -761,7 +767,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             mTargetAlpha = 1.0f;
         }
         mDrawManager.prepareDraw(mBufferedVisibleRange, mVisibleRange, selectedSlotIndex, mInputProcessor.getCurrentFocusSlot(),
-                mInputProcessor.getCurrentScaledSlot(), mInputProcessor.isFocusItemPressed(), mInputProcessor.getScale(), mInputProcessor.getScaleGestureDetector(), mFeedAboutToChange);
+                mInputProcessor.getCurrentScaledSlot(), mInputProcessor.isFocusItemPressed(), mInputProcessor.getScale(),
+                mInputProcessor.getScaleGestureDetector(), mFeedAboutToChange);
         if (mSelectedAlpha != 0.0f) {
             mDrawManager.drawThumbnails(view, gl, mState);
         }
@@ -792,11 +799,11 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mPerformingLayoutChange || !mDeltaAnchorPosition.equals(mDeltaAnchorPositionUncommited)) {
             return;
         }
-        mOldBreakSlots = mBreakSlots;
+        // mOldBreakSlots = mBreakSlots;
         if (mState == STATE_GRID_VIEW) {
-            mBreakSlots = mMediaFeed.getBreaks();
+            final ArrayList<Integer> breaks = mMediaFeed.getBreaks();
         } else {
-            mBreakSlots = null;
+            // mBreakSlots = null;
         }
         mTimeElapsedSinceTransition = 0.0f;
         mPerformingLayoutChange = true;
@@ -826,8 +833,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         try {
             deltaAnchorPosition.set(0, 0, 0);
             if (currentAnchorSlotIndex != Shared.INVALID && newAnchorSlotIndex != Shared.INVALID) {
-                layout.getPositionForSlotIndex(newAnchorSlotIndex, itemWidth, itemHeight, mBreakSlots, deltaAnchorPosition);
-                oldLayout.getPositionForSlotIndex(currentAnchorSlotIndex, itemWidth, itemHeight, mOldBreakSlots, currentSlotPosition);
+                layout.getPositionForSlotIndex(newAnchorSlotIndex, itemWidth, itemHeight, deltaAnchorPosition);
+                oldLayout.getPositionForSlotIndex(currentAnchorSlotIndex, itemWidth, itemHeight, currentSlotPosition);
                 currentSlotPosition.subtract(mDeltaAnchorPosition);
                 deltaAnchorPosition.subtract(currentSlotPosition);
                 deltaAnchorPosition.y = 0;
@@ -1009,7 +1016,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         Vector3f position = pool.create();
         try {
             for (int i = left; i < right; ++i) {
-                gridInterface.getPositionForSlotIndex(i, itemWidth, itemHeight, mBreakSlots, position);
+                gridInterface.getPositionForSlotIndex(i, itemWidth, itemHeight, position);
                 retSlot = i;
                 if (position.x >= absolutePosX) {
                     break;
