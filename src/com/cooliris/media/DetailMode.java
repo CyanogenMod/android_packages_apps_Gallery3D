@@ -1,11 +1,15 @@
 package com.cooliris.media;
 
+import java.io.IOException;
 import java.text.DateFormat;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.media.ExifInterface;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
@@ -127,7 +131,27 @@ public final class DetailMode {
 
         DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
 
-        if (item.isDateTakenValid()) {
+        if (item.mLocaltime == null) {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            try {
+                ExifInterface exif = new ExifInterface(item.mFilePath);
+                String localtime = exif.getAttribute(ExifInterface.TAG_DATETIME);
+                if (localtime != null) {
+                    item.mLocaltime = formatter.parse(localtime, new ParsePosition(0));
+                }
+            } catch (IOException ex) {
+                // ignore it.
+            }
+            if (item.mLocaltime == null && item.mCaption != null) {
+                formatter = new SimpleDateFormat("yyyyMMdd'_'HHmmss");
+                // skip initial IMG_ or VND_
+                item.mLocaltime = formatter.parse(item.mCaption, new ParsePosition(4));
+            }
+        }
+
+        if (item.mLocaltime != null) {
+            strings[2] = resources.getString(Res.string.taken_on) + ": " + dateTimeFormat.format(item.mLocaltime);
+        } else if (item.isDateTakenValid()) {
             long dateTaken = item.mDateTakenInMs;
             if (item.isPicassaItem()) {
                 dateTaken -= App.CURRENT_TIME_ZONE.getOffset(dateTaken);

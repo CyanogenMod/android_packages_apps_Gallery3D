@@ -1,5 +1,7 @@
 package com.cooliris.media;
 
+import java.util.Date;
+
 public final class MediaItem {
     public static final int MEDIA_TYPE_IMAGE = 0;
     public static final int MEDIA_TYPE_VIDEO = 1;
@@ -37,6 +39,7 @@ public final class MediaItem {
     public String mReverseGeocodedLocation;
 
     public long mDateTakenInMs = 0;
+    public Date mLocaltime;
     public boolean mTriedRetrievingExifDateTaken = false;
     public long mDateModifiedInSec = 0;
     public long mDateAddedInSec = 0;
