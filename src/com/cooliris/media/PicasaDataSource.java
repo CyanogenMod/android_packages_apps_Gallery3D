@@ -1,6 +1,7 @@
 package com.cooliris.media;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import android.accounts.Account;
@@ -31,7 +32,6 @@ public final class PicasaDataSource implements DataSource {
 
     private ContentProviderClient mProviderClient;
     private final Context mContext;
-    private ContentObserver mAlbumObserver;
 
     public PicasaDataSource(final Context context) {
         mContext = context;
@@ -63,26 +63,11 @@ public final class PicasaDataSource implements DataSource {
         // Ensure that users are up to date. TODO: also listen for accounts
         // changed broadcast.
         PicasaService.requestSync(mContext, PicasaService.TYPE_USERS_ALBUMS, 0);
-        final Handler handler = App.get(mContext).getHandler();
-        final ContentObserver albumObserver = new ContentObserver(handler) {
-            public void onChange(boolean selfChange) {
-                loadMediaSetsIntoFeed(feed, true);
-            }
-        };
-        mAlbumObserver = albumObserver;
         loadMediaSetsIntoFeed(feed, true);
-
-        // Start listening.
-        ContentResolver cr = mContext.getContentResolver();
-        cr.registerContentObserver(PicasaContentProvider.ALBUMS_URI, false, mAlbumObserver);
-        cr.registerContentObserver(PicasaContentProvider.PHOTOS_URI, false, mAlbumObserver);
     }
 
     public void shutdown() {
-        if (mAlbumObserver != null) {
-            ContentResolver cr = mContext.getContentResolver();
-            cr.unregisterContentObserver(mAlbumObserver);
-        }
+        ;
     }
 
     public void loadItemsForSet(final MediaFeed feed, final MediaSet parentSet, int rangeStart, int rangeEnd) {
@@ -267,8 +252,7 @@ public final class PicasaDataSource implements DataSource {
     public void refresh(final MediaFeed feed, final String[] databaseUris) {
         // Depending on what URI changed, we either need to update the mediasets or the mediaitems of a set.
         if (databaseUris != null && databaseUris.length > 0) {
-            final String firstString = databaseUris[0];
-            if (databaseUris.length == 2 || firstString.equals(PicasaContentProvider.ALBUMS_URI)) {
+            if (ArrayUtils.contains(databaseUris, PicasaContentProvider.ALBUMS_URI.toString())) {
                 // We need to refresh all mediasets of this datasource type.
                 final ArrayList<MediaSet> mediaSets = feed.getMediaSets();
                 final int numMediaSets = mediaSets.size();
@@ -279,7 +263,7 @@ public final class PicasaDataSource implements DataSource {
                         set.refresh();
                     }
                 }
-            } else {
+            } else if (ArrayUtils.contains(databaseUris, PicasaContentProvider.PHOTOS_URI.toString())) {
                 // We need to update just the one set that has these photos.
                 // This operation is not yet supported, so we might as well refresh everything.
                 final ArrayList<MediaSet> mediaSets = feed.getMediaSets();
