@@ -30,7 +30,7 @@ public final class ReverseGeocoder extends Thread {
     private static final String TAG = "ReverseGeocoder";
     private static Criteria LOCATION_CRITERIA = new Criteria();
     private static Address sCurrentAddress; // last known address
-    
+
     static {
         LOCATION_CRITERIA.setAccuracy(Criteria.ACCURACY_COARSE);
         LOCATION_CRITERIA.setPowerRequirement(Criteria.NO_REQUIREMENT);
@@ -156,7 +156,6 @@ public final class ReverseGeocoder extends Thread {
         String addr2AdminArea = checkNull(addr2.getAdminArea());
         String addr1CountryCode = checkNull(addr1.getCountryCode());
         String addr2CountryCode = checkNull(addr2.getCountryCode());
-        
 
         if (currentCity.equals(addr1Locality) && currentCity.equals(addr2Locality)) {
             String otherCity = currentCity;
@@ -295,69 +294,74 @@ public final class ReverseGeocoder extends Thread {
     protected String getReverseGeocodedLocation(final double latitude, final double longitude, final int desiredNumDetails) {
         String location = null;
         int numDetails = 0;
-        Address addr = lookupAddress(latitude, longitude);
+        try {
+            Address addr = lookupAddress(latitude, longitude);
 
-        if (addr != null) {
-            // Look at the first line of the address, thorough fare and feature
-            // name in order and pick one.
-            location = addr.getAddressLine(0);
-            if (location != null && !("null".equals(location))) {
-                numDetails++;
-            } else {
-                location = addr.getThoroughfare();
+            if (addr != null) {
+                // Look at the first line of the address, thorough fare and
+                // feature
+                // name in order and pick one.
+                location = addr.getAddressLine(0);
                 if (location != null && !("null".equals(location))) {
                     numDetails++;
                 } else {
-                    location = addr.getFeatureName();
+                    location = addr.getThoroughfare();
                     if (location != null && !("null".equals(location))) {
                         numDetails++;
+                    } else {
+                        location = addr.getFeatureName();
+                        if (location != null && !("null".equals(location))) {
+                            numDetails++;
+                        }
+                    }
+                }
+
+                if (numDetails == desiredNumDetails) {
+                    return location;
+                }
+
+                String locality = addr.getLocality();
+                if (locality != null && !("null".equals(locality))) {
+                    if (location != null && location.length() > 0) {
+                        location += ", " + locality;
+                    } else {
+                        location = locality;
+                    }
+                    numDetails++;
+                }
+
+                if (numDetails == desiredNumDetails) {
+                    return location;
+                }
+
+                String adminArea = addr.getAdminArea();
+                if (adminArea != null && !("null".equals(adminArea))) {
+                    if (location != null && location.length() > 0) {
+                        location += ", " + adminArea;
+                    } else {
+                        location = adminArea;
+                    }
+                    numDetails++;
+                }
+
+                if (numDetails == desiredNumDetails) {
+                    return location;
+                }
+
+                String countryCode = addr.getCountryCode();
+                if (countryCode != null && !("null".equals(countryCode))) {
+                    if (location != null && location.length() > 0) {
+                        location += ", " + countryCode;
+                    } else {
+                        location = addr.getCountryName();
                     }
                 }
             }
 
-            if (numDetails == desiredNumDetails) {
-                return location;
-            }
-
-            String locality = addr.getLocality();
-            if (locality != null && !("null".equals(locality))) {
-                if (location != null && location.length() > 0) {
-                    location += ", " + locality;
-                } else {
-                    location = locality;
-                }
-                numDetails++;
-            }
-
-            if (numDetails == desiredNumDetails) {
-                return location;
-            }
-
-            String adminArea = addr.getAdminArea();
-            if (adminArea != null && !("null".equals(adminArea))) {
-                if (location != null && location.length() > 0) {
-                    location += ", " + adminArea;
-                } else {
-                    location = adminArea;
-                }
-                numDetails++;
-            }
-
-            if (numDetails == desiredNumDetails) {
-                return location;
-            }
-
-            String countryCode = addr.getCountryCode();
-            if (countryCode != null && !("null".equals(countryCode))) {
-                if (location != null && location.length() > 0) {
-                    location += ", " + countryCode;
-                } else {
-                    location = addr.getCountryName();
-                }
-            }
+            return location;
+        } catch (Exception e) {
+            return null;
         }
-
-        return location;
     }
 
     private String getLocalityAdminForAddress(final Address addr, final boolean approxLocation) {
@@ -463,8 +467,7 @@ public final class ReverseGeocoder extends Thread {
                 dis.close();
             }
             return address;
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Ignore.
         }
         return null;

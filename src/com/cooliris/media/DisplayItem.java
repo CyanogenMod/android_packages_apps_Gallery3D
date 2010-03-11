@@ -3,7 +3,6 @@ package com.cooliris.media;
 import java.util.Random;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.cooliris.app.App;
 import com.cooliris.media.FloatUtils;
@@ -38,6 +37,7 @@ public final class DisplayItem {
     private float mSpan;
     private float mSpanDirection;
     private float mStartOffset;
+    private float mSpanSpeed;
     private static final String TAG = "DisplayItem";
 
     public DisplayItem(MediaItem item) {
@@ -261,9 +261,14 @@ public final class DisplayItem {
             maxSlots = FloatUtils.clamp(maxSlots, 0, GridLayer.MAX_ITEMS_PER_SLOT);
             if (Math.abs(spanDelta) < 10 * App.PIXEL_DENSITY) {
                 // almost the same span
-                mStartOffset += (mSpanDirection * 0.06f);
+                mStartOffset += (mSpanDirection * mSpanSpeed);
                 mStartOffset = FloatUtils.clamp(mStartOffset, 0, maxSlots);
             } else {
+                mSpanSpeed = Math.abs(span / (600 * App.PIXEL_DENSITY));
+                if (mSpanSpeed > 2.0f) {
+                    mSpanSpeed = 2.0f;
+                }
+                mSpanSpeed *= 0.1f;
                 mSpanDirection = Math.signum(spanDelta);
             }
             mSpan = span;

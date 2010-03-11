@@ -181,7 +181,11 @@ public class MediaSet {
         } else if (mItems.get(0).mId == -1L) {
             mItems.set(0, item);
         } else {
-            mItems.add(mCurrentLocation, item);
+            if (mItems.size() > mCurrentLocation) {
+                mItems.set(mCurrentLocation, item);
+            } else {
+                mItems.add(mCurrentLocation, item);
+            }
         }
         if (item.mId != Shared.INVALID) {
             if (lookupItem == null) {
