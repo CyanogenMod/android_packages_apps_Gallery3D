@@ -917,7 +917,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     DisplayItem displayItem = displayItems[indexIntoDisplayItem + j];
                     if (displayItem != null) {
                         MediaItem item = displayItem.mItemRef;
-                        if (item != anchorItem) {
+                        if (!visibleItems.contains(item)) {
                             visibleItems.add(item);
                         }
                     }
