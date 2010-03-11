@@ -215,7 +215,11 @@ public final class GridDrawManager {
                             float maxVal = GridCamera.EYE_Z * 0.5f;
                             float zVal = minVal + mSpreadValue;
                             zVal = FloatUtils.clamp(zVal, minVal, maxVal);
-                            mCamera.moveZTo(-zVal);
+                            if (Float.isInfinite(zVal) || Float.isNaN(zVal)) {
+                                mCamera.moveZTo(0);
+                            } else {
+                                mCamera.moveZTo(-zVal);
+                            }
                         }
                     }
                 }
