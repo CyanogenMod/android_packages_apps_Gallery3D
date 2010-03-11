@@ -881,7 +881,11 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         DisplayItem[] displayItems = sDisplayItems;
         int firstBufferedVisibleSlotIndex = sBufferedVisibleRange.begin;
         int lastBufferedVisibleSlotIndex = sBufferedVisibleRange.end;
-        int currentlyVisibleSlotIndex = (mState == STATE_MEDIA_SETS) ? getAnchorSlotIndex(ANCHOR_LEFT) : getAnchorSlotIndex(ANCHOR_CENTER);
+        int currentlyVisibleSlotIndex = getAnchorSlotIndex(ANCHOR_CENTER);
+        int numVisibleItems = sVisibleRange.end - sVisibleRange.begin + 1;
+        if (mState == STATE_MEDIA_SETS && currentlyVisibleSlotIndex < numVisibleItems) {
+            currentlyVisibleSlotIndex = getAnchorSlotIndex(ANCHOR_LEFT);
+        }
         if (mCurrentExpandedSlot != Shared.INVALID) {
             currentlyVisibleSlotIndex = mCurrentExpandedSlot;
         }

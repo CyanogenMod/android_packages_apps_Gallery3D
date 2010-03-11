@@ -176,6 +176,50 @@ public final class GridDrawManager {
             view.prime(drawables.mTexturePlaceholder, true);
             Texture placeholder = (state == GridLayer.STATE_GRID_VIEW) ? drawables.mTexturePlaceholder : null;
             final boolean pushDown = (state == GridLayer.STATE_GRID_VIEW || state == GridLayer.STATE_FULL_SCREEN) ? false : true;
+            for (int j = 0; j < GridLayer.MAX_ITEMS_PER_SLOT; ++j) {
+                DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + j];
+                if (displayItem == null)
+                    continue;
+                Texture texture = displayItem.getThumbnailImage(context, sThumbnailConfig);
+                if (texture == null || !texture.isLoaded()) {
+                    if (currentScaleSlot != index) {
+                        if (j == 0) {
+                            final MediaSet parentSet = displayItem.mItemRef.mParentMediaSet;
+                            if (parentSet != null && parentSet.getNumItems() <= 1) {
+                                displayList.setAlive(displayItem, false);
+                            }
+                        } else {
+                            displayList.setAlive(displayItem, false);
+                        }
+                    }
+                }
+                final float dx1 = mScaleGestureDetector.getTopFingerDeltaX();
+                final float dy1 = mScaleGestureDetector.getTopFingerDeltaY();
+                final float dx2 = mScaleGestureDetector.getBottomFingerDeltaX();
+                final float dy2 = mScaleGestureDetector.getBottomFingerDeltaY();
+                final float span = mScaleGestureDetector.getCurrentSpan();
+                if (state == GridLayer.STATE_FULL_SCREEN) {
+                    displayList.setOffset(displayItem, false, true, span, dx1, dy1, dx2, dy2);
+                } else {
+                    if (!mHoldPosition) {
+                        if (state != GridLayer.STATE_GRID_VIEW) {
+                            if (currentScaleSlot == index) {
+                                displayList.setOffset(displayItem, true, false, span, dx1, dy1, dx2, dy2);
+                            } else if (currentScaleSlot != Shared.INVALID) {
+                                displayList.setOffset(displayItem, true, true, span, dx1, dy1, dx2, dy2);
+                            } else {
+                                displayList.setOffset(displayItem, false, false, span, dx1, dy1, dx2, dy2);
+                            }
+                        } else {
+                            float minVal = -1.0f;
+                            float maxVal = GridCamera.EYE_Z * 0.5f;
+                            float zVal = minVal + mSpreadValue;
+                            zVal = FloatUtils.clamp(zVal, minVal, maxVal);
+                            mCamera.moveZTo(-zVal);
+                        }
+                    }
+                }
+            }
             for (int j = startSlotIndex; j < GridLayer.MAX_ITEMS_PER_SLOT; ++j) {
                 DisplayItem displayItem = displayItems[(index - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT + j];
                 if (displayItem == null) {
@@ -187,32 +231,6 @@ public final class GridDrawManager {
                     } else {
                         displayList.setHasFocus(displayItem, false, pushDown);
                     }
-                    final float dx1 = mScaleGestureDetector.getTopFingerDeltaX();
-                    final float dy1 = mScaleGestureDetector.getTopFingerDeltaY();
-                    final float dx2 = mScaleGestureDetector.getBottomFingerDeltaX();
-                    final float dy2 = mScaleGestureDetector.getBottomFingerDeltaY();
-                    final float span = mScaleGestureDetector.getCurrentSpan();
-                    if (state == GridLayer.STATE_FULL_SCREEN) {
-                        displayList.setOffset(displayItem, false, true, span, dx1, dy1, dx2, dy2);
-                    } else {
-                        if (!mHoldPosition) {
-                            if (state != GridLayer.STATE_GRID_VIEW) {
-                                if (currentScaleSlot == index) {
-                                    displayList.setOffset(displayItem, true, false, span, dx1, dy1, dx2, dy2);
-                                } else if (currentScaleSlot != Shared.INVALID) {
-                                    displayList.setOffset(displayItem, true, true, span, dx1, dy1, dx2, dy2);
-                                } else {
-                                    displayList.setOffset(displayItem, false, false, span, dx1, dy1, dx2, dy2);
-                                }
-                            } else {
-                                float minVal = -1.0f;
-                                float maxVal = GridCamera.EYE_Z * 0.5f;
-                                float zVal = minVal + mSpreadValue;
-                                zVal = FloatUtils.clamp(zVal, minVal, maxVal);
-                                mCamera.moveZTo(-zVal);
-                            }
-                        }
-                    }
                     if (j >= maxDisplayedItemsPerSlot)
                         continue;
                     Texture texture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
@@ -221,12 +239,12 @@ public final class GridDrawManager {
                             displayItem.mAlive = true;
                         if ((!displayItem.isAnimating() || !texture.isLoaded())
                                 && displayItem.getStackIndex() > GridLayer.MAX_ITEMS_PER_SLOT) {
-                            displayItem.mAlive = true;
+                            displayList.setAlive(displayItem, true);
                             continue;
                         }
                         if (index < firstVisibleSlot || index > lastVisibleSlot) {
                             if (view.bind(texture)) {
-                                mDisplayList.setAlive(displayItem, true);
+                                displayList.setAlive(displayItem, true);
                             }
                             continue;
                         }

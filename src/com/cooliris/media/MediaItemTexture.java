@@ -79,7 +79,6 @@ public final class MediaItemTexture extends Texture {
     }
 
     protected Bitmap load(RenderView view) {
-
         final Config config = mConfig;
         final MediaItem item = mItem;
 

@@ -54,7 +54,7 @@ public final class DiskCache {
         if (record != null) {
             // Read the chunk from the file.
             if (record.timestamp < timestamp) {
-                Log.i(TAG, "File has been updated since the last time stored in cache.");
+                Log.i(TAG, "File has been updated to " + timestamp + " since the last time " + record.timestamp + " stored in cache.");
                 return null;
             }
             try {
