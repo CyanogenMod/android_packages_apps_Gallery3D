@@ -550,6 +550,7 @@ public final class MediaFeed implements Runnable {
                                 if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
                                     synchronized (set) {
                                         dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                        set.checkForDeletedItems();
                                     }
                                     if (set.getNumExpectedItems() == 0) {
                                         mediaSets.remove(set);
@@ -583,6 +584,7 @@ public final class MediaFeed implements Runnable {
                                     if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
                                         synchronized (set) {
                                             dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                            set.checkForDeletedItems();
                                         }
                                         if (set.getNumExpectedItems() == 0) {
                                             mediaSets.remove(set);
@@ -648,6 +650,7 @@ public final class MediaFeed implements Runnable {
                             synchronized (set) {
                                 dataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
                                         * NUM_ITEMS_LOOKAHEAD + NUM_ITEMS_LOOKAHEAD);
+                                set.checkForDeletedItems();
                             }
                             if (set.getNumExpectedItems() == 0) {
                                 mediaSets.remove(set);

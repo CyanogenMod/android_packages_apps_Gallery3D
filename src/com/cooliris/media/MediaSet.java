@@ -2,7 +2,6 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
-
 public class MediaSet {
     public static final int TYPE_SMART = 0;
     public static final int TYPE_FOLDER = 1;
@@ -10,7 +9,7 @@ public class MediaSet {
 
     public long mId;
     public String mName;
-    
+
     public boolean mFlagForDelete;
 
     public boolean mHasImages;
@@ -170,8 +169,9 @@ public class MediaSet {
         if (itemToAdd == null) {
             return;
         }
-        final LongSparseArray<MediaItem> lookup = (itemToAdd.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
-        MediaItem lookupItem = lookup.get(itemToAdd.mId); 
+        final LongSparseArray<MediaItem> lookup = (itemToAdd.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup
+                : mItemsLookupVideo;
+        MediaItem lookupItem = lookup.get(itemToAdd.mId);
         if (lookupItem != null && !lookupItem.mFilePath.equals(itemToAdd.mFilePath)) {
             lookupItem = null;
         }
@@ -254,7 +254,8 @@ public class MediaSet {
                 --mNumExpectedItems;
                 --mNumItemsLoaded;
                 --mCurrentLocation;
-                final LongSparseArray<MediaItem> lookup = (itemToRemove.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
+                final LongSparseArray<MediaItem> lookup = (itemToRemove.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup
+                        : mItemsLookupVideo;
                 lookup.remove(itemToRemove.mId);
                 return true;
             }
@@ -266,10 +267,11 @@ public class MediaSet {
      * @return true if this MediaSet contains the argument MediaItem.
      */
     public boolean lookupContainsItem(final MediaItem item) {
-        final LongSparseArray<MediaItem> lookupTable = (item.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup : mItemsLookupVideo;
+        final LongSparseArray<MediaItem> lookupTable = (item.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup
+                : mItemsLookupVideo;
         MediaItem lookUp = lookupTable.get(item.mId);
         if (lookUp != null && lookUp.mFilePath.equals(item.mFilePath)) {
-           return true;
+            return true;
         } else {
             return false;
         }
@@ -334,17 +336,22 @@ public class MediaSet {
             item.mFlagForDelete = true;
         }
     }
-    
+
     public void checkForDeletedItems() {
         final ArrayList<MediaItem> items = mItems;
+        final ArrayList<MediaItem> itemsToDelete = new ArrayList<MediaItem>();
         synchronized (items) {
             final int numItems = items.size();
             for (int i = 0; i < numItems; ++i) {
                 MediaItem item = items.get(i);
                 if (item.mFlagForDelete) {
-                    removeItem(item);
+                    itemsToDelete.add(item);
                 }
             }
+        }
+        final int numItemsToDelete = itemsToDelete.size();
+        for (int i = 0; i < numItemsToDelete; ++i) {
+            removeItem(itemsToDelete.get(i));
         }
     }
 }
