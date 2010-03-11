@@ -502,7 +502,8 @@ public final class HudLayer extends Layer {
             action = mGridModeButtonAction;
             break;
         case GridLayer.STATE_FULL_SCREEN:
-            if (getGridLayer() != null && getGridLayer().getFeed() != null && getGridLayer().getFeed().getExpandedMediaSet() != null) {
+            if (getGridLayer() != null && getGridLayer().getFeed() != null
+                    && getGridLayer().getFeed().getExpandedMediaSet() != null) {
                 if (getGridLayer().getFeed().getExpandedMediaSet().mId == LocalDataSource.CAMERA_BUCKET_ID) {
                     image = CAMERA_BUTTON_ICON;
                     pressedImage = CAMERA_BUTTON_ICON_PRESSED;
@@ -688,12 +689,15 @@ public final class HudLayer extends Layer {
                             mimeType = "text/plain";
                         }
                     }
-                    if (mediaType == item.getMediaType()) {
-                        // add this uri
-                        if (item.mContentUri != null) {
-                            Uri uri = Uri.parse(item.mContentUri);
-                            uris.add(uri);
-                        }
+                    // Ensure that the media type remains the same
+                    if (mediaType != item.getMediaType()) {
+                        if (!mimeType.contains("text"))
+                            mimeType = "*/*";
+                    }
+                    // add this uri
+                    if (item.mContentUri != null) {
+                        Uri uri = Uri.parse(item.mContentUri);
+                        uris.add(uri);
                     }
                 }
             }
