@@ -426,21 +426,28 @@ public final class MediaFeed implements Runnable {
         if (mDataSource == null)
             return;
         final ArrayList<MediaSet> sets = mMediaSets;
-        final int numSets = sets.size();
-        for (int i = 0; i < numSets; ++i) {
-            final MediaSet set = sets.get(i);
-            set.mFlagForDelete = true;
-        }
         synchronized (sets) {
+            final int numSets = sets.size();
+            for (int i = 0; i < numSets; ++i) {
+                final MediaSet set = sets.get(i);
+                set.mFlagForDelete = true;
+            }
             mDataSource.refresh(MediaFeed.this, mDataSource.getDatabaseUris());
             mDataSource.loadMediaSets(MediaFeed.this);
-        }
-        for (int i = 0; i < numSets; ++i) {
-            final MediaSet set = sets.get(i);
-            if (set.mFlagForDelete) {
-                removeMediaSet(set);
+            final ArrayList<MediaSet> setsToRemove = new ArrayList<MediaSet>();
+            for (int i = 0; i < numSets; ++i) {
+                final MediaSet set = sets.get(i);
+                if (set.mFlagForDelete) {
+                    setsToRemove.add(set);
+                }
             }
+            int numSetsToRemove = setsToRemove.size();
+            for (int i = 0; i < numSetsToRemove; ++i) {
+                sets.remove(setsToRemove.get(i));
+            }
+            setsToRemove.clear();
         }
+        mMediaFeedNeedsToRun = true;
         updateListener(false);
     }
 
