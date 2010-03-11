@@ -167,6 +167,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void layout() {
         if (mFeed != null) {
             // Clear existing markers.
@@ -216,6 +217,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
                 GregorianCalendar time = new GregorianCalendar();
                 ArrayList<MediaItem> items = set.getItems();
                 if (items != null) {
+                    items = (ArrayList<MediaItem>)items.clone();
                     int j = 0;
                     while (j < set.getNumItems()) {
                         final MediaItem item = items.get(j);
