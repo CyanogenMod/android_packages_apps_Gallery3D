@@ -183,6 +183,8 @@ public class UriTexture extends Texture {
     @Override
     protected Bitmap load(RenderView view) {
         Bitmap bitmap = null;
+        if (mUri == null)
+            return bitmap;
         try {
             if (mUri.startsWith("http://")) {
                 if (!isCached(Utils.Crc64Long(mUri), MAX_RESOLUTION_A)) {
