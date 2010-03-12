@@ -511,7 +511,9 @@ public final class MediaFeed implements Runnable {
                 if (mListenerNeedsUpdate && !mMediaFeedNeedsToRun) {
                     mListenerNeedsUpdate = false;
                     if (mListener != null)
-                        mListener.onFeedChanged(this, mListenerNeedsLayout);
+                        synchronized (mMediaSets) {
+                            mListener.onFeedChanged(this, mListenerNeedsLayout);
+                        }
                     try {
                         Thread.sleep(sleepMs);
                     } catch (InterruptedException e) {
