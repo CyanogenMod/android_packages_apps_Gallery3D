@@ -882,19 +882,23 @@ public final class MediaFeed implements Runnable {
     }
 
     public void onResume() {
+        final Context context = mContext;
+        final DataSource dataSource = mDataSource;
+        if (context == null || dataSource == null)
+            return;
         // We setup the listeners for this datasource
-        final String[] uris = mDataSource.getDatabaseUris();
+        final String[] uris = dataSource.getDatabaseUris();
         final HashMap<String, ContentObserver> observers = mContentObservers;
-        if (mContext instanceof Gallery) {
-            final Gallery gallery = (Gallery) mContext;
-            final ContentResolver cr = mContext.getContentResolver();
+        if (context instanceof Gallery) {
+            final Gallery gallery = (Gallery) context;
+            final ContentResolver cr = context.getContentResolver();
             if (uris != null) {
                 final int numUris = uris.length;
                 for (int i = 0; i < numUris; ++i) {
                     final String uri = uris[i];
                     final ContentObserver presentObserver = observers.get(uri);
                     if (presentObserver == null) {
-                        final Handler handler = App.get(mContext).getHandler();
+                        final Handler handler = App.get(context).getHandler();
                         final ContentObserver observer = new ContentObserver(handler) {
                             public void onChange(boolean selfChange) {
                                 if (!mWaitingForMediaScanner) {
