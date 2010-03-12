@@ -502,8 +502,13 @@ public final class MediaFeed implements Runnable {
                         databaseUris = (String[]) uris.keySet().toArray(databaseUris);
                     }
                 }
+                boolean settingFeedAboutToChange = false;
                 if (performRefresh) {
                     if (dataSource != null) {
+                        if (mListener != null) {
+                            settingFeedAboutToChange = true;
+                            mListener.onFeedAboutToChange(this);
+                        }
                         dataSource.refresh(this, databaseUris);
                         mMediaFeedNeedsToRun = true;
                     }
@@ -532,6 +537,9 @@ public final class MediaFeed implements Runnable {
                 App app = App.get(mContext);
                 if (app == null || app.isPaused())
                     continue;
+                if (settingFeedAboutToChange) {
+                    updateListener(true);
+                }
                 mMediaFeedNeedsToRun = false;
                 ArrayList<MediaSet> mediaSets = mMediaSets;
                 synchronized (mediaSets) {
