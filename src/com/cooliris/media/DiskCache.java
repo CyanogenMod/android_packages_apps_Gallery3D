@@ -54,7 +54,8 @@ public final class DiskCache {
         if (record != null) {
             // Read the chunk from the file.
             if (record.timestamp < timestamp) {
-                Log.i(TAG, "File has been updated to " + timestamp + " since the last time " + record.timestamp + " stored in cache.");
+                Log.i(TAG, "File has been updated to " + timestamp + " since the last time " + record.timestamp
+                        + " stored in cache.");
                 return null;
             }
             try {
@@ -266,10 +267,16 @@ public final class DiskCache {
     }
 
     private void writeIndex() {
+        File tempFile = null;
+        final String tempFilePath = mCacheDirectoryPath;
         final String indexFilePath = getIndexFilePath();
         try {
-            // Create a temporary file to write the index into.
-            File tempFile = File.createTempFile("DiskCacheIndex", null);
+            tempFile = File.createTempFile("DiskCache", null, new File(tempFilePath));
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to create or tempFile " + tempFilePath);
+            return;
+        }
+        try {
             final FileOutputStream fileOutput = new FileOutputStream(tempFile);
             final BufferedOutputStream bufferedOutput = new BufferedOutputStream(fileOutput, 1024);
             final DataOutputStream dataOutput = new DataOutputStream(bufferedOutput);
@@ -300,8 +307,10 @@ public final class DiskCache {
 
             // Atomically overwrite the old index file.
             tempFile.renameTo(new File(indexFilePath));
-        } catch (IOException e) {
+        } catch (Exception e) {
+            // Was unable to perform the operation, we delete the temp file
             Log.e(TAG, "Unable to write the index file " + indexFilePath);
+            tempFile.delete();
         }
     }
 
