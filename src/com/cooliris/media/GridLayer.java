@@ -995,7 +995,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public DisplayItem getAnchorDisplayItem(int type) {
         int slotIndex = getAnchorSlotIndex(type);
-        return mDisplayItems[(slotIndex - mBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT];
+        int index = (slotIndex - mBufferedVisibleRange.begin) * MAX_ITEMS_PER_SLOT;
+        if (index >= 0 && index < MAX_ITEMS_DRAWABLE) {
+            return mDisplayItems[index];
+        } else {
+            return null;
+        }
     }
 
     public float getScrollPosition() {
