@@ -1242,6 +1242,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         // TODO lot of optimization possible here
         MediaItem item = timebar.getItem();
         MediaFeed feed = mMediaFeed;
+        if (feed == null)
+            return;
         int numSlots = feed.getNumSlots();
         for (int i = 0; i < numSlots; ++i) {
             MediaSet set = feed.getSetForSlot(i);
