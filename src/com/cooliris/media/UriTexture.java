@@ -2,6 +2,7 @@ package com.cooliris.media;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -80,6 +81,16 @@ public class UriTexture extends Texture {
         mCacheId = id;
     }
 
+    private static int computeSampleSize(byte[] data, int maxResolutionX,
+        int maxResolutionY) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(data, 0, data.length, options);
+        int maxNumOfPixels = maxResolutionX * maxResolutionY;
+        int minSideLength = Math.min(maxResolutionX, maxResolutionY) / 2;
+        return Utils.computeSampleSize(options, minSideLength, maxNumOfPixels);
+    }
+
     public static final Bitmap createFromUri(Context context, String uri, int maxResolutionX, int maxResolutionY, long cacheId,
             ClientConnectionManager connectionManager) throws IOException, URISyntaxException, OutOfMemoryError {
         final BitmapFactory.Options options = new BitmapFactory.Options();
@@ -99,46 +110,16 @@ public class UriTexture extends Texture {
             return bitmap;
         }
         final boolean local = uri.startsWith(ContentResolver.SCHEME_CONTENT) || uri.startsWith("file://");
-        int sampleSize = 1;
-        if (uri.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            // Load the bitmap from a local file.
-            options.inJustDecodeBounds = true;
-            BufferedInputStream bufferedInput = new BufferedInputStream(context.getContentResolver()
-                    .openInputStream(Uri.parse(uri)), 16384);
-            bufferedInput.mark(Integer.MAX_VALUE);
-            bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
-            int width = options.outWidth;
-            int height = options.outHeight;
-            float maxResX = maxResolutionY;
-            if (width > height) {
-                maxResX = maxResolutionX;
-            }
-            float maxResY = (maxResX == maxResolutionX) ? maxResolutionY : maxResolutionX;
-            int ratioX = (int) Math.ceil((float) width / maxResX);
-            int ratioY = (int) Math.ceil((float) height / maxResY);
-            int ratio = Math.max(ratioX, ratioY);
-            ratio = Shared.nextPowerOf2(ratio);
-            sampleSize = ratio;
-            options.inDither = false;
-            options.inJustDecodeBounds = false;
-            options.inSampleSize = ratio;
-            Thread timeoutThread = new Thread("BitmapTimeoutThread") {
-                public void run() {
-                    try {
-                        Thread.sleep(6000);
-                        options.requestCancelDecode();
-                    } catch (InterruptedException e) {
 
-                    }
-                }
-            };
-            timeoutThread.start();
-            bufferedInput.close();
-            bufferedInput = new BufferedInputStream(context.getContentResolver().openInputStream(Uri.parse(uri)), 16384);
-            bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
-            bufferedInput.close();
+        // Get the input stream either from a local file or a remote URL.
+        BufferedInputStream bufferedInput = null;
+        if (uri.startsWith(ContentResolver.SCHEME_CONTENT) ||
+                uri.startsWith(ContentResolver.SCHEME_FILE)) {
+            // Get the stream from a local file.
+            bufferedInput = new BufferedInputStream(context.getContentResolver()
+                    .openInputStream(Uri.parse(uri)), 16384);
         } else {
-            // Load the bitmap from a remote URL.
+            // Get the stream from a remote URL.
             try {
                 InputStream contentInput = null;
                 if (connectionManager == null) {
@@ -166,16 +147,54 @@ public class UriTexture extends Texture {
                     }
                 }
                 if (contentInput != null) {
-                    final BufferedInputStream bufferedInput = new BufferedInputStream(contentInput, 4096);
-                    bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
-                    bufferedInput.close();
+                    bufferedInput = new BufferedInputStream(contentInput, 4096);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error loading image from uri " + uri);
             }
         }
-        if (sampleSize > 1 || !local) {
-            writeToCache(crc64, bitmap, maxResolutionX);
+
+        // Decode the input stream to a bitmap.
+        if (bufferedInput != null) {
+            byte[] buffer = new byte [1024];
+            int bytesRead;
+
+            // Set the initial size of bufferedOutput to 400K, since the sizes of taken photos are mostly < 800K.
+            ByteArrayOutputStream bufferedOutput = new ByteArrayOutputStream(400 * 1024);
+            while ((bytesRead = bufferedInput.read(buffer)) != -1) {
+                bufferedOutput.write(buffer, 0, bytesRead);
+            }
+            bufferedInput.close();
+
+            byte[] encodedData = bufferedOutput.toByteArray();
+            bufferedOutput.close();
+
+            // Set bufferedOuput to null because the current implementation of close() seems not doing much.
+            bufferedOutput = null;
+
+            // compute the sample size of downsampling
+            options.inSampleSize = computeSampleSize(encodedData, maxResolutionX, maxResolutionY);
+
+            options.inDither = false;
+            options.inJustDecodeBounds = false;
+            Thread timeoutThread = new Thread("BitmapTimeoutThread") {
+                public void run() {
+                    try {
+                        Thread.sleep(6000);
+                        options.requestCancelDecode();
+                    } catch (InterruptedException e) {
+
+                    }
+                }
+            };
+            timeoutThread.start();
+
+            // start decoding the real pixels.
+            bitmap = BitmapFactory.decodeByteArray(encodedData, 0, encodedData.length, options);
+        }
+
+        if ((options.inSampleSize > 1 || !local) && bitmap != null) {
+            writeToCache(crc64, bitmap, maxResolutionX / options.inSampleSize);
         }
         return bitmap;
     }
