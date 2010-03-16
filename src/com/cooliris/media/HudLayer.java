@@ -37,6 +37,8 @@ public final class HudLayer extends Layer {
     private TimeBar mTimeBar;
     private MenuBar.Menu[] mNormalBottomMenu = null;
     private MenuBar.Menu[] mSingleViewIntentBottomMenu = null;
+    private MenuBar.Menu[] mNormalBottomMenuNoShare = null;
+    private MenuBar.Menu[] mSingleViewIntentBottomMenuNoShare = null;
     private final MenuBar mSelectionMenuBottom;
     private final MenuBar mSelectionMenuTop;
     private final MenuBar mFullscreenMenu;
@@ -155,6 +157,9 @@ public final class HudLayer extends Layer {
 
         mNormalBottomMenu = new MenuBar.Menu[] { shareMenu, deleteMenu, moreMenu };
         mSingleViewIntentBottomMenu = new MenuBar.Menu[] { shareMenu, moreMenu };
+        
+        mNormalBottomMenuNoShare = new MenuBar.Menu[] { deleteMenu, moreMenu };
+        mSingleViewIntentBottomMenuNoShare = new MenuBar.Menu[] { moreMenu };
 
         mSelectionMenuBottom.setMenus(mNormalBottomMenu);
         mSelectionMenuTop = new MenuBar(context);
@@ -776,6 +781,11 @@ public final class HudLayer extends Layer {
     }
 
     public void enterSelectionMode() {
+        // Disable sharing if it is the pick intent.
+        if (mGridLayer.getPickIntent()) {
+            mSingleViewIntentBottomMenu = mSingleViewIntentBottomMenuNoShare;
+            mNormalBottomMenu = mNormalBottomMenuNoShare;
+        }
         setAlpha(1.0f);
         setMode(HudLayer.MODE_SELECT);
         // if we are in single view mode, show the bottom menu without the
