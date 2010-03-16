@@ -124,55 +124,62 @@ public final class GDataClient {
     }
 
     private void callMethod(HttpUriRequest request, Operation operation) throws IOException {
-        // Specify GData protocol version 2.0.
-        request.addHeader("GData-Version", "2");
-
-        // Indicate support for gzip-compressed responses.
-        request.addHeader("Accept-Encoding", "gzip");
-
-        // Specify authorization token if provided.
-        String authToken = mAuthToken;
-        if (!TextUtils.isEmpty(authToken)) {
-            request.addHeader("Authorization", "GoogleLogin auth=" + authToken);
-        }
-
-        // Specify the ETag of a prior response, if available.
-        String etag = operation.inOutEtag;
-        if (etag != null) {
-            request.addHeader("If-None-Match", etag);
-        }
-
-        // Execute the HTTP request.
-        HttpResponse httpResponse = null;
         try {
-            httpResponse = mHttpClient.execute(request);
-        } catch (IOException e) {
-            Log.w(TAG, "Request failed: " + request.getURI());
-            throw e;
-        }
 
-        // Get the status code and response body.
-        int status = httpResponse.getStatusLine().getStatusCode();
-        InputStream stream = null;
-        HttpEntity entity = httpResponse.getEntity();
-        if (entity != null) {
-            // Wrap the entity input stream in a GZIP decoder if necessary.
-            stream = entity.getContent();
-            if (stream != null) {
-                Header header = entity.getContentEncoding();
-                if (header != null) {
-                    if (header.getValue().contains("gzip")) {
-                        stream = new GZIPInputStream(stream);
+            // Specify GData protocol version 2.0.
+            request.addHeader("GData-Version", "2");
+
+            // Indicate support for gzip-compressed responses.
+            request.addHeader("Accept-Encoding", "gzip");
+
+            // Specify authorization token if provided.
+            String authToken = mAuthToken;
+            if (!TextUtils.isEmpty(authToken)) {
+                request.addHeader("Authorization", "GoogleLogin auth=" + authToken);
+            }
+
+            // Specify the ETag of a prior response, if available.
+            String etag = operation.inOutEtag;
+            if (etag != null) {
+                request.addHeader("If-None-Match", etag);
+            }
+
+            // Execute the HTTP request.
+            HttpResponse httpResponse = null;
+            try {
+                httpResponse = mHttpClient.execute(request);
+            } catch (IOException e) {
+                Log.w(TAG, "Request failed: " + request.getURI());
+                throw e;
+            }
+
+            // Get the status code and response body.
+            int status = httpResponse.getStatusLine().getStatusCode();
+            InputStream stream = null;
+            HttpEntity entity = httpResponse.getEntity();
+            if (entity != null) {
+                // Wrap the entity input stream in a GZIP decoder if necessary.
+                stream = entity.getContent();
+                if (stream != null) {
+                    Header header = entity.getContentEncoding();
+                    if (header != null) {
+                        if (header.getValue().contains("gzip")) {
+                            stream = new GZIPInputStream(stream);
+                        }
                     }
                 }
             }
-        }
 
-        // Return the stream if successful.
-        Header etagHeader = httpResponse.getFirstHeader("ETag");
-        operation.outStatus = status;
-        operation.inOutEtag = etagHeader != null ? etagHeader.getValue() : null;
-        operation.outBody = stream;
+            // Return the stream if successful.
+            Header etagHeader = httpResponse.getFirstHeader("ETag");
+            operation.outStatus = status;
+            operation.inOutEtag = etagHeader != null ? etagHeader.getValue() : null;
+            operation.outBody = stream;
+
+        } catch (java.lang.IllegalStateException e) {
+            Log.e(TAG, "Unhandled IllegalStateException e: "+ e);
+            throw new IOException("Unhandled IllegalStateException");
+        }
     }
 
     private ByteArrayEntity getCompressedEntity(byte[] data) throws IOException {
