@@ -781,6 +781,9 @@ public final class HudLayer extends Layer {
     }
 
     public void enterSelectionMode() {
+        // Do not enter selection mode if the feed is about to change.
+        if (mGridLayer.feedAboutToChange())
+            return;
         // Disable sharing if it is the pick intent.
         if (mGridLayer.getPickIntent()) {
             mSingleViewIntentBottomMenu = mSingleViewIntentBottomMenuNoShare;
