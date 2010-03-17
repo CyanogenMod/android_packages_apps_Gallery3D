@@ -228,7 +228,7 @@ public class ScaleGestureDetector {
                     mPointerTwoUp = true;
                 }
                 // Gesture ended
-                if (mPointerOneUp && mPointerTwoUp) {
+                if (mPointerOneUp || mPointerTwoUp) {
                     setContext(event);
 
                     // Set focus point to the remaining finger

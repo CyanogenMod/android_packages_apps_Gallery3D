@@ -705,9 +705,22 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     public boolean onScale(ScaleGestureDetector detector) {
         final GridLayer layer = mLayer;
         float scale = detector.getScaleFactor();
+        if (Float.isInfinite(scale) || Float.isNaN(scale))
+            return true;
         mScale = scale * mScale;
+        boolean performTranslation = Math.abs(scale - 1.0f) < 0.001f ? false : true;
         if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
             float currentScale = layer.getZoomValue();
+            if (currentScale <= 1.0f)
+                performTranslation = false;
+            final Vector3f retVal = new Vector3f();
+            if (performTranslation) {
+                float posX = detector.getFocusX();
+                float posY = detector.getFocusY();
+                posX -= (mCamera.mWidth / 2);
+                posY -= (mCamera.mHeight / 2);
+                mCamera.convertToRelativeCameraSpace(posX, posY, 0, retVal);
+            }
             if (currentScale < 0.7f && scale < 1.0f) {
                 scale = 1.0f;
             }
@@ -715,6 +728,11 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 scale = 1.0f;
             }
             layer.setZoomValue(currentScale * scale);
+            if (performTranslation) {
+                mCamera.update(0.001f);
+                mCamera.moveBy(retVal.x, retVal.y, 0);
+                layer.constrainCameraForSlot(mCurrentSelectedSlot);
+            }
         }
         if (mLayer.getState() == GridLayer.STATE_GRID_VIEW) {
             mCurrentScaleSlot = Shared.INVALID;
@@ -783,6 +801,13 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                         }
                     }
                 }
+            }
+        } else {
+            // The gesture was cancelled.
+            final GridLayer layer = mLayer;
+            if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
+                layer.setZoomValue(1.0f);
+                mLayer.getHud().hideZoomButtons(false);
             }
         }
         resetScale();
