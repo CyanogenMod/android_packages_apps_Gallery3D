@@ -673,8 +673,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                     if (mState == STATE_GRID_VIEW) {
                         MediaSet expandedSet = mMediaFeed.getExpandedMediaSet();
                         if (expandedSet != null) {
-                            if (!mHud.getPathBar().getCurrentLabel().equals(expandedSet.mNoCountTitleString)) {
-                                mHud.getPathBar().changeLabel(expandedSet.mNoCountTitleString);
+                            if (mHud != null) {
+                                final PathBarLayer pathBar = mHud.getPathBar();
+                                if (pathBar != null) {
+                                    final String currentLabel = pathBar.getCurrentLabel();
+                                    if (currentLabel == null || !currentLabel.equals(expandedSet.mNoCountTitleString)) {
+                                        pathBar.changeLabel(expandedSet.mNoCountTitleString);
+                                    }
+                                }
                             }
                         }
                     }
@@ -1469,13 +1475,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mRequestFocusContentUri = contentUri;
         mMediaFeed.updateListener(false);
     }
-    
+
     public void onResume() {
         if (mMediaFeed != null) {
             mMediaFeed.onResume();
         }
     }
-    
+
     public void onPause() {
         if (mMediaFeed != null) {
             mMediaFeed.onPause();
