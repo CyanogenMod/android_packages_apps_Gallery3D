@@ -27,6 +27,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.StatFs;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
@@ -60,6 +61,11 @@ public class ImageManager {
 
     public static final String CAMERA_IMAGE_BUCKET_NAME = Environment.getExternalStorageDirectory().toString() + "/DCIM/Camera";
     public static final String CAMERA_IMAGE_BUCKET_ID = getBucketId(CAMERA_IMAGE_BUCKET_NAME);
+
+    /*
+     * Low storage threshold for sdcard is 2MB.
+     */
+    private static final long LOW_STORAGE_THRESHOLD = 1024 * 1024 * 2;
 
     /**
      * Matches code in MediaProvider.computeBucketValues. Should be a common
@@ -256,6 +262,16 @@ public class ImageManager {
                 return true;
             }
         } else if (!requireWriteAccess && Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean hasLowStorage() {
+        String storageDirectory = Environment.getExternalStorageDirectory().toString();
+        StatFs stat = new StatFs(storageDirectory);
+        long remaining = (long) stat.getAvailableBlocks() * (long) stat.getBlockSize();
+        if (remaining < LOW_STORAGE_THRESHOLD) {
             return true;
         }
         return false;

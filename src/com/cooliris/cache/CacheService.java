@@ -42,6 +42,7 @@ import android.util.Log;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
 import com.cooliris.media.Gallery;
+import com.cooliris.media.ImageManager;
 import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.LongSparseArray;
 import com.cooliris.media.MediaFeed;
@@ -231,7 +232,12 @@ public final class CacheService extends IntentService {
     public static final void markDirty(final Context context) {
         sList = null;
         vList = null;
-        sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
+
+        try {
+            sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing dirty index to cache.");
+        }
         if (CACHE_THREAD.get() == null) {
             QUEUE_DIRTY_SENSE = false;
             QUEUE_DIRTY_ALL = false;
@@ -266,7 +272,11 @@ public final class CacheService extends IntentService {
             // Add this to the existing keys and concatenate the byte arrays.
             data = concat(data, existingData);
         }
-        sAlbumCache.put(ALBUM_CACHE_DIRTY_BUCKET_INDEX, data, 0);
+        try {
+            sAlbumCache.put(ALBUM_CACHE_DIRTY_BUCKET_INDEX, data, 0);
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing dirty bucket index to cache.");
+        }
     }
 
     public static final void markDirty(final Context context, final long id) {
@@ -627,15 +637,25 @@ public final class CacheService extends IntentService {
         byte[] bitmap = thumbnailCache.get(thumbId, timestamp);
         if (bitmap == null) {
             final long time = SystemClock.uptimeMillis();
-            bitmap = buildThumbnailForId(context, thumbnailCache, thumbId, origId, isVideo, DEFAULT_THUMBNAIL_WIDTH,
-                    DEFAULT_THUMBNAIL_HEIGHT, timestamp);
-            Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
+            try {
+                bitmap = buildThumbnailForId(context, thumbnailCache, thumbId, origId, isVideo, DEFAULT_THUMBNAIL_WIDTH,
+                                             DEFAULT_THUMBNAIL_HEIGHT, timestamp);
+                Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
+            } catch (IOException e) {
+                Log.e(TAG, "Could not store thumbnail on sdcard.");
+            }
         }
         return bitmap;
     }
 
     private static final void buildThumbnails(final Context context) {
         Log.i(TAG, "Preparing DiskCache for all thumbnails.");
+
+        /* check if sdcard is running low in space */
+        if (ImageManager.hasLowStorage()) {
+            Log.e(TAG, "sdcard is running low in space. Aborting thumbnail creation.");
+            return;
+        }
 
         /* Build thumbnails for images */
         ImageList list = getImageList(context);
@@ -653,12 +673,18 @@ public final class CacheService extends IntentService {
             final long thumbnailId = thumbnailIds[i];
             if (!isInThumbnailerSkipList(thumbnailId)) {
                 if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
-                    byte[] retVal = buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false, DEFAULT_THUMBNAIL_WIDTH,
-                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
-                    if (retVal == null || retVal.length == 0) {
-                        // There was an error in building the thumbnail.
-                        // We record this thumbnail id
-                        addToThumbnailerSkipList(thumbnailId);
+                    try {
+                        byte[] retVal = buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false, DEFAULT_THUMBNAIL_WIDTH,
+                                                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
+
+                        if (retVal == null || retVal.length == 0) {
+                            // There was an error in building the thumbnail.
+                            // We record this thumbnail id
+                            addToThumbnailerSkipList(thumbnailId);
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Unable to write to sdcard. Could not populate DiskCache with thumbnails.");
+                        return;
                     }
                 }
             }
@@ -681,12 +707,18 @@ public final class CacheService extends IntentService {
             final long thumbnailId = videoThumbnailIds[i];
             if (!isInVideoThumbnailerSkipList(thumbnailId)) {
                 if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
-                    byte[] retVal = buildThumbnailForId(context, videoThumbnailCache, thumbnailId, id, true, DEFAULT_THUMBNAIL_WIDTH,
-                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
-                    if (retVal == null || retVal.length == 0) {
-                        // There was an error in building the thumbnail.
-                        // We record this thumbnail id
-                        addToVideoThumbnailerSkipList(thumbnailId);
+                    try {
+                        byte[] retVal = buildThumbnailForId(context, videoThumbnailCache, thumbnailId, id, true, DEFAULT_THUMBNAIL_WIDTH,
+                                                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
+
+                        if (retVal == null || retVal.length == 0) {
+                            // There was an error in building the thumbnail.
+                            // We record this thumbnail id
+                            addToVideoThumbnailerSkipList(thumbnailId);
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Unable to write to sdcard. Could not populate DiskCache with thumbnails.");
+                        return;
                     }
                 }
             }
@@ -695,8 +727,12 @@ public final class CacheService extends IntentService {
     }
 
     private static void addToThumbnailerSkipList(long thumbnailId) {
-        sSkipThumbnailIds.put(thumbnailId, sDummyData, 0);
-        sSkipThumbnailIds.flush();
+        try {
+            sSkipThumbnailIds.put(thumbnailId, sDummyData, 0);
+            sSkipThumbnailIds.flush();
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing image thumbnail skip list to cache.");
+        }
     }
 
     private static boolean isInThumbnailerSkipList(long thumbnailId) {
@@ -710,8 +746,12 @@ public final class CacheService extends IntentService {
     }
 
     private static void addToVideoThumbnailerSkipList(long thumbnailId) {
-        sSkipVideoThumbnailIds.put(thumbnailId, sDummyData, 0);
-        sSkipVideoThumbnailIds.flush();
+        try {
+            sSkipVideoThumbnailIds.put(thumbnailId, sDummyData, 0);
+            sSkipVideoThumbnailIds.flush();
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing video thumbnail skip list to cache.");
+        }
     }
 
     private static boolean isInVideoThumbnailerSkipList(long thumbnailId) {
@@ -725,7 +765,8 @@ public final class CacheService extends IntentService {
     }
 
     private static final byte[] buildThumbnailForId(final Context context, final DiskCache thumbnailCache, final long thumbId,
-            final long origId, final boolean isVideo, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+            final long origId, final boolean isVideo, final int thumbnailWidth, final int thumbnailHeight, final long timestamp)
+                throws IOException {
         if (origId == Shared.INVALID) {
             return null;
         }
@@ -738,7 +779,14 @@ public final class CacheService extends IntentService {
                 try {
                     bitmap = UriTexture.createFromUri(context, uriString, 1024, 1024, thumbId, null);
                 } catch (IOException e) {
-                    return null;
+                   /*
+                    * If the request to create thumbnail came from
+                    * THUMBNAIL_THREAD, throw exception so that it can
+                    * abort thumbnail creation.
+                    */
+                   if (Thread.currentThread() == THUMBNAIL_THREAD.get()) {
+                       throw e;
+                   }
                 } catch (URISyntaxException e) {
                     return null;
                 }
@@ -772,7 +820,8 @@ public final class CacheService extends IntentService {
     }
 
     public static final byte[] writeBitmapToCache(final DiskCache thumbnailCache, final long thumbId, final long origId,
-            final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+            final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight, final long timestamp)
+                throws IOException {
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
         // Detect faces to find the focal point, otherwise fall back to the
@@ -834,11 +883,21 @@ public final class CacheService extends IntentService {
             dataOutput.flush();
             finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, cacheOutput);
             retVal = cacheOutput.toByteArray();
+            cacheOutput.close();
+            finalBitmap.recycle();
             synchronized (thumbnailCache) {
                 thumbnailCache.put(thumbId, retVal, timestamp);
             }
-            cacheOutput.close();
-            finalBitmap.recycle();
+        } catch (IOException e) {
+           /*
+            * If the request to store thumbnail came from
+            * THUMBNAIL_THREAD, throw exception so that it can
+            * abort thumbnail creation.
+            */
+           if (Thread.currentThread() == THUMBNAIL_THREAD.get()) {
+               throw e;
+           }
+           return retVal;
         } catch (Exception e) {
             ;
         }

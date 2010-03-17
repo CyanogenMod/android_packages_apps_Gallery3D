@@ -175,7 +175,11 @@ public class UriTexture extends Texture {
             }
         }
         if (sampleSize > 1 || !local) {
-            writeToCache(crc64, bitmap, maxResolutionX);
+            try {
+                writeToCache(crc64, bitmap, maxResolutionX);
+            } catch (IOException e) {
+                return bitmap;
+            }
         }
         return bitmap;
     }
@@ -268,7 +272,7 @@ public class UriTexture extends Texture {
         }
     }
 
-    public static void writeToCache(long crc64, Bitmap bitmap, int maxResolution) {
+    public static void writeToCache(long crc64, Bitmap bitmap, int maxResolution) throws IOException {
         String file = createFilePathFromCrc64(crc64, maxResolution);
         if (bitmap != null && file != null && crc64 != 0) {
             try {
@@ -280,6 +284,8 @@ public class UriTexture extends Texture {
                 bos.flush();
                 bos.close();
                 fos.close();
+            } catch (IOException e) {
+                throw e;
             } catch (Exception e) {
 
             }
