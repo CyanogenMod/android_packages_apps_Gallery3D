@@ -314,10 +314,11 @@ public final class Gallery extends Activity {
                 }
             }
         } else {
-            // View intent for images.
+            // View intent for images and video.
             final Intent intent = getIntent();
             Uri uri = intent.getData();
             boolean slideshow = intent.getBooleanExtra("slideshow", false);
+            boolean enterSelection = intent.getBooleanExtra("review", false);
             final LocalDataSource singleDataSource = new LocalDataSource(Gallery.this, uri.toString(), true);
             // Display both image and video.
             singleDataSource.setMimeFilter(true, true);
@@ -326,6 +327,7 @@ public final class Gallery extends Activity {
                     picasaDataSource);
             mGridLayer.setDataSource(singleCombinedDataSource);
             mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(getContentResolver(), uri));
+            mGridLayer.setEnterSelectionMode(enterSelection);
             if (singleDataSource.isSingleImage()) {
                 mGridLayer.setSingleImage(false);
             } else if (slideshow) {

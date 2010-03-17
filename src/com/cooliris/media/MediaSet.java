@@ -263,6 +263,27 @@ public class MediaSet {
         }
     }
 
+    public void removeDuplicate(final MediaItem itemToRemove) {
+        synchronized (mItems) {
+            int numItems = mItems.size();
+            boolean foundItem = false;
+            for (int i = 0; i < numItems; ++i) {
+                final MediaItem item = mItems.get(i);
+                if (item == itemToRemove) {
+                    if (foundItem == false) {
+                        foundItem = true;
+                    } else {
+                        mItems.remove(i);
+                        --mNumExpectedItems;
+                        --mNumItemsLoaded;
+                        --mCurrentLocation;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * @return true if this MediaSet contains the argument MediaItem.
      */

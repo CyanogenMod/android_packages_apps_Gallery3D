@@ -100,6 +100,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private int mFramesDirty;
     private String mRequestFocusContentUri;
     private int mFrameCount;
+    private boolean mRequestToEnterSelection;
 
     // private ArrayList<Integer> mBreakSlots = new ArrayList<Integer>();
     // private ArrayList<Integer> mOldBreakSlots;
@@ -491,6 +492,19 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         } else {
             mTimeElapsedSinceTransition = 0;
         }
+        if (mRequestToEnterSelection) {
+            HudLayer hud = getHud();
+            if (hud != null) {
+                hud.enterSelectionMode();
+                if (hud.getMode() == HudLayer.MODE_SELECT) {
+                  mRequestToEnterSelection = false;
+                  addSlotToSelectedItems(mInputProcessor.getCurrentSelectedSlot(), true, true);
+                }
+            }
+        }
+
+        // isSingleImageMode() returns true only when the item is not found in DB.
+        // In that case, we won't enter into the selection mode.
         if (mMediaFeed != null && mMediaFeed.isSingleImageMode()) {
             HudLayer hud = getHud();
             hud.getPathBar().setHidden(true);
@@ -1486,5 +1500,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mMediaFeed != null) {
             mMediaFeed.onPause();
         }
+    }
+
+    public void setEnterSelectionMode(boolean enterSelection) {
+        mRequestToEnterSelection = enterSelection;
     }
 }

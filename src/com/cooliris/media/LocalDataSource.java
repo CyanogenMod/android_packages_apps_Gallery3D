@@ -76,7 +76,9 @@ public class LocalDataSource implements DataSource {
         }
         mSingleUri = isSingleImageMode(uri) && mBucketId == null;
         mDone = false;
-        mDiskCache = mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString()) || mUri.startsWith("file://") ? sThumbnailCache
+        mDiskCache = mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
+                || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())
+                || mUri.startsWith("file://") ? sThumbnailCache
                 : null;
     }
     
@@ -111,8 +113,9 @@ public class LocalDataSource implements DataSource {
             item.mId = 0;
             item.mFilePath = "";
             item.setMediaType((isImage(mUri)) ? MediaItem.MEDIA_TYPE_IMAGE : MediaItem.MEDIA_TYPE_VIDEO);
-            if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())) {
-                MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri));
+            if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
+                || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())) {
+                MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri), item.getMediaType());
                 if (newItem != null) {
                     item = newItem;
                     String fileUri = new File(item.mFilePath).toURI().toString();
@@ -171,22 +174,7 @@ public class LocalDataSource implements DataSource {
                 if (numItems == 1 && parentSet.mNumItemsLoaded > 1) {
                     parentSet.mNumItemsLoaded = 1;
                 }
-                for (int i = 1; i < numItems; ++i) {
-                    MediaItem thisItem = items.get(i);
-                    try {
-                        String filePath = Uri.fromFile(new File(thisItem.mFilePath)).toString();
-                        if (item.mId == thisItem.mId
-                                || ((item.mContentUri != null && thisItem.mContentUri != null) && (item.mContentUri
-                                        .equals(thisItem.mContentUri) || item.mContentUri.equals(filePath)))) {
-                            parentSet.removeItem(thisItem);
-                            break;
-                        }
-                    } catch (Exception e) {
-                        // NullPointerException at
-                        // java.io.File.fixSlashes(File.java:267)
-                        continue;
-                    }
-                }
+                parentSet.removeDuplicate(item);
             }
             parentSet.updateNumExpectedItems();
             parentSet.generateTitle(true);
@@ -371,17 +359,23 @@ public class LocalDataSource implements DataSource {
         }
     }
     
-    public static MediaItem createMediaItemFromUri(Context context, Uri target) {
+    public static MediaItem createMediaItemFromUri(Context context, Uri target, int mediaType) {
         MediaItem item = null;
         long id = ContentUris.parseId(target);
         ContentResolver cr = context.getContentResolver();
         String whereClause = Images.ImageColumns._ID + "=" + Long.toString(id);
         try {
-            Cursor cursor = cr.query(Images.Media.EXTERNAL_CONTENT_URI, CacheService.PROJECTION_IMAGES, whereClause, null, null);
+            final Uri uri = (mediaType == MediaItem.MEDIA_TYPE_IMAGE)
+                    ? Images.Media.EXTERNAL_CONTENT_URI
+                    : Video.Media.EXTERNAL_CONTENT_URI;
+            final String[] projection = (mediaType == MediaItem.MEDIA_TYPE_IMAGE)
+                    ? CacheService.PROJECTION_IMAGES
+                    : CacheService.PROJECTION_VIDEOS;
+            Cursor cursor = cr.query(uri, projection, whereClause, null, null);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
                     item = new MediaItem();
-                    CacheService.populateMediaItemFromCursor(item, cr, cursor, Images.Media.EXTERNAL_CONTENT_URI.toString() + "/");
+                    CacheService.populateMediaItemFromCursor(item, cr, cursor, uri.toString() + "/");
                 }
                 cursor.close();
                 cursor = null;
@@ -390,6 +384,7 @@ public class LocalDataSource implements DataSource {
             // If the database operation failed for any reason.
             ;
         }
+        item.mId = id;
         return item;
     }
 
