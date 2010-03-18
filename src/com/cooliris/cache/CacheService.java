@@ -400,24 +400,6 @@ public final class CacheService extends IntentService {
         if (baseUri != null)
             item.mContentUri = baseUri + item.mId;
         final int itemMediaType = item.getMediaType();
-        // Check to see if a new date taken is available.
-        final long dateTaken = fetchDateTaken(item);
-        if (dateTaken != -1L && item.mContentUri != null) {
-            item.mDateTakenInMs = dateTaken;
-            final ContentValues values = new ContentValues();
-            if (itemMediaType == MediaItem.MEDIA_TYPE_VIDEO) {
-                values.put(Video.VideoColumns.DATE_TAKEN, item.mDateTakenInMs);
-            } else {
-                values.put(Images.ImageColumns.DATE_TAKEN, item.mDateTakenInMs);
-            }
-            try {
-                cr.update(Uri.parse(item.mContentUri), values, null, null);
-            } catch (Exception e) {
-                // If the database operation fails for any reason.
-                ;
-            }
-        }
-
         final int orientationDurationValue = cursor.getInt(CacheService.MEDIA_ORIENTATION_OR_DURATION_INDEX);
         if (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) {
             item.mRotation = orientationDurationValue;
