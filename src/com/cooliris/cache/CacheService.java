@@ -220,7 +220,7 @@ public final class CacheService extends IntentService {
     }
 
     public static final void loadMediaSets(final Context context, final MediaFeed feed, final DataSource source,
-            final boolean includeImages, final boolean includeVideos) {
+            final boolean includeImages, final boolean includeVideos, final boolean moveCameraToFront) {
         // We check to see if the Cache is ready.
         syncCache(context);
         final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
@@ -239,7 +239,7 @@ public final class CacheService extends IntentService {
                     } else {
                         mediaSet.refresh();
                     }
-                    if (mediaSet.mId == LocalDataSource.CAMERA_BUCKET_ID) {
+                    if (moveCameraToFront && mediaSet.mId == LocalDataSource.CAMERA_BUCKET_ID) {
                         feed.moveSetToFront(mediaSet);
                     }
                     if ((includeImages && hasImages) || (includeVideos && hasVideos)) {

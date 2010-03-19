@@ -252,7 +252,7 @@ public class LocalDataSource implements DataSource {
                 set.generateTitle(true);
                 set.mPicasaAlbumId = Shared.INVALID;
             } else {
-                CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos);
+                CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos, true);
             }
         } else {
             CacheService.loadMediaSet(mContext, feed, this, Long.parseLong(mBucketId));
@@ -266,11 +266,11 @@ public class LocalDataSource implements DataSource {
             if (!CacheService.isPresentInCache(setId)) {
                 CacheService.markDirty();
             }
-            CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos);
+            CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos, false);
 
             // not re-ordering media sets in the case of displaying a single image
             if (!mSingleUri) {
-              feed.moveSetToFront(set);
+                feed.moveSetToFront(set);
             }
         }
     }
