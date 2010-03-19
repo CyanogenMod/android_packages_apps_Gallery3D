@@ -343,8 +343,9 @@ public class LocalDataSource implements DataSource {
             // Update the file EXIF information.
             Uri uri = Uri.parse(item.mContentUri);
             String uriScheme = uri.getScheme();
-            if (uriScheme.equals("file")) {
-                ExifInterface exif = new ExifInterface(uri.getPath());
+            if (uriScheme.equals("file") || uriScheme.equals("content")) {
+                final String path = (uriScheme.equals("file")) ? uri.getPath() : item.mFilePath;
+                ExifInterface exif = new ExifInterface(path);
                 exif.setAttribute(ExifInterface.TAG_ORIENTATION, Integer.toString(Shared.degreesToExifOrientation(rotation)));
                 exif.saveAttributes();
             }
