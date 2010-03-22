@@ -22,6 +22,7 @@ import com.cooliris.wallpaper.RandomDataSource;
 import com.cooliris.wallpaper.Slideshow;
 
 public final class Gallery extends Activity {
+    public static final String REVIEW_ACTION = "com.cooliris.media.action.REVIEW";
     private static final String TAG = "Gallery";
     
     private App mApp = null;   
@@ -216,6 +217,11 @@ public final class Gallery extends Activity {
         return Intent.ACTION_VIEW.equals(action);
     }
 
+    private boolean isReviewIntent() {
+        String action = getIntent().getAction();
+        return REVIEW_ACTION.equals(action);
+    }
+
     private boolean isImageType(String type) {
         return type.contains("*/") || type.equals("vnd.android.cursor.dir/image") || type.equals("image/*");
     }
@@ -279,14 +285,14 @@ public final class Gallery extends Activity {
         final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(localDataSource, picasaDataSource);
 
         // Depending upon the intent, we assign the right dataSource.
-        if (!isPickIntent() && !isViewIntent()) {
+        if (!isPickIntent() && !isViewIntent() && !isReviewIntent()) {
             localDataSource.setMimeFilter(true, true);
             if (imageManagerHasStorageAfterDelay) {
                 mGridLayer.setDataSource(combinedDataSource);
             } else {
                 mGridLayer.setDataSource(picasaDataSource);
             }
-        } else if (!isViewIntent()) {
+        } else if (isPickIntent()) {
             final Intent intent = getIntent();
             if (intent != null) {
                 String type = intent.resolveType(Gallery.this);
@@ -313,12 +319,10 @@ public final class Gallery extends Activity {
                     mApp.showToast(getResources().getString(Res.string.pick_prompt), Toast.LENGTH_LONG);
                 }
             }
-        } else {
-            // View intent for images and video.
+        } else { // view intent for images and review intent for images and videos
             final Intent intent = getIntent();
             Uri uri = intent.getData();
             boolean slideshow = intent.getBooleanExtra("slideshow", false);
-            boolean enterSelection = intent.getBooleanExtra("review", false);
             final LocalDataSource singleDataSource = new LocalDataSource(Gallery.this, uri.toString(), true);
             // Display both image and video.
             singleDataSource.setMimeFilter(true, true);
@@ -327,7 +331,11 @@ public final class Gallery extends Activity {
                     picasaDataSource);
             mGridLayer.setDataSource(singleCombinedDataSource);
             mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(getContentResolver(), uri));
-            mGridLayer.setEnterSelectionMode(enterSelection);
+
+            if (isReviewIntent()) {
+                mGridLayer.setEnterSelectionMode(true);
+            }
+
             if (singleDataSource.isSingleImage()) {
                 mGridLayer.setSingleImage(false);
             } else if (slideshow) {
