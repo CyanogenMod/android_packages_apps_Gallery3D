@@ -50,6 +50,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -170,7 +171,30 @@ public class CropImage extends MonitoredActivity {
     
     static private void performReturn(Context context, Bundle myExtras, String contentUri) {
     	Intent result = new Intent(null, Uri.parse(contentUri));
-    	if (myExtras != null && myExtras.getBoolean("return-data")) {
+    	boolean resultSet = false;
+        if (myExtras != null) {
+            final Uri outputUri = (Uri)myExtras.getParcelable(MediaStore.EXTRA_OUTPUT);
+            if (outputUri != null) {
+                Bundle extras = new Bundle();
+                OutputStream outputStream = null;
+                try {
+                    outputStream = context.getContentResolver().openOutputStream(outputUri);
+                    if (outputStream != null) {
+                        InputStream inputStream = context.getContentResolver().openInputStream(Uri.parse(contentUri));
+                        Utils.copyStream(inputStream, outputStream);
+                        Util.closeSilently(inputStream);
+                    }
+                    ((Activity) context).setResult(Activity.RESULT_OK, new Intent(outputUri.toString())
+                    .putExtras(extras));
+                    resultSet = true;
+                } catch (Exception ex) {
+                    Log.e(TAG, "Cannot save to uri " + outputUri.toString());
+                } finally {
+                    Util.closeSilently(outputStream);
+                }
+            }
+        }
+    	if (!resultSet && myExtras != null && myExtras.getBoolean("return-data")) {
     		// The size of a transaction should be below 100K.
     		Bitmap bitmap = null;
     		try {
@@ -184,7 +208,8 @@ public class CropImage extends MonitoredActivity {
     			result.putExtra("data", bitmap);
     		}
     	}
-    	((Activity) context).setResult(Activity.RESULT_OK, result);
+    	if (!resultSet)
+    	    ((Activity) context).setResult(Activity.RESULT_OK, result);
     	((Activity) context).finish();
     }        
     

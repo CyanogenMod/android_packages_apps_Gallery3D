@@ -223,7 +223,10 @@ public class Utils {
     public static void Copy(File src, File dst) throws IOException {
         InputStream in = new FileInputStream(src);
         OutputStream out = new FileOutputStream(dst);
-
+        copyStream(in, out);
+    }
+    
+    public static void copyStream(InputStream in, OutputStream out) throws IOException {
         // Transfer bytes from in to out
         byte[] buf = new byte[1024];
         int len;
