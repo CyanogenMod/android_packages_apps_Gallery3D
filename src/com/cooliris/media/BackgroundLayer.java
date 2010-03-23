@@ -36,18 +36,21 @@ public class BackgroundLayer extends Layer {
 
     @Override
     public boolean update(RenderView view, float frameInterval) {
-        if (mFallbackBackground == null || !mFallbackBackground.isLoaded())
+        Texture fallback = mFallbackBackground;
+        if (fallback == null || !fallback.isLoaded())
             return false;
-        if (mBackground == null) {
-            mBackground = new CrossFadingTexture(mFallbackBackground);
+        CrossFadingTexture background = mBackground;
+        if (background == null) {
+            background = new CrossFadingTexture(fallback);
+            mBackground = background;
         }
-        final boolean retVal = mBackground.update(frameInterval);
+        final boolean retVal = background.update(frameInterval);
         int cameraPosition = (int) mGridLayer.getScrollPosition();
         final int backgroundSpacing = mBackgroundBlitWidth - mBackgroundOverlap;
         cameraPosition = (int) ((cameraPosition / backgroundSpacing) * backgroundSpacing);
         final DisplayItem displayItem = mGridLayer.getRepresentativeDisplayItem();
         if (displayItem != null) {
-            mBackground.setTexture(getAdaptive(view, displayItem));
+            background.setTexture(getAdaptive(view, displayItem));
         }
         return retVal;
     }
@@ -86,11 +89,11 @@ public class BackgroundLayer extends Layer {
 
     @Override
     public void renderBlended(RenderView view, GL11 gl) {
+        CrossFadingTexture anchorTexture = mBackground;
         if (mBackground == null || mFallbackBackground == null)
             return;
         gl.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
-        CrossFadingTexture anchorTexture = mBackground;
         boolean bind = anchorTexture.bind(view, gl);
         if (!bind) {
             view.bind(mFallbackBackground);
