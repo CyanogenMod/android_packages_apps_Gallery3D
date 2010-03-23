@@ -2,9 +2,7 @@
 
 <manifest android:versionCode="30682"
     android:versionName="1.1.30682"
-    xmlns:android="http://schemas.android.com/apk/res/android" package="com.cooliris.app">
-
-    <original-package android:name="com.cooliris.media" />
+    xmlns:android="http://schemas.android.com/apk/res/android" package="com.cooliris.media">
 
     <uses-sdk android:targetSdkVersion="7" />
     <application android:icon="@drawable/icon" android:label="@string/app_name"

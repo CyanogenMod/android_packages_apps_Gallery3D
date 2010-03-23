@@ -1,6 +1,6 @@
 package com.cooliris.app;
 
-import com.cooliris.app.R;
+import com.cooliris.media.R;
 
 public class Res {
 //    	public static final R.anim anim = new R.anim();
