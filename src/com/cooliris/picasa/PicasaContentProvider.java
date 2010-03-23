@@ -13,6 +13,7 @@ import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import android.net.Uri;
 import android.util.Log;
 
@@ -37,22 +38,27 @@ public final class PicasaContentProvider extends TableContentProvider {
     public void attachInfo(Context context, ProviderInfo info) {
         // Initialize the provider and set the database.
         super.attachInfo(context, info);
-        setDatabase(new Database(context));
+        setDatabase(new Database(context, Database.DATABASE_NAME));
 
         // Add mappings for each of the exposed tables.
         addMapping(AUTHORITY, "photos", "vnd.cooliris.picasa.photo", PhotoEntry.SCHEMA);
         addMapping(AUTHORITY, "albums", "vnd.cooliris.picasa.album", AlbumEntry.SCHEMA);
 
         // Create the sync context.
-        mSyncContext = new SyncContext();
+        try {
+            mSyncContext = new SyncContext();
+        } catch (Exception e) {
+            // The database wasn't created successfully, we create a memory backed database.
+            setDatabase(new Database(context, null));
+        }
     }
 
     public static final class Database extends SQLiteOpenHelper {
         public static final String DATABASE_NAME = "picasa.db";
         public static final int DATABASE_VERSION = 83;
 
-        public Database(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        public Database(Context context, String name) {
+            super(context, name, null, DATABASE_VERSION);
         }
 
         @Override
