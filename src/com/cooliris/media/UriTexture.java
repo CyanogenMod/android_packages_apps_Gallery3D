@@ -2,7 +2,6 @@ package com.cooliris.media;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -81,11 +80,11 @@ public class UriTexture extends Texture {
         mCacheId = id;
     }
 
-    private static int computeSampleSize(byte[] data, int maxResolutionX,
+    private static int computeSampleSize(InputStream stream, int maxResolutionX,
         int maxResolutionY) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        BitmapFactory.decodeByteArray(data, 0, data.length, options);
+        BitmapFactory.decodeStream(stream, null, options);
         int maxNumOfPixels = maxResolutionX * maxResolutionY;
         int minSideLength = Math.min(maxResolutionX, maxResolutionY) / 2;
         return Utils.computeSampleSize(options, minSideLength, maxNumOfPixels);
@@ -111,7 +110,7 @@ public class UriTexture extends Texture {
         }
         final boolean local = uri.startsWith(ContentResolver.SCHEME_CONTENT) || uri.startsWith("file://");
 
-        // Get the input stream either from a local file or a remote URL.
+        // Get the input stream for computing the sample size.
         BufferedInputStream bufferedInput = null;
         if (uri.startsWith(ContentResolver.SCHEME_CONTENT) ||
                 uri.startsWith(ContentResolver.SCHEME_FILE)) {
@@ -120,61 +119,30 @@ public class UriTexture extends Texture {
                     .openInputStream(Uri.parse(uri)), 16384);
         } else {
             // Get the stream from a remote URL.
-            try {
-                InputStream contentInput = null;
-                if (connectionManager == null) {
-                    final URL url = new URI(uri).toURL();
-                    final URLConnection conn = url.openConnection();
-                    conn.connect();
-                    contentInput = conn.getInputStream();
-                } else {
-                    // We create a cancelable http request from the client
-                    final DefaultHttpClient mHttpClient = new DefaultHttpClient(connectionManager, HTTP_PARAMS);
-                    HttpUriRequest request = new HttpGet(uri);
-                    // Execute the HTTP request.
-                    HttpResponse httpResponse = null;
-                    try {
-                        httpResponse = mHttpClient.execute(request);
-                    } catch (IOException e) {
-                        Log.w(TAG, "Request failed: " + request.getURI());
-                        throw e;
-                    }
-                    HttpEntity entity = httpResponse.getEntity();
-                    if (entity != null) {
-                        // Wrap the entity input stream in a GZIP decoder if
-                        // necessary.
-                        contentInput = entity.getContent();
-                    }
-                }
-                if (contentInput != null) {
-                    bufferedInput = new BufferedInputStream(contentInput, 4096);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error loading image from uri " + uri);
-            }
+            bufferedInput = createInputStreamFromRemoteUrl(uri, connectionManager);
         }
 
-        // Decode the input stream to a bitmap.
+        // Compute the sample size, i.e., not decoding real pixels.
         if (bufferedInput != null) {
-            byte[] buffer = new byte [1024];
-            int bytesRead;
+            options.inSampleSize = computeSampleSize(bufferedInput, maxResolutionX, maxResolutionY);
+        } else {
+            return null;
+        }
 
-            // Set the initial size of bufferedOutput to 400K, since the sizes of taken photos are mostly < 800K.
-            ByteArrayOutputStream bufferedOutput = new ByteArrayOutputStream(400 * 1024);
-            while ((bytesRead = bufferedInput.read(buffer)) != -1) {
-                bufferedOutput.write(buffer, 0, bytesRead);
-            }
-            bufferedInput.close();
+        // Get the input stream again for decoding it to a bitmap.
+        bufferedInput = null;
+        if (uri.startsWith(ContentResolver.SCHEME_CONTENT) ||
+                uri.startsWith(ContentResolver.SCHEME_FILE)) {
+            // Get the stream from a local file.
+            bufferedInput = new BufferedInputStream(context.getContentResolver()
+                    .openInputStream(Uri.parse(uri)), 16384);
+        } else {
+            // Get the stream from a remote URL.
+            bufferedInput = createInputStreamFromRemoteUrl(uri, connectionManager);
+        }
 
-            byte[] encodedData = bufferedOutput.toByteArray();
-            bufferedOutput.close();
-
-            // Set bufferedOuput to null because the current implementation of close() seems not doing much.
-            bufferedOutput = null;
-
-            // compute the sample size of downsampling
-            options.inSampleSize = computeSampleSize(encodedData, maxResolutionX, maxResolutionY);
-
+        // Decode bufferedInput to a bitmap.
+        if (bufferedInput != null) {
             options.inDither = false;
             options.inJustDecodeBounds = false;
             Thread timeoutThread = new Thread("BitmapTimeoutThread") {
@@ -183,20 +151,58 @@ public class UriTexture extends Texture {
                         Thread.sleep(6000);
                         options.requestCancelDecode();
                     } catch (InterruptedException e) {
-
                     }
                 }
             };
             timeoutThread.start();
 
-            // start decoding the real pixels.
-            bitmap = BitmapFactory.decodeByteArray(encodedData, 0, encodedData.length, options);
+            bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
         }
 
         if ((options.inSampleSize > 1 || !local) && bitmap != null) {
             writeToCache(crc64, bitmap, maxResolutionX / options.inSampleSize);
         }
         return bitmap;
+    }
+
+    private static final BufferedInputStream createInputStreamFromRemoteUrl(
+            String uri, ClientConnectionManager connectionManager) {
+        InputStream contentInput = null;
+        if (connectionManager == null) {
+            try {
+                URL url = new URI(uri).toURL();
+                URLConnection conn = url.openConnection();
+                conn.connect();
+                contentInput = conn.getInputStream();
+            } catch (Exception e) {
+                Log.w(TAG, "Request failed: " + uri);
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            // We create a cancelable http request from the client
+            final DefaultHttpClient mHttpClient = new DefaultHttpClient(connectionManager, HTTP_PARAMS);
+            HttpUriRequest request = new HttpGet(uri);
+            // Execute the HTTP request.
+            HttpResponse httpResponse = null;
+            try {
+                httpResponse = mHttpClient.execute(request);
+                HttpEntity entity = httpResponse.getEntity();
+                if (entity != null) {
+                    // Wrap the entity input stream in a GZIP decoder if
+                    // necessary.
+                    contentInput = entity.getContent();
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Request failed: " + request.getURI());
+                return null;
+            }
+        }
+        if (contentInput != null) {
+            return new BufferedInputStream(contentInput, 4096);
+        } else {
+            return null;
+        }
     }
 
     @Override
