@@ -1487,7 +1487,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void focusItem(String contentUri) {
         mRequestFocusContentUri = contentUri;
-        mMediaFeed.updateListener(false);
+        if (mMediaFeed != null) {
+            mMediaFeed.updateListener(false);
+        }
     }
 
     public void onResume() {
