@@ -24,14 +24,15 @@ import com.cooliris.wallpaper.Slideshow;
 public final class Gallery extends Activity {
     public static final String REVIEW_ACTION = "com.cooliris.media.action.REVIEW";
     private static final String TAG = "Gallery";
-    
-    private App mApp = null;   
+
+    private App mApp = null;
     private RenderView mRenderView = null;
     private GridLayer mGridLayer;
     private WakeLock mWakeLock;
     private HashMap<String, Boolean> mAccountsEnabled = new HashMap<String, Boolean>();
     private boolean mDockSlideshow = false;
-    
+    private Thread mLaunchActivityThread;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,23 +62,31 @@ public final class Gallery extends Activity {
                 mRenderView);
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
-        Thread t = new Thread() {
+        mLaunchActivityThread = new Thread() {
             public void run() {
                 launchActivity();
             };
         };
-        t.start();
+        mLaunchActivityThread.start();
         Log.i(TAG, "onCreate");
     }
-    
+
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
-        Thread t = new Thread() {
+        if (mLaunchActivityThread != null) {
+            try {
+                mLaunchActivityThread.join();
+            } catch (InterruptedException ex) {
+                Log.w(TAG, ex);
+            }
+            mLaunchActivityThread = null;
+        }
+        mLaunchActivityThread = new Thread() {
             public void run() {
                 launchActivity();
             };
         };
-        t.start();
+        mLaunchActivityThread.start();
     }
 
     @Override
@@ -89,7 +98,7 @@ public final class Gallery extends Activity {
     public void onStart() {
         super.onStart();
     }
-    
+
     @Override
     public void onResume() {
         super.onResume();
@@ -170,6 +179,14 @@ public final class Gallery extends Activity {
     public void onDestroy() {
         // Force GLThread to exit.
         setContentView(Res.layout.main);
+        if (mLaunchActivityThread != null) {
+            try {
+                mLaunchActivityThread.join();
+            } catch (InterruptedException ex) {
+                Log.w(TAG, ex);
+            }
+            mLaunchActivityThread = null;
+        }
         if (mGridLayer != null) {
             DataSource dataSource = mGridLayer.getDataSource();
             if (dataSource != null) {
@@ -260,7 +277,7 @@ public final class Gallery extends Activity {
             mRenderView.handleLowMemory();
         }
     }
-    
+
     public void launchActivity() {
         int numRetries = 25;
         final boolean imageManagerHasStorage = ImageManager.hasStorage();
@@ -278,7 +295,7 @@ public final class Gallery extends Activity {
         final boolean imageManagerHasStorageAfterDelay = ImageManager.hasStorage();
         if (!imageManagerHasStorageAfterDelay)
             return;
-        
+
         // Creating the DataSource objects.
         final PicasaDataSource picasaDataSource = new PicasaDataSource(Gallery.this);
         final LocalDataSource localDataSource = new LocalDataSource(Gallery.this, LocalDataSource.URI_ALL_MEDIA, false);
