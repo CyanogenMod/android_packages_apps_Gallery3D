@@ -35,7 +35,9 @@ import android.view.View;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
-public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener {
+public class MovieViewControl implements MediaPlayer.OnErrorListener,
+        MediaPlayer.OnCompletionListener,
+        MediaPlayer.OnPreparedListener {
 
     @SuppressWarnings("unused")
     private static final String TAG = "MovieViewControl";
@@ -58,6 +60,7 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
     // State maintained for proper onPause/OnResume behaviour.
     private int mPositionWhenPaused = -1;
     private boolean mWasPlayingWhenPaused = false;
+    private MediaController mMediaController;
 
     Handler mHandler = new Handler();
 
@@ -102,9 +105,11 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
         }
 
         mVideoView.setOnErrorListener(this);
+        mVideoView.setOnPreparedListener(this);
         mVideoView.setOnCompletionListener(this);
         mVideoView.setVideoURI(mUri);
-        mVideoView.setMediaController(new MediaController(context));
+        mMediaController = new MediaController(context);
+        mVideoView.setMediaController(mMediaController);
 
         // make the video view handle keys for seeking and pausing
         mVideoView.requestFocus();
@@ -225,6 +230,13 @@ public class MovieViewControl implements MediaPlayer.OnErrorListener, MediaPlaye
             if (mWasPlayingWhenPaused) {
                 mVideoView.start();
             }
+            mPositionWhenPaused = -1;
+        }
+    }
+
+    public void onPrepared(MediaPlayer mp) {
+        if (mWasPlayingWhenPaused) {
+            mMediaController.show(0);
         }
     }
 

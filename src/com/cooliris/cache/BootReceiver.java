@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.net.Uri;
+import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
@@ -23,10 +24,16 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
         final String action = intent.getAction();
+        final Uri fileUri = intent.getData();
         Log.i(TAG, "Got intent with action " + action);
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)) {
-            CacheService.markDirty(context);
-            CacheService.startCache(context, true);
+            /*
+             * Start CacheService only for external media
+             */
+            if (Environment.getExternalStorageDirectory().getPath().equals(fileUri.getPath())) {
+                CacheService.markDirty(context);
+                CacheService.startCache(context, true);
+            }
         } else if (Intent.ACTION_MEDIA_MOUNTED.equals(action)) {
             if (!mListenersInitialized) {
                 // We add special listeners for the MediaProvider
@@ -47,7 +54,6 @@ public class BootReceiver extends BroadcastReceiver {
                 cr.registerContentObserver(uriVideos, false, localObserver);
             }
         } else if (action.equals(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)) {
-            final Uri fileUri = intent.getData();
             final long bucketId = SingleDataSource.parseBucketIdFromFileUri(fileUri.toString());
             if (!CacheService.isPresentInCache(bucketId)) {
                 CacheService.markDirty(context);
