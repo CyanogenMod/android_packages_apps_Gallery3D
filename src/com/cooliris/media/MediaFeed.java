@@ -3,6 +3,7 @@ package com.cooliris.media;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -876,16 +877,22 @@ public final class MediaFeed implements Runnable {
 
     public void onPause() {
         final HashMap<String, ContentObserver> observers = mContentObservers;
-        String[] uris = new String[observers.size()];
-        uris = observers.keySet().toArray(uris);
-        final int numUris = uris.length;
-        final ContentResolver cr = mContext.getContentResolver();
-        for (int i = 0; i < numUris; ++i) {
-            final String uri = uris[i];
-            if (uri != null) {
-                final ContentObserver observer = observers.get(uri);
-                cr.unregisterContentObserver(observer);
-                observers.remove(uri);
+        final int numObservers = observers.size();
+        if (numObservers > 0) {
+            String[] uris = new String[numObservers];
+            final Set<String> keySet = observers.keySet();
+            if (keySet != null) {
+                uris = keySet.toArray(uris);
+                final int numUris = uris.length;
+                final ContentResolver cr = mContext.getContentResolver();
+                for (int i = 0; i < numUris; ++i) {
+                    final String uri = uris[i];
+                    if (uri != null) {
+                        final ContentObserver observer = observers.get(uri);
+                        cr.unregisterContentObserver(observer);
+                        observers.remove(uri);
+                    }
+                }
             }
         }
         observers.clear();
