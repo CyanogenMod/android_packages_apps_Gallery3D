@@ -293,8 +293,6 @@ public final class Gallery extends Activity {
             } while (numRetries > 0 && !ImageManager.hasStorage());
         }
         final boolean imageManagerHasStorageAfterDelay = ImageManager.hasStorage();
-        if (!imageManagerHasStorageAfterDelay)
-            return;
 
         // Creating the DataSource objects.
         final PicasaDataSource picasaDataSource = new PicasaDataSource(Gallery.this);
@@ -344,9 +342,13 @@ public final class Gallery extends Activity {
             // Display both image and video.
             singleDataSource.setMimeFilter(true, true);
 
-            final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource,
-                    picasaDataSource);
-            mGridLayer.setDataSource(singleCombinedDataSource);
+            if (imageManagerHasStorageAfterDelay) {
+                ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource,
+                        picasaDataSource);
+                mGridLayer.setDataSource(singleCombinedDataSource);
+            } else {
+                mGridLayer.setDataSource(picasaDataSource);
+            }
             mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(getContentResolver(), uri));
 
             if (isReviewIntent()) {

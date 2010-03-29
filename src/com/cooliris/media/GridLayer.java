@@ -1174,7 +1174,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     void addSlotToSelectedItems(int slotId, boolean removeIfAlreadyAdded, boolean updateCount) {
-        if (mFeedAboutToChange == false) {
+        // mMediaFeed may be null because setDataSource() may not be called yet.
+        if (mFeedAboutToChange == false && mMediaFeed != null) {
             MediaFeed feed = mMediaFeed;
             mSelectedBucketList.add(slotId, feed, removeIfAlreadyAdded);
             if (updateCount) {
