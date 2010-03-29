@@ -837,7 +837,8 @@ public final class MediaFeed implements Runnable {
     public MediaSet replaceMediaSet(long setId, DataSource dataSource) {
         Log.i(TAG, "Replacing media set " + setId);
         final MediaSet set = getMediaSet(setId);
-        set.refresh();
+        if (set != null)
+            set.refresh();
         return set;
     }
 
