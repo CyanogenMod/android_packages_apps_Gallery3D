@@ -53,7 +53,7 @@
     <string name="details_ok" msgid="6848594369924424312">"确定"</string>
     <string name="loading_new" msgid="7893793767294787579">"正在载入新相册和新照片"</string>
     <string name="initializing" msgid="2374228157398540466">"正在载入"</string>
-    <string name="pick_prompt" msgid="576608096149718121">"在您的集合中挑选一个项"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"从您的收藏中挑选项目"</string>
     <string name="no_items" msgid="3117870234034732172">"您的收藏中没有任何项目"</string>
     <string name="pick" msgid="7248789132035843128">"精选"</string>
     <string name="delete" msgid="2839695998251824487">"删除"</string>
