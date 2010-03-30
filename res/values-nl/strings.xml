@@ -54,7 +54,7 @@
     <string name="loading_new" msgid="7893793767294787579">"Nieuwe albums en foto\'s laden"</string>
     <string name="initializing" msgid="2374228157398540466">"Laden"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Kies een item uit uw verzameling"</string>
-    <string name="no_items" msgid="3117870234034732172">"Er staan geen items in uw verzameling"</string>
+    <string name="no_items" msgid="3117870234034732172">"Uw verzameling bevat geen items"</string>
     <string name="pick" msgid="7248789132035843128">"Kiezen"</string>
     <string name="delete" msgid="2839695998251824487">"Verwijderen"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Verwijderen bevestigen"</string>

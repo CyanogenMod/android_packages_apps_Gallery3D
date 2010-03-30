@@ -54,7 +54,7 @@
     <string name="loading_new" msgid="7893793767294787579">"Cargando nuevos álbumes y fotos"</string>
     <string name="initializing" msgid="2374228157398540466">"Cargando"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Seleccionar un elemento de tu colección"</string>
-    <string name="no_items" msgid="3117870234034732172">"No hay artículos en su colección."</string>
+    <string name="no_items" msgid="3117870234034732172">"No hay artículos en tu colección."</string>
     <string name="pick" msgid="7248789132035843128">"Seleccionar"</string>
     <string name="delete" msgid="2839695998251824487">"Eliminar"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Confirmar supresión"</string>
