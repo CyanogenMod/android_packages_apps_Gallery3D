@@ -738,7 +738,7 @@ public final class CacheService extends IntentService {
     private static boolean isInThumbnailerSkipList(long thumbnailId) {
         if (sSkipThumbnailIds.isDataAvailable(thumbnailId, 0)) {
             byte[] data = sSkipThumbnailIds.get(thumbnailId, 0);
-            if (data.length > 0) {
+            if ((data != null) && (data.length > 0)) {
                 return true;
             }
         }
@@ -757,7 +757,7 @@ public final class CacheService extends IntentService {
     private static boolean isInVideoThumbnailerSkipList(long thumbnailId) {
         if (sSkipVideoThumbnailIds.isDataAvailable(thumbnailId, 0)) {
             byte[] data = sSkipVideoThumbnailIds.get(thumbnailId, 0);
-            if (data.length > 0) {
+            if ((data != null) && (data.length > 0)) {
                 return true;
             }
         }
