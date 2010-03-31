@@ -68,10 +68,20 @@ public final class MediaFeed implements Runnable {
         if (mDataSourceThread != null) {
             mDataSource.shutdown();
             mDataSourceThread.interrupt();
+            try {
+                mDataSourceThread.join();
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Cannot stop data source thread.", e);
+            }
             mDataSourceThread = null;
         }
         if (mAlbumSourceThread != null) {
             mAlbumSourceThread.interrupt();
+            try {
+                mAlbumSourceThread.join();
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Cannot stop album source thread.", e);
+            }
             mAlbumSourceThread = null;
         }
         int numSets = mMediaSets.size();
