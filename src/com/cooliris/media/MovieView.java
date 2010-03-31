@@ -22,6 +22,8 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
@@ -59,6 +61,10 @@ public class MovieView extends Activity {
             }
         }
         mFinishOnCompletion = intent.getBooleanExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
+        Window win = getWindow();
+        WindowManager.LayoutParams winParams = win.getAttributes();
+        winParams.buttonBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF;
+        win.setAttributes(winParams);
     }
 
     @Override
