@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore.Images;
@@ -31,7 +33,38 @@ public final class Gallery extends Activity {
     private WakeLock mWakeLock;
     private HashMap<String, Boolean> mAccountsEnabled = new HashMap<String, Boolean>();
     private boolean mDockSlideshow = false;
-    private Thread mLaunchActivityThread;
+    private int mNumRetries;
+    private boolean mImageManagerHasStorageAfterDelay = false;
+
+    private static final int CHECK_STORAGE = 0;
+    private static final int HANDLE_INTENT = 1;
+    private static final int NUM_STORAGE_CHECKS = 25;
+
+    private Handler handler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case CHECK_STORAGE:
+                    checkStorage();
+                    break;
+                case HANDLE_INTENT:
+                    initializeDataSource();
+                    break;
+            }
+        }
+    };
+
+    private void checkStorage() {
+        mNumRetries++;
+        mImageManagerHasStorageAfterDelay = ImageManager.hasStorage();
+        if (!mImageManagerHasStorageAfterDelay && mNumRetries < NUM_STORAGE_CHECKS) {
+            if (mNumRetries == 1) {
+                mApp.showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
+            }
+            handler.sendEmptyMessageDelayed(CHECK_STORAGE, 200);
+        } else {
+            handler.sendEmptyMessage(HANDLE_INTENT);
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,31 +95,25 @@ public final class Gallery extends Activity {
                 mRenderView);
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
-        mLaunchActivityThread = new Thread() {
-            public void run() {
-                launchActivity();
-            };
-        };
-        mLaunchActivityThread.start();
+
+        sendInitialMessage();
+
         Log.i(TAG, "onCreate");
+    }
+
+    private void sendInitialMessage() {
+        mNumRetries = 0;
+        Message checkStorage = new Message();
+        checkStorage.what = CHECK_STORAGE;
+        handler.sendMessage(checkStorage);
     }
 
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
-        if (mLaunchActivityThread != null) {
-            try {
-                mLaunchActivityThread.join();
-            } catch (InterruptedException ex) {
-                Log.w(TAG, ex);
-            }
-            mLaunchActivityThread = null;
-        }
-        mLaunchActivityThread = new Thread() {
-            public void run() {
-                launchActivity();
-            };
-        };
-        mLaunchActivityThread.start();
+        handler.removeMessages(CHECK_STORAGE);
+        handler.removeMessages(HANDLE_INTENT);
+
+        sendInitialMessage();
     }
 
     @Override
@@ -179,14 +206,11 @@ public final class Gallery extends Activity {
     public void onDestroy() {
         // Force GLThread to exit.
         setContentView(Res.layout.main);
-        if (mLaunchActivityThread != null) {
-            try {
-                mLaunchActivityThread.join();
-            } catch (InterruptedException ex) {
-                Log.w(TAG, ex);
-            }
-            mLaunchActivityThread = null;
-        }
+
+        // Remove any post messages.
+        handler.removeMessages(CHECK_STORAGE);
+        handler.removeMessages(HANDLE_INTENT);
+
         if (mGridLayer != null) {
             DataSource dataSource = mGridLayer.getDataSource();
             if (dataSource != null) {
@@ -278,22 +302,8 @@ public final class Gallery extends Activity {
         }
     }
 
-    public void launchActivity() {
-        int numRetries = 25;
-        final boolean imageManagerHasStorage = ImageManager.hasStorage();
-        if (!imageManagerHasStorage) {
-            mApp.showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
-            do {
-                --numRetries;
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    ;
-                }
-            } while (numRetries > 0 && !ImageManager.hasStorage());
-        }
-        final boolean imageManagerHasStorageAfterDelay = ImageManager.hasStorage();
-
+    private void initializeDataSource() {
+        final boolean hasStorage = mImageManagerHasStorageAfterDelay;
         // Creating the DataSource objects.
         final PicasaDataSource picasaDataSource = new PicasaDataSource(Gallery.this);
         final LocalDataSource localDataSource = new LocalDataSource(Gallery.this, LocalDataSource.URI_ALL_MEDIA, false);
@@ -302,7 +312,7 @@ public final class Gallery extends Activity {
         // Depending upon the intent, we assign the right dataSource.
         if (!isPickIntent() && !isViewIntent() && !isReviewIntent()) {
             localDataSource.setMimeFilter(true, true);
-            if (imageManagerHasStorageAfterDelay) {
+            if (hasStorage) {
                 mGridLayer.setDataSource(combinedDataSource);
             } else {
                 mGridLayer.setDataSource(picasaDataSource);
@@ -317,9 +327,9 @@ public final class Gallery extends Activity {
                 }
                 boolean includeImages = isImageType(type);
                 boolean includeVideos = isVideoType(type);
-                ((LocalDataSource) localDataSource).setMimeFilter(includeImages, includeVideos);
+                localDataSource.setMimeFilter(includeImages, includeVideos);
                 if (includeImages) {
-                    if (imageManagerHasStorageAfterDelay) {
+                    if (hasStorage) {
                         mGridLayer.setDataSource(combinedDataSource);
                     } else {
                         mGridLayer.setDataSource(picasaDataSource);
@@ -328,9 +338,7 @@ public final class Gallery extends Activity {
                     mGridLayer.setDataSource(localDataSource);
                 }
                 mGridLayer.setPickIntent(true);
-                if (!imageManagerHasStorageAfterDelay) {
-                    mApp.showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
-                } else {
+                if (hasStorage) {
                     mApp.showToast(getResources().getString(Res.string.pick_prompt), Toast.LENGTH_LONG);
                 }
             }
@@ -342,7 +350,7 @@ public final class Gallery extends Activity {
             // Display both image and video.
             singleDataSource.setMimeFilter(true, true);
 
-            if (imageManagerHasStorageAfterDelay) {
+            if (hasStorage) {
                 ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource,
                         picasaDataSource);
                 mGridLayer.setDataSource(singleCombinedDataSource);
@@ -365,4 +373,5 @@ public final class Gallery extends Activity {
         // We record the set of enabled accounts for picasa.
         mAccountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
     }
+
 }
