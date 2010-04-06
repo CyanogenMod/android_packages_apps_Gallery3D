@@ -468,7 +468,7 @@ public final class PicasaContentProvider extends TableContentProvider {
     }
 
     private void deleteAlbumPhotos(SQLiteDatabase db, long albumId) {
-        Log.w(TAG, "deleteAlbumPhotos(" + albumId + ")");
+        Log.v(TAG, "deleteAlbumPhotos(" + albumId + ")");
         String photoTableName = PhotoEntry.SCHEMA.getTableName();
         String[] whereArgs = { Long.toString(albumId) };
         Cursor cursor = db.query(photoTableName, Entry.ID_PROJECTION, WHERE_ALBUM_ID, whereArgs, null, null, null);
@@ -491,8 +491,7 @@ public final class PicasaContentProvider extends TableContentProvider {
     }
 
     private void deletePhotoCache(long photoId) {
-        // TODO
-        Log.w(TAG, "deletePhotoCache(" + photoId + ")");
+        // TODO: implement it.
     }
 
     private final class SyncContext {
