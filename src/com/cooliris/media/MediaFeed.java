@@ -311,6 +311,11 @@ public final class MediaFeed implements Runnable {
         return 0;
     }
 
+    public void copySlotStateFrom(MediaFeed another) {
+        mExpandedMediaSetIndex = another.mExpandedMediaSetIndex;
+        mInClusteringMode = another.mInClusteringMode;
+    }
+
     public ArrayList<Integer> getBreaks() {
         if (true)
             return null;

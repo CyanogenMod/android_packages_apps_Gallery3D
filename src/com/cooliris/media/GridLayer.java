@@ -409,12 +409,16 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void setDataSource(DataSource dataSource) {
         MediaFeed feed = mMediaFeed;
+        mMediaFeed = new MediaFeed(mContext, dataSource, this);
         if (feed != null) {
+            // Restore the slot state in the original feed before shutting it down.
+            mMediaFeed.copySlotStateFrom(feed);
+
             feed.shutdown();
             mDisplayList.clear();
             mBackground.clear();
         }
-        mMediaFeed = new MediaFeed(mContext, dataSource, this);
+
         mMediaFeed.start();
     }
 

@@ -163,8 +163,9 @@ public final class Gallery extends Activity {
                         }
                         if (oldValue != newValue) {
                             // Reload the datasource.
-                            if (mGridLayer != null)
+                            if (mGridLayer != null) {
                                 mGridLayer.setDataSource(mGridLayer.getDataSource());
+                            }
                             break;
                         }
                     }
@@ -373,5 +374,4 @@ public final class Gallery extends Activity {
         // We record the set of enabled accounts for picasa.
         mAccountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
     }
-
 }
