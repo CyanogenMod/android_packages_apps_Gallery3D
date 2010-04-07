@@ -1,6 +1,10 @@
 package com.cooliris.media;
 
-import java.util.HashMap;
+import com.cooliris.app.App;
+import com.cooliris.app.Res;
+import com.cooliris.cache.CacheService;
+import com.cooliris.wallpaper.RandomDataSource;
+import com.cooliris.wallpaper.Slideshow;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,6 +13,7 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -17,11 +22,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
-import com.cooliris.app.App;
-import com.cooliris.app.Res;
-import com.cooliris.cache.CacheService;
-import com.cooliris.wallpaper.RandomDataSource;
-import com.cooliris.wallpaper.Slideshow;
+import java.util.HashMap;
 
 public final class Gallery extends Activity {
     public static final String REVIEW_ACTION = "com.cooliris.media.action.REVIEW";
@@ -35,12 +36,18 @@ public final class Gallery extends Activity {
     private boolean mDockSlideshow = false;
     private int mNumRetries;
     private boolean mImageManagerHasStorageAfterDelay = false;
+    private HandlerThread mPicasaAccountThread = new HandlerThread("PicasaAccountMonitor");
+    private Handler mPicasaHandler;
+
+    private static final int GET_PICASA_ACCOUNT_STATUS = 1;
+    private static final int UPDATE_PICASA_ACCOUNT_STATUS = 2;
 
     private static final int CHECK_STORAGE = 0;
     private static final int HANDLE_INTENT = 1;
     private static final int NUM_STORAGE_CHECKS = 25;
 
-    private Handler handler = new Handler() {
+    private final Handler handler = new Handler() {
+        @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case CHECK_STORAGE:
@@ -96,6 +103,22 @@ public final class Gallery extends Activity {
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
 
+        mPicasaAccountThread.start();
+        mPicasaHandler = new Handler(mPicasaAccountThread.getLooper()) {
+
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what) {
+                    case GET_PICASA_ACCOUNT_STATUS:
+                        mAccountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
+                        break;
+                    case UPDATE_PICASA_ACCOUNT_STATUS:
+                        updatePicasaAccountStatus();
+                        break;
+                }
+            }
+        };
+
         sendInitialMessage();
 
         Log.i(TAG, "onCreate");
@@ -108,6 +131,7 @@ public final class Gallery extends Activity {
         handler.sendMessage(checkStorage);
     }
 
+    @Override
     protected void onNewIntent(Intent intent) {
         setIntent(intent);
         handler.removeMessages(CHECK_STORAGE);
@@ -144,35 +168,23 @@ public final class Gallery extends Activity {
             mRenderView.onResume();
         }
         if (mApp.isPaused()) {
-            mApp.getHandler().post(new Runnable() {
-                public void run() {
-                    // We check to see if the authenticated accounts have
-                    // changed, and
-                    // if so, reload the datasource.
-                    HashMap<String, Boolean> accountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
-                    String[] keys = new String[accountsEnabled.size()];
-                    keys = accountsEnabled.keySet().toArray(keys);
-                    int numKeys = keys.length;
-                    for (int i = 0; i < numKeys; ++i) {
-                        String key = keys[i];
-                        boolean newValue = accountsEnabled.get(key).booleanValue();
-                        boolean oldValue = false;
-                        Boolean oldValObj = mAccountsEnabled.get(key);
-                        if (oldValObj != null) {
-                            oldValue = oldValObj.booleanValue();
-                        }
-                        if (oldValue != newValue) {
-                            // Reload the datasource.
-                            if (mGridLayer != null) {
-                                mGridLayer.setDataSource(mGridLayer.getDataSource());
-                            }
-                            break;
-                        }
-                    }
-                    mAccountsEnabled = accountsEnabled;
-                }
-            });
+            mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
+            mPicasaHandler.sendEmptyMessage(UPDATE_PICASA_ACCOUNT_STATUS);
         	mApp.onResume();
+        }
+    }
+
+    void updatePicasaAccountStatus() {
+        // We check to see if the authenticated accounts have
+        // changed, if so, reload the datasource.
+
+        // TODO: This should be done in PicasaDataFeed
+        if (mGridLayer != null) {
+            HashMap<String, Boolean> accountsEnabled = PicasaDataSource.getAccountStatus(this);
+            if (!accountsEnabled.equals(mAccountsEnabled)) {
+                mGridLayer.setDataSource(mGridLayer.getDataSource());
+                mAccountsEnabled = accountsEnabled;
+            }
         }
     }
 
@@ -187,9 +199,13 @@ public final class Gallery extends Activity {
             }
             mWakeLock = null;
         }
+
         LocalDataSource.sThumbnailCache.flush();
         LocalDataSource.sThumbnailCacheVideo.flush();
         PicasaDataSource.sThumbnailCache.flush();
+
+        mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
+        mPicasaHandler.removeMessages(UPDATE_PICASA_ACCOUNT_STATUS);
     	mApp.onPause();
     }
 
@@ -211,6 +227,10 @@ public final class Gallery extends Activity {
         // Remove any post messages.
         handler.removeMessages(CHECK_STORAGE);
         handler.removeMessages(HANDLE_INTENT);
+
+        mPicasaAccountThread.quit();
+        mPicasaAccountThread = null;
+        mPicasaHandler = null;
 
         if (mGridLayer != null) {
             DataSource dataSource = mGridLayer.getDataSource();
@@ -372,6 +392,6 @@ public final class Gallery extends Activity {
             }
         }
         // We record the set of enabled accounts for picasa.
-        mAccountsEnabled = PicasaDataSource.getAccountStatus(Gallery.this);
+        mPicasaHandler.sendEmptyMessage(GET_PICASA_ACCOUNT_STATUS);
     }
 }
