@@ -706,7 +706,7 @@ public final class CacheService extends IntentService {
             final long timeModifiedInSec = videoTimestamp[i];
             final long thumbnailId = videoThumbnailIds[i];
             if (!isInVideoThumbnailerSkipList(thumbnailId)) {
-                if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
+                if (!videoThumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
                     try {
                         byte[] retVal = buildThumbnailForId(context, videoThumbnailCache, thumbnailId, id, true, DEFAULT_THUMBNAIL_WIDTH,
                                                             DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
