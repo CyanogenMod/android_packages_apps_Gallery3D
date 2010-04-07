@@ -184,11 +184,20 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 layer.endSlideshow();
             }
             boolean needsVibrate = false;
+            boolean directionalKeyPressed = false;
             if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
                 needsVibrate = !layer.changeFocusToNextSlot(1.0f);
+                directionalKeyPressed = true;
             }
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
                 needsVibrate = !layer.changeFocusToPreviousSlot(1.0f);
+                directionalKeyPressed = true;
+            }
+            if (directionalKeyPressed) {
+                if (layer.getHud().getMode() == HudLayer.MODE_SELECT) {
+                    layer.deselectAll();
+                    layer.enterSelectionMode();
+                }
             }
             if (needsVibrate) {
                 vibrateShort();
