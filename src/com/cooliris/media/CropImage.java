@@ -488,50 +488,25 @@ public class CropImage extends MonitoredActivity {
                         break;
                     }
                 }
-                try {
-                    MediaItem item = mItem;
-                    String finalFileName = fileName + "-" + x + ".jpg";
-                    // TODO this is going to cause the orientation to reset.
-                    Uri newUri = ImageManager.addImage(mContentResolver, item.mCaption, item.mDateAddedInSec, item.mDateTakenInMs, item.mLatitude,
-                            item.mLongitude, 0, directory.toString(), finalFileName);
-                    boolean complete = false;
-                    try {
-                        String[] projection = new String[] { ImageColumns._ID, ImageColumns.MINI_THUMB_MAGIC };
-                        Cursor c = mContentResolver.query(newUri, projection, null, null, null);
-                        try {
-                            c.moveToPosition(0);
-                        } finally {
-                            c.close();
-                        }
-                        ContentValues values = new ContentValues();
-                        values.put(ImageColumns.MINI_THUMB_MAGIC, 0);
-                        mContentResolver.update(newUri, values, null, null);
-                        OutputStream outputStream = null;
-                        try {
-                            outputStream = mContentResolver.openOutputStream(newUri);
-                            if (outputStream != null) {
-                                croppedImage.compress(mOutputFormat, 75, outputStream);
-                            }
-                        } catch (IOException ex) {
-                            // TODO: report error to caller
-                            Log.e(TAG, "Cannot open file: " + newUri, ex);
-                        } finally {
-                            Util.closeSilently(outputStream);
-                        }
-                        complete = true;
-                    } finally {
-                        if (!complete) {
-                            try {
-                                mContentResolver.delete(newUri, null, null);
-                            } catch (Throwable t) {
-                                // Ignore it while clean up.
-                            }
-                        }
-                    }
+
+                MediaItem item = mItem;
+                String title = fileName + "-" + x;
+                String finalFileName = title + ".jpg";
+                int[] degree = new int[1];
+                Double latitude = null;
+                Double longitude = null;
+                if (item.isLatLongValid()) {
+                    latitude = new Double(item.mLatitude);
+                    longitude = new Double(item.mLongitude);
+                }
+                Uri newUri = ImageManager.addImage(mContentResolver, title,
+                        item.mDateAddedInSec, item.mDateTakenInMs, latitude,
+                        longitude, directory.toString(), finalFileName,
+                        croppedImage, null, degree);
+                if (newUri != null) {
                     setResult(RESULT_OK, new Intent().setAction(newUri.toString()).putExtras(extras));
-                } catch (Exception e) { // CR: e.
-                    // CR: sentences!
-                    Log.e(TAG, "Store image fail, continue anyway", e);
+                } else {
+                    setResult(RESULT_OK, new Intent().setAction(null));
                 }
             }
         }

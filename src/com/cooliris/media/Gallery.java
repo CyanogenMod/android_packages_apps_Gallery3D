@@ -286,7 +286,7 @@ public final class Gallery extends Activity {
             // to that image.
             if (resultCode == RESULT_OK) {
                 String contentUri = data.getAction();
-                if (mGridLayer != null) {
+                if (mGridLayer != null && contentUri != null) {
                     mGridLayer.focusItem(contentUri);
                 }
             }
