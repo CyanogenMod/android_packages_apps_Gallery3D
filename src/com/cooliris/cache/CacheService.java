@@ -91,7 +91,7 @@ public final class CacheService extends IntentService {
     public static final int THUMBNAIL_ID_INDEX = 0;
     public static final int THUMBNAIL_DATE_MODIFIED_INDEX = 1;
     public static final int THUMBNAIL_DATA_INDEX = 2;
-    public static final int THUMBNAIL_ORIENTATION_INDEX = 2;
+    public static final int THUMBNAIL_ORIENTATION_INDEX = 3;
     public static final String[] THUMBNAIL_PROJECTION = new String[] { Images.ImageColumns._ID, Images.ImageColumns.DATE_ADDED,
             Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION };
 
