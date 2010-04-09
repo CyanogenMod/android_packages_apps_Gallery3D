@@ -56,9 +56,6 @@ public final class PicasaDataSource implements DataSource {
         if (mProviderClient == null) {
             mProviderClient = mContext.getContentResolver().acquireContentProviderClient(PicasaContentProvider.AUTHORITY);
         }
-        // Force permission dialog to be displayed if necessary. TODO: remove
-        // this after signed by Google.
-        PicasaApi.getAccounts(mContext);
 
         // Ensure that users are up to date. TODO: also listen for accounts
         // changed broadcast.
