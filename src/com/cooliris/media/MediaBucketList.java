@@ -2,8 +2,10 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import android.util.Log;
 
 public final class MediaBucketList {
+    private static final String TAG = "MediaBucketList";
     private static final Boolean TRUE = new Boolean(true);
     private static final Boolean FALSE = new Boolean(false);
 
@@ -85,6 +87,10 @@ public final class MediaBucketList {
         if (slotId == Shared.INVALID) {
             return;
         }
+	if (feed == null) {
+	    Log.e(TAG, "MediaFeed is null");
+	    return;
+	}
         setDirty();
         final ArrayList<MediaBucket> selectedBuckets = mBuckets;
         final int numSelectedBuckets = selectedBuckets.size();

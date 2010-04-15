@@ -10,6 +10,7 @@ import android.os.PowerManager.WakeLock;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.Context;
+import android.util.Log;
 
 public final class GridLayer extends RootLayer implements MediaFeed.Listener, TimeBar.Listener {
     public static final int STATE_MEDIA_SETS = 0;
@@ -28,6 +29,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     private static final float SLIDESHOW_TRANSITION_TIME = 3.5f;
 
+    private static final String TAG = "GridLayer";
     private HudLayer mHud;
     private int mState;
     private static final IndexRange sBufferedVisibleRange = new IndexRange();
@@ -1179,6 +1181,10 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public boolean tapGesture(int slotIndex, boolean metadata) {
         MediaFeed feed = mMediaFeed;
+	if (feed == null) {
+	    Log.e(TAG, "MediaFeed is null");
+	    return false;
+	}
         if (!feed.isClustered()) {
             // It is not clustering.
             if (!feed.hasExpandedMediaSet()) {

@@ -109,7 +109,11 @@ public final class Gallery extends Activity {
                     if (imageManagerHasStorageAfterDelay) {
                         mGridLayer.setDataSource(combinedDataSource);
                     } else {
-                        mGridLayer.setDataSource(picasaDataSource);
+                        try {
+                            mGridLayer.setDataSource(picasaDataSource);
+                        } catch (NullPointerException e) {
+                            Log.i(TAG,"NullPointerException");
+                        }
                     }
                     if (!isCacheReady && imageManagerHasStorageAfterDelay) {
                         showToast(getResources().getString(R.string.loading_new), Toast.LENGTH_LONG);
@@ -143,8 +147,12 @@ public final class Gallery extends Activity {
                     boolean slideshow = getIntent().getBooleanExtra("slideshow", false);
                     final SingleDataSource singleDataSource = new SingleDataSource(Gallery.this, uri.toString(), slideshow);
                     final ConcatenatedDataSource singleCombinedDataSource = new ConcatenatedDataSource(singleDataSource, picasaDataSource);
-                    mGridLayer.setDataSource(singleCombinedDataSource);
-                    mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
+                    try {
+                        mGridLayer.setDataSource(singleCombinedDataSource);
+		        mGridLayer.setViewIntent(true, Utils.getBucketNameFromUri(uri));
+                    } catch (NullPointerException e) {
+                        Log.i(TAG,"NullPointerException");
+                    }
                     if (singleDataSource.isSingleImage()) {
                         mGridLayer.setSingleImage(false);
                     } else if (slideshow) {

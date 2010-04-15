@@ -87,7 +87,7 @@ public final class DiskCache {
         return true;
     }
 
-    public void put(long key, byte[] data, long timestamp) {
+    public void put(long key, byte[] data, long timestamp) throws IOException {
         // Check to see if the record already exists.
         Record record = null;
         synchronized (mIndexMap) {
@@ -106,8 +106,9 @@ public final class DiskCache {
                     }
                     return;
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Unable to read from chunk file");
+            } catch (IOException e) {
+                Log.e(TAG, "Unable to write to chunk file");
+                throw e;
             }
         }
         // Append a new chunk to the current chunk.
@@ -135,6 +136,7 @@ public final class DiskCache {
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Unable to write new entry to chunk file");
+                throw e;
             }
         } else {
             Log.e(TAG, "getChunkFile() returned null");
@@ -296,7 +298,7 @@ public final class DiskCache {
         }
     }
 
-    private RandomAccessFile getChunkFile(int chunk) {
+    private RandomAccessFile getChunkFile(int chunk) throws FileNotFoundException {
         RandomAccessFile chunkFile = null;
         synchronized (mChunkFiles) {
             chunkFile = mChunkFiles.get(chunk);
@@ -307,6 +309,7 @@ public final class DiskCache {
                 chunkFile = new RandomAccessFile(chunkFilePath, "rw");
             } catch (FileNotFoundException e) {
                 Log.e(TAG, "Unable to create or open the chunk file " + chunkFilePath);
+                throw e;
             }
             synchronized (mChunkFiles) {
                 mChunkFiles.put(chunk, chunkFile);
