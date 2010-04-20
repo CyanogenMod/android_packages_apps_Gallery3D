@@ -37,7 +37,7 @@ public final class Gallery extends Activity {
     private int mNumRetries;
     private boolean mImageManagerHasStorageAfterDelay = false;
     private HandlerThread mPicasaAccountThread = new HandlerThread("PicasaAccountMonitor");
-    private Handler mPicasaHandler;
+    private Handler mPicasaHandler = null;
 
     private static final int GET_PICASA_ACCOUNT_STATUS = 1;
     private static final int UPDATE_PICASA_ACCOUNT_STATUS = 2;
@@ -168,8 +168,10 @@ public final class Gallery extends Activity {
             mRenderView.onResume();
         }
         if (mApp.isPaused()) {
-            mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
-            mPicasaHandler.sendEmptyMessage(UPDATE_PICASA_ACCOUNT_STATUS);
+            if (mPicasaHandler != null) {
+                mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
+                mPicasaHandler.sendEmptyMessage(UPDATE_PICASA_ACCOUNT_STATUS);
+            }
         	mApp.onResume();
         }
     }
@@ -204,8 +206,10 @@ public final class Gallery extends Activity {
         LocalDataSource.sThumbnailCacheVideo.flush();
         PicasaDataSource.sThumbnailCache.flush();
 
-        mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
-        mPicasaHandler.removeMessages(UPDATE_PICASA_ACCOUNT_STATUS);
+        if (mPicasaHandler != null) {
+            mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
+            mPicasaHandler.removeMessages(UPDATE_PICASA_ACCOUNT_STATUS);
+        }
     	mApp.onPause();
     }
 
