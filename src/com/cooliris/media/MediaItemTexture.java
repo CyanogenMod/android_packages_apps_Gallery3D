@@ -102,7 +102,40 @@ public final class MediaItemTexture extends Texture {
         if (config == null) {
             Bitmap retVal = null;
             try {
-                if (mItem.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) {
+                Uri uri = Uri.parse(uriString);
+                final boolean isLocal = (uri.getScheme().equals("content") &&
+                        uri.getAuthority().equals("media"));
+                final boolean isImage = (mItem.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE);
+
+                if (isLocal) {
+                    Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
+                    new Thread() {
+                        public void run() {
+                            try {
+                                Thread.sleep(5000);
+                            } catch (InterruptedException e) {
+                                ;
+                            }
+                            try {
+                                if (isImage) {
+                                    MediaStore.Images.Thumbnails.cancelThumbnailRequest(mContext.getContentResolver(), mItem.mId);
+                                } else {
+                                    MediaStore.Video.Thumbnails.cancelThumbnailRequest(mContext.getContentResolver(), mItem.mId);
+                                }
+                            } catch (Exception e) {
+                                ;
+                            }
+                        }
+                    }.start();
+                    if (isImage) {
+                        retVal = MediaStore.Images.Thumbnails.getThumbnail(mContext.getContentResolver(), mItem.mId,
+                                MediaStore.Images.Thumbnails.MINI_KIND, null);
+                    } else {
+                        retVal = MediaStore.Video.Thumbnails.getThumbnail(mContext.getContentResolver(), mItem.mId,
+                                MediaStore.Video.Thumbnails.MINI_KIND, null);
+                    }
+                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                } else if (isImage) {
                     Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
                     try {
                         // We first dirty the cache if the timestamp has changed
@@ -127,25 +160,6 @@ public final class MediaItemTexture extends Texture {
                     } catch (URISyntaxException e) {
                         ;
                     }
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                } else {
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
-                    new Thread() {
-                        public void run() {
-                            try {
-                                Thread.sleep(5000);
-                            } catch (InterruptedException e) {
-                                ;
-                            }
-                            try {
-                                MediaStore.Video.Thumbnails.cancelThumbnailRequest(mContext.getContentResolver(), mItem.mId);
-                            } catch (Exception e) {
-                                ;
-                            }
-                        }
-                    }.start();
-                    retVal = MediaStore.Video.Thumbnails.getThumbnail(mContext.getContentResolver(), mItem.mId,
-                            MediaStore.Video.Thumbnails.MINI_KIND, null);
                     Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 }
             } catch (OutOfMemoryError e) {
