@@ -565,33 +565,30 @@ public final class CacheService extends IntentService {
         try {
             Bitmap bitmap = null;
             Thread.sleep(1);
-            if (!isVideo) {
-                final String uriString = BASE_CONTENT_STRING_IMAGES + origId;
-                UriTexture.invalidateCache(thumbId, 1024);
-                try {
-                    bitmap = UriTexture.createFromUri(context, uriString, 1024, 1024, thumbId, null);
-                } catch (IOException e) {
-                    return null;
-                } catch (URISyntaxException e) {
-                    return null;
-                }
-            } else {
-                new Thread() {
-                    public void run() {
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            ;
-                        }
-                        try {
-                            MediaStore.Video.Thumbnails.cancelThumbnailRequest(context.getContentResolver(), origId);
-                        } catch (Exception e) {
-                            ;
-                        }
+            new Thread() {
+                public void run() {
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        ;
                     }
-                }.start();
+                    try {
+                        if (isVideo) {
+                            MediaStore.Video.Thumbnails.cancelThumbnailRequest(context.getContentResolver(), origId);
+                        } else {
+                            MediaStore.Images.Thumbnails.cancelThumbnailRequest(context.getContentResolver(), origId);
+                        }
+                    } catch (Exception e) {
+                        ;
+                    }
+                }
+            }.start();
+            if (isVideo) {
                 bitmap = MediaStore.Video.Thumbnails.getThumbnail(context.getContentResolver(), origId,
-                        MediaStore.Video.Thumbnails.MICRO_KIND, null);
+                        MediaStore.Video.Thumbnails.MINI_KIND, null);
+            } else {
+                bitmap = MediaStore.Images.Thumbnails.getThumbnail(context.getContentResolver(), origId,
+                        MediaStore.Images.Thumbnails.MINI_KIND, null);
             }
             if (bitmap == null) {
                 return null;
