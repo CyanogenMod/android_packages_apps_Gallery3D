@@ -101,7 +101,7 @@ public final class HudLayer extends Layer {
     private float mAlpha;
     private float mAnimAlpha;
     private boolean mAutoHide;
-    private float mTimeElapsedSinceFullOpacity;
+    private long mLastTimeFullOpacity;
     private String mCachedCaption;
     private String mCachedPosition;
     private String mCachedCurrentLabel;
@@ -545,19 +545,17 @@ public final class HudLayer extends Layer {
             factor = 4.0f;
         }
         mAnimAlpha = FloatUtils.animate(mAnimAlpha, mAlpha, frameInterval * factor);
-        boolean timeElapsedSinceFullOpacity_Reset = mTimeElapsedSinceFullOpacity == 0.0f;
 
         if (mAutoHide) {
             if (mAlpha == 1.0f && mMode != MODE_SELECT) {
-                mTimeElapsedSinceFullOpacity += frameInterval;
-                if (mTimeElapsedSinceFullOpacity > 5.0f)
+                long now = System.currentTimeMillis();
+                if (now - mLastTimeFullOpacity >= 5000) {
                     setAlpha(0);
+                }
             }
         }
-        if (mAnimAlpha != mAlpha || (mTimeElapsedSinceFullOpacity < 5.0f && !timeElapsedSinceFullOpacity_Reset))
-            return true;
 
-        return false;
+        return (mAnimAlpha != mAlpha);
     }
 
     public void renderOpaque(RenderView view, GL11 gl) {
@@ -575,8 +573,18 @@ public final class HudLayer extends Layer {
             if (mView != null)
                 mView.requestRender();
         }
+
+        // We try to invoke update() again in 5 seconds to see if
+        // auto hide is needed.
         if (alpha == 1.0f) {
-            mTimeElapsedSinceFullOpacity = 0.0f;
+            mLastTimeFullOpacity = System.currentTimeMillis();
+            App.get(mContext).getHandler().postDelayed(new Runnable() {
+                public void run() {
+                    if (mView != null) {
+                        mView.requestRender();
+                    }
+                }
+            }, 5000);
         }
     }
 
