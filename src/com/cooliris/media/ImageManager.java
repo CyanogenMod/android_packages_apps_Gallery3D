@@ -293,20 +293,7 @@ public class ImageManager {
                 return false;
             }
         }
-        File f = new File(directoryName, ".probe");
-        try {
-            // Remove stale file if any
-            if (f.exists()) {
-                f.delete();
-            }
-            if (!f.createNewFile()) {
-                return false;
-            }
-            f.delete();
-            return true;
-        } catch (IOException ex) {
-            return false;
-        }
+        return directory.canWrite();
     }
 
     public static boolean quickHasStorage() {
