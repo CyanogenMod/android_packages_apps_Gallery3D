@@ -76,7 +76,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private final DisplaySlot[] mDisplaySlots = new DisplaySlot[MAX_DISPLAY_SLOTS];
     private ArrayList<MediaItem> mVisibleItems;
 
-    private float mTimeElapsedSinceTransition;
     private final BackgroundLayer mBackground;
     private boolean mLocationFilter;
     private float mZoomValue = 1.0f;
@@ -201,7 +200,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mHud.setSize(mWidth, mHeight);
         mHud.setAlpha(1.0f);
         mBackground.setSize(mWidth, mHeight);
-        mTimeElapsedSinceTransition = 0.0f;
         if (mView != null) {
             mView.requestRender();
         }
@@ -484,7 +482,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     @Override
     public boolean update(RenderView view, float timeElapsed) {
         if (mFeedAboutToChange == false) {
-            mTimeElapsedSinceTransition += timeElapsed;
             mTimeElapsedSinceGridViewReady += timeElapsed;
             if (mTimeElapsedSinceGridViewReady >= 1.0f) {
                 mTimeElapsedSinceGridViewReady = 1.0f;
@@ -493,8 +490,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (mTimeElapsedSinceStackViewReady >= 1.0f) {
                 mTimeElapsedSinceStackViewReady = 1.0f;
             }
-        } else {
-            mTimeElapsedSinceTransition = 0;
         }
         if (mRequestToEnterSelection) {
             HudLayer hud = getHud();
@@ -566,7 +561,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             --mFramesDirty;
         }
         if (mDisplayList.getNumAnimatables() != 0 || mCamera.isAnimating()
-                || (mTimeElapsedSinceTransition > 0.0f && mTimeElapsedSinceTransition < 1.0f) || mSelectedAlpha != mTargetAlpha
+                || mSelectedAlpha != mTargetAlpha
                 // || (mAnimatedFov != mTargetFov)
                 || dirty)
             return true;
@@ -624,7 +619,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                         ArrayList<MediaItem> items = set.getItems();
                         displaySlots[indexIntoSlots].setMediaSet(set);
                         ArrayList<MediaItem> bestItems = mTempList;
-                        // if (mTimeElapsedSinceTransition < 1.0f)
                         {
                             // We always show the same top thumbnails for a
                             // stack of albums
@@ -664,7 +658,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                                 if (item != null) {
                                     DisplayItem displayItem = displayList.get(item);
                                     if ((mState == STATE_FULL_SCREEN && i != mInputProcessor.getCurrentSelectedSlot())
-                                            || (mState == STATE_GRID_VIEW && (mTimeElapsedSinceTransition > 1.0f || j >= originallyFoundItems))) {
+                                            || (mState == STATE_GRID_VIEW && j >= originallyFoundItems)) {
                                         displayItem.set(position, j, false);
                                         displayItem.commit();
                                     } else {
@@ -829,7 +823,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         } else {
             // mBreakSlots = null;
         }
-        mTimeElapsedSinceTransition = 0.0f;
         mPerformingLayoutChange = true;
         LayoutInterface layout = mLayoutInterface;
         if (oldLayout == null) {
@@ -1290,7 +1283,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void onFeedAboutToChange(MediaFeed feed) {
         mFeedAboutToChange = true;
-        mTimeElapsedSinceTransition = 0;
     }
 
     public void startSlideshow() {

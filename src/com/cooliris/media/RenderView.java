@@ -806,7 +806,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         }
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         // Increase the priority of the render thread.
-        Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
+        // This is commented out to give other threads more CPU.
+        //Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
 
         // Disable unused state.
         gl.glEnable(GL11.GL_DITHER);
