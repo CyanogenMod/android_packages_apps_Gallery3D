@@ -26,6 +26,8 @@ public final class MediaFeed implements Runnable {
     public static final int OPERATION_CROP = 2;
 
     private static final int NUM_ITEMS_LOOKAHEAD = 60;
+    private static final int NUM_INTERRUPT_RETRIES = 30;
+    private static final int JOIN_TIMEOUT = 50;
 
     private IndexRange mVisibleRange = new IndexRange();
     private IndexRange mBufferedRange = new IndexRange();
@@ -49,6 +51,7 @@ public final class MediaFeed implements Runnable {
     private boolean mLoading;
     private HashMap<String, ContentObserver> mContentObservers = new HashMap<String, ContentObserver>();
     private ArrayList<String[]> mRequestedRefresh = new ArrayList<String[]>();
+    private volatile boolean mIsShutdown = false;
 
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
@@ -65,23 +68,14 @@ public final class MediaFeed implements Runnable {
     }
 
     public void shutdown() {
+        mIsShutdown = true;
         if (mDataSourceThread != null) {
             mDataSource.shutdown();
-            mDataSourceThread.interrupt();
-            try {
-                mDataSourceThread.join();
-            } catch (InterruptedException e) {
-                Log.w(TAG, "Cannot stop data source thread.", e);
-            }
+            repeatShuttingDownThread(mDataSourceThread);
             mDataSourceThread = null;
         }
         if (mAlbumSourceThread != null) {
-            mAlbumSourceThread.interrupt();
-            try {
-                mAlbumSourceThread.join();
-            } catch (InterruptedException e) {
-                Log.w(TAG, "Cannot stop album source thread.", e);
-            }
+            repeatShuttingDownThread(mAlbumSourceThread);
             mAlbumSourceThread = null;
         }
         int numSets = mMediaSets.size();
@@ -103,6 +97,23 @@ public final class MediaFeed implements Runnable {
         mListener = null;
         mDataSource = null;
         mSingleWrapper = null;
+    }
+
+    private void repeatShuttingDownThread(Thread targetThread) {
+        for (int i = 0; i < NUM_INTERRUPT_RETRIES && targetThread.isAlive(); ++i) {
+            targetThread.interrupt();
+            try {
+                targetThread.join(JOIN_TIMEOUT);
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Cannot stop the thread: " + targetThread.getName(), e);
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+
+        if (targetThread.isAlive()) {
+            Log.w(TAG, "Cannot stop the thread: " + targetThread.getName());
+        }
     }
 
     public void setVisibleRange(int begin, int end) {
@@ -397,6 +408,7 @@ public final class MediaFeed implements Runnable {
         mLoading = true;
         mDataSourceThread = new Thread(this);
         mDataSourceThread.setName("MediaFeed");
+        mIsShutdown = false;
         mAlbumSourceThread = new Thread(new Runnable() {
             public void run() {
                 if (mContext == null)
@@ -492,7 +504,7 @@ public final class MediaFeed implements Runnable {
         int sleepMs = 10;
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         if (dataSource != null) {
-            while (!Thread.interrupted()) {
+            while (!Thread.interrupted() && !mIsShutdown) {
                 String[] databaseUris = null;
                 boolean performRefresh = false;
                 synchronized (mRequestedRefresh) {
