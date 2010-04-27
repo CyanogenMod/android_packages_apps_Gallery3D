@@ -53,8 +53,8 @@
     <string name="details_ok" msgid="6848594369924424312">"确定"</string>
     <string name="loading_new" msgid="7893793767294787579">"正在载入新相册和新照片"</string>
     <string name="initializing" msgid="2374228157398540466">"正在载入"</string>
-    <string name="pick_prompt" msgid="576608096149718121">"从您的收藏中挑选项目"</string>
-    <string name="no_items" msgid="3117870234034732172">"您的收藏中没有任何项目"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"从您的收藏中挑选一个"</string>
+    <string name="no_items" msgid="3117870234034732172">"您还没有照片或视频。"</string>
     <string name="pick" msgid="7248789132035843128">"精选"</string>
     <string name="delete" msgid="2839695998251824487">"删除"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"确认删除"</string>
@@ -78,7 +78,7 @@
     <string name="location_unknown" msgid="6310139243003315255">"未知地点"</string>
     <string name="title" msgid="7622928349908052569">"标题"</string>
     <string name="type" msgid="4329478642546287192">"类型"</string>
-    <string name="taken_on" msgid="3269486910757192479">"拍摄日期："</string>
+    <string name="taken_on" msgid="3269486910757192479">"拍摄日期"</string>
     <string name="added_on" msgid="5194321063173381814">"添加日期："</string>
     <string name="show_on_map" msgid="6157544221201750980">"显示在地图上"</string>
     <string name="rotate_left" msgid="7412075232752726934">"向左旋转"</string>

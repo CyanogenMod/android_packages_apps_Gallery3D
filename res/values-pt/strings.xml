@@ -31,7 +31,7 @@
     <item msgid="6662413035764778250">"Nov"</item>
     <item msgid="3784870986696899313">"Dez"</item>
   </string-array>
-    <string name="gadget_title" msgid="259405922673466798">"Frame da imagem"</string>
+    <string name="gadget_title" msgid="259405922673466798">"Moldura de uma imagem"</string>
     <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
     <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
     <string name="movie_view_label" msgid="3697303290960009886">"Filmes\n"</string>
@@ -48,8 +48,8 @@
     <string name="crop_label" msgid="521114301871349328">"Cortar imagem"</string>
     <string name="running_face_detection" msgid="4094707964259463039">"Aguarde..."</string>
     <string name="set_image" msgid="2331476809308010401">"Definir imagem como\n"</string>
-    <string name="wallpaper" msgid="9222901738515471972">"Configurando o papel de parede, aguarde…"</string>
-    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Papel de parede"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Configurando o plano de fundo, aguarde…"</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Plano de fundo"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
     <string name="loading_new" msgid="7893793767294787579">"Carregando novos álbuns e fotos"</string>
     <string name="initializing" msgid="2374228157398540466">"Carregando"</string>

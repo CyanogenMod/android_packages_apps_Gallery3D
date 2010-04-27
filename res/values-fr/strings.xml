@@ -51,10 +51,10 @@
     <string name="wallpaper" msgid="9222901738515471972">"Configuration du fond d\'écran en cours. Veuillez patienter..."</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Fond d\'écran"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
-    <string name="loading_new" msgid="7893793767294787579">"Chargement de photos et d\'albums nouveaux"</string>
+    <string name="loading_new" msgid="7893793767294787579">"Chargement des nouveaux éléments (albums et photos)"</string>
     <string name="initializing" msgid="2374228157398540466">"Chargement"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Choisissez un élément dans votre collection."</string>
-    <string name="no_items" msgid="3117870234034732172">"Votre collection ne contient aucun élément"</string>
+    <string name="no_items" msgid="3117870234034732172">"Aucun élément dans votre collection."</string>
     <string name="pick" msgid="7248789132035843128">"Choisir"</string>
     <string name="delete" msgid="2839695998251824487">"Supprimer"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Confirmer la suppression"</string>

@@ -31,7 +31,7 @@
     <item msgid="6662413035764778250">"Lis"</item>
     <item msgid="3784870986696899313">"Gru"</item>
   </string-array>
-    <string name="gadget_title" msgid="259405922673466798">"Ramka zdjęcia"</string>
+    <string name="gadget_title" msgid="259405922673466798">"Ramka ze zdjęciem"</string>
     <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
     <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
     <string name="movie_view_label" msgid="3697303290960009886">"Filmy"</string>
@@ -54,7 +54,7 @@
     <string name="loading_new" msgid="7893793767294787579">"Wczytywanie nowych albumów i zdjęć"</string>
     <string name="initializing" msgid="2374228157398540466">"Wczytywanie"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Wybierz element z kolekcji"</string>
-    <string name="no_items" msgid="3117870234034732172">"W Twojej kolekcji nie ma żadnych elementów"</string>
+    <string name="no_items" msgid="3117870234034732172">"Brak elementów"</string>
     <string name="pick" msgid="7248789132035843128">"Wybierz"</string>
     <string name="delete" msgid="2839695998251824487">"Usuń"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Potwierdź usunięcie"</string>

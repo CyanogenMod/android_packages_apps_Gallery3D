@@ -31,7 +31,7 @@
     <item msgid="6662413035764778250">"11월"</item>
     <item msgid="3784870986696899313">"12월"</item>
   </string-array>
-    <string name="gadget_title" msgid="259405922673466798">"사진 프레임"</string>
+    <string name="gadget_title" msgid="259405922673466798">"사진 액자"</string>
     <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
     <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
     <string name="movie_view_label" msgid="3697303290960009886">"영화"</string>
