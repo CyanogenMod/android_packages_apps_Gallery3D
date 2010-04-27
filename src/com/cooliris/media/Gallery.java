@@ -304,6 +304,7 @@ public final class Gallery extends Activity {
         }
         if (mRenderView != null)
             mRenderView.requestRender();
+	onCreate(null);
         Log.i(TAG, "onConfigurationChanged");
     }
 
