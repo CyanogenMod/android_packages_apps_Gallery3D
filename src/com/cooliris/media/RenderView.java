@@ -545,12 +545,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     public void onResume() {
         super.onResume();
         Sensor sensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        Sensor sensorOrientation = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (sensorAccelerometer != null) {
             mSensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_UI);
-        }
-        if (sensorOrientation != null) {
-            mSensorManager.registerListener(this, sensorOrientation, SensorManager.SENSOR_DELAY_UI);
         }
         if (mRootLayer != null) {
             mRootLayer.onResume();
@@ -876,13 +872,10 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     /** Indicates that a sensor value has changed. */
     public void onSensorChanged(SensorEvent event) {
         final int type = event.sensor.getType();
-        if ((!mPendingSensorEvent && type == Sensor.TYPE_ACCELEROMETER) || type == Sensor.TYPE_ORIENTATION) {
+        if (!mPendingSensorEvent && type == Sensor.TYPE_ACCELEROMETER) {
             final SensorEvent e = event;
             if (mRootLayer != null)
                 mRootLayer.onSensorChanged(RenderView.this, e);
-            if (type == Sensor.TYPE_ORIENTATION) {
-                requestRender();
-            }
         }
     }
 

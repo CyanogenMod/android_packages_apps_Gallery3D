@@ -92,7 +92,6 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             return;
         switch (event.sensor.getType()) {
         case Sensor.TYPE_ACCELEROMETER:
-        case Sensor.TYPE_ORIENTATION:
             float[] values = event.values;
             float valueToUse = (mCamera.mWidth < mCamera.mHeight) ? values[0] : -values[1];
             float tiltValue = 0.8f * mPrevTiltValueLowPass + 0.2f * valueToUse;
