@@ -152,7 +152,7 @@
         <service android:label="CacheService" android:name="com.cooliris.cache.CacheService"/>
 
         <receiver android:label="BootReceiver" android:name="com.cooliris.cache.BootReceiver"
-            android:enabled="true" android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            android:enabled="true">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
                 <action android:name="android.intent.action.BOOT_COMPLETE" />
