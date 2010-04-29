@@ -61,7 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"Отмена"</string>
     <string name="share" msgid="3619042788254195341">"Отправить"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-карта извлечена или не вставлена"</string>
-    <string name="more" msgid="1526449516720792387">"Дополнительно"</string>
+    <string name="more" msgid="1526449516720792387">"Ещё"</string>
     <string name="select_all" msgid="8623593677101437957">"Выбрать все"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Снять все выделения"</string>
     <string name="slideshow" msgid="4355906903247112975">"Слайд-шоу"</string>
