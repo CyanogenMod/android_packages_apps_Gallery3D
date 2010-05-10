@@ -31,9 +31,12 @@ import org.apache.http.params.HttpProtocolParams;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.provider.MediaStore.Images;
 import android.util.Log;
 
 import com.cooliris.cache.CacheService;
@@ -102,9 +105,27 @@ public class UriTexture extends Texture {
         int sampleSize = 1;
         if (uri.startsWith(ContentResolver.SCHEME_CONTENT)) {
             // Load the bitmap from a local file.
+            final ContentResolver cr = context.getContentResolver();
+            String filePath = null;
+
+            /*
+             * Get the file path corresponding to uri
+             */
+            try {
+                final Cursor cursor = cr.query(Uri.parse(uri), new String[] { Images.ImageColumns.DATA },
+                                                 null, null, null);
+                if (cursor != null && cursor.getCount() > 0 ) {
+                    cursor.moveToFirst();
+                    filePath = cursor.getString(0);
+                    cursor.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             options.inJustDecodeBounds = true;
-            BufferedInputStream bufferedInput = new BufferedInputStream(context.getContentResolver()
-                    .openInputStream(Uri.parse(uri)), 16384);
+            BufferedInputStream bufferedInput = new BufferedInputStream(new FileInputStream(filePath),
+                                                                         16384);
             bufferedInput.mark(Integer.MAX_VALUE);
             bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
             int width = options.outWidth;
@@ -122,21 +143,37 @@ public class UriTexture extends Texture {
             options.inDither = false;
             options.inJustDecodeBounds = false;
             options.inSampleSize = ratio;
-            Thread timeoutThread = new Thread("BitmapTimeoutThread") {
-                public void run() {
-                    try {
-                        Thread.sleep(6000);
-                        options.requestCancelDecode();
-                    } catch (InterruptedException e) {
 
-                    }
+            /*
+             * Extract thumbnail from EXIF header
+             */
+            byte[] thumbnail = null;
+            if (filePath != null) {
+                ExifInterface exif = new ExifInterface(filePath);
+                if (exif != null && exif.hasThumbnail()) {
+                    thumbnail = exif.getThumbnail();
                 }
-            };
-            timeoutThread.start();
-            bufferedInput.close();
-            bufferedInput = new BufferedInputStream(context.getContentResolver().openInputStream(Uri.parse(uri)), 16384);
-            bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
-            bufferedInput.close();
+            }
+
+            if(thumbnail != null) {
+                bitmap  = BitmapFactory.decodeByteArray(thumbnail,0,thumbnail.length, options);
+            } else {
+                Thread timeoutThread = new Thread("BitmapTimeoutThread") {
+                    public void run() {
+                        try {
+                            Thread.sleep(6000);
+                            options.requestCancelDecode();
+                        } catch (InterruptedException e) {
+
+                        }
+                    }
+                };
+                timeoutThread.start();
+                bufferedInput.close();
+                bufferedInput = new BufferedInputStream(new FileInputStream(filePath), 16384);
+                bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
+                bufferedInput.close();
+            }
         } else {
             // Load the bitmap from a remote URL.
             try {
