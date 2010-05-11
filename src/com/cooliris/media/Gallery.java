@@ -299,12 +299,19 @@ public final class Gallery extends Activity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+
+        if (mRenderView != null) { 
+            mRenderView.shutdown();
+            mRenderView = new RenderView(this);
+            mRenderView.setRootLayer(mGridLayer);
+            setContentView(mRenderView);
+            
+        }            
+        
         if (mGridLayer != null) {
             mGridLayer.markDirty(30);
         }
-        if (mRenderView != null)
-            mRenderView.requestRender();
-	onCreate(null);
+        
         Log.i(TAG, "onConfigurationChanged");
     }
 
