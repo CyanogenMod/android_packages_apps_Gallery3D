@@ -1,5 +1,3 @@
-package com.cooliris.media;
-
 /*
  * Copyright (C) 2007 The Android Open Source Project
  *
@@ -15,6 +13,8 @@ package com.cooliris.media;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.cooliris.media;
 
 import java.io.File;
 import java.io.FileNotFoundException;

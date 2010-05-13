@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2009 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.cooliris.media;
 
 import java.util.ArrayList;
@@ -50,7 +66,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     private final StringTexture[] mMonthLabels = new StringTexture[12];
     private final StringTexture[] mDayLabels = new StringTexture[32];
     private final StringTexture[] mOpaqueDayLabels = new StringTexture[32];
-    private final StringTexture mDot = new StringTexture("¥");
+    private final StringTexture mDot = new StringTexture("ï¿½");
     private final HashMap<MediaItem, Marker> mTracker = new HashMap<MediaItem, Marker>(1024);
     private int mState;
     private float mTextAlpha = 0.0f;
