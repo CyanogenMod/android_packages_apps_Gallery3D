@@ -54,12 +54,12 @@
     <string name="loading_new" msgid="7893793767294787579">"Neue Alben und Fotos werden geladen"</string>
     <string name="initializing" msgid="2374228157398540466">"Wird geladen"</string>
     <string name="pick_prompt" msgid="576608096149718121">"Ein Element aus Ihrer Sammlung auswählen"</string>
-    <string name="no_items" msgid="3117870234034732172">"In Ihrer Sammlung befinden sich keine Elemente."</string>
+    <string name="no_items" msgid="3117870234034732172">"Ihre Galerie ist leer."</string>
     <string name="pick" msgid="7248789132035843128">"Auswählen"</string>
     <string name="delete" msgid="2839695998251824487">"Löschen"</string>
     <string name="confirm_delete" msgid="5731757674837098707">"Löschen bestätigen"</string>
     <string name="cancel" msgid="3637516880917356226">"Abbrechen"</string>
-    <string name="share" msgid="3619042788254195341">"Freigeben"</string>
+    <string name="share" msgid="3619042788254195341">"Weitergeben"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-Karte wurde entfernt oder ist nicht vorhanden."</string>
     <string name="more" msgid="1526449516720792387">"Mehr"</string>
     <string name="select_all" msgid="8623593677101437957">"Alles auswählen"</string>
