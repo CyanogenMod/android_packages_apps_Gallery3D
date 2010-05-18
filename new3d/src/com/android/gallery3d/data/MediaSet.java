@@ -8,15 +8,15 @@ public interface MediaSet {
 
     public int getSubMediaSetCount();
 
-    public MediaSet getSubMediaSet(int index);
-
-    public int getMediaCount();
-
     public MediaItem getMediaItem(int index);
+
+    public int getMediaItemCount();
 
     public int getTotalMediaItemCount();
 
     public String getTitle();
 
     public MediaItem[] getCoverMediaItems();
+
+    public MediaSet getSubMediaSet(int index);
 }
