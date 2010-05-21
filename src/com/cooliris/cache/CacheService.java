@@ -488,7 +488,8 @@ public final class CacheService extends IntentService {
                 int ctr = 0;
                 do {
                     if (Thread.interrupted()) {
-                        break;
+                        cursorImages.close();
+                        return null;
                     }
                     ids[ctr] = cursorImages.getLong(THUMBNAIL_ID_INDEX);
                     timestamp[ctr] = cursorImages.getLong(THUMBNAIL_DATE_MODIFIED_INDEX);
@@ -528,7 +529,8 @@ public final class CacheService extends IntentService {
                 int ctr = 0;
                 do {
                     if (Thread.interrupted()) {
-                        break;
+                        cursorVideos.close();
+                        return null;
                     }
                     ids[ctr] = cursorVideos.getLong(THUMBNAIL_ID_INDEX);
                     timestamp[ctr] = cursorVideos.getLong(THUMBNAIL_DATE_MODIFIED_INDEX);
@@ -575,6 +577,15 @@ public final class CacheService extends IntentService {
 
         /* Build thumbnails for images */
         ImageList list = getImageList(context);
+
+        /*
+         * getImageList returns null only when the thumbnail refresh
+         * thread is interrupted. Bail out from futher processing here.
+         */
+        if (list == null) {
+            return;
+        }
+
         final int size = (list.ids == null) ? 0 : list.ids.length;
         final long[] ids = list.ids;
         final long[] timestamp = list.timestamp;
@@ -603,6 +614,15 @@ public final class CacheService extends IntentService {
 
         /* Build thumbnails for videos */
         list = getVideoList(context);
+
+        /*
+         * getVideoList returns null only when the thumbnail refresh
+         * thread is interrupted. Bail out from futher processing here.
+         */
+        if (list == null) {
+            return;
+        }
+
         final int videoListSize = (list.ids == null) ? 0 : list.ids.length;
         final long[] videoIds = list.ids;
         final long[] videoTimestamp = list.timestamp;
