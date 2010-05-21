@@ -16,22 +16,32 @@
 
 package com.android.gallery3d.app;
 
-import com.android.gallery3d.R;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.android.gallery3d.R;
+import com.android.gallery3d.ui.GLRootView;
+import com.android.gallery3d.ui.SlotView;
+import com.android.gallery3d.ui.SlotViewMockData;
+
 public final class Gallery extends Activity {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
+
     private static final String TAG = "Gallery";
+    private GLRootView mGLRootView;
+    private SlotView mSlotView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        Log.i(TAG, "onCreate");
+        mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
+
+        mSlotView = new SlotView();
+        mGLRootView.setContentPane(mSlotView);
+        mSlotView.setModel(new SlotViewMockData(this));
     }
 
     @Override
@@ -47,11 +57,13 @@ public final class Gallery extends Activity {
     @Override
     public void onResume() {
         super.onResume();
+        mGLRootView.onResume();
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        mGLRootView.onPause();
     }
 
     @Override

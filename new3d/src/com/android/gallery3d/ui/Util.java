@@ -16,12 +16,18 @@
 
 package com.android.gallery3d.ui;
 
+import android.app.Activity;
+import android.content.Context;
+import android.util.DisplayMetrics;
+
 /**
  * Collection of utility functions used in this package.
  */
 class Util {
     @SuppressWarnings("unused")
     private static final String TAG = "Util";
+
+    private static float sPixelDensity = -1f;
 
     private Util() {
     }
@@ -66,4 +72,25 @@ class Util {
         if (x < min) return min;
         return x;
     }
+
+    public static float clamp(float x, float min, float max) {
+        if (x > max) return max;
+        if (x < min) return min;
+        return x;
+    }
+
+    public synchronized static float dpToPixel(Context context, float dp) {
+        if (sPixelDensity < 0) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            ((Activity) context).getWindowManager()
+                    .getDefaultDisplay().getMetrics(metrics);
+            sPixelDensity =  metrics.density;
+        }
+        return sPixelDensity * dp;
+    }
+
+    public static int dpToPixel(Context context, int dp) {
+        return (int)(dpToPixel(context, (float) dp) + .5f);
+    }
+
 }

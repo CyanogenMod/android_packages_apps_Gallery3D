@@ -68,8 +68,6 @@ public class GLRootView extends GLSurfaceView
 
     private static boolean mTexture2DEnabled;
 
-    private static float sPixelDensity = -1f;
-
     private GL11 mGL;
     private GLView mContentView;
     private DisplayMetrics mDisplayMetrics;
@@ -91,10 +89,10 @@ public class GLRootView extends GLSurfaceView
     private final float mXyBuffer[] = new float[VERTEX_BUFFER_SIZE];
     private final byte mIndexBuffer[] = new byte[INDEX_BUFFER_SIZE];
 
-    private int mNinePatchX[] = new int[4];
-    private int mNinePatchY[] = new int[4];
-    private float mNinePatchU[] = new float[4];
-    private float mNinePatchV[] = new float[4];
+    private final int mNinePatchX[] = new int[4];
+    private final int mNinePatchY[] = new int[4];
+    private final float mNinePatchU[] = new float[4];
+    private final float mNinePatchV[] = new float[4];
 
     private ByteBuffer mXyPointer;
     private ByteBuffer mUvPointer;
@@ -103,7 +101,7 @@ public class GLRootView extends GLSurfaceView
     private int mFlags = FLAG_NEED_LAYOUT;
     private long mAnimationTime;
 
-    private CameraEGLConfigChooser mEglConfigChooser = new CameraEGLConfigChooser();
+    private final CameraEGLConfigChooser mEglConfigChooser = new CameraEGLConfigChooser();
 
     public GLRootView(Context context) {
         this(context, null);
@@ -124,20 +122,6 @@ public class GLRootView extends GLSurfaceView
 
     public long currentAnimationTimeMillis() {
         return mAnimationTime;
-    }
-
-    public synchronized static float dpToPixel(Context context, float dp) {
-        if (sPixelDensity < 0) {
-            DisplayMetrics metrics = new DisplayMetrics();
-            ((Activity) context).getWindowManager()
-                    .getDefaultDisplay().getMetrics(metrics);
-            sPixelDensity =  metrics.density;
-        }
-        return sPixelDensity * dp;
-    }
-
-    public static int dpToPixel(Context context, int dp) {
-        return (int)(dpToPixel(context, (float) dp) + .5f);
     }
 
     public Transformation obtainTransformation() {
