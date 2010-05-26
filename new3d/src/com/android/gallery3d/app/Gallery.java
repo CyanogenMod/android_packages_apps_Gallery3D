@@ -22,9 +22,12 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.data.LocalMediaSet;
+import com.android.gallery3d.data.MediaDbAccessor;
+import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.SlotView;
-import com.android.gallery3d.ui.SlotViewMockData;
+import com.android.gallery3d.ui.MediaSetSlotAdapter;
 
 public final class Gallery extends Activity {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
@@ -41,7 +44,9 @@ public final class Gallery extends Activity {
 
         mSlotView = new SlotView(this);
         mGLRootView.setContentPane(mSlotView);
-        mSlotView.setModel(new SlotViewMockData(this));
+        MediaSet rootSet = MediaDbAccessor.getMediaSets(this);
+        ((LocalMediaSet) rootSet).printOut();
+        mSlotView.setModel(new MediaSetSlotAdapter(this, rootSet));
     }
 
     @Override
