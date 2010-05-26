@@ -39,7 +39,7 @@ public final class Gallery extends Activity {
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
 
-        mSlotView = new SlotView();
+        mSlotView = new SlotView(this);
         mGLRootView.setContentPane(mSlotView);
         mSlotView.setModel(new SlotViewMockData(this));
     }

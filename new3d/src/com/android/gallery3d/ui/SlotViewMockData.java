@@ -10,7 +10,7 @@ import java.util.Random;
 public class SlotViewMockData implements SlotView.Model {
     private static final int LENGTH_LIMIT = 180;
     private static final double EXPECTED_AREA = LENGTH_LIMIT * LENGTH_LIMIT / 2;
-    private static final int DATA_SIZE = 15;
+    private static final int DATA_SIZE = 50;
     private static final int PILE_SIZE = 4;
 
     private final BasicTexture mPhoto[];
@@ -37,7 +37,10 @@ public class SlotViewMockData implements SlotView.Model {
         }
     }
 
-    public void freeSlot(int index) {
+    public void freeSlot(int index, DisplayItemPanel panel) {
+        for (int i = index * PILE_SIZE, n = i + PILE_SIZE; i < n; ++i) {
+            panel.removeDisplayItem(mItems[i]);
+        }
     }
 
     public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
