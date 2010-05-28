@@ -2,6 +2,7 @@ package com.android.gallery3d.ui;
 
 import android.graphics.Bitmap;
 import android.opengl.GLUtils;
+import android.util.Log;
 
 import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
@@ -10,6 +11,7 @@ abstract class BitmapTexture extends BasicTexture {
 
     @SuppressWarnings("unused")
     private static final String TAG = "Texture";
+    private boolean mOpaque;
 
     protected BitmapTexture() {
         super(null, 0, STATE_UNLOADED);
@@ -60,7 +62,10 @@ abstract class BitmapTexture extends BasicTexture {
                 int widthExt = Util.nextPowerOf2(width);
                 int heightExt = Util.nextPowerOf2(height);
                 int format = GLUtils.getInternalFormat(bitmap);
+                mOpaque =
+                        (format == GL11.GL_RGB || format == GL11.GL_LUMINANCE);
                 int type = GLUtils.getType(bitmap);
+
 
                 mTextureWidth = widthExt;
                 mTextureHeight = heightExt;
@@ -105,5 +110,10 @@ abstract class BitmapTexture extends BasicTexture {
             gl.glBindTexture(GL11.GL_TEXTURE_2D, getId());
         }
         return true;
+    }
+
+    @Override
+    public boolean isOpaque() {
+        return mOpaque ;
     }
 }

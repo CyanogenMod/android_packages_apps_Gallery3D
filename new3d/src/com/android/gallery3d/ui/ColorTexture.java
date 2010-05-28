@@ -16,6 +16,10 @@
 
 package com.android.gallery3d.ui;
 
+import android.graphics.Color;
+
+import javax.microedition.khronos.opengles.GL11;
+
 class ColorTexture implements Texture {
 
     private int mColor;
@@ -29,5 +33,10 @@ class ColorTexture implements Texture {
 
     public void draw(GLRootView root, int x, int y, int w, int h) {
         root.drawColor(x, y, w, h, mColor);
+    }
+
+    public boolean isOpaque() {
+        int alpha = mColor >>> 24;
+        return alpha != 0;
     }
 }

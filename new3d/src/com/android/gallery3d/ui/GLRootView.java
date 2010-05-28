@@ -300,7 +300,7 @@ public class GLRootView extends GLSurfaceView
         }
     }
 
-    public void drawRect(int x, int y, int width, int height) {
+    private void drawRect(int x, int y, int width, int height) {
         float matrix[] = mMatrixValues;
         mTransformation.getMatrix().getValues(matrix);
         drawRect(x, y, width, height, matrix);
@@ -331,7 +331,7 @@ public class GLRootView extends GLSurfaceView
 
     public void drawNinePatch(
             NinePatchTexture tex, int x, int y, int width, int height) {
-
+        isToEnableGL_BLEND(tex);
         NinePatchChunk chunk = tex.getNinePatchChunk();
 
         // The code should be easily extended to handle the general cases by
@@ -549,6 +549,7 @@ public class GLRootView extends GLSurfaceView
     }
 
     public void drawColor(int x, int y, int width, int height, int color) {
+        setBlendEnabled(color);
         float alpha = mTransformation.getAlpha();
         GL11 gl = mGL;
         if (mTexture2DEnabled) {
@@ -571,7 +572,7 @@ public class GLRootView extends GLSurfaceView
 
     public void drawTexture(BasicTexture texture,
             int x, int y, int width, int height, float alpha) {
-
+        isToEnableGL_BLEND(texture);
         if (!mTexture2DEnabled) {
             mGL.glEnable(GL11.GL_TEXTURE_2D);
             mTexture2DEnabled = true;
@@ -605,6 +606,23 @@ public class GLRootView extends GLSurfaceView
                 setAlphaValue(alpha);
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
             }
+        }
+    }
+
+    private void isToEnableGL_BLEND(Texture texture) {
+        if (!texture.isOpaque()) {
+            mGL.glEnable(GL11.GL_BLEND);
+        } else {
+            mGL.glDisable(GL11.GL_BLEND);
+        }
+    }
+
+    private void setBlendEnabled(int color) {
+        int alpha = Color.alpha(color);
+        if (alpha != 0) {
+            mGL.glEnable(GL11.GL_BLEND);
+        } else {
+            mGL.glDisable(GL11.GL_BLEND);
         }
     }
 

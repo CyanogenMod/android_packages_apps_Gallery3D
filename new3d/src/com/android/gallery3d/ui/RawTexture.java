@@ -51,4 +51,9 @@ class RawTexture extends BasicTexture {
     public void drawBack(GLRootView root, int x, int y, int w, int h) {
         root.drawTexture(this, x, y, w, h, 1f);
     }
+
+    @Override
+    public boolean isOpaque() {
+        return false;
+    }
 }

@@ -19,4 +19,5 @@ package com.android.gallery3d.ui;
 interface Texture {
     public void draw(GLRootView root, int x, int y);
     public void draw(GLRootView root, int x, int y, int w, int h);
+    public boolean isOpaque();
 }

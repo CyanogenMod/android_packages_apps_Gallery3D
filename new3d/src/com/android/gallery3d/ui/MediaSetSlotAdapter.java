@@ -124,5 +124,9 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         }
     }
 
+    public void freeSlot(int index, DisplayItemPanel panel) {
+        // TODO: Need to implement the method.
+    }
+
 }
 
