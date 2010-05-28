@@ -96,5 +96,4 @@ class Util {
     public static boolean isOpaque(int color) {
         return color >>> 24 == 0xFF;
     }
-
 }

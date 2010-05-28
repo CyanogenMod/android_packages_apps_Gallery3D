@@ -6,7 +6,6 @@ import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
 
 import javax.microedition.khronos.opengles.GL11;
-import android.util.Log;
 
 public class SlotView extends GLView {
 

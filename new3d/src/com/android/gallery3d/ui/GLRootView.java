@@ -91,6 +91,7 @@ public class GLRootView extends GLSurfaceView
     private final int mNinePatchY[] = new int[4];
     private final float mNinePatchU[] = new float[4];
     private final float mNinePatchV[] = new float[4];
+    private final float mTextureColor[] = new float[4];
 
     private FloatBuffer mXyPointer;
     private FloatBuffer mUvPointer;
@@ -244,6 +245,10 @@ public class GLRootView extends GLSurfaceView
         gl.glVertexPointer(2, GL11.GL_FLOAT, 0, mXyPointer);
         gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, mUvPointer);
 
+        // Enable the texture coordinate array for Texture 1
+        gl.glClientActiveTexture(GL11.GL_TEXTURE1);
+        gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, mUvPointer);
+        gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
     }
 
     /**
@@ -527,21 +532,8 @@ public class GLRootView extends GLSurfaceView
         drawRect(x, y, width, height);
     }
 
-    public void drawTexture(
+    private void drawBoundTexture(
             BasicTexture texture, int x, int y, int width, int height) {
-        drawTexture(texture, x, y, width, height, mTransformation.getAlpha());
-    }
-
-    public void drawTexture(BasicTexture texture,
-            int x, int y, int width, int height, float alpha) {
-        mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
-        mGLState.setTexture2DEnabled(true);
-
-        if (!texture.bind(this, mGL)) {
-            throw new RuntimeException("cannot bind" + texture.toString());
-        }
-        if (width <= 0 || height <= 0) return ;
-
         Matrix matrix = mTransformation.getMatrix();
         matrix.getValues(mMatrixValues);
 
@@ -552,7 +544,6 @@ public class GLRootView extends GLSurfaceView
                     (texture.mWidth - 0.5f) / texture.mTextureWidth,
                     (texture.mHeight - 0.5f) / texture.mTextureHeight,
                     mUvBuffer, mUvPointer);
-            mGLState.setTextureAlpha(alpha);
             drawRect(x, y, width, height, mMatrixValues);
         } else {
             // draw the rect from bottom-left to top-right
@@ -562,10 +553,89 @@ public class GLRootView extends GLSurfaceView
             width = (int) points[2] - x;
             height = (int) points[3] - y;
             if (width > 0 && height > 0) {
-                mGLState.setTextureAlpha(alpha);
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
             }
         }
+
+    }
+
+    public void drawTexture(
+            BasicTexture texture, int x, int y, int width, int height) {
+        drawTexture(texture, x, y, width, height, mTransformation.getAlpha());
+    }
+
+    public void drawTexture(BasicTexture texture,
+            int x, int y, int width, int height, float alpha) {
+        if (width <= 0 || height <= 0) return ;
+
+        mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
+        mGLState.setTexture2DEnabled(true);
+
+        if (!texture.bind(this, mGL)) {
+            throw new RuntimeException("cannot bind" + texture.toString());
+        }
+        mGLState.setTextureAlpha(alpha);
+        drawBoundTexture(texture, x, y, width, height);
+    }
+
+    public void drawMixed(BasicTexture from, BasicTexture to,
+            float ratio, int x, int y, int w, int h) {
+        drawMixed(from, to, ratio, x, y, w, h, mTransformation.getAlpha());
+    }
+
+    private void setTextureColor(float r, float g, float b, float alpha) {
+        float[] color = mTextureColor;
+        color[0] = r;
+        color[1] = g;
+        color[2] = b;
+        color[3] = alpha;
+    }
+
+    public void drawMixed(BasicTexture from, BasicTexture to,
+            float ratio, int x, int y, int width, int height, float alpha) {
+        if (alpha < OPAQUE_ALPHA) {
+            throw new RuntimeException("Cannot support alpha value");
+        }
+        mGLState.setBlendEnabled(!from.isOpaque() || !to.isOpaque());
+        mGLState.setTexture2DEnabled(true);
+
+        final GL11 gl = mGL;
+        if (!from.bind(this, gl)) {
+            throw new RuntimeException("fail to bind texture");
+        }
+
+        gl.glActiveTexture(GL11.GL_TEXTURE1);
+        if (!to.bind(this, gl)) {
+            gl.glActiveTexture(GL11.GL_TEXTURE0);
+            throw new RuntimeException("fail to bind texture");
+        }
+        gl.glEnable(GL11.GL_TEXTURE_2D);
+
+        // Interpolate the RGB and alpha values between both textures.
+        mGLState.setTexEnvMode(GL11.GL_COMBINE);
+        gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_RGB, GL11.GL_INTERPOLATE);
+        gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_ALPHA, GL11.GL_INTERPOLATE);
+
+        // Specify the interpolation factor via the alpha component of
+        // GL_TEXTURE_ENV_COLORes.
+        setTextureColor(ratio, ratio, ratio, ratio);
+        gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, mTextureColor, 0);
+
+        // Wire up the interpolation factor for RGB.
+        gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_SRC2_RGB, GL11.GL_CONSTANT);
+        gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_OPERAND2_RGB, GL11.GL_SRC_ALPHA);
+
+        // Wire up the interpolation factor for alpha.
+        gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_SRC2_ALPHA, GL11.GL_CONSTANT);
+        gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_OPERAND2_ALPHA, GL11.GL_SRC_ALPHA);
+
+        // Draw the combined texture.
+        drawBoundTexture(to, x, y, width, height);
+
+        // Disable TEXTURE1.
+        gl.glDisable(GL11.GL_TEXTURE_2D);
+        // Switch back to the default texture unit.
+        gl.glActiveTexture(GL11.GL_TEXTURE0);
     }
 
     private static boolean isMatrixRotatedOrFlipped(float matrix[]) {
