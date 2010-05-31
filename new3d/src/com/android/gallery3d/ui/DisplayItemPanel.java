@@ -58,6 +58,12 @@ public class DisplayItemPanel extends GLView {
         if (!mPrepareTransition) invalidate();
     }
 
+    public void removeDisplayItem(DisplayItem item) {
+        if (item.mPanel != this) throw new IllegalArgumentException();
+        mItems.remove(item);
+        item.mPanel = null;
+    }
+
     public void prepareTransition() {
         mPrepareTransition = true;
         for (DisplayItem item : mItems) {
@@ -85,9 +91,12 @@ public class DisplayItemPanel extends GLView {
 
     @Override
     protected void render(GLRootView view, GL11 gl) {
+        Transformation transform = view.getTransformation();
+        Matrix matrix = transform.getMatrix();
+        matrix.preTranslate(-mScrollX, 0);
         if (mAnimationStartTime == NO_ANIMATION) {
             for (DisplayItem item: mItems) {
-                renderItem(view, item);
+                renderItem(view, item, matrix);
             }
         } else {
             long now = view.currentAnimationTimeMillis();
@@ -107,11 +116,10 @@ public class DisplayItemPanel extends GLView {
                 invalidate();
             }
         }
+        matrix.preTranslate(mScrollX, 0);
     }
 
-    private void renderItem(GLRootView root, DisplayItem item) {
-        Transformation transform = root.getTransformation();
-        Matrix matrix = transform.getMatrix();
+    private void renderItem(GLRootView root, DisplayItem item, Matrix matrix) {
         item.mCurrent.apply(matrix);
         item.render(root);
         item.mCurrent.inverse(matrix);

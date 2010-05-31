@@ -1,14 +1,23 @@
 package com.android.gallery3d.ui;
 
+import android.content.Context;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.animation.DecelerateInterpolator;
+
+import javax.microedition.khronos.opengles.GL11;
 
 public class SlotView extends GLView {
+
+    private static final String TAG = "SlotView";
+    private static final int MAX_VELOCITY = 2500;
 
     public static interface Model {
         public int size();
         public int getSlotHeight();
         public int getSlotWidth();
         public void putSlot(int index, int x, int y, DisplayItemPanel panel);
-        public void freeSlot(int index);
+        public void freeSlot(int index, DisplayItemPanel panel);
     }
 
     private Model mModel;
@@ -19,12 +28,20 @@ public class SlotView extends GLView {
     private int mSlotWidth;
     private int mSlotHeight;
     private int mRowCount;
-    private int mScroll;
     private int mScrollLimit;
 
-    public SlotView() {
+    private int mVisibleStart = 0;
+    private int mVisibleEnd = 0;
+
+    private final GestureDetector mGestureDetector;
+    private final ScrollerHelper mScroller;
+
+    public SlotView(Context context) {
         mPanel = new DisplayItemPanel();
         super.addComponent(mPanel);
+        mGestureDetector =
+                new GestureDetector(context, new MyGestureListener());
+        mScroller = new ScrollerHelper(context, new DecelerateInterpolator(1));
     }
 
     @Override
@@ -46,60 +63,153 @@ public class SlotView extends GLView {
 
     private void initializeLayoutParams() {
         int size = mModel.size();
-        int slotWidth = mSlotWidth = mModel.getSlotWidth();
-        int slotHeight = mSlotHeight = mModel.getSlotHeight();
+        mSlotWidth = mModel.getSlotWidth();
+        mSlotHeight = mModel.getSlotHeight();
         int totalHeight= getHeight();
         int rowCount = totalHeight / mSlotHeight;
         if (rowCount == 0) rowCount = 1;
         mRowCount = rowCount;
         int hGap = mHorizontalGap = 10;
         int vGap = mVerticalGap = (
-                totalHeight - rowCount * slotHeight) / (rowCount + 1);
-        mScrollLimit = ((size + rowCount - 1) / rowCount) * (hGap + slotWidth)
+                totalHeight - rowCount * mSlotHeight) / (rowCount + 1);
+        mScrollLimit = ((size + rowCount - 1) / rowCount) * (hGap + mSlotWidth)
                 + hGap - getWidth();
+        if (mScrollLimit < 0) mScrollLimit = 0;
     }
 
     @Override
     protected void onLayout(boolean changeSize, int l, int t, int r, int b) {
         mPanel.layout(0, 0, r - l, b - t);
+        mVisibleStart = 0;
+        mVisibleEnd = 0;
+        mPanel.prepareTransition();
         initializeLayoutParams();
-        mScroll = Util.clamp(mScroll, 0, mScrollLimit);
-        layoutContent();
+        // The scroll limit could be changed
+        setScrollPosition(mPanel.mScrollX, true);
+        mPanel.startTransition();
+    }
+
+    private void setScrollPosition(int position, boolean force) {
+        position = Util.clamp(position, 0, mScrollLimit);
+        if (!force && position == mPanel.mScrollX) return;
+        mPanel.mScrollX = position;
+
+        int colWidth = mHorizontalGap + mSlotWidth;
+        int rowHeight = mVerticalGap + mSlotHeight;
+        int startColumn = position / colWidth;
+        int endColumn = (position + getWidth() + mSlotWidth - 1) / colWidth;
+        setVisibleRange(startColumn, endColumn);
+        invalidate();
     }
 
     public void notifyDataChanged() {
-        mScroll = 0;
+        setScrollPosition(0, false);
         notifyDataInvalidate();
     }
 
     public void notifyDataInvalidate() {
-        layoutContent();
+        invalidate();
     }
 
-    private void layoutContent() {
-        int hGap = mHorizontalGap;
-        int vGap = mVerticalGap;
-        int slotWidth = mSlotWidth;
-        int slotHeight = mSlotHeight;
+    @Override
+    protected boolean dispatchTouchEvent(MotionEvent event) {
+        // Don't pass the event to the child (MediaDisplayPanel).
+        // Handle it here
+        return onTouch(event);
+    }
+
+    @Override
+    protected boolean onTouch(MotionEvent event) {
+        mGestureDetector.onTouchEvent(event);
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mScroller.forceFinished();
+                break;
+        }
+        return true;
+    }
+
+    @Override
+    protected void render(GLRootView root, GL11 gl) {
+        super.render(root, gl);
+        if (mScroller.computeScrollOffset(root.currentAnimationTimeMillis())) {
+            setScrollPosition(mScroller.getCurrentPosition(), false);
+            invalidate();
+        }
+    }
+
+    private void freeSlotsInColumn(int columnIndex) {
+        int rowCount = mRowCount;
+        DisplayItemPanel panel = mPanel;
+        for (int i = columnIndex * rowCount,
+                n = Math.min(mModel.size(), i + rowCount); i < n; ++i) {
+            mModel.freeSlot(i, panel);
+        }
+    }
+
+    private void putSlotsInColumn(int columnIndex) {
+        int x = columnIndex * (mHorizontalGap + mSlotWidth) + mHorizontalGap;
+        int y = mVerticalGap;
+        int rowHeight = mVerticalGap + mSlotHeight;
         int rowCount = mRowCount;
 
-        int colWidth = hGap + slotWidth;
-        int rowHeight = vGap + slotHeight;
-
-        int startColumn = mScroll / colWidth;
-        int endColumn = (mScroll + getWidth() + slotWidth - 1) / colWidth;
-
-        int startIndex = startColumn * rowCount;
-        int endIndex = Math.min(endColumn * rowCount, mModel.size());
-
-        mPanel.prepareTransition();
-        for (int i = startIndex; i < endIndex; ++i) {
-            int col = i / rowCount;
-            int row = i - col * rowCount;
-            mModel.putSlot(i, col * colWidth + hGap - mScroll,
-                    row * rowHeight + vGap, mPanel);
+        DisplayItemPanel panel = mPanel;
+        for (int i = columnIndex * rowCount,
+                n = Math.min(mModel.size(), i + rowCount); i < n; ++i) {
+            mModel.putSlot(i, x, y, panel);
+            y += rowHeight;
         }
-        mPanel.startTransition();
-        invalidate();
+    }
+
+    // start: inclusive, end: exclusive
+    private void setVisibleRange(int start, int end) {
+        if (start == mVisibleStart && end == mVisibleEnd) return;
+        int rowCount = mRowCount;
+        if (start >= mVisibleEnd || end < mVisibleStart) {
+            for (int i = mVisibleStart, n = mVisibleEnd; i < n; ++i) {
+                freeSlotsInColumn(i);
+            }
+            for (int i = start; i < end; ++i) {
+                putSlotsInColumn(i);
+            }
+        } else {
+            for (int i = mVisibleStart; i < start; ++i) {
+                freeSlotsInColumn(i);
+            }
+            for (int i = end, n = mVisibleEnd; i < n; ++i) {
+                freeSlotsInColumn(i);
+            }
+            for (int i = start, n = mVisibleStart; i < n; ++i) {
+                putSlotsInColumn(i);
+            }
+            for (int i = mVisibleEnd; i < end; ++i) {
+                putSlotsInColumn(i);
+            }
+        }
+        mVisibleStart = start;
+        mVisibleEnd = end;
+    }
+
+    private class MyGestureListener
+            extends GestureDetector.SimpleOnGestureListener {
+
+        @Override
+        public boolean onFling(MotionEvent e1,
+                MotionEvent e2, float velocityX, float velocityY) {
+            if (mScrollLimit == 0) return false;
+            velocityX = Util.clamp(velocityX, -MAX_VELOCITY, MAX_VELOCITY);
+            mScroller.fling(mPanel.mScrollX, -(int) velocityX, 0, mScrollLimit);
+            invalidate();
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1,
+                MotionEvent e2, float distanceX, float distanceY) {
+            if (mScrollLimit == 0) return false;
+            setScrollPosition(mPanel.mScrollX + (int) distanceX, false);
+            invalidate();
+            return true;
+        }
     }
 }
