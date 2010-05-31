@@ -33,6 +33,7 @@ import android.view.animation.Transformation;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Stack;
 
@@ -94,8 +95,8 @@ public class GLRootView extends GLSurfaceView
     private final float mNinePatchU[] = new float[4];
     private final float mNinePatchV[] = new float[4];
 
-    private ByteBuffer mXyPointer;
-    private ByteBuffer mUvPointer;
+    private FloatBuffer mXyPointer;
+    private FloatBuffer mUvPointer;
     private ByteBuffer mIndexPointer;
 
     private int mFlags = FLAG_NEED_LAYOUT;
@@ -171,8 +172,8 @@ public class GLRootView extends GLSurfaceView
         setRenderer(this);
 
         int size = VERTEX_BUFFER_SIZE * Float.SIZE / Byte.SIZE;
-        mXyPointer = allocateDirectNativeOrderBuffer(size);
-        mUvPointer = allocateDirectNativeOrderBuffer(size);
+        mXyPointer = allocateDirectNativeOrderBuffer(size).asFloatBuffer();
+        mUvPointer = allocateDirectNativeOrderBuffer(size).asFloatBuffer();
         mIndexPointer = allocateDirectNativeOrderBuffer(INDEX_BUFFER_SIZE);
     }
 
@@ -306,7 +307,7 @@ public class GLRootView extends GLSurfaceView
     }
 
     private static void putRectangle(float x, float y,
-            float width, float height, float[] buffer, ByteBuffer pointer) {
+            float width, float height, float[] buffer, FloatBuffer pointer) {
         buffer[0] = x;
         buffer[1] = y;
         buffer[2] = x + width;
@@ -315,7 +316,7 @@ public class GLRootView extends GLSurfaceView
         buffer[5] = y + height;
         buffer[6] = x + width;
         buffer[7] = y + height;
-        pointer.asFloatBuffer().put(buffer, 0, 8).position(0);
+        pointer.put(buffer, 0, 8).position(0);
     }
 
     private void drawRect(
@@ -476,8 +477,8 @@ public class GLRootView extends GLSurfaceView
                 uv[yIndex] = v[j];
             }
         }
-        mUvPointer.asFloatBuffer().put(uv, 0, pntCount << 1).position(0);
-        mXyPointer.asFloatBuffer().put(xy, 0, pntCount << 1).position(0);
+        mUvPointer.put(uv, 0, pntCount << 1).position(0);
+        mXyPointer.put(xy, 0, pntCount << 1).position(0);
 
         int idxCount = 1;
         byte index[] = mIndexBuffer;
