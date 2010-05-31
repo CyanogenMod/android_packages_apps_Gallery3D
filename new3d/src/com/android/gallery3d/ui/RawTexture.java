@@ -52,7 +52,6 @@ class RawTexture extends BasicTexture {
         root.drawTexture(this, x, y, w, h, 1f);
     }
 
-    @Override
     public boolean isOpaque() {
         return false;
     }

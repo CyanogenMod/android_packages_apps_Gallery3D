@@ -112,7 +112,6 @@ abstract class BitmapTexture extends BasicTexture {
         return true;
     }
 
-    @Override
     public boolean isOpaque() {
         return mOpaque ;
     }
