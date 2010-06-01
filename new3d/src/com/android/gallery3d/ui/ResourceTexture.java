@@ -20,7 +20,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
-class ResourceTexture extends BitmapTexture {
+class ResourceTexture extends UploadedTexture {
 
     protected final Context mContext;
     protected final int mResId;

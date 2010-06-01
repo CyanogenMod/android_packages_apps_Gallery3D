@@ -51,7 +51,7 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             Bitmap bitmap = items[i].getImage(mContext.getContentResolver(),
                     MediaItem.TYPE_THUMBNAIL);
             DisplayItem displayItem = new MyDisplayItem(
-                    new ImageTexture(bitmap), mFrame);
+                    new BitmapTexture(bitmap), mFrame);
             int dx = random.nextInt(11) - 5;
             int itemX = (i & 0x01) == 0
                     ? left + dx + displayItem.getWidth() / 2
@@ -63,7 +63,7 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         Bitmap bitmap = items[0].getImage(mContext.getContentResolver(),
                 MediaItem.TYPE_THUMBNAIL);
         DisplayItem displayItem = new MyDisplayItem(
-                new ImageTexture(bitmap), mFrame);
+                new BitmapTexture(bitmap), mFrame);
         panel.putDisplayItem(displayItem, x, y, 0);
     }
 

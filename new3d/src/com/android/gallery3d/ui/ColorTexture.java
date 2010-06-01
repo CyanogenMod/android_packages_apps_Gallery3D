@@ -16,13 +16,9 @@
 
 package com.android.gallery3d.ui;
 
-import android.graphics.Color;
-
-import javax.microedition.khronos.opengles.GL11;
-
 class ColorTexture implements Texture {
 
-    private int mColor;
+    private final int mColor;
 
     public ColorTexture(int color) {
         mColor = color;
