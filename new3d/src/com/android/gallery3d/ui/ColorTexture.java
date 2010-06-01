@@ -32,7 +32,6 @@ class ColorTexture implements Texture {
     }
 
     public boolean isOpaque() {
-        int alpha = mColor >>> 24;
-        return alpha != 0;
+        return Util.isOpaque(mColor);
     }
 }

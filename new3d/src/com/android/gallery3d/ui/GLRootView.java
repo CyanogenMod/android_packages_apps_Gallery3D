@@ -18,7 +18,6 @@ package com.android.gallery3d.ui;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
@@ -67,7 +66,7 @@ public class GLRootView extends GLSurfaceView
     private static final int FLAG_INITIALIZED = 1;
     private static final int FLAG_NEED_LAYOUT = 2;
 
-    private static boolean mTexture2DEnabled;
+    private static final float OPAQUE_ALPHA = 0.95f;
 
     private GL11 mGL;
     private GLView mContentView;
@@ -81,8 +80,6 @@ public class GLRootView extends GLSurfaceView
     private final Transformation mTransformation = new Transformation();
     private final Stack<Transformation> mTransformStack =
             new Stack<Transformation>();
-
-    private float mLastAlpha = mTransformation.getAlpha();
 
     private final float mMatrixValues[] = new float[16];
 
@@ -102,7 +99,10 @@ public class GLRootView extends GLSurfaceView
     private int mFlags = FLAG_NEED_LAYOUT;
     private long mAnimationTime;
 
-    private final CameraEGLConfigChooser mEglConfigChooser = new CameraEGLConfigChooser();
+    private final CameraEGLConfigChooser mEglConfigChooser =
+            new CameraEGLConfigChooser();
+
+    private GLState mGLState;
 
     public GLRootView(Context context) {
         this(context, null);
@@ -232,6 +232,7 @@ public class GLRootView extends GLSurfaceView
             Log.i(TAG, "GLObject has changed from " + mGL + " to " + gl);
         }
         mGL = gl;
+        mGLState = new GLState(gl);
 
         if (!ENABLE_FPS_TEST) {
             setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -239,25 +240,7 @@ public class GLRootView extends GLSurfaceView
             setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
         }
 
-        // Disable unused state
-        gl.glDisable(GL11.GL_LIGHTING);
-
-        // Enable used features
-        gl.glEnable(GL11.GL_BLEND);
-        gl.glEnable(GL11.GL_SCISSOR_TEST);
-        gl.glEnable(GL11.GL_STENCIL_TEST);
-        gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
-        gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
-        gl.glEnable(GL11.GL_TEXTURE_2D);
-        mTexture2DEnabled = true;
-
-        gl.glTexEnvf(GL11.GL_TEXTURE_ENV,
-                GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-
-        // Set the background color
-        gl.glClearColor(0f, 0f, 0f, 0f);
-        gl.glClearStencil(0);
-
+        mGLState.initialize();
         gl.glVertexPointer(2, GL11.GL_FLOAT, 0, mXyPointer);
         gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, mUvPointer);
 
@@ -272,7 +255,8 @@ public class GLRootView extends GLSurfaceView
         Log.v(TAG, "onSurfaceChanged: " + width + "x" + height
                 + ", gl10: " + gl1.toString());
         GL11 gl = (GL11) gl1;
-        mGL = gl;
+        Util.Assert(mGL == gl);
+
         gl.glViewport(0, 0, width, height);
 
         gl.glMatrixMode(GL11.GL_PROJECTION);
@@ -283,21 +267,6 @@ public class GLRootView extends GLSurfaceView
         matrix.reset();
         matrix.preTranslate(0, getHeight());
         matrix.preScale(1, -1);
-    }
-
-    private void setAlphaValue(float alpha) {
-        if (mLastAlpha == alpha) return;
-
-        GL11 gl = mGL;
-        mLastAlpha = alpha;
-        if (alpha >= 0.95f) {
-            gl.glTexEnvf(GL11.GL_TEXTURE_ENV,
-                    GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
-        } else {
-            gl.glTexEnvf(GL11.GL_TEXTURE_ENV,
-                    GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
-            gl.glColor4f(alpha, alpha, alpha, alpha);
-        }
     }
 
     private void drawRect(int x, int y, int width, int height) {
@@ -331,8 +300,10 @@ public class GLRootView extends GLSurfaceView
 
     public void drawNinePatch(
             NinePatchTexture tex, int x, int y, int width, int height) {
-        isToEnableGL_BLEND(tex);
+        float alpha = mTransformation.getAlpha();
         NinePatchChunk chunk = tex.getNinePatchChunk();
+
+        mGLState.setTexture2DEnabled(true);
 
         // The code should be easily extended to handle the general cases by
         // allocating more space for buffers. But let's just handle the only
@@ -352,8 +323,9 @@ public class GLRootView extends GLSurfaceView
 
         int nx = stretch(divX, divU, chunk.mDivX, tex.getWidth(), width);
         int ny = stretch(divY, divV, chunk.mDivY, tex.getHeight(), height);
+        mGLState.setBlendEnabled(!tex.isOpaque() || alpha < OPAQUE_ALPHA);
 
-        setAlphaValue(mTransformation.getAlpha());
+        mGLState.setTextureAlpha(alpha);
         Matrix matrix = mTransformation.getMatrix();
         matrix.getValues(mMatrixValues);
         GL11 gl = mGL;
@@ -549,19 +521,9 @@ public class GLRootView extends GLSurfaceView
     }
 
     public void drawColor(int x, int y, int width, int height, int color) {
-        setBlendEnabled(color);
         float alpha = mTransformation.getAlpha();
-        GL11 gl = mGL;
-        if (mTexture2DEnabled) {
-            // Set mLastAlpha to an invalid value, so that it will reset again
-            // in setAlphaValue(float) later.
-            mLastAlpha = -1.0f;
-            gl.glDisable(GL11.GL_TEXTURE_2D);
-            mTexture2DEnabled = false;
-        }
-        alpha /= 256.0f;
-        gl.glColor4f(Color.red(color) * alpha, Color.green(color) * alpha,
-                Color.blue(color) * alpha, Color.alpha(color) * alpha);
+        mGLState.setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
+        mGLState.setFragmentColor(color, alpha);
         drawRect(x, y, width, height);
     }
 
@@ -572,11 +534,8 @@ public class GLRootView extends GLSurfaceView
 
     public void drawTexture(BasicTexture texture,
             int x, int y, int width, int height, float alpha) {
-        isToEnableGL_BLEND(texture);
-        if (!mTexture2DEnabled) {
-            mGL.glEnable(GL11.GL_TEXTURE_2D);
-            mTexture2DEnabled = true;
-        }
+        mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
+        mGLState.setTexture2DEnabled(true);
 
         if (!texture.bind(this, mGL)) {
             throw new RuntimeException("cannot bind" + texture.toString());
@@ -593,7 +552,7 @@ public class GLRootView extends GLSurfaceView
                     (texture.mWidth - 0.5f) / texture.mTextureWidth,
                     (texture.mHeight - 0.5f) / texture.mTextureHeight,
                     mUvBuffer, mUvPointer);
-            setAlphaValue(alpha);
+            mGLState.setTextureAlpha(alpha);
             drawRect(x, y, width, height, mMatrixValues);
         } else {
             // draw the rect from bottom-left to top-right
@@ -603,26 +562,9 @@ public class GLRootView extends GLSurfaceView
             width = (int) points[2] - x;
             height = (int) points[3] - y;
             if (width > 0 && height > 0) {
-                setAlphaValue(alpha);
+                mGLState.setTextureAlpha(alpha);
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
             }
-        }
-    }
-
-    private void isToEnableGL_BLEND(Texture texture) {
-        if (!texture.isOpaque()) {
-            mGL.glEnable(GL11.GL_BLEND);
-        } else {
-            mGL.glDisable(GL11.GL_BLEND);
-        }
-    }
-
-    private void setBlendEnabled(int color) {
-        int alpha = Color.alpha(color);
-        if (alpha != 0) {
-            mGL.glEnable(GL11.GL_BLEND);
-        } else {
-            mGL.glDisable(GL11.GL_BLEND);
         }
     }
 
@@ -729,4 +671,89 @@ public class GLRootView extends GLSurfaceView
         texture.setTextureSize(newWidth, newHeight);
     }
 
+    private static class GLState {
+
+        private final GL11 mGL;
+
+        private int mTexEnvMode = GL11.GL_REPLACE;
+        private float mTextureAlpha = 1.0f;
+        private boolean mTexture2DEnabled = true;
+        private boolean mBlendEnabled = true;
+
+        public GLState(GL11 gl) {
+            mGL = gl;
+        }
+
+        public void initialize() {
+            GL11 gl = mGL;
+            // Disable unused state
+            gl.glDisable(GL11.GL_LIGHTING);
+
+            // Enable used features
+            gl.glEnable(GL11.GL_BLEND);
+            gl.glEnable(GL11.GL_SCISSOR_TEST);
+            gl.glEnable(GL11.GL_STENCIL_TEST);
+            gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+            gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+            gl.glEnable(GL11.GL_TEXTURE_2D);
+
+            gl.glTexEnvf(GL11.GL_TEXTURE_ENV,
+                    GL11.GL_TEXTURE_ENV_MODE, GL11.GL_REPLACE);
+
+            // Set the background color
+            gl.glClearColor(0f, 0f, 0f, 0f);
+            gl.glClearStencil(0);
+        }
+
+        public void setTexEnvMode(int mode) {
+            if (mTexEnvMode == mode) return;
+            mTexEnvMode = mode;
+            mGL.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, mode);
+        }
+
+        public void setTextureAlpha(float alpha) {
+            if (mTextureAlpha == alpha) return;
+            mTextureAlpha = alpha;
+            if (alpha >= OPAQUE_ALPHA) {
+                // The alpha is need for those texture without alpha channel
+                mGL.glColor4f(1, 1, 1, 1);
+                setTexEnvMode(GL11.GL_REPLACE);
+            } else {
+                mGL.glColor4f(alpha, alpha, alpha, alpha);
+                setTexEnvMode(GL11.GL_MODULATE);
+            }
+        }
+
+        public void setFragmentColor(int color, float alpha) {
+            setTexture2DEnabled(false);
+            alpha /= 256f;
+            // Set mTextureAlpha to an invalid value, so that it will reset
+            // again in setTextureAlpha(float) later.
+            mTextureAlpha = -1.0f;
+            mGL.glColor4f(
+                    ((color >> 16) & 0xFF) * alpha,
+                    ((color >> 8) & 0xFF) * alpha,
+                    (color & 0xFF) * alpha, (color >>> 24) * alpha);
+        }
+
+        public void setTexture2DEnabled(boolean enabled) {
+            if (mTexture2DEnabled == enabled) return;
+            mTexture2DEnabled = enabled;
+            if (enabled) {
+                mGL.glEnable(GL11.GL_TEXTURE_2D);
+            } else {
+                mGL.glDisable(GL11.GL_TEXTURE_2D);
+            }
+        }
+
+        public void setBlendEnabled(boolean enabled) {
+            if (mBlendEnabled == enabled) return;
+            mBlendEnabled = enabled;
+            if (enabled) {
+                mGL.glEnable(GL11.GL_BLEND);
+            } else {
+                mGL.glDisable(GL11.GL_BLEND);
+            }
+        }
+    }
 }
