@@ -18,9 +18,6 @@ package com.android.gallery3d.app;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -29,13 +26,10 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.data.LocalMediaSet;
 import com.android.gallery3d.data.MediaDbAccessor;
 import com.android.gallery3d.data.MediaSet;
-import com.android.gallery3d.ui.AdaptiveBackground;
+import com.android.gallery3d.ui.Compositor;
 import com.android.gallery3d.ui.GLHandler;
 import com.android.gallery3d.ui.GLRootView;
-import com.android.gallery3d.ui.GLView;
-import com.android.gallery3d.ui.HeadUpDisplay;
-import com.android.gallery3d.ui.MediaSetSlotAdapter;
-import com.android.gallery3d.ui.OverlayLayout;
+import com.android.gallery3d.ui.GridSlotAdapter;
 import com.android.gallery3d.ui.SlotView;
 
 public final class Gallery extends Activity {
@@ -45,64 +39,32 @@ public final class Gallery extends Activity {
 
     private static final String TAG = "Gallery";
     private GLRootView mGLRootView;
-    private SlotView mSlotView;
     private GLHandler mHandler;
-    private AdaptiveBackground mBackground;
-
-    private Bitmap mBgImages[];
-    private int mBgIndex = 0;
+    private Compositor mCompositor;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
-
-        mSlotView = new SlotView(this);
-        MediaSet rootSet = MediaDbAccessor.getMediaSets(this);
-        ((LocalMediaSet) rootSet).printOut();
-        mSlotView.setModel(new MediaSetSlotAdapter(this, rootSet));
-
-        mBackground = new AdaptiveBackground();
-
-        GLView overlay = new OverlayLayout();
-        overlay.addComponent(mBackground);
-        overlay.addComponent(mSlotView);
-        overlay.addComponent(new HeadUpDisplay(this));
-        mGLRootView.setContentPane(overlay);
-
         mHandler = new GLHandler(mGLRootView) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
                     case CHANGE_BACKGROUND:
-                        changeBackground();
+                        mCompositor.changeBackground();
+                        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 3000);
                         break;
                 }
             }
         };
 
-        loadBackgroundBitmap(R.drawable.square,
-                R.drawable.potrait, R.drawable.landscape);
-        mBackground.setImage(mBgImages[mBgIndex]);
-    }
-
-    private void changeBackground() {
-        mBackground.setImage(mBgImages[mBgIndex]);
-        if (++mBgIndex == mBgImages.length) mBgIndex = 0;
-        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 15000);
-    }
-
-    private void loadBackgroundBitmap(int ... ids) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        mBgImages = new Bitmap[ids.length];
-        Resources res = getResources();
-        for (int i = 0, n = ids.length; i < n; ++i) {
-            Bitmap bitmap = BitmapFactory.decodeResource(res, ids[i], options);
-            mBgImages[i] = mBackground.getAdaptiveBitmap(bitmap);
-            bitmap.recycle();
-        }
+        MediaSet rootSet = MediaDbAccessor.getMediaSets(this);
+        ((LocalMediaSet) rootSet).printOut();
+        mCompositor = new Compositor(this);
+        SlotView slotView = mCompositor.getSlotView();
+        slotView.setModel(new GridSlotAdapter(this, rootSet.getSubMediaSet(0)));
+        mGLRootView.setContentPane(mCompositor);
     }
 
     @Override

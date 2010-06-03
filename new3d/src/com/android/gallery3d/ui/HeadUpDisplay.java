@@ -299,4 +299,16 @@ public class HeadUpDisplay extends GLView {
             return mContent.size();
         }
     }
+
+    public int getTopBarBottomPosition() {
+        Rect rect = new Rect();
+        getBoundsOf(mTopBar, rect);
+        return rect.bottom;
+    }
+
+    public int getBottomBarTopPosition() {
+        Rect rect = new Rect();
+        getBoundsOf(mBottomBar, rect);
+        return rect.top;
+    }
 }

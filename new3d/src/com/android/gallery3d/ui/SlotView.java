@@ -1,6 +1,7 @@
 package com.android.gallery3d.ui;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
@@ -63,15 +64,13 @@ public class SlotView extends GLView {
         int size = mModel.size();
         mSlotWidth = mModel.getSlotWidth();
         mSlotHeight = mModel.getSlotHeight();
-        int totalHeight= getHeight();
-        int rowCount = totalHeight / mSlotHeight;
+        int rowCount = (getHeight() - mVerticalGap)
+                / (mVerticalGap + mSlotHeight);
         if (rowCount == 0) rowCount = 1;
         mRowCount = rowCount;
-        int hGap = mHorizontalGap = 10;
-        int vGap = mVerticalGap = (
-                totalHeight - rowCount * mSlotHeight) / (rowCount + 1);
-        mScrollLimit = ((size + rowCount - 1) / rowCount) * (hGap + mSlotWidth)
-                + hGap - getWidth();
+        mScrollLimit = ((size + rowCount - 1) / rowCount)
+                * (mHorizontalGap + mSlotWidth)
+                + mHorizontalGap - getWidth();
         if (mScrollLimit < 0) mScrollLimit = 0;
     }
 
@@ -208,6 +207,17 @@ public class SlotView extends GLView {
             setScrollPosition(mPanel.mScrollX + (int) distanceX, false);
             invalidate();
             return true;
+        }
+    }
+
+    public void setGaps(int horizontalGap, int verticalGap) {
+        if (mHorizontalGap != horizontalGap || mVerticalGap != verticalGap) {
+            mHorizontalGap = horizontalGap;
+            mVerticalGap = verticalGap;
+            if (mModel != null) {
+                initializeLayoutParams();
+                invalidate();
+            }
         }
     }
 }
