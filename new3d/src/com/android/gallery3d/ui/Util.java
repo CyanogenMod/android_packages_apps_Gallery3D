@@ -93,4 +93,8 @@ class Util {
         return (int)(dpToPixel(context, (float) dp) + .5f);
     }
 
+    public static boolean isOpaque(int color) {
+        return color >>> 24 == 0xFF;
+    }
+
 }
