@@ -96,7 +96,7 @@ public class DisplayItemPanel extends GLView {
         matrix.preTranslate(-mScrollX, 0);
         if (mAnimationStartTime == NO_ANIMATION) {
             for (DisplayItem item: mItems) {
-                renderItem(view, item, matrix);
+                renderItem(view, item);
             }
         } else {
             long now = view.currentAnimationTimeMillis();
@@ -119,10 +119,11 @@ public class DisplayItemPanel extends GLView {
         matrix.preTranslate(mScrollX, 0);
     }
 
-    private void renderItem(GLRootView root, DisplayItem item, Matrix matrix) {
-        item.mCurrent.apply(matrix);
+    private void renderItem(GLRootView root, DisplayItem item) {
+        Transformation transformation = root.pushTransform();
+        item.mCurrent.apply(transformation.getMatrix());
         item.render(root);
-        item.mCurrent.inverse(matrix);
+        root.popTransform();
     }
 
     private void renderItem(

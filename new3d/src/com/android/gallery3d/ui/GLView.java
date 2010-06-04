@@ -42,7 +42,7 @@ public class GLView {
     protected final Rect mPaddings = new Rect();
 
     private GLRootView mRootView;
-    private GLView mParent;
+    protected GLView mParent;
     private ArrayList<GLView> mComponents;
     private GLView mMotionTarget;
 
@@ -233,7 +233,7 @@ public class GLView {
         return false;
     }
 
-    private boolean dispatchTouchEvent(MotionEvent event,
+    protected boolean dispatchTouchEvent(MotionEvent event,
             int x, int y, GLView component, boolean checkBounds) {
         Rect rect = component.mBounds;
         int left = rect.left;
@@ -268,7 +268,8 @@ public class GLView {
             }
         }
         if (action == MotionEvent.ACTION_DOWN) {
-            for (int i = 0, n = getComponentCount(); i < n; ++i) {
+            // in the reverse rendering order
+            for (int i = getComponentCount() - 1; i >= 0; --i) {
                 GLView component = getComponent(i);
                 if (component.getVisibility() != GLView.VISIBLE) continue;
                 if (dispatchTouchEvent(event, x, y, component, true)) {

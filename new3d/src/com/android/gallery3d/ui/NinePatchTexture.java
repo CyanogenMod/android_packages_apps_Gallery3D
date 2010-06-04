@@ -38,7 +38,10 @@ class NinePatchTexture extends ResourceTexture {
                 mContext.getResources(), mResId, options);
         mBitmap = bitmap;
         setSize(bitmap.getWidth(), bitmap.getHeight());
-        mChunk = NinePatchChunk.deserialize(bitmap.getNinePatchChunk());
+        byte[] chunkData = bitmap.getNinePatchChunk();
+        mChunk = chunkData == null
+                ? null
+                : NinePatchChunk.deserialize(bitmap.getNinePatchChunk());
         if (mChunk == null) {
             throw new RuntimeException("invalid nine-patch image: " + mResId);
         }

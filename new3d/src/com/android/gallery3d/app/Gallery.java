@@ -33,6 +33,7 @@ import com.android.gallery3d.ui.AdaptiveBackground;
 import com.android.gallery3d.ui.GLHandler;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.GLView;
+import com.android.gallery3d.ui.HeadUpDisplay;
 import com.android.gallery3d.ui.MediaSetSlotAdapter;
 import com.android.gallery3d.ui.OverlayLayout;
 import com.android.gallery3d.ui.SlotView;
@@ -67,6 +68,7 @@ public final class Gallery extends Activity {
         GLView overlay = new OverlayLayout();
         overlay.addComponent(mBackground);
         overlay.addComponent(mSlotView);
+        overlay.addComponent(new HeadUpDisplay(this));
         mGLRootView.setContentPane(overlay);
 
         mHandler = new GLHandler(mGLRootView) {
