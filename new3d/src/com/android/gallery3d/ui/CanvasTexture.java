@@ -21,7 +21,7 @@ import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
 
 /** Using a canvas to draw the texture */
-abstract class CanvasTexture extends BitmapTexture {
+abstract class CanvasTexture extends UploadedTexture {
     protected Canvas mCanvas;
 
     public CanvasTexture(int width, int height) {
