@@ -8,6 +8,10 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Random;
 
 public class MediaSetSlotAdapter implements SlotView.Model {
@@ -16,6 +20,7 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private static final int SLOT_WIDTH = 220;
     private static final int SLOT_HEIGHT = 200;
     private static final int MARGIN_TO_SLOTSIDE = 10;
+    private static final int INITIAL_CACHE_CAPACITY = 32;
 
     private final NinePatchTexture mFrame;
 
@@ -24,6 +29,10 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private MediaSet mRootSet;
     private Context mContext;
 
+    private Map<Integer, MyDisplayItem[]> mItemsetMap =
+            new HashMap<Integer, MyDisplayItem[]>(INITIAL_CACHE_CAPACITY);
+    private LinkedHashSet<Integer> mLruSlot =
+            new LinkedHashSet<Integer>(INITIAL_CACHE_CAPACITY);
 
     public MediaSetSlotAdapter(Context context, MediaSet rootSet) {
         mContext = context;
@@ -32,39 +41,58 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         Random random = mRandom;
     }
 
-    public void freeSlot(int index) {
-    }
-
     public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
-        MediaSet set = mRootSet.getSubMediaSet(slotIndex);
-        MediaItem[] items = set.getCoverMediaItems();
+        // Get displayItems from mItemsetMap or create them from MediaSet.
+        MyDisplayItem[] displayItems = mItemsetMap.get(slotIndex);
+        if (displayItems == null) {
+            MediaSet set = mRootSet.getSubMediaSet(slotIndex);
+            MediaItem[] items = set.getCoverMediaItems();
+
+            displayItems = new MyDisplayItem[items.length];
+            for (int i = 0; i < items.length; ++i) {
+                Bitmap bitmap = items[i].getImage(mContext.getContentResolver(),
+                        MediaItem.TYPE_THUMBNAIL);
+
+                // TODO: Need to replace BitmapTexture with something else
+                // whose bitmap is freeable.
+                displayItems[i] = new MyDisplayItem(
+                        new BitmapTexture(bitmap), mFrame);
+            }
+            addSlotToCache(slotIndex, displayItems);
+        }
+
+        // Put displayItems to the panel.
         Random random = mRandom;
         int left = x + MARGIN_TO_SLOTSIDE;
         int right = x + getSlotWidth() - MARGIN_TO_SLOTSIDE;
-
         x += getSlotWidth() / 2;
         y += getSlotHeight() / 2;
 
         // Put the cover items in reverse order, so that the first item is on
         // top of the rest.
-        for (int i = items.length -1; i > 0; --i) {
-            Bitmap bitmap = items[i].getImage(mContext.getContentResolver(),
-                    MediaItem.TYPE_THUMBNAIL);
-            DisplayItem displayItem = new MyDisplayItem(
-                    new BitmapTexture(bitmap), mFrame);
+        for (int i = displayItems.length -1; i > 0; --i) {
             int dx = random.nextInt(11) - 5;
             int itemX = (i & 0x01) == 0
-                    ? left + dx + displayItem.getWidth() / 2
-                    : right + dx - displayItem.getWidth() / 2;
+                    ? left + dx + displayItems[i].getWidth() / 2
+                    : right + dx - displayItems[i].getWidth() / 2;
             int dy = random.nextInt(11) - 10;
             int theta = random.nextInt(31) - 15;
-            panel.putDisplayItem(displayItem, itemX, y + dy, theta);
+            panel.putDisplayItem(displayItems[i], itemX, y + dy, theta);
         }
-        Bitmap bitmap = items[0].getImage(mContext.getContentResolver(),
-                MediaItem.TYPE_THUMBNAIL);
-        DisplayItem displayItem = new MyDisplayItem(
-                new BitmapTexture(bitmap), mFrame);
-        panel.putDisplayItem(displayItem, x, y, 0);
+        panel.putDisplayItem(displayItems[0], x, y, 0);
+    }
+
+    private void addSlotToCache(int slotIndex, MyDisplayItem[] displayItems) {
+        // Remove an itemset if the size of mItemsetMap is no less than
+        // INITIAL_CACHE_CAPACITY and there exists a slot in mLruSlot.
+        Iterator<Integer> iter = mLruSlot.iterator();
+        for (int i = mItemsetMap.size() - INITIAL_CACHE_CAPACITY;
+                i >= 0 && iter.hasNext(); --i) {
+            mItemsetMap.remove(iter.next());
+            iter.remove();
+        }
+        mItemsetMap.put(slotIndex, displayItems);
+        mLruSlot.remove(slotIndex);
     }
 
     public int getSlotHeight() {
@@ -125,8 +153,11 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     }
 
     public void freeSlot(int index, DisplayItemPanel panel) {
-        // TODO: Need to implement the method.
+        MyDisplayItem[] displayItems = mItemsetMap.get(index);
+        for (MyDisplayItem item : displayItems) {
+            panel.removeDisplayItem(item);
+        }
+        mLruSlot.add(index);
     }
-
 }
 
