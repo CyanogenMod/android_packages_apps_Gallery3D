@@ -183,7 +183,7 @@ public class GLListView extends GLView {
         }
         mScrollHeight = height;
         mHasMeasured = true;
-        new MeasureHelper(this)
+        MeasureHelper.getInstance(this)
                 .setPreferredContentSize(maxWidth, height)
                 .measure(widthSpec, heightSpec);
     }

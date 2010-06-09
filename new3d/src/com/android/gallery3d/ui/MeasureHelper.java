@@ -21,12 +21,19 @@ import android.view.View.MeasureSpec;
 
 class MeasureHelper {
 
-    private final GLView mComponent;
+    private static MeasureHelper sInstance = new MeasureHelper(null);
+
+    private GLView mComponent;
     private int mPreferredWidth;
     private int mPreferredHeight;
 
-    public MeasureHelper(GLView component) {
+    private MeasureHelper(GLView component) {
         mComponent = component;
+    }
+
+    public static MeasureHelper getInstance(GLView component) {
+        sInstance.mComponent = component;
+        return sInstance;
     }
 
     public MeasureHelper setPreferredContentSize(int width, int height) {

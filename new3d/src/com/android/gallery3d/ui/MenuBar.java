@@ -56,7 +56,7 @@ class MenuBar extends GLView {
         }
         width += (n - 1) * BORDER_SIZE;
         height += 2 * BORDER_SIZE;
-        new MeasureHelper(this)
+        MeasureHelper.getInstance(this)
                 .setPreferredContentSize(width, height)
                 .measure(widthSpec, heightSpec);
     }

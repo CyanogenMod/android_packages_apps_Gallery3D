@@ -1,12 +1,12 @@
 package com.android.gallery3d.anim;
 
-public class FloatAnimation extends Animation {
+public class IntAnimation extends Animation {
 
-    private final float mFrom;
-    private final float mTo;
-    private float mCurrent;
+    private final int mFrom;
+    private final int mTo;
+    private int mCurrent;
 
-    public FloatAnimation(float from, float to, int duration) {
+    public IntAnimation(int from, int to, int duration) {
         mFrom = from;
         mTo = to;
         setDuration(duration);
@@ -15,7 +15,7 @@ public class FloatAnimation extends Animation {
     @Override
     protected boolean onCalculate(float progress) {
         if (progress < 1f) {
-            mCurrent = mFrom + (mTo - mFrom) * progress;
+            mCurrent = mFrom + (int)((mTo - mFrom) * progress + .5f);
             return true;
         } else {
             mCurrent = mTo;
@@ -23,7 +23,7 @@ public class FloatAnimation extends Animation {
         }
     }
 
-    public float get() {
+    public int get() {
         return mCurrent;
     }
 }
