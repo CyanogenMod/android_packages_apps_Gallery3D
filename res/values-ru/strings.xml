@@ -16,7 +16,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name" msgid="1928079047368929634">"Фотоальбом"</string>
+    <string name="app_name" msgid="1928079047368929634">"Галерея"</string>
   <string-array name="months_abbreviated">
     <item msgid="9066537518640988368">"янв"</item>
     <item msgid="4680813504147866612">"фев"</item>
