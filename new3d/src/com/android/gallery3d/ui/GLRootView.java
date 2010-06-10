@@ -274,12 +274,6 @@ public class GLRootView extends GLSurfaceView
         matrix.preScale(1, -1);
     }
 
-    private void drawRect(int x, int y, int width, int height) {
-        float matrix[] = mMatrixValues;
-        mTransformation.getMatrix().getValues(matrix);
-        drawRect(x, y, width, height, matrix);
-    }
-
     private static void putRectangle(float x, float y,
             float width, float height, float[] buffer, FloatBuffer pointer) {
         buffer[0] = x;
@@ -291,6 +285,34 @@ public class GLRootView extends GLSurfaceView
         buffer[6] = x + width;
         buffer[7] = y + height;
         pointer.put(buffer, 0, 8).position(0);
+    }
+
+    public void setColor(int color) {
+        float alpha = mTransformation.getAlpha();
+        mGLState.setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
+        mGLState.setFragmentColor(color, alpha);
+    }
+
+    public void drawLine(int x1, int y1, int x2, int y2) {
+        float matrix[] = mMatrixValues;
+        mTransformation.getMatrix().getValues(matrix);
+        GL11 gl = mGL;
+        gl.glPushMatrix();
+        gl.glMultMatrixf(toGLMatrix(matrix), 0);
+        float buffer[] = mXyBuffer;
+        buffer[0] = x1;
+        buffer[1] = y1;
+        buffer[2] = x2;
+        buffer[3] = y2;
+        mXyPointer.put(buffer, 0, 4).position(0);
+        gl.glDrawArrays(GL11.GL_LINE_STRIP, 0, 2);
+        gl.glPopMatrix();
+    }
+
+    public void drawRect(int x, int y, int width, int height) {
+        float matrix[] = mMatrixValues;
+        mTransformation.getMatrix().getValues(matrix);
+        drawRect(x, y, width, height, matrix);
     }
 
     private void drawRect(
@@ -597,6 +619,7 @@ public class GLRootView extends GLSurfaceView
             throw new RuntimeException("Cannot support alpha value");
         }
         mGLState.setBlendEnabled(!from.isOpaque() || !to.isOpaque());
+        mGLState.setTextureAlpha(1);
         mGLState.setTexture2DEnabled(true);
 
         final GL11 gl = mGL;
@@ -795,15 +818,16 @@ public class GLRootView extends GLSurfaceView
         }
 
         public void setFragmentColor(int color, float alpha) {
-            setTexture2DEnabled(false);
-            alpha /= 256f;
             // Set mTextureAlpha to an invalid value, so that it will reset
             // again in setTextureAlpha(float) later.
             mTextureAlpha = -1.0f;
-            mGL.glColor4f(
-                    ((color >> 16) & 0xFF) * alpha,
-                    ((color >> 8) & 0xFF) * alpha,
-                    (color & 0xFF) * alpha, (color >>> 24) * alpha);
+
+            setTexture2DEnabled(false);
+            int prealpha = (int) ((color >>> 24) * alpha + 0.5);
+            mGL.glColor4x(
+                    ((color >> 16) & 0xFF) * prealpha,
+                    ((color >> 8) & 0xFF) * prealpha,
+                    (color & 0xFF) * prealpha, prealpha << 8);
         }
 
         public void setTexture2DEnabled(boolean enabled) {

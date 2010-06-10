@@ -28,7 +28,8 @@ class ColorTexture implements Texture {
     }
 
     public void draw(GLRootView root, int x, int y, int w, int h) {
-        root.drawColor(x, y, w, h, mColor);
+        root.setColor(mColor);
+        root.drawRect(x, y, w, h);
     }
 
     public boolean isOpaque() {
