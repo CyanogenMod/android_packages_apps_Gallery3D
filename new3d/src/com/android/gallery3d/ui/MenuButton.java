@@ -4,8 +4,6 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 
-import javax.microedition.khronos.opengles.GL11;
-
 public class MenuButton extends IconLabel {
 
     private boolean mPressed;
@@ -42,18 +40,18 @@ public class MenuButton extends IconLabel {
     }
 
     @Override
-    protected void render(GLRootView root, GL11 gl) {
+    protected void render(GLCanvas canvas) {
         if (mPressed) {
             int width = getWidth();
             int height = getHeight();
             if (mHighlight instanceof NinePatchTexture) {
                 Rect p = ((NinePatchTexture) mHighlight).getPaddings();
-                mHighlight.draw(root, -p.left, -p.top,
+                mHighlight.draw(canvas, -p.left, -p.top,
                         width + p.left + p.right, height + p.top + p.bottom);
             } else {
-                mHighlight.draw(root, 0, 0, width, height);
+                mHighlight.draw(canvas, 0, 0, width, height);
             }
         }
-        super.render(root, gl);
+        super.render(canvas);
     }
 }

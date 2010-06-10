@@ -6,8 +6,6 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.view.animation.Transformation;
 
-import javax.microedition.khronos.opengles.GL11;
-
 public class IconLabel extends GLView {
 
     public static final int NULL_ID = 0;
@@ -81,7 +79,7 @@ public class IconLabel extends GLView {
     }
 
     @Override
-    protected void render(GLRootView root, GL11 gl) {
+    protected void render(GLCanvas canvas) {
         /*
          * The layout: |--padding--|--mIcon--|--sTextLeftPadding--|--mText--|
          *     --mTextRightPadding--|--padding--|
@@ -93,13 +91,13 @@ public class IconLabel extends GLView {
 
         int xoffset = p.left;
 
-        Transformation trans = root.getTransformation();
+        Transformation trans = canvas.getTransformation();
         float oldAlpha = trans.getAlpha();
         trans.setAlpha(oldAlpha * (mEnabled ? ENABLED_ALPHA : DISABLED_ALPHA));
 
         BasicTexture icon = mIcon;
         if (icon != null) {
-            icon.draw(root, xoffset,
+            icon.draw(canvas, xoffset,
                     p.top + (height - icon.getHeight()) / 2);
             xoffset += icon.getWidth();
         } else {
@@ -110,7 +108,7 @@ public class IconLabel extends GLView {
         xoffset += sTextLeftPadding;
         int yoffset = p.top + (height - title.getHeight()) / 2;
         //TODO: cut the text if it is too long
-        title.draw(root, xoffset, yoffset);
+        title.draw(canvas, xoffset, yoffset);
 
         trans.setAlpha(oldAlpha);
     }

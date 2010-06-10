@@ -24,12 +24,12 @@ class ColorTexture implements Texture {
         mColor = color;
     }
 
-    public void draw(GLRootView root, int x, int y) {
+    public void draw(GLCanvas canvas, int x, int y) {
     }
 
-    public void draw(GLRootView root, int x, int y, int w, int h) {
-        root.setColor(mColor);
-        root.drawRect(x, y, w, h);
+    public void draw(GLCanvas canvas, int x, int y, int w, int h) {
+        canvas.setColor(mColor);
+        canvas.fillRect(x, y, w, h);
     }
 
     public boolean isOpaque() {

@@ -65,13 +65,13 @@ abstract class BasicTexture implements Texture {
         mState = STATE_UNLOADED;
     }
 
-    public void draw(GLRootView root, int x, int y) {
-        root.drawTexture(this, x, y, mWidth, mHeight);
+    public void draw(GLCanvas canvas, int x, int y) {
+        canvas.drawTexture(this, x, y, mWidth, mHeight);
     }
 
-    public void draw(GLRootView root, int x, int y, int w, int h) {
-        root.drawTexture(this, x, y, w, h);
+    public void draw(GLCanvas canvas, int x, int y, int w, int h) {
+        canvas.drawTexture(this, x, y, w, h);
     }
 
-    abstract protected boolean bind(GLRootView root, GL11 gl);
+    abstract protected boolean bind(GLCanvas canvas);
 }

@@ -16,5 +16,5 @@
 
 package com.android.gallery3d.ui;
 
-public class GLOutOfMemoryException extends Exception {
+public class GLOutOfMemoryException extends RuntimeException {
 }

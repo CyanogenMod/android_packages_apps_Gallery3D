@@ -5,8 +5,6 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
 
-import javax.microedition.khronos.opengles.GL11;
-
 public class SlotView extends GLView {
 
     private static final String TAG = "SlotView";
@@ -130,9 +128,9 @@ public class SlotView extends GLView {
     }
 
     @Override
-    protected void render(GLRootView root, GL11 gl) {
-        super.render(root, gl);
-        if (mScroller.computeScrollOffset(root.currentAnimationTimeMillis())) {
+    protected void render(GLCanvas canvas) {
+        super.render(canvas);
+        if (mScroller.computeScrollOffset(canvas.currentAnimationTimeMillis())) {
             setScrollPosition(mScroller.getCurrentPosition(), false);
             invalidate();
         }
