@@ -1,6 +1,5 @@
 package com.android.gallery3d.ui;
 
-import android.util.Log;
 
 
 public class MixedTexture implements Texture {
@@ -39,7 +38,6 @@ public class MixedTexture implements Texture {
     }
 
     public void draw(GLRootView root, int x, int y, int w, int h) {
-        Log.v("MixedTexture", "ratio  = " + mMixRatio);
         if (mMixRatio >= 1 || mSource == null) {
             mDestination.draw(root, x, y, w, h);
         } else if (mMixRatio <= 0) {

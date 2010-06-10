@@ -75,7 +75,7 @@ public class IconLabel extends GLView {
         int height = Math.max(
                 mText.getHeight(), mIcon == null ? 0 : mIcon.getHeight());
         height = Math.max(sMinimalHeight, height);
-        new MeasureHelper(this)
+        MeasureHelper.getInstance(this)
                 .setPreferredContentSize(width, height)
                 .measure(widthSpec, heightSpec);
     }

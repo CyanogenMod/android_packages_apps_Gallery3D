@@ -29,6 +29,7 @@ public class HeadUpDisplay extends GLView {
     private final MenuItemBar mBottomBar;
     private final MenuBar mTopBar;
     private final Context mContext;
+    private final Pathbar mPathbar;
     private final NinePatchTexture mHighlight;
 
     private PopupWindow mPopupWindow;
@@ -37,6 +38,9 @@ public class HeadUpDisplay extends GLView {
     private GLView mAnchorView;
     private final HashMap<MenuItem, MenuAdapter> mContentMap =
             new HashMap<MenuItem, MenuAdapter>();
+
+    private ResourceTexture mPathIcons[];
+    private String mPathTitle[];
 
     private static void initializeStaticVariables(Context context) {
         if (sPopupWindowOverlap >= 0) return;
@@ -51,6 +55,8 @@ public class HeadUpDisplay extends GLView {
         mContext = context;
         mBottomBar = new MenuItemBar();
         mTopBar = new MenuBar();
+        mPathbar = new Pathbar(context);
+
         mHighlight = new NinePatchTexture(context, R.drawable.menu_highlight);
         mTopBar.setBackground(
                 new NinePatchTexture(context, R.drawable.top_menu_bar_bg));
@@ -58,6 +64,7 @@ public class HeadUpDisplay extends GLView {
                 new NinePatchTexture(context, R.drawable.menu_bar_bg));
         mBottomBar.setOnSelectedListener(new MySelectedListener());
 
+        super.addComponent(mPathbar);
         super.addComponent(mTopBar);
         super.addComponent(mBottomBar);
 
@@ -69,16 +76,17 @@ public class HeadUpDisplay extends GLView {
             boolean changesize, int left, int top, int right, int bottom) {
         int width = right - left;
         int height = bottom - top;
-        mTopBar.measure(
-                MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-                MeasureSpec.UNSPECIFIED);
-        mBottomBar.measure(
-                MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-                MeasureSpec.UNSPECIFIED);
-        mTopBar.layout(0, 0, width, mTopBar.getMeasuredHeight());
+        int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
+        int heightSpec = MeasureSpec.UNSPECIFIED;
+        mPathbar.measure(widthSpec, heightSpec);
+        mTopBar.measure(widthSpec, heightSpec);
+        mBottomBar.measure(widthSpec, heightSpec);
+
+        mPathbar.layout(0, 0, width, mPathbar.getMeasuredHeight());
+        int offset = mPathbar.getMeasuredHeight();
+        mTopBar.layout(0, offset, width, offset + mTopBar.getMeasuredHeight());
         mBottomBar.layout(
                 0, height - mBottomBar.getMeasuredHeight(), width, height);
-
         if (mPopupWindow != null
                 && mPopupWindow.getVisibility() == GLView.VISIBLE) {
             this.layoutPopupWindow(mAnchorView);
@@ -101,6 +109,15 @@ public class HeadUpDisplay extends GLView {
 
     private void initialize() {
         Context context = mContext;
+
+        mPathIcons = new ResourceTexture[] {
+                new ResourceTexture(context, R.drawable.icon_home_small),
+                new ResourceTexture(context, R.drawable.icon_camera_small),
+                new ResourceTexture(context, R.drawable.icon_folder_small),
+                new ResourceTexture(context, R.drawable.icon_picasa_small)};
+
+        mPathTitle = new String[] {"Gallery", "Camera", "Folder", "Picasa"};
+
         addTopMenuButton(R.string.select_all);
         mTopBar.addComponent(new IconLabel(
                 context, IconLabel.NULL_ID, R.string.items));
@@ -120,6 +137,12 @@ public class HeadUpDisplay extends GLView {
         mContentMap.put(share, buildShareMenu(context));
         mContentMap.put(delete, deleteMenu);
         mContentMap.put(more, moreMenu);
+
+        mPathbar.push(mPathIcons[0], mPathTitle[0]);
+        mPathbar.push(mPathIcons[1], mPathTitle[1]);
+        mPathbar.push(mPathIcons[2], mPathTitle[2]);
+
+        mPathbar.setOnClickedListener(new MyPathbarListener());
     }
 
     @Override
@@ -213,6 +236,23 @@ public class HeadUpDisplay extends GLView {
                 layoutPopupWindow(source);
                 if (mPopupWindow.getVisibility() != GLView.VISIBLE) {
                     mPopupWindow.popup();
+                }
+            }
+        }
+    }
+
+    private class MyPathbarListener implements Pathbar.OnClickedListener {
+
+        public void onClicked(Pathbar source, int index) {
+            int size = mPathbar.size();
+            if (index < size - 1) {
+                mPathbar.pop(size - index - 1);
+            } else {
+                // click on the last item
+                if (size == mPathIcons.length) {
+                    source.get(index).setTitle("No more item");
+                } else {
+                    source.push(mPathIcons[index + 1], mPathTitle[index + 1]);
                 }
             }
         }

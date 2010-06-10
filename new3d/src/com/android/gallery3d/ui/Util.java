@@ -23,7 +23,7 @@ import android.util.DisplayMetrics;
 /**
  * Collection of utility functions used in this package.
  */
-class Util {
+public class Util {
     @SuppressWarnings("unused")
     private static final String TAG = "Util";
 
