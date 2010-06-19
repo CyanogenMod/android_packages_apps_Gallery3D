@@ -1,12 +1,15 @@
 package com.android.gallery3d.ui;
 
 import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.opengl.GLU;
 import android.view.animation.Transformation;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Collection;
 import java.util.Stack;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -167,6 +170,10 @@ public class GLCanvas {
         gl.glPopMatrix();
     }
 
+    public void fillRect(Rect r) {
+        fillRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
+    }
+
     public void fillRect(int x, int y, int width, int height) {
         float matrix[] = mMatrixValues;
         mTransformation.getMatrix().getValues(matrix);
@@ -196,9 +203,7 @@ public class GLCanvas {
         if (chunk.mDivX.length != 2 || chunk.mDivY.length != 2) {
             throw new RuntimeException("unsupported nine patch");
         }
-        if (!tex.bind(this)) {
-            throw new RuntimeException("cannot bind" + tex.toString());
-        }
+        tex.bind(this);
         if (width <= 0 || height <= 0) return ;
 
         int divX[] = mNinePatchX;
@@ -450,10 +455,7 @@ public class GLCanvas {
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
         mGLState.setTexture2DEnabled(true);
-
-        if (!texture.bind(this)) {
-            throw new RuntimeException("cannot bind" + texture.toString());
-        }
+        texture.bind(this);
         mGLState.setTextureAlpha(alpha);
         drawBoundTexture(texture, x, y, width, height);
     }
@@ -484,15 +486,10 @@ public class GLCanvas {
         mGLState.setTexture2DEnabled(true);
 
         final GL11 gl = mGL;
-        if (!from.bind(this)) {
-            throw new RuntimeException("fail to bind texture");
-        }
+        from.bind(this);
 
         gl.glActiveTexture(GL11.GL_TEXTURE1);
-        if (!to.bind(this)) {
-            gl.glActiveTexture(GL11.GL_TEXTURE0);
-            throw new RuntimeException("fail to bind texture");
-        }
+        to.bind(this);
         gl.glEnable(GL11.GL_TEXTURE_2D);
 
         // Interpolate the RGB and alpha values between both textures.
@@ -675,5 +672,28 @@ public class GLCanvas {
 
     public void clearBuffer() {
         mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
+    }
+
+    public void setTextureCoords(RectF source) {
+        float buffer[] = mUvBuffer;
+        buffer[0] = source.left;
+        buffer[1] = source.top;
+        buffer[2] = source.right;
+        buffer[3] = source.top;
+        buffer[4] = source.left;
+        buffer[5] = source.bottom;
+        buffer[6] = source.right;
+        buffer[7] = source.bottom;
+        mUvPointer.put(buffer, 0, 8).position(0);
+    }
+
+    public void releaseTextures(Collection<? extends BasicTexture> c) {
+        IntArray array = new IntArray();
+        for (BasicTexture t : c) {
+            if (t.isLoaded(this)) array.add(t.mId);
+        }
+        if (array.size() > 0) {
+            mGL.glDeleteTextures(array.size(), array.toArray(null), 0);
+        }
     }
 }

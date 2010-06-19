@@ -6,9 +6,9 @@ abstract class BasicTexture implements Texture {
 
     protected static final int UNSPECIFIED = -1;
 
-    public static final int STATE_UNLOADED = 0;
-    public static final int STATE_LOADED = 1;
-    public static final int STATE_ERROR = -1;
+    protected static final int STATE_UNLOADED = 0;
+    protected static final int STATE_LOADED = 1;
+    protected static final int STATE_ERROR = -1;
 
     protected GL11 mGL;
 
@@ -58,8 +58,8 @@ abstract class BasicTexture implements Texture {
         return mHeight;
     }
 
-    public void deleteFromGL() {
-        if (mState == STATE_LOADED) {
+    public void deleteFromGL(GLCanvas canvas) {
+        if (mState == STATE_LOADED && mGL == canvas.getGLInstance()) {
             mGL.glDeleteTextures(1, new int[]{mId}, 0);
         }
         mState = STATE_UNLOADED;
@@ -73,5 +73,9 @@ abstract class BasicTexture implements Texture {
         canvas.drawTexture(this, x, y, w, h);
     }
 
-    abstract protected boolean bind(GLCanvas canvas);
+    abstract protected void bind(GLCanvas canvas);
+
+    public boolean isLoaded(GLCanvas canvas) {
+        return mState == STATE_LOADED && mGL == canvas.getGLInstance();
+    }
 }

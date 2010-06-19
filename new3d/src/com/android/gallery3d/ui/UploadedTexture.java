@@ -11,9 +11,31 @@ abstract class UploadedTexture extends BasicTexture {
     @SuppressWarnings("unused")
     private static final String TAG = "Texture";
     private boolean mOpaque;
+    private boolean mContentValid = true;
+
+    protected Bitmap mBitmap;
 
     protected UploadedTexture() {
         super(null, 0, STATE_UNLOADED);
+    }
+
+    private Bitmap getBitmap() {
+        if (mBitmap == null) {
+            mBitmap = onGetBitmap();
+            if (mWidth == UNSPECIFIED) {
+                setSize(mBitmap.getWidth(), mBitmap.getHeight());
+            } else if (mWidth != mBitmap.getWidth()
+                    || mHeight != mBitmap.getHeight()) {
+                throw new IllegalStateException("cannot change content size");
+            }
+        }
+        return mBitmap;
+    }
+
+    private void freeBitmap() {
+        Util.Assert(mBitmap != null);
+        onFreeBitmap(mBitmap);
+        mBitmap = null;
     }
 
     @Override
@@ -28,11 +50,42 @@ abstract class UploadedTexture extends BasicTexture {
         return mHeight;
     }
 
-    protected abstract Bitmap getBitmap();
+    protected abstract Bitmap onGetBitmap();
 
-    protected abstract void freeBitmap(Bitmap bitmap);
+    protected abstract void onFreeBitmap(Bitmap bitmap);
 
-    private void uploadToGL(GL11 gl) throws GLOutOfMemoryException {
+    protected void invalidateContent() {
+        if (mBitmap != null) freeBitmap();
+        if (mState == STATE_LOADED) mContentValid = false;
+    }
+
+    /**
+     * Whether the content on GPU is valid.
+     */
+    public boolean isContentValid(GLCanvas canvas) {
+        return isLoaded(canvas) && mContentValid;
+    }
+
+    /**
+     * Updates the content on GPU's memory.
+     * @param canvas
+     */
+    public void updateContent(GLCanvas canvas) {
+        if (!isLoaded(canvas)) {
+            uploadToGL(canvas.getGLInstance());
+        } else if (!mContentValid) {
+            Bitmap bitmap = getBitmap();
+            int format = GLUtils.getInternalFormat(bitmap);
+            int type = GLUtils.getType(bitmap);
+            mGL.glBindTexture(GL11.GL_TEXTURE_2D, mId);
+            GLUtils.texSubImage2D(
+                    GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap, format, type);
+            freeBitmap();
+            mContentValid = true;
+        }
+    }
+
+    private void uploadToGL(GL11 gl) {
         Bitmap bitmap = getBitmap();
         int glError = GL11.GL_NO_ERROR;
         if (bitmap != null) {
@@ -65,7 +118,6 @@ abstract class UploadedTexture extends BasicTexture {
                         (format == GL11.GL_RGB || format == GL11.GL_LUMINANCE);
                 int type = GLUtils.getType(bitmap);
 
-
                 mTextureWidth = widthExt;
                 mTextureHeight = heightExt;
                 gl.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format,
@@ -73,7 +125,7 @@ abstract class UploadedTexture extends BasicTexture {
                 GLUtils.texSubImage2D(
                         GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap, format, type);
             } finally {
-                freeBitmap(bitmap);
+                freeBitmap();
             }
             if (glError == GL11.GL_OUT_OF_MEMORY) {
                 throw new GLOutOfMemoryException();
@@ -96,23 +148,16 @@ abstract class UploadedTexture extends BasicTexture {
     }
 
     @Override
-    protected boolean bind(GLCanvas canvas) {
-        GL11 gl = canvas.getGLInstance();
-        if (mState == UploadedTexture.STATE_UNLOADED || mGL != gl) {
-            mState = UploadedTexture.STATE_UNLOADED;
-            try {
-                uploadToGL(gl);
-            } catch (GLOutOfMemoryException e) {
-                canvas.handleLowMemory();
-                return false;
-            }
-        } else {
-            gl.glBindTexture(GL11.GL_TEXTURE_2D, getId());
-        }
-        return true;
+    protected void bind(GLCanvas canvas) {
+        updateContent(canvas);
+        mGL.glBindTexture(GL11.GL_TEXTURE_2D, mId);
     }
 
     public boolean isOpaque() {
         return mOpaque ;
+    }
+
+    public void recycle() {
+        if (mBitmap != null) freeBitmap();
     }
 }
