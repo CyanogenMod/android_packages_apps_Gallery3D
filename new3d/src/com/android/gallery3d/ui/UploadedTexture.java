@@ -96,13 +96,14 @@ abstract class UploadedTexture extends BasicTexture {
     }
 
     @Override
-    protected boolean bind(GLRootView root, GL11 gl) {
+    protected boolean bind(GLCanvas canvas) {
+        GL11 gl = canvas.getGLInstance();
         if (mState == UploadedTexture.STATE_UNLOADED || mGL != gl) {
             mState = UploadedTexture.STATE_UNLOADED;
             try {
                 uploadToGL(gl);
             } catch (GLOutOfMemoryException e) {
-                root.handleLowMemory();
+                canvas.handleLowMemory();
                 return false;
             }
         } else {

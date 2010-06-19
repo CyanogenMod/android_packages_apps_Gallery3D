@@ -1,9 +1,5 @@
 package com.android.gallery3d.ui;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Rect;
-
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
@@ -12,6 +8,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Rect;
+
 import java.util.Random;
 
 public class MediaSetSlotAdapter implements SlotView.Model {
@@ -26,8 +27,8 @@ public class MediaSetSlotAdapter implements SlotView.Model {
 
     private final Random mRandom = new Random();
 
-    private MediaSet mRootSet;
-    private Context mContext;
+    private final MediaSet mRootSet;
+    private final Context mContext;
 
     private Map<Integer, MyDisplayItem[]> mItemsetMap =
             new HashMap<Integer, MyDisplayItem[]>(INITIAL_CACHE_CAPACITY);
@@ -141,14 +142,14 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         }
 
         @Override
-        public void render(GLRootView root) {
+        public void render(GLCanvas canvas) {
             int x = -mWidth / 2;
             int y = -mHeight / 2;
 
             Rect p = mFrame.getPaddings();
-            mContent.draw(root, x + p.left, y + p.top,
+            mContent.draw(canvas, x + p.left, y + p.top,
                     mWidth - p.left - p.right, mHeight - p.top - p.bottom);
-            mFrame.draw(root, x, y, mWidth, mHeight);
+            mFrame.draw(canvas, x, y, mWidth, mHeight);
         }
     }
 

@@ -1,6 +1,10 @@
 package com.android.gallery3d.ui;
 
 import static com.android.gallery3d.ui.Util.dpToPixel;
+
+import com.android.gallery3d.R;
+import com.android.gallery3d.anim.IntAnimation;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -10,13 +14,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.animation.Transformation;
 
-import com.android.gallery3d.R;
-import com.android.gallery3d.anim.IntAnimation;
-
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
-
-import javax.microedition.khronos.opengles.GL11;
 
 public class Pathbar extends GLView {
 
@@ -237,26 +236,26 @@ public class Pathbar extends GLView {
         return sHorizontalPadding * 2 + item.mIcon.getWidth();
     }
 
-    private void renderItem(GLRootView root, BasicTexture icon,
+    private void renderItem(GLCanvas canvas, BasicTexture icon,
             StringTexture title, NinePatchTexture background, int width) {
         int height = getHeight();
         int offsetX = mOffsetX;
 
         Rect p = background.getPaddings();
         background.draw(
-                root, offsetX - p.left, 0, width + p.left + p.right, height);
+                canvas, offsetX - p.left, 0, width + p.left + p.right, height);
 
         int yoffset = (height - icon.getHeight()) / 2;
         offsetX += sHorizontalPadding;
         if (icon != mProgressIcon) {
-            icon.draw(root, offsetX, yoffset);
+            icon.draw(canvas, offsetX, yoffset);
         } else {
-            Transformation t = root.pushTransform();
+            Transformation t = canvas.pushTransform();
             int degrees = mProgressStep * 360 / PROGRESS_STEP_COUNT;
             t.getMatrix().preRotate(degrees, offsetX
                     + icon.getWidth() / 2, yoffset + icon.getHeight() / 2);
-            icon.draw(root, offsetX, yoffset);
-            root.popTransform();
+            icon.draw(canvas, offsetX, yoffset);
+            canvas.popTransform();
             if (!mProgressUpdated) {
                 mProgressUpdated = true;
                 mHandler.sendEmptyMessageDelayed(UPDATE_PROGRESS, 125);
@@ -265,15 +264,15 @@ public class Pathbar extends GLView {
         offsetX += icon.getWidth();
         if (title != null) {
             yoffset = (height - title.getHeight()) / 2;
-            title.draw(root, offsetX, yoffset);
+            title.draw(canvas, offsetX, yoffset);
         }
         mOffsetX += width + p.right;
     }
 
-    private void renderItemWithAnimation(GLRootView root, BasicTexture icon,
+    private void renderItemWithAnimation(GLCanvas canvas, BasicTexture icon,
             StringTexture title, NinePatchTexture background) {
 
-        boolean moreAnim = mAnim.calculate(root.currentAnimationTimeMillis());
+        boolean moreAnim = mAnim.calculate(canvas.currentAnimationTimeMillis());
 
         int width = mAnim.get();
         if (width < (3 * sHorizontalPadding
@@ -286,11 +285,11 @@ public class Pathbar extends GLView {
         } else {
             mRequestRender = true;
         }
-        renderItem(root, icon, title, background, width);
+        renderItem(canvas, icon, title, background, width);
     }
 
     @Override
-    protected void render(GLRootView root, GL11 gl) {
+    protected void render(GLCanvas canvas) {
         mRequestRender = false;
         mOffsetX = 0;
 
@@ -298,7 +297,7 @@ public class Pathbar extends GLView {
         for (int i = 0, n = size - 2; i < n; ++i) {
             Item item = mCrumb.get(i);
             int width = getItemWidthWithoutTitle(item);
-            renderItem(root, item.mIcon, null,
+            renderItem(canvas, item.mIcon, null,
                     i == mPressedIndex ? mPathbarPressed : mPathbar, width);
         }
 
@@ -309,9 +308,9 @@ public class Pathbar extends GLView {
             NinePatchTexture bg =
                     index == mPressedIndex ? mPathbarPressed : mPathbar;
             if (mAnimationType == PUSH_ANIMATION) {
-                renderItemWithAnimation(root, item.mIcon, item.mTitle, bg);
+                renderItemWithAnimation(canvas, item.mIcon, item.mTitle, bg);
             } else {
-                renderItem(root, item.mIcon,
+                renderItem(canvas, item.mIcon,
                         null, bg, getItemWidthWithoutTitle(item));
             }
         }
@@ -324,9 +323,9 @@ public class Pathbar extends GLView {
             NinePatchTexture bg =
                     index == mPressedIndex ? mPathcapPressed : mPathcap;
             if (mAnimationType == POP_ANIMATION) {
-                renderItemWithAnimation(root, icon, item.mTitle, bg);
+                renderItemWithAnimation(canvas, icon, item.mTitle, bg);
             } else {
-                renderItem(root, icon, item.mTitle, bg, getItemWidth(item));
+                renderItem(canvas, icon, item.mTitle, bg, getItemWidth(item));
             }
         }
         if (mRequestRender) invalidate();

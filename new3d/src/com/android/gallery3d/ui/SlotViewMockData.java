@@ -8,7 +8,7 @@ import com.android.gallery3d.R;
 import java.util.Random;
 
 public class SlotViewMockData implements SlotView.Model {
-    private static final int LENGTH_LIMIT = 180;
+    private static final int LENGTH_LIMIT = 150;
     private static final double EXPECTED_AREA = LENGTH_LIMIT * LENGTH_LIMIT / 2;
     private static final int DATA_SIZE = 50;
     private static final int PILE_SIZE = 4;
@@ -113,13 +113,13 @@ public class SlotViewMockData implements SlotView.Model {
         }
 
         @Override
-        public void render(GLRootView root) {
+        public void render(GLCanvas canvas) {
             int x = -mWidth / 2;
             int y = -mHeight / 2;
 
             Rect p = mFrame.getPaddings();
-            mFrame.draw(root, x, y, mWidth, mHeight);
-            mContent.draw(root, x + p.left, y + p.top,
+            mFrame.draw(canvas, x, y, mWidth, mHeight);
+            mContent.draw(canvas, x + p.left, y + p.top,
                     mWidth - p.left - p.right, mHeight - p.top - p.bottom);
         }
     }

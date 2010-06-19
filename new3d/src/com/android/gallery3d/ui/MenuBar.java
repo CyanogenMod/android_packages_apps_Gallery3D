@@ -19,8 +19,6 @@ package com.android.gallery3d.ui;
 import android.graphics.Rect;
 import android.view.View.MeasureSpec;
 
-import javax.microedition.khronos.opengles.GL11;
-
 class MenuBar extends GLView {
 
     private static final int BORDER_SIZE = 1; // 1 pixel on all devices
@@ -90,11 +88,11 @@ class MenuBar extends GLView {
     }
 
     @Override
-    protected void renderBackground(GLRootView root, GL11 gl) {
+    protected void renderBackground(GLCanvas canvas) {
         int width = getWidth();
         int height = getHeight();
         if (mBackground != null) {
-            mBackground.draw(root, 0, 0, width, height);
+            mBackground.draw(canvas, 0, 0, width, height);
         }
         Rect p = mPaddings;
 
@@ -106,12 +104,12 @@ class MenuBar extends GLView {
         int left = p.left;
         int right = left + width;
 
-        root.setColor(BORDER_COLOR);
-        root.drawLine(left, top, right, top);
-        root.drawLine(left, bottom - 1, right, bottom -1);
+        canvas.setColor(BORDER_COLOR);
+        canvas.drawLine(left, top, right, top);
+        canvas.drawLine(left, bottom - 1, right, bottom -1);
         for (int i = 0, n = getComponentCount() - 1; i < n; ++i) {
             Rect bounds = getComponent(i).mBounds;
-            root.drawLine(bounds.right, top, bounds.right, bottom);
+            canvas.drawLine(bounds.right, top, bounds.right, bottom);
         }
     }
 }

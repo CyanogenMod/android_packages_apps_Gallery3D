@@ -40,7 +40,8 @@ class RawTexture extends BasicTexture {
     }
 
     @Override
-    protected boolean bind(GLRootView glRootView, GL11 gl) {
+    protected boolean bind(GLCanvas canvas) {
+        GL11 gl = canvas.getGLInstance();
         if (mGL == gl) {
             gl.glBindTexture(GL11.GL_TEXTURE_2D, getId());
             return true;
@@ -48,8 +49,8 @@ class RawTexture extends BasicTexture {
         return false;
     }
 
-    public void drawBack(GLRootView root, int x, int y, int w, int h) {
-        root.drawTexture(this, x, y, w, h, 1f);
+    public void drawBack(GLCanvas canvas, int x, int y, int w, int h) {
+        canvas.drawTexture(this, x, y, w, h, 1f);
     }
 
     public boolean isOpaque() {

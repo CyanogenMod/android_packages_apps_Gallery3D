@@ -110,7 +110,7 @@ class PopupWindow extends GLView {
         mAnchorPosition = xoffset;
     }
 
-    private void renderBackgroundWithStencil(GLRootView root, GL11 gl) {
+    private void renderBackgroundWithStencil(GLCanvas canvas) {
         int width = getWidth();
         int height = getHeight();
         int aWidth = mAnchor.getWidth();
@@ -121,22 +121,22 @@ class PopupWindow extends GLView {
         int aXoffset = Util.clamp(mAnchorPosition - aWidth / 2,
                 p.left, width - p.right - aWidth);
         int aYoffset = height - aHeight;
-
+        GL11 gl = canvas.getGLInstance();
         if (mAnchor != null) {
             gl.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
             gl.glStencilFunc(GL11.GL_ALWAYS, 1, 1);
-            mAnchor.draw(root, aXoffset, aYoffset);
+            mAnchor.draw(canvas, aXoffset, aYoffset);
             gl.glStencilFunc(GL11.GL_NOTEQUAL, 1, 1);
             gl.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
         }
 
         if (mBackground != null) {
-            mBackground.draw(root, 0, 0,
+            mBackground.draw(canvas, 0, 0,
                     width, height - aHeight + mAnchorOffset);
         }
     }
 
-    private void renderBackgroundWithoutStencil(GLRootView root, GL11 gl) {
+    private void renderBackgroundWithoutStencil(GLCanvas canvas) {
         int width = getWidth();
         int height = getHeight();
         int aWidth = mAnchor.getWidth();
@@ -149,9 +149,10 @@ class PopupWindow extends GLView {
         int aYoffset = height - aHeight;
 
         if (mAnchor != null) {
-            mAnchor.draw(root, aXoffset, aYoffset);
+            mAnchor.draw(canvas, aXoffset, aYoffset);
         }
 
+        GL11 gl = canvas.getGLInstance();
         if (mBackupTexture == null || mBackupTexture.getBoundGL() != gl) {
             mBackupTexture = RawTexture.newInstance(gl);
         }
@@ -161,27 +162,27 @@ class PopupWindow extends GLView {
             // Copy the current drawing results of the triangle area into
             // "backup", so that we can restore the content after it is
             // overlaid by the background.
-            root.copyTexture2D(backup, aXoffset, aYoffset, aWidth, aHeight);
+            canvas.copyTexture2D(backup, aXoffset, aYoffset, aWidth, aHeight);
         } catch (GLOutOfMemoryException e) {
             Log.e(TAG, "out of memory", e);
         }
 
         if (mBackground != null) {
-            mBackground.draw(root, 0, 0,
+            mBackground.draw(canvas, 0, 0,
                     width, height - aHeight + mAnchorOffset);
         }
 
         gl.glBlendFunc(GL11.GL_ONE, GL11.GL_ZERO);
-        backup.drawBack(root, aXoffset, aYoffset, aWidth, aHeight);
+        backup.drawBack(canvas, aXoffset, aYoffset, aWidth, aHeight);
         gl.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
     }
 
     @Override
-    protected void renderBackground(GLRootView root, GL11 gl) {
+    protected void renderBackground(GLCanvas root) {
         if (mUsingStencil) {
-            renderBackgroundWithStencil(root, gl);
+            renderBackgroundWithStencil(root);
         } else {
-            renderBackgroundWithoutStencil(root, gl);
+            renderBackgroundWithoutStencil(root);
         }
     }
 

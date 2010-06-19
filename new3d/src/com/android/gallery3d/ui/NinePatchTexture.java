@@ -60,7 +60,7 @@ class NinePatchTexture extends ResourceTexture {
     }
 
     @Override
-    public void draw(GLRootView root, int x, int y, int w, int h) {
-        root.drawNinePatch(this, x, y, w, h);
+    public void draw(GLCanvas canvas, int x, int y, int w, int h) {
+        canvas.drawNinePatch(this, x, y, w, h);
     }
 }

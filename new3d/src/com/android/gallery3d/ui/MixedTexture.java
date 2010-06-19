@@ -33,17 +33,17 @@ public class MixedTexture implements Texture {
         mMixRatio = ratio;
     }
 
-    public void draw(GLRootView root, int x, int y) {
-        draw(root, x, y, mWidth, mHeight);
+    public void draw(GLCanvas canvas, int x, int y) {
+        draw(canvas, x, y, mWidth, mHeight);
     }
 
-    public void draw(GLRootView root, int x, int y, int w, int h) {
+    public void draw(GLCanvas canvas, int x, int y, int w, int h) {
         if (mMixRatio >= 1 || mSource == null) {
-            mDestination.draw(root, x, y, w, h);
+            mDestination.draw(canvas, x, y, w, h);
         } else if (mMixRatio <= 0) {
-            mSource.draw(root, x, y, w, h);
+            mSource.draw(canvas, x, y, w, h);
         } else {
-            root.drawMixed(mSource, mDestination, mMixRatio, x, y, w, h);
+            canvas.drawMixed(mSource, mDestination, mMixRatio, x, y, w, h);
         }
     }
 
