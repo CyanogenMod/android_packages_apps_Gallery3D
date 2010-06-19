@@ -16,6 +16,7 @@
 package com.android.gallery3d.ui;
 
 import android.opengl.GLSurfaceView.EGLConfigChooser;
+
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
@@ -26,17 +27,15 @@ import javax.microedition.khronos.egl.EGLDisplay;
  * choose a configuration that support RGBA_8888 format and if possible,
  * with stencil buffer, but is not required.
  */
-class CameraEGLConfigChooser implements EGLConfigChooser {
-
-    private static final int COLOR_BITS = 8;
+class GalleryEGLConfigChooser implements EGLConfigChooser {
 
     private int mStencilBits;
 
     private final int mConfigSpec[] = new int[] {
-            EGL10.EGL_RED_SIZE, COLOR_BITS,
-            EGL10.EGL_GREEN_SIZE, COLOR_BITS,
-            EGL10.EGL_BLUE_SIZE, COLOR_BITS,
-            EGL10.EGL_ALPHA_SIZE, COLOR_BITS,
+            EGL10.EGL_RED_SIZE, 5,
+            EGL10.EGL_GREEN_SIZE, 6,
+            EGL10.EGL_BLUE_SIZE, 5,
+            EGL10.EGL_ALPHA_SIZE, 0,
             EGL10.EGL_NONE
     };
 

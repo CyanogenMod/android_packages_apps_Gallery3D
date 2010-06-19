@@ -25,8 +25,6 @@ import android.view.animation.Transformation;
 
 import java.util.ArrayList;
 
-import javax.microedition.khronos.opengles.GL11;
-
 public class GLView {
     @SuppressWarnings("unused")
     private static final String TAG = "GLView";
@@ -70,7 +68,7 @@ public class GLView {
         animation.initialize(getWidth(),
                 getHeight(), mParent.getWidth(), mParent.getHeight());
         mAnimation.start();
-        root.registerLaunchedAnimation(animation);
+        root.registerLaunchedAnimation(mAnimation);
         invalidate();
     }
 
@@ -188,41 +186,41 @@ public class GLView {
         }
     }
 
-    protected void render(GLRootView view, GL11 gl) {
-        renderBackground(view, gl);
+    protected void render(GLCanvas canvas) {
+        renderBackground(canvas);
         for (int i = 0, n = getComponentCount(); i < n; ++i) {
             GLView component = getComponent(i);
             if (component.getVisibility() != GLView.VISIBLE
                     && component.mAnimation == null) continue;
-            renderChild(view, gl, component);
+            renderChild(canvas, component);
         }
     }
 
-    protected void renderBackground(GLRootView view, GL11 gl) {
+    protected void renderBackground(GLCanvas view) {
     }
 
-    protected void renderChild(GLRootView root, GL11 gl, GLView component) {
+    protected void renderChild(GLCanvas canvas, GLView component) {
         int xoffset = component.mBounds.left - mScrollX;
         int yoffset = component.mBounds.top - mScrollY;
 
-        Transformation transform = root.getTransformation();
+        Transformation transform = canvas.getTransformation();
         Matrix matrix = transform.getMatrix();
         matrix.preTranslate(xoffset, yoffset);
 
         Animation anim = component.mAnimation;
         if (anim != null) {
-            long now = root.currentAnimationTimeMillis();
-            Transformation temp = root.obtainTransformation();
+            long now = canvas.currentAnimationTimeMillis();
+            Transformation temp = canvas.obtainTransformation();
             if (!anim.getTransformation(now, temp)) {
                 component.mAnimation = null;
             }
             invalidate();
-            root.pushTransform();
+            canvas.pushTransform();
             transform.compose(temp);
-            root.freeTransformation(temp);
+            canvas.freeTransformation(temp);
         }
-        component.render(root, gl);
-        if (anim != null) root.popTransform();
+        component.render(canvas);
+        if (anim != null) canvas.popTransform();
         matrix.preTranslate(-xoffset, -yoffset);
     }
 

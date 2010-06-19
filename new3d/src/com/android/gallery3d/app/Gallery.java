@@ -90,7 +90,7 @@ public final class Gallery extends Activity {
     private void changeBackground() {
         mBackground.setImage(mBgImages[mBgIndex]);
         if (++mBgIndex == mBgImages.length) mBgIndex = 0;
-        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 3000);
+        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 15000);
     }
 
     private void loadBackgroundBitmap(int ... ids) {

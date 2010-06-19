@@ -7,8 +7,6 @@ import android.view.animation.Transformation;
 
 import java.util.ArrayList;
 
-import javax.microedition.khronos.opengles.GL11;
-
 public class DisplayItemPanel extends GLView {
 
     private static final int TRANSITION_DURATION = 1000;
@@ -90,16 +88,16 @@ public class DisplayItemPanel extends GLView {
     }
 
     @Override
-    protected void render(GLRootView view, GL11 gl) {
-        Transformation transform = view.getTransformation();
+    protected void render(GLCanvas canvas) {
+        Transformation transform = canvas.getTransformation();
         Matrix matrix = transform.getMatrix();
         matrix.preTranslate(-mScrollX, 0);
         if (mAnimationStartTime == NO_ANIMATION) {
             for (DisplayItem item: mItems) {
-                renderItem(view, item);
+                renderItem(canvas, item);
             }
         } else {
-            long now = view.currentAnimationTimeMillis();
+            long now = canvas.currentAnimationTimeMillis();
             if (mAnimationStartTime == START_ANIMATION) {
                 mAnimationStartTime = now;
             }
@@ -107,7 +105,7 @@ public class DisplayItemPanel extends GLView {
                     (now - mAnimationStartTime) / TRANSITION_DURATION,  0, 1);
             float interpolate = mInterpolator.getInterpolation(timeRatio);
             for (DisplayItem item: mItems) {
-                renderItem(view, item, interpolate);
+                renderItem(canvas, item, interpolate);
             }
             if (timeRatio == 1.0f) {
                 onTransitionComplete();
@@ -119,16 +117,16 @@ public class DisplayItemPanel extends GLView {
         matrix.preTranslate(mScrollX, 0);
     }
 
-    private void renderItem(GLRootView root, DisplayItem item) {
-        Transformation transformation = root.pushTransform();
+    private void renderItem(GLCanvas canvas, DisplayItem item) {
+        Transformation transformation = canvas.pushTransform();
         item.mCurrent.apply(transformation.getMatrix());
-        item.render(root);
-        root.popTransform();
+        item.render(canvas);
+        canvas.popTransform();
     }
 
     private void renderItem(
-            GLRootView root, DisplayItem item, float interpolate) {
-        Transformation transform = root.getTransformation();
+            GLCanvas canvas, DisplayItem item, float interpolate) {
+        Transformation transform = canvas.getTransformation();
         float alpha = transform.getAlpha();
         Matrix matrix = transform.getMatrix();
         switch (item.mState) {
@@ -143,7 +141,7 @@ public class DisplayItemPanel extends GLView {
                 break;
         }
         item.mCurrent.apply(matrix);
-        item.render(root);
+        item.render(canvas);
         item.mCurrent.inverse(matrix);
         transform.setAlpha(alpha);
     }

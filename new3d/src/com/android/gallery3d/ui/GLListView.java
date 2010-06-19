@@ -1,6 +1,7 @@
 package com.android.gallery3d.ui;
 
 import static android.view.View.MeasureSpec.makeMeasureSpec;
+
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -12,8 +13,6 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
 import android.widget.Scroller;
-
-import javax.microedition.khronos.opengles.GL11;
 
 public class GLListView extends GLView {
     @SuppressWarnings("unused")
@@ -120,35 +119,35 @@ public class GLListView extends GLView {
         mOnItemSelectedListener = l;
     }
 
-    private boolean drawWithAnimation(GLRootView root,
+    private boolean drawWithAnimation(GLCanvas canvas,
             Texture texture, int x, int y, int w, int h, Animation anim) {
-        long now = root.currentAnimationTimeMillis();
-        Transformation temp = root.obtainTransformation();
+        long now = canvas.currentAnimationTimeMillis();
+        Transformation temp = canvas.obtainTransformation();
         boolean more = anim.getTransformation(now, temp);
-        Transformation transformation = root.pushTransform();
+        Transformation transformation = canvas.pushTransform();
         transformation.compose(temp);
-        texture.draw(root, x, y, w, h);
+        texture.draw(canvas, x, y, w, h);
         invalidate();
-        root.popTransform();
+        canvas.popTransform();
         return more;
     }
 
     @Override
-    protected void render(GLRootView root, GL11 gl) {
-        root.clipRect(0, 0, getWidth(), getHeight());
+    protected void render(GLCanvas canvas) {
+        canvas.clipRect(0, 0, getWidth(), getHeight());
         if (mHighlightIndex != INDEX_NONE) {
             GLView view = mModel.getView(mHighlightIndex);
             Rect bounds = view.bounds();
             if (mHighLight != null) {
                 int width = bounds.width();
                 int height = bounds.height();
-                mHighLight.draw(root,
+                mHighLight.draw(canvas,
                         bounds.left - mScrollX, bounds.top - mScrollY,
                         width, height);
             }
         }
-        super.render(root, gl);
-        root.clearClip();
+        super.render(canvas);
+        canvas.clearClip();
 
         if (mScrollBarAnimation != null || mScrollBarVisible) {
             int width = mScrollbar.getWidth();
@@ -156,13 +155,13 @@ public class GLListView extends GLView {
             int yoffset = mScrollY * getHeight() / mScrollHeight;
             if (mScrollBarAnimation != null) {
                 if (!drawWithAnimation(
-                        root, mScrollbar, getWidth() - width, yoffset,
+                        canvas, mScrollbar, getWidth() - width, yoffset,
                         width, height, mScrollBarAnimation)) {
                     mScrollBarAnimation = null;
                 }
             } else {
                 mScrollbar.draw(
-                        root, getWidth() - width, yoffset, width, height);
+                        canvas, getWidth() - width, yoffset, width, height);
             }
         }
         if (mScroller.computeScrollOffset()) {

@@ -16,15 +16,6 @@
 
 package com.cooliris.media;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-import javax.microedition.khronos.opengles.GL11;
-import javax.microedition.khronos.opengles.GL11Ext;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -33,9 +24,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
 import android.opengl.GLUtils;
-import android.opengl.GLSurfaceView;
 import android.os.Process;
 import android.os.SystemClock;
 import android.util.Log;
@@ -43,6 +34,15 @@ import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
+
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+import javax.microedition.khronos.opengles.GL11;
+import javax.microedition.khronos.opengles.GL11Ext;
 
 public final class RenderView extends GLSurfaceView implements GLSurfaceView.Renderer, SensorEventListener {
     private static final String TAG = "RenderView";
@@ -54,7 +54,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     private static final int EVENT_KEY = 2;
     private static final int EVENT_FOCUS = 3;
 
-    private SensorManager mSensorManager;
+    private final SensorManager mSensorManager;
 
     private GL11 mGL = null;
     private int mViewWidth = 0;
@@ -331,7 +331,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     	// Allow the texture to defer queuing.
         if (!texture.shouldQueue()) {
             return;
-        }       
+        }
 
         // Change the texture state to loading.
         texture.mState = Texture.STATE_LOADING;
@@ -374,7 +374,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     public void draw2D(Texture texture, int x, int y, int width, int height) {
         if (bind(texture)) {
-            ((GL11Ext) mGL).glDrawTexiOES(x, (int) (mViewHeight - y - height), 0, width, height);
+            ((GL11Ext) mGL).glDrawTexiOES(x, (mViewHeight - y - height), 0, width, height);
         }
     }
 
@@ -579,9 +579,27 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         }
     }
 
+    private final boolean ENABLE_FPS_TEST = false;
+    private int mFrameCount = 0;
+    private long mFrameCountingStart = 0;
+
     /** Renders a frame of the UI. */
     // @Override
     public void onDrawFrame(GL10 gl1) {
+
+        if (ENABLE_FPS_TEST) {
+            long now = System.nanoTime();
+            if (mFrameCountingStart == 0) {
+                mFrameCountingStart = now;
+            } else if ((now - mFrameCountingStart) > 1000000000) {
+                Log.v(TAG, "fps: " + (double) mFrameCount
+                        * 1000000000 / (now - mFrameCountingStart));
+                mFrameCountingStart = now;
+                mFrameCount = 0;
+            }
+            ++mFrameCount;
+        }
+
         GL11 gl = (GL11) gl1;
         if (!mFirstDraw) {
             Log.i(TAG, "First Draw");
@@ -816,7 +834,8 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             Log.i(TAG, "GLObject has changed from " + mGL + " to " + gl);
             mGL = gl;
         }
-        setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        // setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
         // Increase the priority of the render thread.
         // This is commented out to give other threads more CPU.
         //Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
@@ -921,7 +940,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         // deadlocking with GLSurfaceView's needToWait().
         /*
          * if (mGL == null) { return; }
-         * 
+         *
          * // Wait for the render thread to process this event. try {
          * synchronized (this) { mCurrentFocusEventGain = gainFocus;
          * mCurrentFocusEventDirection = direction; mCurrentEventType =
@@ -988,6 +1007,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             super("TextureLoad");
         }
 
+        @Override
         public void run() {
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             Deque<Texture> inputQueue = (sVideoTextureLoadThread == this) ? sLoadInputQueueVideo

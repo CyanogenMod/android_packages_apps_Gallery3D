@@ -51,7 +51,7 @@ public abstract class DisplayItem {
         mHeight = height;
     }
 
-    public abstract void render(GLRootView root);
+    public abstract void render(GLCanvas canvas);
 
     public int getWidth() {
         return mWidth;

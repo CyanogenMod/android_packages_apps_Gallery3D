@@ -1,13 +1,11 @@
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.anim.FloatAnimation;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LightingColorFilter;
 import android.graphics.Paint;
-
-import com.android.gallery3d.anim.FloatAnimation;
-
-import javax.microedition.khronos.opengles.GL11;
 
 public class AdaptiveBackground extends GLView {
 
@@ -79,10 +77,10 @@ public class AdaptiveBackground extends GLView {
     }
 
     @Override
-    protected void render(GLRootView root, GL11 gl) {
+    protected void render(GLCanvas canvas) {
         if (mMixedTexture == null) return;
 
-        if (mAnimation.calculate(root.currentAnimationTimeMillis())) {
+        if (mAnimation.calculate(canvas.currentAnimationTimeMillis())) {
             mMixedTexture.setMixtureRatio(mAnimation.get());
             invalidate();
         } else if (mPendingBitmap != null) {
@@ -98,7 +96,7 @@ public class AdaptiveBackground extends GLView {
 
         MixedTexture mixed = mMixedTexture;
         for (int i = start, n = scroll + getWidth(); i < n; i += width) {
-            mMixedTexture.draw(root, i - scroll, 0, width, height);
+            mMixedTexture.draw(canvas, i - scroll, 0, width, height);
         }
     }
 }
