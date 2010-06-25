@@ -393,6 +393,7 @@ public class LocalDataSource implements DataSource {
                 if (cursor.moveToFirst()) {
                     item = new MediaItem();
                     CacheService.populateMediaItemFromCursor(item, cr, cursor, uri.toString() + "/");
+                    item.mId = id;
                 }
                 cursor.close();
                 cursor = null;
@@ -401,7 +402,6 @@ public class LocalDataSource implements DataSource {
             // If the database operation failed for any reason.
             ;
         }
-        item.mId = id;
         return item;
     }
 
