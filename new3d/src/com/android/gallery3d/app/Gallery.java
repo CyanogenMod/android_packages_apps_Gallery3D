@@ -23,7 +23,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.gallery3d.R;
-import com.android.gallery3d.data.LocalMediaSet;
+import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.data.MediaDbAccessor;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.Compositor;
@@ -43,12 +43,23 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
     private GLHandler mHandler;
     private Compositor mCompositor;
     private MediaSet mRootSet;
+    private SlotView mSlotView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ImageService.initialize(this);
+
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
+
+        mRootSet = MediaDbAccessor.getMediaSets(this);
+        mCompositor = new Compositor(this);
+        mSlotView = mCompositor.getSlotView();
+        mSlotView.setModel(new MediaSetSlotAdapter(this, mRootSet, mSlotView));
+        mSlotView.setSlotTapListener(this);
+        mGLRootView.setContentPane(mCompositor);
+
         mHandler = new GLHandler(mGLRootView) {
             @Override
             public void handleMessage(Message message) {
@@ -61,17 +72,11 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
             }
         };
 
-        mRootSet = MediaDbAccessor.getMediaSets(this);
-        mCompositor = new Compositor(this);
-        SlotView slotView = mCompositor.getSlotView();
-        slotView.setModel(new MediaSetSlotAdapter(this, mRootSet));
-        slotView.setSlotTapListener(this);
-        mGLRootView.setContentPane(mCompositor);
     }
 
     public void onSingleTapUp(int slotIndex) {
-        mCompositor.getSlotView().setModel(
-                new GridSlotAdapter(this, mRootSet.getSubMediaSet(slotIndex)));
+        mCompositor.getSlotView().setModel(new GridSlotAdapter(
+                this, mRootSet.getSubMediaSet(slotIndex), mSlotView));
     }
 
     @Override
@@ -107,6 +112,7 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
+        ImageService.getInstance().close();
     }
 
     private boolean isPickIntent() {

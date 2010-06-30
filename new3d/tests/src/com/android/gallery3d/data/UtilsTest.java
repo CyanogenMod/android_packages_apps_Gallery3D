@@ -16,21 +16,10 @@
 
 package com.android.gallery3d.data;
 
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory.Options;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.net.Uri;
-import android.provider.MediaStore;
 import android.test.AndroidTestCase;
-import android.util.Log;
-import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
+import android.util.Log;
 
 public class UtilsTest extends AndroidTestCase {
     private static final String TAG = "UtilsTest";
@@ -125,23 +114,5 @@ public class UtilsTest extends AndroidTestCase {
             }
             assertTrue(sampleSize == result);
         }
-    }
-
-    @MediumTest
-    public void testGenerateBitmap() throws IOException {
-        File file = new File(getContext().getFilesDir(), "test.jpg");
-        Bitmap b = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
-        FileOutputStream f = new FileOutputStream(file);
-        b.eraseColor(Color.BLUE);
-        b.compress(Bitmap.CompressFormat.PNG, 100, f);
-        f.close();
-        Bitmap b2 = Utils.generateBitmap(file.getPath(), Utils.UNCONSTRAINED, 2500);
-        assertTrue(b2.getPixel(0, 0) == Color.BLUE);
-        assertEquals(100, b.getWidth());
-        assertEquals(100, b.getHeight());
-        // TODO: This is broken now. Wait for the bug fix.
-        //assertEquals(50, b2.getWidth());
-        //assertEquals(50, b2.getHeight());
-        file.delete();
     }
 }

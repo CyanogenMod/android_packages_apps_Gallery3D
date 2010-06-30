@@ -178,7 +178,7 @@ public class MediaDbAccessor {
     }
 
     private static void populateAbstractMediaItemFromCursor(Cursor cursor,
-            String baseUri, AbstractMediaItem item) {
+            String baseUri, DatabaseMediaItem item) {
         item.mId = cursor.getInt(MEDIA_ID_INDEX);
         item.mCaption = cursor.getString(MEDIA_CAPTION_INDEX);
         item.mMimeType = cursor.getString(MEDIA_MIME_TYPE_INDEX);

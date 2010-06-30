@@ -47,6 +47,14 @@ public class MixedTexture implements Texture {
         }
     }
 
+    public int getWidth() {
+        return mWidth;
+    }
+
+    public int getHeight() {
+        return mHeight;
+    }
+
     public boolean isOpaque() {
         return true;
     }

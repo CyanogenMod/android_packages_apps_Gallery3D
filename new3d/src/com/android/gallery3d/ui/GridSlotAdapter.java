@@ -2,8 +2,8 @@ package com.android.gallery3d.ui;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Rect;
-import android.util.Log;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaItem;
@@ -21,29 +21,41 @@ public class GridSlotAdapter implements SlotView.Model {
     private static final int SLOT_HEIGHT = 132;
     private static final int INITIAL_CACHE_CAPACITY = 48;
 
-    private Map<Integer, MyDisplayItem> mItemMap =
+    private final Map<Integer, MyDisplayItem> mItemMap =
             new HashMap<Integer, MyDisplayItem>(INITIAL_CACHE_CAPACITY);
-    private LinkedHashSet<Integer> mLruSlot =
+    private final LinkedHashSet<Integer> mLruSlot =
             new LinkedHashSet<Integer>(INITIAL_CACHE_CAPACITY);
     private final NinePatchTexture mFrame;
 
-    private MediaSet mMediaSet;
-    private Context mContext;
+    private final MediaSet mMediaSet;
+    private final Texture mWaitLoadingTexture;
+    private final SlotView mSlotView;
 
-    public GridSlotAdapter(Context context, MediaSet mediaSet) {
-        mContext = context;
+    public GridSlotAdapter(Context context, MediaSet mediaSet, SlotView slotView) {
+        mSlotView = slotView;
         mMediaSet = mediaSet;
         mFrame = new NinePatchTexture(context, R.drawable.grid_frame);
+        ColorTexture gray = new ColorTexture(Color.GRAY);
+        gray.setSize(64, 48);
+        mWaitLoadingTexture = gray;
     }
 
     public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
         MyDisplayItem displayItem = mItemMap.get(slotIndex);
         if (displayItem == null) {
             MediaItem item = mMediaSet.getMediaItem(slotIndex);
-            Bitmap bitmap = item.getImage(mContext.getContentResolver(),
-                    MediaItem.TYPE_THUMBNAIL);
-            displayItem = new MyDisplayItem(new BitmapTexture(bitmap), mFrame);
+            item.setListener(new MyMediaItemListener(slotIndex));
+            switch (item.requestImage(MediaItem.TYPE_MICROTHUMBNAIL)) {
+                case MediaItem.IMAGE_READY:
+                    Bitmap bitmap = item.getImage(MediaItem.TYPE_MICROTHUMBNAIL);
+                    displayItem = new MyDisplayItem(
+                            new BitmapTexture(bitmap), mFrame);
+                    break;
+                default:
+                    displayItem = new MyDisplayItem(mWaitLoadingTexture, mFrame);
+                    break;
 
+            }
             // Remove an item if the size of mItemsetMap is no less than
             // INITIAL_CACHE_CAPACITY and there exists a slot in mLruSlot.
             if (mItemMap.size() >= INITIAL_CACHE_CAPACITY && !mLruSlot.isEmpty()) {
@@ -73,17 +85,45 @@ public class GridSlotAdapter implements SlotView.Model {
         return mMediaSet.getMediaItemCount();
     }
 
+    private class MyMediaItemListener implements MediaItem.MediaItemListener {
+
+        private final int mSlotIndex;
+
+        public MyMediaItemListener(int slotIndex) {
+            mSlotIndex = slotIndex;
+        }
+
+        @Override
+        public void onImageCanceled(MediaItem abstractMediaItem, int type) {
+            // Do nothing
+        }
+
+        @Override
+        public void onImageError(MediaItem item, int type, Throwable error) {
+            // Do nothing
+        }
+
+        @Override
+        public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
+            MyDisplayItem displayItem = mItemMap.get(mSlotIndex);
+            displayItem.updateContent(new BitmapTexture(bitmap));
+            mSlotView.notifyDataInvalidate();
+        }
+    }
+
     private static class MyDisplayItem extends DisplayItem {
 
-        private static final String TAG = "MyDisplayItem";
-        private final BasicTexture mContent;
+        private Texture mContent;
         private final NinePatchTexture mFrame;
 
-        public MyDisplayItem(BasicTexture content, NinePatchTexture frame) {
-            mContent = content;
+        public MyDisplayItem(Texture content, NinePatchTexture frame) {
             mFrame = frame;
+            updateContent(content);
+        }
 
-            Rect p = frame.getPaddings();
+        public void updateContent(Texture content) {
+            mContent = content;
+            Rect p = mFrame.getPaddings();
 
             int width = mContent.getWidth();
             int height = mContent.getHeight();
