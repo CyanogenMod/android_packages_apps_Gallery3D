@@ -1,7 +1,6 @@
 package com.android.gallery3d.ui;
 
 import static android.view.View.MeasureSpec.makeMeasureSpec;
-
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -9,10 +8,10 @@ import android.os.Message;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View.MeasureSpec;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.Transformation;
 import android.widget.Scroller;
+
+import com.android.gallery3d.anim.AlphaAnimation;
+import com.android.gallery3d.anim.CanvasAnimation;
 
 public class GLListView extends GLView {
     @SuppressWarnings("unused")
@@ -37,7 +36,7 @@ public class GLListView extends GLView {
     private boolean mHasMeasured = false;
 
     private boolean mScrollBarVisible = false;
-    private Animation mScrollBarAnimation;
+    private CanvasAnimation mScrollBarAnimation;
     private OnItemSelectedListener mOnItemSelectedListener;
 
     private final GestureDetector mGestureDetector;
@@ -120,20 +119,20 @@ public class GLListView extends GLView {
     }
 
     private boolean drawWithAnimation(GLCanvas canvas,
-            Texture texture, int x, int y, int w, int h, Animation anim) {
+            Texture texture, int x, int y, int w, int h, CanvasAnimation anim) {
         long now = canvas.currentAnimationTimeMillis();
-        Transformation temp = canvas.obtainTransformation();
-        boolean more = anim.getTransformation(now, temp);
-        Transformation transformation = canvas.pushTransform();
-        transformation.compose(temp);
+        canvas.save(anim.getCanvasSaveFlags());
+        boolean more = anim.calculate(canvas.currentAnimationTimeMillis());
+        anim.apply(canvas);
         texture.draw(canvas, x, y, w, h);
-        invalidate();
-        canvas.popTransform();
+        canvas.restore();
+        if (more) invalidate();
         return more;
     }
 
     @Override
     protected void render(GLCanvas canvas) {
+        canvas.save(GLCanvas.CLIP_SAVE_FLAG);
         canvas.clipRect(0, 0, getWidth(), getHeight());
         if (mHighlightIndex != INDEX_NONE) {
             GLView view = mModel.getView(mHighlightIndex);
@@ -147,7 +146,7 @@ public class GLListView extends GLView {
             }
         }
         super.render(canvas);
-        canvas.clearClip();
+        canvas.restore();
 
         if (mScrollBarAnimation != null || mScrollBarVisible) {
             int width = mScrollbar.getWidth();

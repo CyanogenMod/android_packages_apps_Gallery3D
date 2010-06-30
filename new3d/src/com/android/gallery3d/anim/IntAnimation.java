@@ -13,14 +13,8 @@ public class IntAnimation extends Animation {
     }
 
     @Override
-    protected boolean onCalculate(float progress) {
-        if (progress < 1f) {
-            mCurrent = mFrom + (int)((mTo - mFrom) * progress + .5f);
-            return true;
-        } else {
-            mCurrent = mTo;
-            return false;
-        }
+    protected void onCalculate(float progress) {
+        mCurrent = mFrom + (int)((mTo - mFrom) * progress + .5f);
     }
 
     public int get() {

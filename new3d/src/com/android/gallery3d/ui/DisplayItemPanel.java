@@ -1,9 +1,7 @@
 package com.android.gallery3d.ui;
 
-import android.graphics.Matrix;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.view.animation.Transformation;
 
 import java.util.ArrayList;
 
@@ -89,9 +87,7 @@ public class DisplayItemPanel extends GLView {
 
     @Override
     protected void render(GLCanvas canvas) {
-        Transformation transform = canvas.getTransformation();
-        Matrix matrix = transform.getMatrix();
-        matrix.preTranslate(-mScrollX, 0);
+        canvas.translate(-mScrollX, 0, 0);
         if (mAnimationStartTime == NO_ANIMATION) {
             for (DisplayItem item: mItems) {
                 renderItem(canvas, item);
@@ -114,35 +110,32 @@ public class DisplayItemPanel extends GLView {
                 invalidate();
             }
         }
-        matrix.preTranslate(mScrollX, 0);
+        canvas.translate(mScrollX, 0, 0);
     }
 
     private void renderItem(GLCanvas canvas, DisplayItem item) {
-        Transformation transformation = canvas.pushTransform();
-        item.mCurrent.apply(transformation.getMatrix());
+        canvas.save(GLCanvas.ALPHA_SAVE_FLAG | GLCanvas.MATRIX_SAVE_FLAG);
+        item.mCurrent.apply(canvas);
         item.render(canvas);
-        canvas.popTransform();
+        canvas.restore();
     }
 
     private void renderItem(
             GLCanvas canvas, DisplayItem item, float interpolate) {
-        Transformation transform = canvas.getTransformation();
-        float alpha = transform.getAlpha();
-        Matrix matrix = transform.getMatrix();
+        canvas.save(GLCanvas.ALPHA_SAVE_FLAG | GLCanvas.MATRIX_SAVE_FLAG);
         switch (item.mState) {
             case STATE_MOVED:
                 item.updateCurrentPosition(interpolate);
                 break;
             case STATE_NEWBIE:
-                transform.setAlpha(alpha * interpolate);
+                canvas.multiplyAlpha(interpolate);
                 break;
             case STATE_REMOVED:
-                transform.setAlpha(alpha * (1.0f - interpolate));
+                canvas.multiplyAlpha(1.0f - interpolate);
                 break;
         }
-        item.mCurrent.apply(matrix);
+        item.mCurrent.apply(canvas);
         item.render(canvas);
-        item.mCurrent.inverse(matrix);
-        transform.setAlpha(alpha);
+        canvas.restore();
     }
 }

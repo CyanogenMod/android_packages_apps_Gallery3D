@@ -13,14 +13,8 @@ public class FloatAnimation extends Animation {
     }
 
     @Override
-    protected boolean onCalculate(float progress) {
-        if (progress < 1f) {
-            mCurrent = mFrom + (mTo - mFrom) * progress;
-            return true;
-        } else {
-            mCurrent = mTo;
-            return false;
-        }
+    protected void onCalculate(float progress) {
+        mCurrent = mFrom + (mTo - mFrom) * progress;
     }
 
     public float get() {
