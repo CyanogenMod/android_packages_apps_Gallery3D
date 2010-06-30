@@ -605,7 +605,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             Log.i(TAG, "First Draw");
         }
         mFirstDraw = true;
-        // setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         // Rebuild the display lists if the render tree has changed.
         if (mListsDirty) {
             updateLists();
@@ -834,8 +834,13 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
             Log.i(TAG, "GLObject has changed from " + mGL + " to " + gl);
             mGL = gl;
         }
-        // setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+
+        if (ENABLE_FPS_TEST) {
+            setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        } else {
+            setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        }
+
         // Increase the priority of the render thread.
         // This is commented out to give other threads more CPU.
         //Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
