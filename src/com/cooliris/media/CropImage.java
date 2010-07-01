@@ -132,8 +132,11 @@ public class CropImage extends MonitoredActivity {
     						MediaScannerConnection connection = mConnectionMap.get(context);    						
     						if (connection != null) {
     							try {
+    								final String downloadDirectoryPath = LocalDataSource.DOWNLOAD_BUCKET_NAME;
+    								File downloadDirectory = new File(downloadDirectoryPath);
+    								downloadDirectory.mkdirs();
     								final String path = UriTexture.writeHttpDataInDirectory(context, contentUri,
-    										LocalDataSource.DOWNLOAD_BUCKET_NAME);
+    										downloadDirectoryPath);
     								if (path != null) {
     									connection.scanFile(path, item.mMimeType);
     								} else {
