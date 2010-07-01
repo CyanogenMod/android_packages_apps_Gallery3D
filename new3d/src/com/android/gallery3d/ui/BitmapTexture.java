@@ -3,20 +3,19 @@ package com.android.gallery3d.ui;
 import android.graphics.Bitmap;
 
 public class BitmapTexture extends UploadedTexture {
-    protected Bitmap mBitmap;
+    protected Bitmap mContentBitmap;
 
     public BitmapTexture(Bitmap bitmap) {
-        mBitmap = bitmap;
-        setSize(mBitmap.getWidth(), mBitmap.getHeight());
+        mContentBitmap = bitmap;
     }
 
     @Override
-    protected void freeBitmap(Bitmap bitmap) {
+    protected void onFreeBitmap(Bitmap bitmap) {
         // Do nothing.
     }
 
     @Override
-    protected Bitmap getBitmap() {
-        return mBitmap;
+    protected Bitmap onGetBitmap() {
+        return mContentBitmap;
     }
 }

@@ -27,6 +27,7 @@ import android.view.MotionEvent;
 import android.view.animation.Animation;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -44,7 +45,7 @@ public class GLRootView extends GLSurfaceView
         implements GLSurfaceView.Renderer {
     private static final String TAG = "GLRootView";
 
-    private final boolean ENABLE_FPS_TEST = true;
+    private final boolean ENABLE_FPS_TEST = false;
     private int mFrameCount = 0;
     private long mFrameCountingStart = 0;
 
@@ -58,11 +59,21 @@ public class GLRootView extends GLSurfaceView
     private DisplayMetrics mDisplayMetrics;
 
     private int mFlags = FLAG_NEED_LAYOUT;
+    private volatile boolean mRenderRequested = false;
 
     private final GalleryEGLConfigChooser mEglConfigChooser =
             new GalleryEGLConfigChooser();
 
     private final ArrayList<Animation> mAnimations = new ArrayList<Animation>();
+
+    private final LinkedList<OnGLIdleListener> mIdleListeners =
+            new LinkedList<OnGLIdleListener>();
+
+    private final IdleRunner mIdleRunner = new IdleRunner();
+
+    public static interface OnGLIdleListener {
+        public boolean onGLIdle(GLRootView root);
+    }
 
     public GLRootView(Context context) {
         this(context, null);
@@ -88,6 +99,14 @@ public class GLRootView extends GLSurfaceView
         mAnimations.add(animation);
     }
 
+    public synchronized void addOnGLIdleListener(OnGLIdleListener listener) {
+        mIdleListeners.addLast(listener);
+        if (!mRenderRequested && !mIdleRunner.mActive) {
+            mIdleRunner.mActive = true;
+            queueEvent(mIdleRunner);
+        }
+    }
+
     public void setContentPane(GLView content) {
         mContentView = content;
         content.onAttachToRoot(this);
@@ -99,6 +118,13 @@ public class GLRootView extends GLSurfaceView
 
     public GLView getContentPane() {
         return mContentView;
+    }
+
+    @Override
+    public void requestRender() {
+        if (mRenderRequested) return;
+        mRenderRequested = true;
+        super.requestRender();
     }
 
     public synchronized void requestLayoutContentPane() {
@@ -140,7 +166,6 @@ public class GLRootView extends GLSurfaceView
         }
         mGL = gl;
         mCanvas = new GLCanvas(gl);
-
         if (!ENABLE_FPS_TEST) {
             setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         } else {
@@ -176,6 +201,8 @@ public class GLRootView extends GLSurfaceView
             ++mFrameCount;
         }
 
+        mRenderRequested = false;
+
         if ((mFlags & FLAG_NEED_LAYOUT) != 0) layoutContentPane();
         mCanvas.clearClip();
         mCanvas.clearBuffer();
@@ -184,6 +211,12 @@ public class GLRootView extends GLSurfaceView
            mContentView.render(mCanvas);
         }
         mAnimations.clear();
+
+        if (!mRenderRequested
+                && !mIdleRunner.mActive && !mIdleListeners.isEmpty()) {
+            mIdleRunner.mActive = true;
+            queueEvent(mIdleRunner);
+        }
     }
 
     @Override
@@ -201,5 +234,30 @@ public class GLRootView extends GLSurfaceView
                     .getDefaultDisplay().getMetrics(mDisplayMetrics);
         }
         return mDisplayMetrics;
+    }
+
+    public GLCanvas getCanvas() {
+        return mCanvas;
+    }
+
+    private class IdleRunner implements Runnable {
+        protected boolean mActive = false;
+
+        private boolean runInternal() {
+            if (mRenderRequested) return false;
+            if (mIdleListeners.isEmpty()) return false;
+            OnGLIdleListener listener = mIdleListeners.removeFirst();
+            if (listener.onGLIdle(GLRootView.this)) {
+                mIdleListeners.addLast(listener);
+            }
+            return mIdleListeners.isEmpty();
+        }
+
+        public void run() {
+            synchronized (GLRootView.this) {
+                mActive = runInternal();
+                if (mActive) queueEvent(this);
+            }
+        }
     }
 }

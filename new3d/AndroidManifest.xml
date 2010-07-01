@@ -25,11 +25,19 @@
 
     <application android:icon="@drawable/icon" android:label="@string/app_name"
         android:debuggable="true">
+        <activity android:name="com.android.gallery3d.app.ViewImage"
+                android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+                android:label="ViewImage">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity android:name="com.android.gallery3d.app.Gallery" android:label="@string/app_name"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:configChanges="keyboardHidden|orientation"
-            android:clearTaskOnLaunch="true" android:noHistory="false"
-            android:stateNotNeeded="true">
+                android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+                android:configChanges="keyboardHidden|orientation"
+                android:clearTaskOnLaunch="true" android:noHistory="false"
+                android:stateNotNeeded="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

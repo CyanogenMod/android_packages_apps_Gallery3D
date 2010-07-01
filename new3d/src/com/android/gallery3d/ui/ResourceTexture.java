@@ -24,7 +24,6 @@ class ResourceTexture extends UploadedTexture {
 
     protected final Context mContext;
     protected final int mResId;
-    protected Bitmap mBitmap;
 
     public ResourceTexture(Context context, int resId) {
         mContext = Util.checkNotNull(context);
@@ -32,20 +31,15 @@ class ResourceTexture extends UploadedTexture {
     }
 
     @Override
-    protected Bitmap getBitmap() {
-        if (mBitmap != null) return mBitmap;
+    protected Bitmap onGetBitmap() {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        mBitmap = BitmapFactory.decodeResource(
+        return BitmapFactory.decodeResource(
                 mContext.getResources(), mResId, options);
-        setSize(mBitmap.getWidth(), mBitmap.getHeight());
-        return mBitmap;
     }
 
     @Override
-    protected void freeBitmap(Bitmap bitmap) {
-        Util.Assert(bitmap == mBitmap);
+    protected void onFreeBitmap(Bitmap bitmap) {
         bitmap.recycle();
-        mBitmap = null;
     }
 }

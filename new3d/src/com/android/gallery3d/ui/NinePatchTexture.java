@@ -29,7 +29,7 @@ class NinePatchTexture extends ResourceTexture {
     }
 
     @Override
-    protected Bitmap getBitmap() {
+    protected Bitmap onGetBitmap() {
         if (mBitmap != null) return mBitmap;
 
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -50,12 +50,12 @@ class NinePatchTexture extends ResourceTexture {
 
     public Rect getPaddings() {
         // get the paddings from nine patch
-        if (mChunk == null) getBitmap();
+        if (mChunk == null) onGetBitmap();
         return mChunk.mPaddings;
     }
 
     public NinePatchChunk getNinePatchChunk() {
-        if (mChunk == null) getBitmap();
+        if (mChunk == null) onGetBitmap();
         return mChunk;
     }
 

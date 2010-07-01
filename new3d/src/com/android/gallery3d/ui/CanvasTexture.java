@@ -23,21 +23,26 @@ import android.graphics.Bitmap.Config;
 /** Using a canvas to draw the texture */
 abstract class CanvasTexture extends UploadedTexture {
     protected Canvas mCanvas;
+    private final Config mConfig = Config.ARGB_8888;
 
-    public CanvasTexture(int width, int height) {
+    public CanvasTexture(int width, int height, Config config) {
         setSize(width, height);
     }
 
+    public CanvasTexture(int width, int height) {
+        this(width, height, Config.ARGB_8888);
+    }
+
     @Override
-    protected Bitmap getBitmap() {
-        Bitmap bitmap = Bitmap.createBitmap(mWidth, mHeight, Config.ARGB_8888);
+    protected Bitmap onGetBitmap() {
+        Bitmap bitmap = Bitmap.createBitmap(mWidth, mHeight, mConfig);
         mCanvas = new Canvas(bitmap);
         onDraw(mCanvas, bitmap);
         return bitmap;
     }
 
     @Override
-    protected void freeBitmap(Bitmap bitmap) {
+    protected void onFreeBitmap(Bitmap bitmap) {
         bitmap.recycle();
     }
 
