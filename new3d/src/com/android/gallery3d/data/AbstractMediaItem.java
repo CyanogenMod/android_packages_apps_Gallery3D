@@ -1,5 +1,9 @@
 package com.android.gallery3d.data;
 
+//
+// AbstractMediaItem is an abstract class captures those common fields
+// in ImageMediaItem and VideoMediaItem.
+//
 public abstract class AbstractMediaItem implements MediaItem {
     static final int FULLIMAGE_TARGET_SIZE = 1024;
     static final int FULLIMAGE_MAX_NUM_PIXELS = 3 * 1024 * 1024;
