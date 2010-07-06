@@ -30,9 +30,10 @@ import com.android.gallery3d.ui.Compositor;
 import com.android.gallery3d.ui.GLHandler;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.GridSlotAdapter;
+import com.android.gallery3d.ui.MediaSetSlotAdapter;
 import com.android.gallery3d.ui.SlotView;
 
-public final class Gallery extends Activity {
+public final class Gallery extends Activity implements SlotView.SlotTapListener {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
 
     private static final int CHANGE_BACKGROUND = 1;
@@ -41,6 +42,7 @@ public final class Gallery extends Activity {
     private GLRootView mGLRootView;
     private GLHandler mHandler;
     private Compositor mCompositor;
+    private MediaSet mRootSet;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -59,12 +61,17 @@ public final class Gallery extends Activity {
             }
         };
 
-        MediaSet rootSet = MediaDbAccessor.getMediaSets(this);
-        ((LocalMediaSet) rootSet).printOut();
+        mRootSet = MediaDbAccessor.getMediaSets(this);
         mCompositor = new Compositor(this);
         SlotView slotView = mCompositor.getSlotView();
-        slotView.setModel(new GridSlotAdapter(this, rootSet.getSubMediaSet(0)));
+        slotView.setModel(new MediaSetSlotAdapter(this, mRootSet));
+        slotView.setSlotTapListener(this);
         mGLRootView.setContentPane(mCompositor);
+    }
+
+    public void onSingleTapUp(int slotIndex) {
+        mCompositor.getSlotView().setModel(
+                new GridSlotAdapter(this, mRootSet.getSubMediaSet(slotIndex)));
     }
 
     @Override

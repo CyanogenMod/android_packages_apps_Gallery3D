@@ -2,6 +2,7 @@ package com.android.gallery3d.ui;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
@@ -10,6 +11,7 @@ public class SlotView extends GLView {
 
     private static final String TAG = "SlotView";
     private static final int MAX_VELOCITY = 2500;
+    private static final int NOT_AT_SLOTPOSITION = -1;
 
     public static interface Model {
         public int size();
@@ -34,6 +36,7 @@ public class SlotView extends GLView {
 
     private final GestureDetector mGestureDetector;
     private final ScrollerHelper mScroller;
+    private SlotTapListener mSlotTapListener;
 
     public SlotView(Context context) {
         mPanel = new DisplayItemPanel();
@@ -55,6 +58,7 @@ public class SlotView extends GLView {
 
     public void setModel(Model model) {
         if (model == mModel) return;
+        setVisibleRange(0, 0);
         mModel = model;
         if (model != null) initializeLayoutParams();
         notifyDataChanged();
@@ -100,7 +104,7 @@ public class SlotView extends GLView {
     }
 
     public void notifyDataChanged() {
-        setScrollPosition(0, false);
+        setScrollPosition(0, true);
         notifyDataInvalidate();
     }
 
@@ -208,6 +212,44 @@ public class SlotView extends GLView {
             invalidate();
             return true;
         }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            float x = e.getX();
+            float y = e.getY();
+            int index = getSlotIndexByPosition(x, y);
+            if (index != SlotView.NOT_AT_SLOTPOSITION) {
+                mSlotTapListener.onSingleTapUp(index);
+            }
+            return true;
+        }
+    }
+
+    public void setSlotTapListener(SlotTapListener listener) {
+        mSlotTapListener = listener;
+    }
+
+    private int getSlotIndexByPosition(float x, float y) {
+        int columnWidth = mHorizontalGap + mSlotWidth;
+        float absoluteX = x + mPanel.mScrollX;
+        int columnIdx = (int) (absoluteX + 0.5) / columnWidth;
+        if ((absoluteX - columnWidth * columnIdx) < mHorizontalGap) {
+            return NOT_AT_SLOTPOSITION;
+        }
+
+        int rowHeight = mVerticalGap + mSlotHeight;
+        float absoluteY = y + mPanel.mScrollY;
+        int rowIdx = (int) (absoluteY + 0.5) / rowHeight;
+        if (((absoluteY - rowHeight * rowIdx) < mVerticalGap)
+            || rowIdx >= mRowCount) {
+            return NOT_AT_SLOTPOSITION;
+        }
+        int index = columnIdx * mRowCount + rowIdx;
+        return index >= mModel.size() ? NOT_AT_SLOTPOSITION : index;
+    }
+
+    public interface SlotTapListener {
+        public void onSingleTapUp(int slotIndex);
     }
 
     public void setGaps(int horizontalGap, int verticalGap) {
