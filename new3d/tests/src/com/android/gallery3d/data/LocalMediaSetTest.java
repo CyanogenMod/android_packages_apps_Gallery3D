@@ -1,22 +1,40 @@
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.util.Log;
+import android.test.suitebuilder.annotation.SmallTest;
 
 import junit.framework.TestCase;
 
+@SmallTest
 public class LocalMediaSetTest extends TestCase {
     private static final String TAG = "LocalMediaSetTest";
 
     public void testEmptySet() {
         LocalMediaSet s = new LocalMediaSet(42, "Empty Set");
-        assertTrue(s.getMediaItemCount() == 0);
-        assertTrue(s.getSubMediaSetCount() == 0);
-        assertTrue(s.getTotalMediaItemCount() == 0);
-        assertTrue(s.getTitle().equals("Empty Set"));
-        assertTrue(s.getCoverMediaItems().length == 0);
-        assertTrue(s.getSubMediaSetById(42) == null);
+        assertEquals(0, s.getMediaItemCount());
+        assertEquals(0, s.getSubMediaSetCount());
+        assertEquals(0, s.getTotalMediaItemCount());
+        assertEquals("Empty Set", s.getTitle());
+        assertEquals(0, s.getCoverMediaItems().length);
+        assertNull(s.getSubMediaSetById(42));
     }
 
     private static class MyMediaItem implements MediaItem {
@@ -30,11 +48,11 @@ public class LocalMediaSetTest extends TestCase {
         LocalMediaSet s = new LocalMediaSet(1, "One Item Set");
         MediaItem item = new MyMediaItem();
         s.addMediaItem(item);
-        assertTrue(s.getMediaItemCount() == 1);
-        assertTrue(s.getSubMediaSetCount() == 0);
-        assertTrue(s.getTotalMediaItemCount() == 1);
-        assertTrue(s.getCoverMediaItems()[0] == item);
-        assertTrue(s.getMediaItem(0) == item);
+        assertEquals(1, s.getMediaItemCount());
+        assertEquals(0, s.getSubMediaSetCount());
+        assertEquals(1, s.getTotalMediaItemCount());
+        assertSame(item, s.getCoverMediaItems()[0]);
+        assertSame(item, s.getMediaItem(0));
     }
 
     public void testTwoItems() {
@@ -43,9 +61,9 @@ public class LocalMediaSetTest extends TestCase {
         MediaItem item2 = new MyMediaItem();
         s.addMediaItem(item1);
         s.addMediaItem(item2);
-        assertTrue(s.getMediaItemCount() == 2);
-        assertTrue(s.getSubMediaSetCount() == 0);
-        assertTrue(s.getTotalMediaItemCount() == 2);
+        assertEquals(2, s.getMediaItemCount());
+        assertEquals(0, s.getSubMediaSetCount());
+        assertEquals(2, s.getTotalMediaItemCount());
         assertTrue(s.getCoverMediaItems()[0] == item1
                 || s.getCoverMediaItems()[0] == item2);
     }
@@ -54,15 +72,15 @@ public class LocalMediaSetTest extends TestCase {
         LocalMediaSet s = new LocalMediaSet(3, "One Empty Sub-MediaSet");
         LocalMediaSet t = new LocalMediaSet(42, "Empty Set");
         s.addSubMediaSet(t);
-        assertTrue(s.getMediaItemCount() == 0);
-        assertTrue(s.getSubMediaSetCount() == 1);
-        assertTrue(s.getTotalMediaItemCount() == 0);
-        assertTrue(s.getTitle().equals("One Empty Sub-MediaSet"));
-        assertTrue(s.getCoverMediaItems().length == 0);
-        assertTrue(s.getSubMediaSet(0) == t);
-        assertTrue(s.getSubMediaSetById(42) == t);
-        assertTrue(s.getSubMediaSetById(0) == null);
-        assertTrue(t.getTitle().equals("Empty Set"));
+        assertEquals(0, s.getMediaItemCount());
+        assertEquals(1, s.getSubMediaSetCount());
+        assertEquals(0, s.getTotalMediaItemCount());
+        assertEquals("One Empty Sub-MediaSet", s.getTitle());
+        assertEquals(0, s.getCoverMediaItems().length);
+        assertSame(t, s.getSubMediaSet(0));
+        assertSame(t, s.getSubMediaSetById(42));
+        assertNull(s.getSubMediaSetById(0));
+        assertEquals("Empty Set", t.getTitle());
     }
 
     public void testSubSubMediaSet() {
@@ -71,34 +89,34 @@ public class LocalMediaSetTest extends TestCase {
         LocalMediaSet s2 = new LocalMediaSet(2, "Set 2");
         MediaItem item = new MyMediaItem();
         s.addSubMediaSet(s1);
-        assertTrue(s.getMediaItemCount() == 0);
-        assertTrue(s.getSubMediaSetCount() == 1);
-        assertTrue(s.getTotalMediaItemCount() == 0);
-        assertTrue(s.getCoverMediaItems().length == 0);
-        assertTrue(s.getSubMediaSet(0) == s1);
-        assertTrue(s.getSubMediaSetById(0) == null);
-        assertTrue(s.getSubMediaSetById(1) == s1);
-        assertTrue(s.getSubMediaSetById(2) == null);
+        assertEquals(0, s.getMediaItemCount());
+        assertEquals(1, s.getSubMediaSetCount());
+        assertEquals(0, s.getTotalMediaItemCount());
+        assertEquals(0, s.getCoverMediaItems().length);
+        assertSame(s1, s.getSubMediaSet(0));
+        assertNull(s.getSubMediaSetById(0));
+        assertSame(s1, s.getSubMediaSetById(1));
+        assertNull(s.getSubMediaSetById(2));
         s1.addSubMediaSet(s2);
-        assertTrue(s.getMediaItemCount() == 0);
-        assertTrue(s.getSubMediaSetCount() == 1);
-        assertTrue(s.getTotalMediaItemCount() == 0);
-        assertTrue(s.getCoverMediaItems().length == 0);
-        assertTrue(s.getSubMediaSet(0) == s1);
-        assertTrue(s.getSubMediaSetById(0) == null);
-        assertTrue(s.getSubMediaSetById(1) == s1);
-        assertTrue(s.getSubMediaSetById(2) == null);
-        assertTrue(s1.getSubMediaSet(0) == s2);
-        assertTrue(s1.getSubMediaSetById(2) == s2);
+        assertEquals(0, s.getMediaItemCount());
+        assertEquals(1, s.getSubMediaSetCount());
+        assertEquals(0, s.getTotalMediaItemCount());
+        assertEquals(0, s.getCoverMediaItems().length);
+        assertSame(s1, s.getSubMediaSet(0));
+        assertNull(s.getSubMediaSetById(0));
+        assertSame(s1, s.getSubMediaSetById(1));
+        assertNull(s.getSubMediaSetById(2));
+        assertSame(s2, s1.getSubMediaSet(0));
+        assertSame(s2, s1.getSubMediaSetById(2));
         s2.addMediaItem(item);
-        assertTrue(s.getMediaItemCount() == 0);
-        assertTrue(s.getSubMediaSetCount() == 1);
-        assertTrue(s.getTotalMediaItemCount() == 1);
-        assertTrue(s.getCoverMediaItems().length == 1);
-        assertTrue(s.getSubMediaSet(0) == s1);
-        assertTrue(s.getSubMediaSetById(0) == null);
-        assertTrue(s.getSubMediaSetById(1) == s1);
-        assertTrue(s.getSubMediaSetById(2) == null);
+        assertEquals(0, s.getMediaItemCount());
+        assertEquals(1, s.getSubMediaSetCount());
+        assertEquals(1, s.getTotalMediaItemCount());
+        assertEquals(1, s.getCoverMediaItems().length);
+        assertSame(s1, s.getSubMediaSet(0));
+        assertNull(s.getSubMediaSetById(0));
+        assertSame(s1, s.getSubMediaSetById(1));
+        assertNull(s.getSubMediaSetById(2));
     }
 
     //
@@ -139,26 +157,25 @@ public class LocalMediaSetTest extends TestCase {
 
         LocalMediaSet s = s0;
 
-        assertTrue(s.getMediaItemCount() == 2);
-        assertTrue(s.getSubMediaSetCount() == 2);
-        assertTrue(s.getTotalMediaItemCount() == 6);
+        assertEquals(2, s.getMediaItemCount());
+        assertEquals(2, s.getSubMediaSetCount());
+        assertEquals(6, s.getTotalMediaItemCount());
         assertTrue(s.getCoverMediaItems().length > 0);
-        assertTrue(s.getSubMediaSet(0) == s1);
-        assertTrue(s.getSubMediaSet(1) == s4);
-        assertTrue(s.getSubMediaSetById(1) == s1);
-        assertTrue(s.getSubMediaSetById(4) == s4);
-        assertTrue(s.getSubMediaSetById(8) == null);
-        assertTrue(s4.getSubMediaSetById(8) == s8);
-        assertTrue(s.getSubMediaSetById(LocalMediaSet.ROOT_SET_ID) == null);
+        assertSame(s1, s.getSubMediaSet(0));
+        assertSame(s4, s.getSubMediaSet(1));
+        assertSame(s1, s.getSubMediaSetById(1));
+        assertSame(s4, s.getSubMediaSetById(4));
+        assertNull(s.getSubMediaSetById(8));
+        assertSame(s8, s4.getSubMediaSetById(8));
+        assertNull(s.getSubMediaSetById(LocalMediaSet.ROOT_SET_ID));
 
         MediaItem[] m = s.getCoverMediaItems();
         for (int i = 0; i < m.length; i++) {
             assertTrue(m[i] == t2 || m[i] == t3 || m[i] == t5
                     || m[i] == t6 || m[i] == t7 || m[i] == t10);
             for (int j = 0; j < i; j++) {
-                assertTrue(m[j] != m[i]);
+                assertNotSame(m[j], m[i]);
             }
         }
     }
-
 }
