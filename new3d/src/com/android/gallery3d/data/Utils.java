@@ -13,8 +13,9 @@ import android.provider.MediaStore.Video;
 import android.util.Log;
 
 public class Utils {
-    private static final int UNCONSTRAINED = -1;
     private static final String TAG = "Utils";
+
+    public static final int UNCONSTRAINED = -1;
 
     /*
      * Compute the sample size as a function of minSideLength
@@ -25,10 +26,10 @@ public class Utils {
      * tolerable in terms of memory usage.
      *
      * The function returns a sample size based on the constraints.
-     * Both size and minSideLength can be passed in as IImage.UNCONSTRAINED,
+     * Both size and minSideLength can be passed in as UNCONSTRAINED,
      * which indicates no care of the corresponding constraint.
      * The functions prefers returning a sample size that
-     * generates a smaller bitmap, unless minSideLength = IImage.UNCONSTRAINED.
+     * generates a smaller bitmap, unless minSideLength = UNCONSTRAINED.
      *
      * Also, the function rounds up the sample size to a power of 2 or multiple
      * of 8 because BitmapFactory only honors sample size this way.

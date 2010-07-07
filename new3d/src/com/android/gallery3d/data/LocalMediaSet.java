@@ -7,6 +7,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+//
+// LocalMediaSet is a MediaSet which is obtained from MediaProvider.
+// Each LocalMediaSet is identified by a bucket id.
+// It is populated by addMediaItem(MediaItem) and addSubMediaSet(LocalMediaSet).
+//
+// getSubMediaSetById(int setId) returns a sub-MediaSet given a bucket id.
+//
 public class LocalMediaSet implements MediaSet {
     public static final int ROOT_SET_ID = -1;
     private static final String TAG = "LocalMediaSet";
@@ -33,12 +40,33 @@ public class LocalMediaSet implements MediaSet {
     }
 
     public MediaItem[] getCoverMediaItems() {
-        int size = Math.min(getMediaItemCount(), MAX_NUM_COVERED_ITEMS);
-        MediaItem[] coveredItems = new MediaItem[size];
-        for (int i = 0; i < size; ++i) {
-            coveredItems[i] = getMediaItem(i);
+        MediaItem[] coverItems = new MediaItem[MAX_NUM_COVERED_ITEMS];
+        int filled = fillCoverMediaItems(coverItems, 0);
+        if (filled < MAX_NUM_COVERED_ITEMS) {
+            MediaItem[] result = new MediaItem[filled];
+            System.arraycopy(coverItems, 0, result, 0, filled);
+            return result;
+        } else {
+            return coverItems;
         }
-        return coveredItems;
+    }
+
+    private int fillCoverMediaItems(MediaItem[] items, int offset) {
+        // Fill from my MediaItems.
+        int size = Math.min(getMediaItemCount(), items.length - offset);
+        for (int i = 0; i < size; ++i) {
+            items[offset + i] = getMediaItem(i);
+        }
+        if (offset + size == items.length) return size;
+
+        // Fill from sub-MediaSets.
+        int n = getSubMediaSetCount();
+        for (int i = 0; i < n; ++i) {
+            size += mSubMediaSets.get(i).fillCoverMediaItems(items, offset + size);
+            if (offset + size == items.length) break;
+        }
+
+        return size;
     }
 
     public MediaItem getMediaItem(int index) {
@@ -74,7 +102,7 @@ public class LocalMediaSet implements MediaSet {
     public int getTotalMediaItemCount() {
         int totalItemCount = mMediaItems.size();
         for (LocalMediaSet set : mSubMediaSets) {
-            totalItemCount += set.getMediaItemCount();
+            totalItemCount += set.getTotalMediaItemCount();
         }
         return totalItemCount;
     }
