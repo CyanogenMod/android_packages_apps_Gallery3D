@@ -32,47 +32,62 @@ public class Util {
     private Util() {
     }
 
+    // Throws AssertionError if the input is false.
     public static void Assert(boolean cond) {
         if (!cond) {
             throw new AssertionError();
         }
     }
 
+    // Throws NullPointerException if the input is null.
     public static <T> T checkNotNull(T object) {
         if (object == null) throw new NullPointerException();
         return object;
     }
 
+    // Returns true if two input Object are both null or equal
+    // to each other.
     public static boolean equals(Object a, Object b) {
         return (a == b) || (a == null ? false : a.equals(b));
     }
 
+    // Returns true if the input is power of 2.
+    // Throws IllegalArgumentException if the input is <= 0.
     public static boolean isPowerOf2(int n) {
+        if (n <= 0) throw new IllegalArgumentException();
         return (n & -n) == n;
     }
 
+    // Returns the next power of two.
+    // Returns the input if it is already power of 2.
+    // Throws IllegalArgumentException if the input is <= 0 or
+    // the answer overflows.
     public static int nextPowerOf2(int n) {
+        if (n <= 0 || n > (1 << 30)) throw new IllegalArgumentException();
         n -= 1;
-        n |= n >>> 16;
-        n |= n >>> 8;
-        n |= n >>> 4;
-        n |= n >>> 2;
-        n |= n >>> 1;
+        n |= n >> 16;
+        n |= n >> 8;
+        n |= n >> 4;
+        n |= n >> 2;
+        n |= n >> 1;
         return n + 1;
     }
 
+    // Returns the euclidean distance between (x, y) and (sx, sy).
     public static float distance(float x, float y, float sx, float sy) {
         float dx = x - sx;
         float dy = y - sy;
-        return (float) Math.sqrt(dx * dx + dy * dy);
+        return (float) Math.hypot(dx, dy);
     }
 
+    // Returns the input value x clamped to the range [min, max].
     public static int clamp(int x, int min, int max) {
         if (x > max) return max;
         if (x < min) return min;
         return x;
     }
 
+    // Returns the input value x clamped to the range [min, max].
     public static float clamp(float x, float min, float max) {
         if (x > max) return max;
         if (x < min) return min;
@@ -84,13 +99,13 @@ public class Util {
             DisplayMetrics metrics = new DisplayMetrics();
             ((Activity) context).getWindowManager()
                     .getDefaultDisplay().getMetrics(metrics);
-            sPixelDensity =  metrics.density;
+            sPixelDensity = metrics.density;
         }
         return sPixelDensity * dp;
     }
 
     public static int dpToPixel(Context context, int dp) {
-        return (int)(dpToPixel(context, (float) dp) + .5f);
+        return Math.round(dpToPixel(context, (float) dp));
     }
 
     public static boolean isOpaque(int color) {
