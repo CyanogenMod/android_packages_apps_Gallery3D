@@ -51,7 +51,7 @@ public class ScaleAnimation extends CanvasAnimation {
 
     @Override
     public int getCanvasSaveFlags() {
-        return GLCanvas.MATRIX_SAVE_FLAG;
+        return GLCanvas.SAVE_FLAG_MATRIX;
     }
 
     @Override

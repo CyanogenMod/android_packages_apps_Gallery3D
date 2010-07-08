@@ -19,8 +19,8 @@ public class DisplayItemPanel extends GLView {
     // The state of the items that changed position
     private static final int STATE_MOVED = 3;
 
-    private static final long NO_ANIMATION = -1;
-    private static final long START_ANIMATION = 0;
+    private static final long START_ANIMATION = -1;
+    private static final long NO_ANIMATION = -2;
 
     private ArrayList<DisplayItem> mItems = new ArrayList<DisplayItem>();
 
@@ -114,7 +114,7 @@ public class DisplayItemPanel extends GLView {
     }
 
     private void renderItem(GLCanvas canvas, DisplayItem item) {
-        canvas.save(GLCanvas.ALPHA_SAVE_FLAG | GLCanvas.MATRIX_SAVE_FLAG);
+        canvas.save(GLCanvas.SAVE_FLAG_ALPHA | GLCanvas.SAVE_FLAG_MATRIX);
         item.mCurrent.apply(canvas);
         item.render(canvas);
         canvas.restore();
@@ -122,7 +122,7 @@ public class DisplayItemPanel extends GLView {
 
     private void renderItem(
             GLCanvas canvas, DisplayItem item, float interpolate) {
-        canvas.save(GLCanvas.ALPHA_SAVE_FLAG | GLCanvas.MATRIX_SAVE_FLAG);
+        canvas.save(GLCanvas.SAVE_FLAG_ALPHA | GLCanvas.SAVE_FLAG_MATRIX);
         switch (item.mState) {
             case STATE_MOVED:
                 item.updateCurrentPosition(interpolate);

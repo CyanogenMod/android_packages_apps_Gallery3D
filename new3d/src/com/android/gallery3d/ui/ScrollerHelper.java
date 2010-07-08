@@ -6,7 +6,7 @@ import android.view.ViewConfiguration;
 import android.view.animation.Interpolator;
 
 public class ScrollerHelper {
-    private static final long ANIMATION_START = 0;
+    private static final long START_ANIMATION = -1;
 
     private final float mDeceleration;
 
@@ -38,7 +38,7 @@ public class ScrollerHelper {
      */
     public boolean computeScrollOffset(long currentTimeMillis) {
         if (mFinished) return false;
-        if (mStartTime == ANIMATION_START) mStartTime = currentTimeMillis;
+        if (mStartTime == START_ANIMATION) mStartTime = currentTimeMillis;
 
         int timePassed = (int)(currentTimeMillis - mStartTime);
         if (timePassed < mDuration) {
@@ -70,7 +70,7 @@ public class ScrollerHelper {
         mVelocity = Math.abs(velocity);
         mDirection = velocity >= 0 ? 1 : -1;
         mDuration = (int) (1000 * mVelocity / mDeceleration);
-        mStartTime = ANIMATION_START;
+        mStartTime = START_ANIMATION;
         mStart = start;
         mMin = min;
         mMax = max;

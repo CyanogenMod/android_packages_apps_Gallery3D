@@ -132,7 +132,7 @@ public class GLListView extends GLView {
 
     @Override
     protected void render(GLCanvas canvas) {
-        canvas.save(GLCanvas.CLIP_SAVE_FLAG);
+        canvas.save(GLCanvas.SAVE_FLAG_CLIP);
         canvas.clipRect(0, 0, getWidth(), getHeight());
         if (mHighlightIndex != INDEX_NONE) {
             GLView view = mModel.getView(mHighlightIndex);
