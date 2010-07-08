@@ -24,7 +24,8 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.animation.Animation;
+
+import com.android.gallery3d.anim.CanvasAnimation;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -64,7 +65,8 @@ public class GLRootView extends GLSurfaceView
     private final GalleryEGLConfigChooser mEglConfigChooser =
             new GalleryEGLConfigChooser();
 
-    private final ArrayList<Animation> mAnimations = new ArrayList<Animation>();
+    private final ArrayList<CanvasAnimation> mAnimations =
+            new ArrayList<CanvasAnimation>();
 
     private final LinkedList<OnGLIdleListener> mIdleListeners =
             new LinkedList<OnGLIdleListener>();
@@ -91,7 +93,7 @@ public class GLRootView extends GLSurfaceView
         return mEglConfigChooser;
     }
 
-    void registerLaunchedAnimation(Animation animation) {
+    void registerLaunchedAnimation(CanvasAnimation animation) {
         // Register the newly launched animation so that we can set the start
         // time more precisely. (Usually, it takes much longer for first
         // rendering, so we set the animation start time as the time we
@@ -204,13 +206,19 @@ public class GLRootView extends GLSurfaceView
         mRenderRequested = false;
 
         if ((mFlags & FLAG_NEED_LAYOUT) != 0) layoutContentPane();
-        mCanvas.clearClip();
         mCanvas.clearBuffer();
         mCanvas.setCurrentTimeMillis(SystemClock.uptimeMillis());
         if (mContentView != null) {
            mContentView.render(mCanvas);
         }
-        mAnimations.clear();
+
+        if (!mAnimations.isEmpty()) {
+            long now = SystemClock.uptimeMillis();
+            for (CanvasAnimation anim : mAnimations) {
+                anim.setStartTime(now);
+            }
+            mAnimations.clear();
+        }
 
         if (!mRenderRequested
                 && !mIdleRunner.mActive && !mIdleListeners.isEmpty()) {

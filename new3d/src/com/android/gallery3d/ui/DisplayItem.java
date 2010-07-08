@@ -1,6 +1,5 @@
 package com.android.gallery3d.ui;
 
-import android.graphics.Matrix;
 
 
 public abstract class DisplayItem {
@@ -22,14 +21,9 @@ public abstract class DisplayItem {
             mTheata = p.mTheata;
         }
 
-        public void apply(Matrix matrix) {
-            matrix.preTranslate(mX, mY);
-            matrix.preRotate(mTheata);
-        }
-
-        public void inverse(Matrix matrix) {
-            matrix.preRotate(-mTheata);
-            matrix.preTranslate(-mX, -mY);
+        public void apply(GLCanvas canvas) {
+            canvas.translate(mX, mY, 0);
+            canvas.rotate(mTheata, 0, 0, 1);
         }
     }
 

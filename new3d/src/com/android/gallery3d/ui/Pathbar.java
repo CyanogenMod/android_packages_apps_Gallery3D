@@ -1,10 +1,6 @@
 package com.android.gallery3d.ui;
 
 import static com.android.gallery3d.ui.Util.dpToPixel;
-
-import com.android.gallery3d.R;
-import com.android.gallery3d.anim.IntAnimation;
-
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -12,7 +8,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.animation.Transformation;
+
+import com.android.gallery3d.R;
+import com.android.gallery3d.anim.IntAnimation;
 
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -245,17 +243,20 @@ public class Pathbar extends GLView {
         background.draw(
                 canvas, offsetX - p.left, 0, width + p.left + p.right, height);
 
-        int yoffset = (height - icon.getHeight()) / 2;
+        int offsetY = (height - icon.getHeight()) / 2;
         offsetX += sHorizontalPadding;
         if (icon != mProgressIcon) {
-            icon.draw(canvas, offsetX, yoffset);
+            icon.draw(canvas, offsetX, offsetY);
         } else {
-            Transformation t = canvas.pushTransform();
             int degrees = mProgressStep * 360 / PROGRESS_STEP_COUNT;
-            t.getMatrix().preRotate(degrees, offsetX
-                    + icon.getWidth() / 2, yoffset + icon.getHeight() / 2);
-            icon.draw(canvas, offsetX, yoffset);
-            canvas.popTransform();
+            int pivotX = offsetX + icon.getWidth() / 2;
+            int pivotY = offsetY + icon.getHeight() / 2;
+            canvas.save(GLCanvas.MATRIX_SAVE_FLAG);
+            canvas.translate(pivotX, pivotY, 0);
+            canvas.rotate(degrees, 0, 0, 1);
+            canvas.translate(-pivotX, -pivotY, 0);
+            icon.draw(canvas, offsetX, offsetY);
+            canvas.restore();
             if (!mProgressUpdated) {
                 mProgressUpdated = true;
                 mHandler.sendEmptyMessageDelayed(UPDATE_PROGRESS, 125);
@@ -263,8 +264,8 @@ public class Pathbar extends GLView {
         }
         offsetX += icon.getWidth();
         if (title != null) {
-            yoffset = (height - title.getHeight()) / 2;
-            title.draw(canvas, offsetX, yoffset);
+            offsetY = (height - title.getHeight()) / 2;
+            title.draw(canvas, offsetX, offsetY);
         }
         mOffsetX += width + p.right;
     }

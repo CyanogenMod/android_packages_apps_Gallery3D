@@ -1,10 +1,9 @@
 package com.android.gallery3d.ui;
 
-import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLU;
-import android.view.animation.Transformation;
+import android.opengl.Matrix;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -17,6 +16,12 @@ import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
 
 public class GLCanvas {
+
+    public static final int ALL_SAVE_FLAG = 0xFFFFFFFF;
+    public static final int CLIP_SAVE_FLAG = 0x01;
+    public static final int ALPHA_SAVE_FLAG = 0x02;
+    public static final int MATRIX_SAVE_FLAG = 0x04;
+
     // We need 16 vertices for a normal nine-patch image (the 4x4 vertices)
     private static final int VERTEX_BUFFER_SIZE = 16 * 2;
 
@@ -26,13 +31,6 @@ public class GLCanvas {
     private static final float OPAQUE_ALPHA = 0.95f;
 
     private final GL11 mGL;
-
-    private final Stack<Transformation> mFreeTransform =
-            new Stack<Transformation>();
-
-    private final Transformation mTransformation = new Transformation();
-    private final Stack<Transformation> mTransformStack =
-            new Stack<Transformation>();
 
     private final float mMatrixValues[] = new float[16];
 
@@ -54,8 +52,11 @@ public class GLCanvas {
 
     private long mAnimationTime;
 
-    private int mWidth;
-    private int mHeight;
+    private float mAlpha;
+    private final Rect mClipRect = new Rect();
+    private final Stack<ConfigState> mRestoreStack =
+            new Stack<ConfigState>();
+    private ConfigState mRecycledRestoreAction;
 
     GLCanvas(GL11 gl) {
         mGL = gl;
@@ -64,53 +65,41 @@ public class GLCanvas {
     }
 
     public void setSize(int width, int height) {
-        mWidth = width;
-        mHeight = height;
         GL11 gl = mGL;
-
         gl.glViewport(0, 0, width, height);
         gl.glMatrixMode(GL11.GL_PROJECTION);
         gl.glLoadIdentity();
         GLU.gluOrtho2D(gl, 0, width, 0, height);
 
-        Matrix matrix = mTransformation.getMatrix();
-        matrix.reset();
-        matrix.preTranslate(0, mHeight);
-        matrix.preScale(1, -1);
+        gl.glMatrixMode(GL11.GL_MODELVIEW);
+        gl.glLoadIdentity();
+
+        // The positive direction in Y coordinate in OpenGL is from bottom to
+        // top, which is different from the coordinate system in Java. So, we
+        // flip it here.
+        float matrix[] = mMatrixValues;
+        Matrix.setIdentityM(matrix, 0);
+        Matrix.translateM(matrix, 0, 0, height, 0);
+        Matrix.scaleM(matrix, 0, 1, -1, 1);
+
+        mClipRect.set(0, 0, width, height);
+        gl.glScissor(0, 0, width, height);
     }
 
     public long currentAnimationTimeMillis() {
         return mAnimationTime;
     }
 
-    public Transformation obtainTransformation() {
-        if (!mFreeTransform.isEmpty()) {
-            Transformation t = mFreeTransform.pop();
-            t.clear();
-            return t;
-        }
-        return new Transformation();
+    public void setAlpha(float alpha) {
+        mAlpha = alpha;
     }
 
-    public void freeTransformation(Transformation freeTransformation) {
-        mFreeTransform.push(freeTransformation);
+    public void multiplyAlpha(float alpha) {
+        mAlpha *= alpha;
     }
 
-    public Transformation getTransformation() {
-        return mTransformation;
-    }
-
-    public Transformation pushTransform() {
-        Transformation trans = obtainTransformation();
-        trans.set(mTransformation);
-        mTransformStack.push(trans);
-        return mTransformation;
-    }
-
-    public void popTransform() {
-        Transformation trans = mTransformStack.pop();
-        mTransformation.set(trans);
-        freeTransformation(trans);
+    public float getAlpha() {
+        return mAlpha;
     }
 
     private static ByteBuffer allocateDirectNativeOrderBuffer(int size) {
@@ -133,6 +122,8 @@ public class GLCanvas {
         gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, mUvPointer);
         gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 
+        // mMatrixValues will be initialized in setSize()
+        mAlpha = 1.0f;
     }
 
     private static void putRectangle(float x, float y,
@@ -149,17 +140,14 @@ public class GLCanvas {
     }
 
     public void setColor(int color) {
-        float alpha = mTransformation.getAlpha();
+        float alpha = mAlpha;
         mGLState.setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
         mGLState.setFragmentColor(color, alpha);
     }
 
     public void drawLine(int x1, int y1, int x2, int y2) {
-        float matrix[] = mMatrixValues;
-        mTransformation.getMatrix().getValues(matrix);
         GL11 gl = mGL;
-        gl.glPushMatrix();
-        gl.glMultMatrixf(toGLMatrix(matrix), 0);
+        gl.glLoadMatrixf(mMatrixValues, 0);
         float buffer[] = mXyBuffer;
         buffer[0] = x1;
         buffer[1] = y1;
@@ -167,32 +155,34 @@ public class GLCanvas {
         buffer[3] = y2;
         mXyPointer.put(buffer, 0, 4).position(0);
         gl.glDrawArrays(GL11.GL_LINE_STRIP, 0, 2);
-        gl.glPopMatrix();
     }
 
     public void fillRect(Rect r) {
         fillRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
     }
 
-    public void fillRect(int x, int y, int width, int height) {
-        float matrix[] = mMatrixValues;
-        mTransformation.getMatrix().getValues(matrix);
-        fillRect(x, y, width, height, matrix);
+    public void translate(float x, float y, float z) {
+        Matrix.translateM(mMatrixValues, 0, x, y, z);
     }
 
-    private void fillRect(
-            int x, int y, int width, int height, float matrix[]) {
+    public void scale(float sx, float sy, float sz) {
+        Matrix.scaleM(mMatrixValues, 0, sx, sy, sz);
+    }
+
+    public void rotate(float angle, float x, float y, float z) {
+        Matrix.rotateM(mMatrixValues, 0, angle, x, y, z);
+    }
+
+    public void fillRect(int x, int y, int width, int height) {
         GL11 gl = mGL;
-        gl.glPushMatrix();
-        gl.glMultMatrixf(toGLMatrix(matrix), 0);
+        gl.glLoadMatrixf(mMatrixValues, 0);
         putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
         gl.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
-        gl.glPopMatrix();
     }
 
     public void drawNinePatch(
             NinePatchTexture tex, int x, int y, int width, int height) {
-        float alpha = mTransformation.getAlpha();
+        float alpha = mAlpha;
         NinePatchChunk chunk = tex.getNinePatchChunk();
 
         mGLState.setTexture2DEnabled(true);
@@ -216,14 +206,11 @@ public class GLCanvas {
         mGLState.setBlendEnabled(!tex.isOpaque() || alpha < OPAQUE_ALPHA);
 
         mGLState.setTextureAlpha(alpha);
-        Matrix matrix = mTransformation.getMatrix();
-        matrix.getValues(mMatrixValues);
+
         GL11 gl = mGL;
-        gl.glPushMatrix();
-        gl.glMultMatrixf(toGLMatrix(mMatrixValues), 0);
+        gl.glLoadMatrixf(mMatrixValues, 0);
         gl.glTranslatef(x, y, 0);
         drawMesh(divX, divY, divU, divV, nx, ny);
-        gl.glPopMatrix();
     }
 
     /**
@@ -368,50 +355,60 @@ public class GLCanvas {
                 idxCount, GL11.GL_UNSIGNED_BYTE, mIndexPointer);
     }
 
-    private float[] mapPoints(Matrix matrix, int x1, int y1, int x2, int y2) {
+    private float[] mapPoints(float matrix[], int x1, int y1, int x2, int y2) {
         float[] point = mXyBuffer;
-        point[0] = x1; point[1] = y1; point[2] = x2; point[3] = y2;
-        matrix.mapPoints(point, 0, point, 0, 4);
+        int srcOffset = 6;
+        point[srcOffset] = x1;
+        point[srcOffset + 1] = y1;
+        point[srcOffset + 2] = 0;
+        point[srcOffset + 3] = 1;
+
+        int resultOffset = 0;
+        Matrix.multiplyMV(point, resultOffset, matrix, 0, point, srcOffset);
+        point[resultOffset] /= point[resultOffset + 3];
+        point[resultOffset + 1] /= point[resultOffset + 3];
+
+        // map the second point
+        point[srcOffset] = x2;
+        point[srcOffset + 1] = y2;
+        resultOffset = 2;
+        Matrix.multiplyMV(point, resultOffset, matrix, 0, point, srcOffset);
+        point[resultOffset] /= point[resultOffset + 3];
+        point[resultOffset + 1] /= point[resultOffset + 3];
+
         return point;
     }
 
-    public void clipRect(int x, int y, int width, int height) {
-        float point[] = mapPoints(
-                mTransformation.getMatrix(), x, y + height, x + width, y);
+
+    public boolean clipRect(int left, int top, int right, int bottom) {
+        float point[] = mapPoints(mMatrixValues, left, top, right, bottom);
 
         // mMatrix could be a rotation matrix. In this case, we need to find
         // the boundaries after rotation. (only handle 90 * n degrees)
         if (point[0] > point[2]) {
-            x = (int) point[2];
-            width = (int) point[0] - x;
+            left = (int) point[2];
+            right = (int) point[0];
         } else {
-            x = (int) point[0];
-            width = (int) point[2] - x;
+            left = (int) point[0];
+            right = (int) point[2];
         }
         if (point[1] > point[3]) {
-            y = (int) point[3];
-            height = (int) point[1] - y;
+            top = (int) point[3];
+            bottom = (int) point[1];
         } else {
-            y = (int) point[1];
-            height = (int) point[3] - y;
+            top = (int) point[1];
+            bottom = (int) point[3];
         }
-        mGL.glScissor(x, y, width, height);
-    }
+        Rect clip = mClipRect;
 
-    public void clearClip() {
-        mGL.glScissor(0, 0, mWidth, mHeight);
-    }
-
-    private static float[] toGLMatrix(float v[]) {
-        v[15] = v[8]; v[13] = v[5]; v[5] = v[4]; v[4] = v[1];
-        v[12] = v[2]; v[1] = v[3]; v[3] = v[6];
-        v[2] = v[6] = v[8] = v[9] = 0;
-        v[10] = 1;
-        return v;
+        boolean intersect = clip.intersect(left, top, right, bottom);
+        if (!intersect) clip.set(0, 0, 0, 0);
+        mGL.glScissor(clip.left, clip.top, clip.width(), clip.height());
+        return intersect;
     }
 
     public void drawColor(int x, int y, int width, int height, int color) {
-        float alpha = mTransformation.getAlpha();
+        float alpha = mAlpha;
         mGLState.setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
         mGLState.setFragmentColor(color, alpha);
         fillRect(x, y, width, height);
@@ -419,9 +416,6 @@ public class GLCanvas {
 
     private void drawBoundTexture(
             BasicTexture texture, int x, int y, int width, int height) {
-        Matrix matrix = mTransformation.getMatrix();
-        matrix.getValues(mMatrixValues);
-
         // Test whether it has been rotated or flipped, if so, glDrawTexiOES
         // won't work
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
@@ -429,10 +423,11 @@ public class GLCanvas {
                     (texture.mWidth - 0.5f) / texture.mTextureWidth,
                     (texture.mHeight - 0.5f) / texture.mTextureHeight,
                     mUvBuffer, mUvPointer);
-            fillRect(x, y, width, height, mMatrixValues);
+            fillRect(x, y, width, height);
         } else {
             // draw the rect from bottom-left to top-right
-            float points[] = mapPoints(matrix, x, y + height, x + width, y);
+            float points[] = mapPoints(
+                    mMatrixValues, x, y + height, x + width, y);
             x = (int) points[0];
             y = (int) points[1];
             width = (int) points[2] - x;
@@ -446,7 +441,7 @@ public class GLCanvas {
 
     public void drawTexture(
             BasicTexture texture, int x, int y, int width, int height) {
-        drawTexture(texture, x, y, width, height, mTransformation.getAlpha());
+        drawTexture(texture, x, y, width, height, mAlpha);
     }
 
     public void drawTexture(BasicTexture texture,
@@ -462,7 +457,7 @@ public class GLCanvas {
 
     public void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int w, int h) {
-        drawMixed(from, to, ratio, x, y, w, h, mTransformation.getAlpha());
+        drawMixed(from, to, ratio, x, y, w, h, mAlpha);
     }
 
     private void setTextureColor(float r, float g, float b, float alpha) {
@@ -519,20 +514,24 @@ public class GLCanvas {
         gl.glActiveTexture(GL11.GL_TEXTURE0);
     }
 
+    // TODO: the code only work for 2D should get fixed for 3D or removed
+    private static final int MSKEW_X = 4;
+    private static final int MSKEW_Y = 1;
+    private static final int MSCALE_X = 0;
+    private static final int MSCALE_Y = 5;
+
     private static boolean isMatrixRotatedOrFlipped(float matrix[]) {
-        return matrix[Matrix.MSKEW_X] != 0 || matrix[Matrix.MSKEW_Y] != 0
-                || matrix[Matrix.MSCALE_X] < 0 || matrix[Matrix.MSCALE_Y] > 0;
+        return matrix[MSKEW_X] != 0 || matrix[MSKEW_Y] != 0
+                || matrix[MSCALE_X] < 0 || matrix[MSCALE_Y] > 0;
     }
 
     public void copyTexture2D(
             RawTexture texture, int x, int y, int width, int height) {
-        Matrix matrix = mTransformation.getMatrix();
-        matrix.getValues(mMatrixValues);
 
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
             throw new IllegalArgumentException("cannot support rotated matrix");
         }
-        float points[] = mapPoints(matrix, x, y + height, x + width, y);
+        float points[] = mapPoints(mMatrixValues, x, y + height, x + width, y);
         x = (int) points[0];
         y = (int) points[1];
         width = (int) points[2] - x;
@@ -694,6 +693,82 @@ public class GLCanvas {
         }
         if (array.size() > 0) {
             mGL.glDeleteTextures(array.size(), array.toArray(null), 0);
+        }
+    }
+
+    public int save() {
+        return save(ALL_SAVE_FLAG);
+    }
+
+    public int save(int saveFlags) {
+        ConfigState config = obtainRestoreConfig();
+
+        if ((saveFlags & ALPHA_SAVE_FLAG) != 0) {
+            config.mAlpha = mAlpha;
+        } else {
+            config.mAlpha = -1;
+        }
+
+        if ((saveFlags & CLIP_SAVE_FLAG) != 0) {
+            config.mRect.set(mClipRect);
+        } else {
+            config.mRect.left = Integer.MAX_VALUE;
+        }
+
+        if ((saveFlags & MATRIX_SAVE_FLAG) != 0) {
+            System.arraycopy(mMatrixValues, 0, config.mMatrix, 0, 16);
+        } else {
+            config.mMatrix[0] = Float.NEGATIVE_INFINITY;
+        }
+
+        mRestoreStack.push(config);
+        return mRestoreStack.size() - 1;
+    }
+
+    public void restore() {
+        if (mRestoreStack.isEmpty()) throw new IllegalStateException();
+        ConfigState config = mRestoreStack.pop();
+        config.restore(this);
+        freeRestoreConfig(config);
+    }
+
+    public void restoreToCount(int saveCount) {
+        while (mRestoreStack.size() > saveCount) {
+            restore();
+        }
+    }
+
+    private void freeRestoreConfig(ConfigState action) {
+        action.mNextFree = mRecycledRestoreAction;
+        mRecycledRestoreAction = action;
+    }
+
+    private ConfigState obtainRestoreConfig() {
+        if (mRecycledRestoreAction != null) {
+            ConfigState result = mRecycledRestoreAction;
+            mRecycledRestoreAction = result.mNextFree;
+            return result;
+        }
+        return new ConfigState();
+    }
+
+    private static class ConfigState {
+        float mAlpha;
+        Rect mRect = new Rect();
+        float mMatrix[] = new float[16];
+        ConfigState mNextFree;
+
+        public void restore(GLCanvas canvas) {
+            if (mAlpha >= 0) canvas.setAlpha(mAlpha);
+            if (mRect.left != Integer.MAX_VALUE) {
+                Rect rect = mRect;
+                canvas.mClipRect.set(rect);
+                canvas.mGL.glScissor(
+                        rect.left, rect.top, rect.width(), rect.height());
+            }
+            if (mMatrix[0] != Float.NEGATIVE_INFINITY) {
+                System.arraycopy(mMatrix, 0, canvas.mMatrixValues, 0, 16);
+            }
         }
     }
 }

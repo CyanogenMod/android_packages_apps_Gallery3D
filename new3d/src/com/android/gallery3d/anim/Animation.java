@@ -49,6 +49,10 @@ abstract public class Animation {
         mStartTime = ANIMATION_START;
     }
 
+    public void setStartTime(long time) {
+        mStartTime = time;
+    }
+
     public boolean isActive() {
         return mStartTime != NO_ANIMATION;
     }
@@ -58,11 +62,16 @@ abstract public class Animation {
         if (mStartTime == ANIMATION_START) mStartTime = currentTimeMillis;
         int elapse = (int) (currentTimeMillis - mStartTime);
         float x = Util.clamp((float) elapse / mDuration, 0f, 1f);
-        if (mInterpolator != null) x = mInterpolator.getInterpolation(x);
-        if (onCalculate(x)) return true;
-        mStartTime = NO_ANIMATION;
-        return false;
+        onCalculate(mInterpolator != null
+                ? mInterpolator.getInterpolation(x)
+                : x);
+        if (elapse >= mDuration) {
+            mStartTime = NO_ANIMATION;
+            return false;
+        } else {
+            return true;
+        }
     }
 
-    abstract protected boolean onCalculate(float progress);
+    abstract protected void onCalculate(float progress);
 }

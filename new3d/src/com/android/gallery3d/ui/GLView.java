@@ -16,12 +16,11 @@
 
 package com.android.gallery3d.ui;
 
-import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.SystemClock;
 import android.view.MotionEvent;
-import android.view.animation.Animation;
-import android.view.animation.Transformation;
+
+import com.android.gallery3d.anim.CanvasAnimation;
 
 import java.util.ArrayList;
 
@@ -45,7 +44,7 @@ public class GLView {
     private GLView mMotionTarget;
 
     private OnTouchListener mOnTouchListener;
-    private Animation mAnimation;
+    private CanvasAnimation mAnimation;
 
     protected int mViewFlags = 0;
 
@@ -60,13 +59,11 @@ public class GLView {
     protected int mScrollHeight = 0;
     protected int mScrollWidth = 0;
 
-    public void startAnimation(Animation animation) {
+    public void startAnimation(CanvasAnimation animation) {
         GLRootView root = getGLRootView();
         if (root == null) throw new IllegalStateException();
 
         mAnimation = animation;
-        animation.initialize(getWidth(),
-                getHeight(), mParent.getWidth(), mParent.getHeight());
         mAnimation.start();
         root.registerLaunchedAnimation(mAnimation);
         invalidate();
@@ -203,25 +200,21 @@ public class GLView {
         int xoffset = component.mBounds.left - mScrollX;
         int yoffset = component.mBounds.top - mScrollY;
 
-        Transformation transform = canvas.getTransformation();
-        Matrix matrix = transform.getMatrix();
-        matrix.preTranslate(xoffset, yoffset);
+        canvas.translate(xoffset, yoffset, 0);
 
-        Animation anim = component.mAnimation;
+        CanvasAnimation anim = component.mAnimation;
         if (anim != null) {
-            long now = canvas.currentAnimationTimeMillis();
-            Transformation temp = canvas.obtainTransformation();
-            if (!anim.getTransformation(now, temp)) {
+            canvas.save(anim.getCanvasSaveFlags());
+            if (anim.calculate(canvas.currentAnimationTimeMillis())) {
+                invalidate();
+            } else {
                 component.mAnimation = null;
             }
-            invalidate();
-            canvas.pushTransform();
-            transform.compose(temp);
-            canvas.freeTransformation(temp);
+            anim.apply(canvas);
         }
         component.render(canvas);
-        if (anim != null) canvas.popTransform();
-        matrix.preTranslate(-xoffset, -yoffset);
+        if (anim != null) canvas.restore();
+        canvas.translate(-xoffset, -yoffset, 0);
     }
 
     protected boolean onTouch(MotionEvent event) {

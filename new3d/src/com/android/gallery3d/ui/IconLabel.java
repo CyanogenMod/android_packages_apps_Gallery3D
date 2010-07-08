@@ -4,7 +4,6 @@ import static com.android.gallery3d.ui.Util.dpToPixel;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.view.animation.Transformation;
 
 public class IconLabel extends GLView {
 
@@ -91,9 +90,8 @@ public class IconLabel extends GLView {
 
         int xoffset = p.left;
 
-        Transformation trans = canvas.getTransformation();
-        float oldAlpha = trans.getAlpha();
-        trans.setAlpha(oldAlpha * (mEnabled ? ENABLED_ALPHA : DISABLED_ALPHA));
+        float oldAlpha = canvas.getAlpha();
+        canvas.multiplyAlpha(mEnabled ? ENABLED_ALPHA : DISABLED_ALPHA);
 
         BasicTexture icon = mIcon;
         if (icon != null) {
@@ -110,7 +108,7 @@ public class IconLabel extends GLView {
         //TODO: cut the text if it is too long
         title.draw(canvas, xoffset, yoffset);
 
-        trans.setAlpha(oldAlpha);
+        canvas.setAlpha(oldAlpha);
     }
 
     public void setEnabled(boolean enabled) {
