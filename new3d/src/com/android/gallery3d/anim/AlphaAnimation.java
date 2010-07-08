@@ -23,7 +23,7 @@ public class AlphaAnimation extends CanvasAnimation {
 
     @Override
     public int getCanvasSaveFlags() {
-        return GLCanvas.ALPHA_SAVE_FLAG;
+        return GLCanvas.SAVE_FLAG_ALPHA;
     }
 
     @Override

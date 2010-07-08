@@ -167,7 +167,7 @@ public class GLRootView extends GLSurfaceView
             Log.i(TAG, "GLObject has changed from " + mGL + " to " + gl);
         }
         mGL = gl;
-        mCanvas = new GLCanvas(gl);
+        mCanvas = new GLCanvasImp(gl);
         if (!ENABLE_FPS_TEST) {
             setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         } else {
@@ -207,7 +207,7 @@ public class GLRootView extends GLSurfaceView
 
         if ((mFlags & FLAG_NEED_LAYOUT) != 0) layoutContentPane();
         mCanvas.clearBuffer();
-        mCanvas.setCurrentTimeMillis(SystemClock.uptimeMillis());
+        mCanvas.setCurrentAnimationTimeMillis(SystemClock.uptimeMillis());
         if (mContentView != null) {
            mContentView.render(mCanvas);
         }

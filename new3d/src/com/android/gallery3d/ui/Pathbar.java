@@ -251,7 +251,7 @@ public class Pathbar extends GLView {
             int degrees = mProgressStep * 360 / PROGRESS_STEP_COUNT;
             int pivotX = offsetX + icon.getWidth() / 2;
             int pivotY = offsetY + icon.getHeight() / 2;
-            canvas.save(GLCanvas.MATRIX_SAVE_FLAG);
+            canvas.save(GLCanvas.SAVE_FLAG_MATRIX);
             canvas.translate(pivotX, pivotY, 0);
             canvas.rotate(degrees, 0, 0, 1);
             canvas.translate(-pivotX, -pivotY, 0);
