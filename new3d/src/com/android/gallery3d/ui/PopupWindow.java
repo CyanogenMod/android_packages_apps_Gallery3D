@@ -19,11 +19,12 @@ package com.android.gallery3d.ui;
 import android.graphics.Rect;
 import android.util.Log;
 import android.view.View.MeasureSpec;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
 import android.view.animation.OvershootInterpolator;
-import android.view.animation.ScaleAnimation;
+
+import com.android.gallery3d.anim.AlphaAnimation;
+import com.android.gallery3d.anim.AnimationSet;
+import com.android.gallery3d.anim.CanvasAnimation;
+import com.android.gallery3d.anim.ScaleAnimation;
 
 import javax.microedition.khronos.opengles.GL11;
 
@@ -202,11 +203,10 @@ class PopupWindow extends GLView {
     public void popup() {
         setVisibility(GLView.VISIBLE);
 
-        AnimationSet set = new AnimationSet(false);
-        Animation scale = new ScaleAnimation(
+        AnimationSet set = new AnimationSet();
+        CanvasAnimation scale = new ScaleAnimation(
                 0.7f, 1f, 0.7f, 1f, mAnchorPosition, getHeight());
-        Animation alpha = new AlphaAnimation(0.5f, 1.0f);
-
+        CanvasAnimation alpha = new AlphaAnimation(0.5f, 1.0f);
         set.addAnimation(scale);
         set.addAnimation(alpha);
         scale.setDuration(150);
@@ -217,7 +217,7 @@ class PopupWindow extends GLView {
 
     public void popoff() {
         setVisibility(GLView.INVISIBLE);
-        Animation alpha = new AlphaAnimation(0.7f, 0.0f);
+        AlphaAnimation alpha = new AlphaAnimation(0.7f, 0.0f);
         alpha.setDuration(100);
         startAnimation(alpha);
     }
