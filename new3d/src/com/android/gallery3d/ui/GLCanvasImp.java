@@ -48,6 +48,7 @@ public class GLCanvasImp implements GLCanvas {
     private long mAnimationTime;
 
     private float mAlpha;
+    private int mBoundColor;
     private final Rect mClipRect = new Rect();
     private final Stack<ConfigState> mRestoreStack =
             new Stack<ConfigState>();
@@ -140,13 +141,13 @@ public class GLCanvasImp implements GLCanvas {
         pointer.put(buffer, 0, 8).position(0);
     }
 
-    public void setColor(int color) {
-        float alpha = mAlpha;
-        mGLState.setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
-        mGLState.setFragmentColor(color, alpha);
+    public void bindColor(int color) {
+        mBoundColor = color;
+        mGLState.setTexture2DEnabled(false);
     }
 
     public void drawLine(int x1, int y1, int x2, int y2) {
+        mGLState.setColorAlpha(mBoundColor, mAlpha);
         GL11 gl = mGL;
         gl.glLoadMatrixf(mMatrixValues, 0);
         float buffer[] = mXyBuffer;
@@ -175,6 +176,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void fillRect(int x, int y, int width, int height) {
+        mGLState.setColorAlpha(mBoundColor, mAlpha);
         GL11 gl = mGL;
         gl.glLoadMatrixf(mMatrixValues, 0);
         putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
@@ -185,8 +187,6 @@ public class GLCanvasImp implements GLCanvas {
             NinePatchTexture tex, int x, int y, int width, int height) {
         float alpha = mAlpha;
         NinePatchChunk chunk = tex.getNinePatchChunk();
-
-        mGLState.setTexture2DEnabled(true);
 
         // The code should be easily extended to handle the general cases by
         // allocating more space for buffers. But let's just handle the only
@@ -204,8 +204,8 @@ public class GLCanvasImp implements GLCanvas {
 
         int nx = stretch(divX, divU, chunk.mDivX, tex.getWidth(), width);
         int ny = stretch(divY, divV, chunk.mDivY, tex.getHeight(), height);
-        mGLState.setBlendEnabled(!tex.isOpaque() || alpha < OPAQUE_ALPHA);
 
+        mGLState.setBlendEnabled(!tex.isOpaque() || alpha < OPAQUE_ALPHA);
         mGLState.setTextureAlpha(alpha);
 
         GL11 gl = mGL;
@@ -407,13 +407,6 @@ public class GLCanvasImp implements GLCanvas {
         return intersect;
     }
 
-    public void drawColor(int x, int y, int width, int height, int color) {
-        float alpha = mAlpha;
-        mGLState.setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
-        mGLState.setFragmentColor(color, alpha);
-        fillRect(x, y, width, height);
-    }
-
     private void drawBoundTexture(
             BasicTexture texture, int x, int y, int width, int height) {
         // Test whether it has been rotated or flipped, if so, glDrawTexiOES
@@ -432,6 +425,7 @@ public class GLCanvasImp implements GLCanvas {
             y = (int) points[1];
             width = (int) points[2] - x;
             height = (int) points[3] - y;
+            mGLState.setTextureAlpha(mAlpha);
             if (width > 0 && height > 0) {
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
             }
@@ -449,15 +443,18 @@ public class GLCanvasImp implements GLCanvas {
         if (width <= 0 || height <= 0) return ;
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
-        mGLState.setTexture2DEnabled(true);
         texture.bind(this);
-        mGLState.setTextureAlpha(alpha);
         drawBoundTexture(texture, x, y, width, height);
     }
 
     public void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int w, int h) {
         drawMixed(from, to, ratio, x, y, w, h, mAlpha);
+    }
+
+    public void bindTexture(BasicTexture texture) {
+        mGLState.setTexture2DEnabled(true);
+        mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.mId);
     }
 
     private void setTextureColor(float r, float g, float b, float alpha) {
@@ -477,8 +474,6 @@ public class GLCanvasImp implements GLCanvas {
             throw new RuntimeException("Cannot support alpha value");
         }
         mGLState.setBlendEnabled(!from.isOpaque() || !to.isOpaque());
-        mGLState.setTextureAlpha(1);
-        mGLState.setTexture2DEnabled(true);
 
         final GL11 gl = mGL;
         from.bind(this);
@@ -614,6 +609,15 @@ public class GLCanvasImp implements GLCanvas {
             mGL.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, mode);
         }
 
+        public void setColorAlpha(int color, float alpha) {
+            if (mTexture2DEnabled) {
+                setTextureAlpha(alpha);
+            } else {
+                setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
+                setFragmentColor(color, alpha);
+            }
+        }
+
         public void setTextureAlpha(float alpha) {
             if (mTextureAlpha == alpha) return;
             mTextureAlpha = alpha;
@@ -633,6 +637,7 @@ public class GLCanvasImp implements GLCanvas {
             mTextureAlpha = -1.0f;
 
             setTexture2DEnabled(false);
+
             float prealpha = (color >>> 24) * alpha * 65535f / 255f / 255f;
             mGL.glColor4x(
                     Math.round(((color >> 16) & 0xFF) * prealpha),

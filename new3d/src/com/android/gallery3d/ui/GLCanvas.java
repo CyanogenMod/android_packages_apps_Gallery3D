@@ -2,7 +2,6 @@ package com.android.gallery3d.ui;
 
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.view.animation.Transformation;
 
 import java.util.Collection;
 
@@ -31,9 +30,9 @@ public interface GLCanvas {
     public void setCurrentAnimationTimeMillis(long time);
     public long currentAnimationTimeMillis();
 
-    // Sets the current drawing color used for drawLine and fillRect.
-    // The format is 0xaarrggbb.
-    public void setColor(int color);
+    // Bindss the current drawing color to the canvas. It will be used for
+    // drawLine and fillRect. The format is 0xaarrggbb.
+    public void bindColor(int color);
 
     // Sets and gets the current alpha, alpha must be in [0, 1].
     public void setAlpha(float alpha);
@@ -109,4 +108,8 @@ public interface GLCanvas {
 
     // Gets the underlying GL instance. This is used when
     public GL11 getGLInstance();
+
+    // Binds the texture to the canvas for the following drawing calls. This
+    // function should only be called in Texture.
+    public void bindTexture(BasicTexture texture);
 }
