@@ -60,6 +60,8 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void setSize(int width, int height) {
+        Util.Assert(width >= 0 && height >= 0);
+
         GL11 gl = mGL;
         gl.glViewport(0, 0, width, height);
         gl.glMatrixMode(GL11.GL_PROJECTION);
@@ -86,10 +88,12 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void setAlpha(float alpha) {
+        Util.Assert(alpha >= 0 && alpha <= 1);
         mAlpha = alpha;
     }
 
     public void multiplyAlpha(float alpha) {
+        Util.Assert(alpha >= 0 && alpha <= 1);
         mAlpha *= alpha;
     }
 
@@ -628,11 +632,12 @@ public class GLCanvasImp implements GLCanvas {
             mTextureAlpha = -1.0f;
 
             setTexture2DEnabled(false);
-            int prealpha = (int) ((color >>> 24) * alpha + 0.5);
+            float prealpha = (color >>> 24) * alpha * 65535f / 255f / 255f;
             mGL.glColor4x(
-                    ((color >> 16) & 0xFF) * prealpha,
-                    ((color >> 8) & 0xFF) * prealpha,
-                    (color & 0xFF) * prealpha, prealpha << 8);
+                    Math.round(((color >> 16) & 0xFF) * prealpha),
+                    Math.round(((color >> 8) & 0xFF) * prealpha),
+                    Math.round((color & 0xFF) * prealpha),
+                    Math.round(255 * prealpha));
         }
 
         public void setTexture2DEnabled(boolean enabled) {
@@ -661,7 +666,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void setCurrentAnimationTimeMillis(long time) {
-        if (time < 0) throw new IllegalArgumentException("time must be nonnegative");
+        Util.Assert(time >= 0);
         mAnimationTime = time;
     }
 
