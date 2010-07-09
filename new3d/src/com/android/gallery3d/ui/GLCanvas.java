@@ -18,7 +18,8 @@ public interface GLCanvas {
     // Tells GLCanvas the size of the underlying GL surface. This should be
     // called before first drawing and when the size of GL surface is changed.
     // This is called by GLRootView and should not be called by the clients
-    // who only want to draw on the GLCanvas.
+    // who only want to draw on the GLCanvas. Both width and height must be
+    // nonnegative.
     public void setSize(int width, int height);
 
     // Clear the drawing buffers. This should only be used by GLRootView.
@@ -31,9 +32,10 @@ public interface GLCanvas {
     public long currentAnimationTimeMillis();
 
     // Sets the current drawing color used for drawLine and fillRect.
+    // The format is 0xaarrggbb.
     public void setColor(int color);
 
-    // Sets and gets the current alpha
+    // Sets and gets the current alpha, alpha must be in [0, 1].
     public void setAlpha(float alpha);
     public float getAlpha();
 
