@@ -1,21 +1,15 @@
 package com.android.gallery3d.data;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
-import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.provider.MediaStore.Images;
-import android.provider.MediaStore.Video;
-import android.util.Log;
+import android.graphics.Canvas;
+import android.graphics.Bitmap.Config;
+
+import com.android.gallery3d.ui.Util;
 
 public class Utils {
-    private static final String TAG = "Utils";
-
     public static final int UNCONSTRAINED = -1;
+    private static final String TAG = "Utils";
 
     /*
      * Compute the sample size as a function of minSideLength
@@ -38,125 +32,49 @@ public class Utils {
      */
     public static int computeSampleSize(BitmapFactory.Options options,
             int minSideLength, int maxNumOfPixels) {
-        int initialSize = computeInitialSampleSize(options, minSideLength,
-                maxNumOfPixels);
+        int initialSize = computeInitialSampleSize(
+                options, minSideLength, maxNumOfPixels);
 
-        int roundedSize;
-        if (initialSize <= 8 ) {
-            roundedSize = 1;
-            while (roundedSize < initialSize) {
-                roundedSize <<= 1;
-            }
-        } else {
-            roundedSize = (initialSize + 7) / 8 * 8;
-        }
-
-        return roundedSize;
+        return initialSize <= 8
+                ? Util.nextPowerOf2(initialSize)
+                : (initialSize + 7) / 8 * 8;
     }
 
-    public static int computeInitialSampleSize(BitmapFactory.Options options,
+    private static int computeInitialSampleSize(BitmapFactory.Options options,
             int minSideLength, int maxNumOfPixels) {
-        double w = options.outWidth;
-        double h = options.outHeight;
+        if (maxNumOfPixels == UNCONSTRAINED && minSideLength == UNCONSTRAINED) {
+            return 1;
+        }
+
+        int w = options.outWidth;
+        int h = options.outHeight;
 
         int lowerBound = (maxNumOfPixels == UNCONSTRAINED) ? 1 :
-                (int) Math.ceil(Math.sqrt(w * h / maxNumOfPixels));
-        int upperBound = (minSideLength == UNCONSTRAINED) ? 128 :
-                (int) Math.min(Math.floor(w / minSideLength),
-                Math.floor(h / minSideLength));
+                (int) Math.ceil(Math.sqrt((double) (w * h) / maxNumOfPixels));
 
-        if (upperBound < lowerBound) {
-            // return the larger one when there is no overlapping zone.
-            return lowerBound;
-        }
-
-        if ((maxNumOfPixels == UNCONSTRAINED) &&
-                (minSideLength == UNCONSTRAINED)) {
-            return 1;
-        } else if (minSideLength == UNCONSTRAINED) {
+        if (minSideLength == UNCONSTRAINED) {
             return lowerBound;
         } else {
-            return upperBound;
+            int sampeSize = Math.min(w / minSideLength, h / minSideLength);
+            return Math.max(sampeSize, lowerBound);
         }
     }
 
-    public static Bitmap generateBitmap(String filePath, int targetSideLength,
-            int maxNumOfPixels) {
-        FileInputStream stream;
-        try {
-            stream = new FileInputStream(filePath);
-        } catch (FileNotFoundException e) {
-            Log.i(TAG, "Cannot open file: " + filePath, e);
-            return null;
-        }
-        BufferedInputStream bufferedInput = new BufferedInputStream(stream);
+    public static Bitmap resize(Bitmap original, int targetPixels) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        float scale = (float) Math.sqrt(
+                (double) targetPixels / (width * height));
+        if (scale >= 1.0f) return original;
 
-        // Decode bufferedInput for calculating a sample size.
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        int minSideLength = targetSideLength / 2;
-        bufferedInput.mark(10 * 1000);
-        options.inSampleSize =  Utils.computeSampleSize(options, minSideLength,
-                maxNumOfPixels);
-        try {
-            bufferedInput.reset();
-        } catch (IOException e) {
-            Log.i(TAG, "Cannot reset BufferedInputStream: " + filePath, e);
-            return null;
-        }
-
-        // Decode bufferedInput again for getting the pixels
-        options.inJustDecodeBounds = false;
-        Thread timeoutThread = new Thread("BitmapTimeoutThread") {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(6000);
-                    options.requestCancelDecode();
-                } catch (InterruptedException e) {
-                }
-            }
-        };
-        timeoutThread.start();
-
-        return BitmapFactory.decodeStream(bufferedInput, null, options);
-    }
-
-    public static Bitmap getImageThumbnail(final ContentResolver cr,
-            final long imageId, int kind) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-
-        Thread timeoutThread = new Thread("GetThumbnailTimeoutThread") {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(6000);
-                    Images.Thumbnails.cancelThumbnailRequest(cr, imageId);
-                } catch (InterruptedException e) {
-                }
-            }
-        };
-        timeoutThread.start();
-
-        return Images.Thumbnails.getThumbnail(cr, imageId, kind, options);
-    }
-
-    public static Bitmap getVideoThumbnail(final ContentResolver cr,
-            final long videoId, int kind) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-
-        Thread timeoutThread = new Thread("GetThumbnailTimeoutThread") {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(6000);
-                    Video.Thumbnails.cancelThumbnailRequest(cr, videoId);
-                } catch (InterruptedException e) {
-                }
-            }
-        };
-        timeoutThread.start();
-
-        return Video.Thumbnails.getThumbnail(cr, videoId, kind, options);
+        int scaledWidth = (int) (width * scale + 0.5f);
+        int scaledHeight = (int) (height * scale + 0.5f);
+        Bitmap bitmap = Bitmap.createBitmap(scaledWidth, scaledHeight,
+                original.hasAlpha() ? Config.ARGB_8888 : Config.RGB_565);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.scale((float) scaledWidth / width, (float) scaledHeight / height);
+        canvas.drawBitmap(original, 0, 0, null);
+        original.recycle();
+        return bitmap;
     }
 }

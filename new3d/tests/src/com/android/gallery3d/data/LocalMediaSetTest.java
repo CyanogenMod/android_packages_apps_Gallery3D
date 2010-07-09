@@ -16,9 +16,7 @@
 
 package com.android.gallery3d.data;
 
-import android.content.ContentResolver;
 import android.graphics.Bitmap;
-import android.util.Log;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import junit.framework.TestCase;
@@ -40,8 +38,10 @@ public class LocalMediaSetTest extends TestCase {
     private static class MyMediaItem implements MediaItem {
         public String getMediaUri() { return ""; }
         public String getTitle() { return ""; }
-        public Bitmap getImage(ContentResolver cr, int type) { return null; }
+        public Bitmap getImage(int type) { return null; }
         public void setListener(MediaItemListener listener) {}
+        public int requestImage(int type) {return 0;}
+        public void cancelImageRequest(int type) {}
     }
 
     public void testOneItem() {

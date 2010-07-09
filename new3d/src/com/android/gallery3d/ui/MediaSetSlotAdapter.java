@@ -1,5 +1,10 @@
 package com.android.gallery3d.ui;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Rect;
+
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
@@ -8,11 +13,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
-
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Rect;
-
 import java.util.Random;
 
 public class MediaSetSlotAdapter implements SlotView.Model {
@@ -28,38 +28,30 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private final Random mRandom = new Random();
 
     private final MediaSet mRootSet;
-    private final Context mContext;
+    private final Texture mWaitLoadingTexture;
 
-    private Map<Integer, MyDisplayItem[]> mItemsetMap =
+    private final Map<Integer, MyDisplayItem[]> mItemsetMap =
             new HashMap<Integer, MyDisplayItem[]>(INITIAL_CACHE_CAPACITY);
-    private LinkedHashSet<Integer> mLruSlot =
+    private final LinkedHashSet<Integer> mLruSlot =
             new LinkedHashSet<Integer>(INITIAL_CACHE_CAPACITY);
+    private final SlotView mSlotView;
 
-    public MediaSetSlotAdapter(Context context, MediaSet rootSet) {
-        mContext = context;
+    public MediaSetSlotAdapter(
+            Context context, MediaSet rootSet, SlotView view) {
         mRootSet = rootSet;
         mFrame = new NinePatchTexture(context, R.drawable.stack_frame);
-        Random random = mRandom;
+        ColorTexture gray = new ColorTexture(Color.GRAY);
+        gray.setSize(64, 48);
+        mWaitLoadingTexture = gray;
+        mSlotView = view;
     }
 
     public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
+
         // Get displayItems from mItemsetMap or create them from MediaSet.
         MyDisplayItem[] displayItems = mItemsetMap.get(slotIndex);
         if (displayItems == null) {
-            MediaSet set = mRootSet.getSubMediaSet(slotIndex);
-            MediaItem[] items = set.getCoverMediaItems();
-
-            displayItems = new MyDisplayItem[items.length];
-            for (int i = 0; i < items.length; ++i) {
-                Bitmap bitmap = items[i].getImage(mContext.getContentResolver(),
-                        MediaItem.TYPE_THUMBNAIL);
-
-                // TODO: Need to replace BitmapTexture with something else
-                // whose bitmap is freeable.
-                displayItems[i] = new MyDisplayItem(
-                        new BitmapTexture(bitmap), mFrame);
-            }
-            addSlotToCache(slotIndex, displayItems);
+            displayItems = createDisplayItems(slotIndex);
         }
 
         // Put displayItems to the panel.
@@ -81,6 +73,32 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             panel.putDisplayItem(displayItems[i], itemX, y + dy, theta);
         }
         panel.putDisplayItem(displayItems[0], x, y, 0);
+    }
+
+    private MyDisplayItem[] createDisplayItems(int slotIndex) {
+        MediaSet set = mRootSet.getSubMediaSet(slotIndex);
+        MediaItem[] items = set.getCoverMediaItems();
+
+        MyDisplayItem[] displayItems = new MyDisplayItem[items.length];
+        for (int i = 0; i < items.length; ++i) {
+            items[i].setListener(new MyMediaItemListener(slotIndex, i));
+            switch (items[i].requestImage(MediaItem.TYPE_MICROTHUMBNAIL)) {
+                case MediaItem.IMAGE_READY:
+                    Bitmap bitmap =
+                            items[i].getImage(MediaItem.TYPE_MICROTHUMBNAIL);
+                    // TODO: Need to replace BitmapTexture with something else
+                    // whose bitmap is freeable.
+                    displayItems[i] = new MyDisplayItem(
+                            new BitmapTexture(bitmap), mFrame);
+                    break;
+                default:
+                    displayItems[i] =
+                            new MyDisplayItem(mWaitLoadingTexture, mFrame);
+                    break;
+            }
+        }
+        addSlotToCache(slotIndex, displayItems);
+        return displayItems;
     }
 
     private void addSlotToCache(int slotIndex, MyDisplayItem[] displayItems) {
@@ -108,16 +126,47 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         return mRootSet.getSubMediaSetCount();
     }
 
+    private class MyMediaItemListener implements MediaItem.MediaItemListener {
+
+        private final int mSlotIndex;
+        private final int mItemIndex;
+
+        public MyMediaItemListener(int slotIndex, int itemIndex) {
+            mSlotIndex = slotIndex;
+            mItemIndex = itemIndex;
+        }
+
+        @Override
+        public void onImageCanceled(MediaItem abstractMediaItem, int type) {
+            // Do nothing
+        }
+
+        @Override
+        public void onImageError(MediaItem item, int type, Throwable error) {
+            // Do nothing
+        }
+
+        @Override
+        public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
+            MyDisplayItem[] items = mItemsetMap.get(mSlotIndex);
+            items[mItemIndex].updateContent(new BitmapTexture(bitmap));
+            mSlotView.notifyDataInvalidate();
+        }
+    }
+
     private static class MyDisplayItem extends DisplayItem {
 
-        private final BasicTexture mContent;
+        private Texture mContent;
         private final NinePatchTexture mFrame;
 
-        public MyDisplayItem(BasicTexture content, NinePatchTexture frame) {
-            mContent = content;
+        public MyDisplayItem(Texture content, NinePatchTexture frame) {
             mFrame = frame;
+            updateContent(content);
+        }
 
-            Rect p = frame.getPaddings();
+        public void updateContent(Texture content) {
+            mContent = content;
+            Rect p = mFrame.getPaddings();
 
             int width = mContent.getWidth();
             int height = mContent.getHeight();
