@@ -59,6 +59,8 @@ public class GLCanvasImp implements GLCanvas {
         initialize();
     }
 
+    private int mClipRetryCount = 0;
+
     public void setSize(int width, int height) {
         Util.Assert(width >= 0 && height >= 0);
 
@@ -80,7 +82,7 @@ public class GLCanvasImp implements GLCanvas {
         Matrix.scaleM(matrix, 0, 1, -1, 1);
 
         mClipRect.set(0, 0, width, height);
-        gl.glScissor(0, 0, width, height);
+        mClipRetryCount = 2;
     }
 
     public long currentAnimationTimeMillis() {
@@ -378,7 +380,6 @@ public class GLCanvasImp implements GLCanvas {
         return point;
     }
 
-
     public boolean clipRect(int left, int top, int right, int bottom) {
         float point[] = mapPoints(mMatrixValues, left, top, right, bottom);
 
@@ -671,6 +672,15 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void clearBuffer() {
+        // OpenGL seems having a bug causing us not being able to reset the
+        // scissor box in "setSize()". We have to do it in the second
+        // onDrawFrame().
+        if (mClipRetryCount > 0) {
+            --mClipRetryCount;
+            Rect clip = mClipRect;
+            mGL.glScissor(clip.left, clip.top, clip.width(), clip.height());
+        }
+
         mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
     }
 
