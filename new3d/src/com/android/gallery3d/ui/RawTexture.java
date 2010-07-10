@@ -45,7 +45,7 @@ class RawTexture extends BasicTexture {
         if (mGL != gl) {
             throw new RuntimeException("cannot bind to different GL");
         }
-        gl.glBindTexture(GL11.GL_TEXTURE_2D, getId());
+        canvas.bindTexture(this);
     }
 
     public void drawBack(GLCanvas canvas, int x, int y, int w, int h) {

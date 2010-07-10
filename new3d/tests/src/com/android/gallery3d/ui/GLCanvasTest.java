@@ -3,11 +3,13 @@ package com.android.gallery3d.ui;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
+import junit.framework.TestCase;
+
 import java.nio.Buffer;
 import java.util.Arrays;
+
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
-import junit.framework.TestCase;
 
 @SmallTest
 public class GLCanvasTest extends TestCase {
@@ -138,7 +140,7 @@ public class GLCanvasTest extends TestCase {
             GLCanvas canvas = new GLCanvasImp(this);
             // Test one color to make sure blend is called.
             assertEquals(0, mCalled);
-            canvas.setColor(0x7F804020);
+            canvas.bindColor(0x7F804020);
             canvas.drawLine(0, 0, 1, 1);
             assertTrue(mBlendCalled);
             assertEquals(1, mCalled);
@@ -153,7 +155,7 @@ public class GLCanvasTest extends TestCase {
                 int pre = makeColor4f(a * r, a * g, a * b, a);
 
                 mCalled = 0;
-                canvas.setColor(c);
+                canvas.bindColor(c);
                 canvas.drawLine(0, 0, 1, 1);
                 assertEquals(1, mCalled);
                 assertEquals(pre, mCalledColor);
@@ -237,7 +239,7 @@ public class GLCanvasTest extends TestCase {
             GLCanvas canvas = new GLCanvasImp(this);
 
             assertEquals(0, mCalled);
-            canvas.setColor(0xFF804020);
+            canvas.bindColor(0xFF804020);
             canvas.setAlpha(0.48f);
             canvas.drawLine(0, 0, 1, 1);
             assertTrue(mBlendCalled);
@@ -257,7 +259,7 @@ public class GLCanvasTest extends TestCase {
         private int mCalledColor;
         private boolean mBlendCalled;
         private PointerInfo mVertexPointer;
-        private int[] mResult = new int[4];
+        private final int[] mResult = new int[4];
 
         @Override
         public void glVertexPointer(int size, int type, int stride, Buffer pointer) {
