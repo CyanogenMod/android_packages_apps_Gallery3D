@@ -277,8 +277,18 @@ public final class Gallery extends Activity {
         if (mGridLayer != null) {
             mGridLayer.markDirty(30);
         }
-        if (mRenderView != null)
-            mRenderView.requestRender();
+        if (mRenderView != null) {
+            if (getResources().getBoolean(R.bool.reload_on_orientation_change)) {
+                // FILTHY, DIRTY, UGLY HACK.
+                mRenderView.shutdown();
+                mRenderView = new RenderView(this);
+                mRenderView.setRootLayer(mGridLayer);
+                setContentView(mRenderView);
+                mRenderView.onResume();
+            } else {
+                mRenderView.requestRender();
+            }
+        }
         Log.i(TAG, "onConfigurationChanged");
     }
 
