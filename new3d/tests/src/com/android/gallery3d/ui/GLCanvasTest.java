@@ -258,14 +258,20 @@ public class GLCanvasTest extends TestCase {
     }
 
     // This test assumes the drawLine() function use glDrawArrays() with
-    // LINE_STRIP mode to/ draw the line and the input coordinates are used
+    // GL_LINE_STRIP mode to draw the line and the input coordinates are used
     // directly.
     private static class DrawLineTest extends GLStub {
         private int mCalled = 0;
-        private int mCalledColor;
-        private boolean mBlendCalled;
+        private boolean mVertexArrayEnabled;
         private PointerInfo mVertexPointer;
         private final int[] mResult = new int[4];
+
+        @Override
+        public void glEnableClientState(int array) {
+            if (array == GL10.GL_VERTEX_ARRAY) {
+               mVertexArrayEnabled = true;
+            }
+        }
 
         @Override
         public void glVertexPointer(int size, int type, int stride, Buffer pointer) {
@@ -293,12 +299,89 @@ public class GLCanvasTest extends TestCase {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
             canvas.drawLine(2, 7, 1, 8);
+            assertTrue(mVertexArrayEnabled);
             assertEquals(1, mCalled);
 
             Log.v(TAG, "result = " + Arrays.toString(mResult));
             int[] answer = new int[] {2, 7, 1, 8};
             for (int i = 0; i < answer.length; i++) {
                 assertEquals(answer[i], mResult[i]);
+            }
+        }
+    }
+
+    @SmallTest
+    public void testFillRect() {
+        new FillRectTest().run();
+    }
+
+    // This test assumes the drawLine() function use glDrawArrays() with
+    // GL_TRIANGLE_STRIP mode to draw the line and the input coordinates
+    // are used directly.
+    private static class FillRectTest extends GLStub {
+        private int mCalled = 0;
+        private boolean mVertexArrayEnabled;
+        private PointerInfo mVertexPointer;
+        private int[] mResult = new int[8];
+
+        @Override
+        public void glEnableClientState(int array) {
+            if (array == GL10.GL_VERTEX_ARRAY) {
+               mVertexArrayEnabled = true;
+            }
+        }
+
+        @Override
+        public void glVertexPointer(int size, int type, int stride, Buffer pointer) {
+            mVertexPointer = new PointerInfo(size, type, stride, pointer);
+        }
+
+        @Override
+        public void glDrawArrays(int mode, int first, int count) {
+            assertNotNull(mVertexPointer);
+            assertEquals(GL10.GL_TRIANGLE_STRIP, mode);
+            assertEquals(4, count);
+            mVertexPointer.bindByteBuffer();
+
+            double[] coord = new double[4];
+            for (int i = 0; i < 4; i++) {
+                mVertexPointer.getArrayElement(first + i, coord);
+                mResult[i * 2 + 0] = (int) coord[0];
+                mResult[i * 2 + 1] = (int) coord[1];
+            }
+
+            mCalled++;
+        }
+
+        void run() {
+            GLCanvas canvas = new GLCanvasImp(this);
+            canvas.setSize(400, 300);
+            canvas.fillRect(2, 7, 1, 8);
+            assertTrue(mVertexArrayEnabled);
+            assertEquals(1, mCalled);
+            Log.v(TAG, "result = " + Arrays.toString(mResult));
+
+            // These are the four vertics that should be used.
+            int[] answer = new int[] {
+                2, 7,
+                3, 7,
+                3, 15,
+                2, 15};
+            int count[] = new int[4];
+
+            // Count the number of appearances for each vertex.
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    if (answer[i * 2] == mResult[j * 2] &&
+                        answer[i * 2 + 1] == mResult[j * 2 + 1]) {
+                        count[i]++;
+                    }
+                }
+            }
+
+            // Each vertex should appear exactly once.
+            for (int i = 0; i < 4; i++) {
+                assertEquals(1, count[i]);
             }
         }
     }
@@ -347,20 +430,17 @@ public class GLCanvasTest extends TestCase {
 
         @Override
         public void glOrthof(
-            float left,
-            float right,
-            float bottom,
-            float top,
-            float zNear,
-            float zFar ) {
-                float tx = - (right + left) / (right - left);
-                float ty = - (top + bottom) / (top - bottom);
+            float left, float right, float bottom, float top,
+            float zNear, float zFar) {
+            float tx = -(right + left) / (right - left);
+            float ty = -(top + bottom) / (top - bottom);
                 float tz = - (zFar + zNear) / (zFar - zNear);
-                float[] m = new float[] { 2/(right - left), 0, 0,  0,
-                                          0, 2/(top - bottom), 0,  0,
-                                          0, 0, -2/(zFar - zNear), 0,
-                                          tx, ty, tz, 1
-                                        };
+                float[] m = new float[] {
+                        2 / (right - left), 0, 0,  0,
+                        0, 2 / (top - bottom), 0,  0,
+                        0, 0, -2 / (zFar - zNear), 0,
+                        tx, ty, tz, 1
+                };
                 glLoadMatrixf(m, 0);
         }
 
@@ -383,56 +463,185 @@ public class GLCanvasTest extends TestCase {
 
             // Initial matrix
             canvas.drawLine(0, 0, 1, 1);
-            assertMatrixEq(new float[] {1,  0, 0, 0,
-                                        0, -1, 0, 0,
-                                        0,  0, 1, 0,
-                                        0, 50, 0, 1},
-                    mModelViewMatrixUsed);
+            assertMatrixEq(new float[] {
+                    1,  0, 0, 0,
+                    0, -1, 0, 0,
+                    0,  0, 1, 0,
+                    0, 50, 0, 1
+                    }, mModelViewMatrixUsed);
 
-            assertMatrixEq(new float[] {2f/40,    0,  0,  0,
-                                            0,2f/50,  0,  0,
-                                            0,    0, -1,  0,
-                                           -1,   -1,  0,  1},
-                    mProjectionMatrixUsed);
+            assertMatrixEq(new float[] {
+                    2f / 40,       0,  0, 0,
+                          0, 2f / 50,  0, 0,
+                          0,       0, -1, 0,
+                         -1,      -1,  0, 1
+                    }, mProjectionMatrixUsed);
 
             // Translation
             canvas.translate(3, 4, 5);
             canvas.drawLine(0, 0, 1, 1);
-            assertMatrixEq(new float[] {1,  0, 0, 0,
-                                        0, -1, 0, 0,
-                                        0,  0, 1, 0,
-                                        3, 46, 5, 1},
-                    mModelViewMatrixUsed);
+            assertMatrixEq(new float[] {
+                    1,  0, 0, 0,
+                    0, -1, 0, 0,
+                    0,  0, 1, 0,
+                    3, 46, 5, 1
+                    }, mModelViewMatrixUsed);
             canvas.save();
 
             // Scaling
             canvas.scale(0.7f, 0.6f, 0.5f);
             canvas.drawLine(0, 0, 1, 1);
-            assertMatrixEq(new float[] {0.7f,     0,    0, 0,
-                                           0, -0.6f,    0, 0,
-                                           0,     0, 0.5f, 0,
-                                           3,    46,    5, 1},
-                    mModelViewMatrixUsed);
+            assertMatrixEq(new float[] {
+                    0.7f,     0,    0, 0,
+                    0,    -0.6f,    0, 0,
+                    0,        0, 0.5f, 0,
+                    3,       46,    5, 1
+                    }, mModelViewMatrixUsed);
 
             // Rotation
             canvas.rotate(90, 0, 0, 1);
             canvas.drawLine(0, 0, 1, 1);
-            assertMatrixEq(new float[] {    0, -0.6f,    0, 0,
-                                        -0.7f,     0,    0, 0,
-                                            0,     0, 0.5f, 0,
-                                            3,    46,    5, 1},
-                    mModelViewMatrixUsed);
+            assertMatrixEq(new float[] {
+                        0, -0.6f,    0, 0,
+                    -0.7f,     0,    0, 0,
+                        0,     0, 0.5f, 0,
+                        3,    46,    5, 1
+                    }, mModelViewMatrixUsed);
             canvas.restore();
 
             // After restoring to the point just after translation,
             // do rotation again.
             canvas.rotate(180, 1, 0, 0);
             canvas.drawLine(0, 0, 1, 1);
-            assertMatrixEq(new float[] {  1,  0,  0, 0,
-                                          0,  1,  0, 0,
-                                          0,  0, -1, 0,
-                                          3, 46,  5, 1},
-                    mModelViewMatrixUsed);
+            assertMatrixEq(new float[] {
+                    1,  0,  0, 0,
+                    0,  1,  0, 0,
+                    0,  0, -1, 0,
+                    3, 46,  5, 1
+                    }, mModelViewMatrixUsed);
+        }
+    }
+
+    @SmallTest
+    public void testClipRect() {
+        new ClipRectTest().run();
+    }
+
+    private static class ClipRectTest extends GLStub {
+        int mX, mY, mWidth, mHeight;
+
+        @Override
+        public void glScissor(int x, int y, int width, int height) {
+            mX = x;
+            mY = 100 - y - height;  // flip in Y direction
+            mWidth = width;
+            mHeight = height;
+        }
+
+        private void assertClipRect(int x, int y, int width, int height) {
+            assertEquals(x, mX);
+            assertEquals(y, mY);
+            assertEquals(width, mWidth);
+            assertEquals(height, mHeight);
+        }
+
+        private void assertEmptyClipRect() {
+            assertEquals(0, mWidth);
+            assertEquals(0, mHeight);
+        }
+
+        void run() {
+            GLCanvas canvas = new GLCanvasImp(this);
+            canvas.setSize(100, 100);
+            canvas.save();
+            assertClipRect(0, 0, 100, 100);
+
+            assertTrue(canvas.clipRect(10, 10, 70, 70));
+            canvas.save();
+            assertClipRect(10, 10, 60, 60);
+
+            assertTrue(canvas.clipRect(30, 30, 90, 90));
+            canvas.save();
+            assertClipRect(30, 30, 40, 40);
+
+            assertTrue(canvas.clipRect(40, 40, 60, 90));
+            assertClipRect(40, 40, 20, 30);
+
+            assertFalse(canvas.clipRect(30, 30, 70, 40));
+            assertEmptyClipRect();
+            assertFalse(canvas.clipRect(0, 0, 100, 100));
+            assertEmptyClipRect();
+
+            canvas.restore();
+            assertClipRect(30, 30, 40, 40);
+
+            canvas.restore();
+            assertClipRect(10, 10, 60, 60);
+
+            canvas.restore();
+            assertClipRect(0, 0, 100, 100);
+
+            canvas.translate(10, 20, 30);
+            assertTrue(canvas.clipRect(10, 10, 70, 70));
+            canvas.save();
+            assertClipRect(20, 30, 60, 60);
+        }
+    }
+
+    @SmallTest
+    public void testSaveRestore() {
+        new SaveRestoreTest().run();
+    }
+
+    private static class SaveRestoreTest extends GLStub {
+        int mX, mY, mWidth, mHeight;
+
+        @Override
+        public void glScissor(int x, int y, int width, int height) {
+            mX = x;
+            mY = 100 - y - height;  // flip in Y direction
+            mWidth = width;
+            mHeight = height;
+        }
+
+        private void assertClipRect(int x, int y, int width, int height) {
+            assertEquals(x, mX);
+            assertEquals(y, mY);
+            assertEquals(width, mWidth);
+            assertEquals(height, mHeight);
+        }
+
+        void run() {
+            GLCanvas canvas = new GLCanvasImp(this);
+            canvas.setSize(100, 100);
+
+            canvas.setAlpha(0.7f);
+            assertTrue(canvas.clipRect(10, 10, 70, 70));
+
+            canvas.save(canvas.SAVE_FLAG_CLIP);
+            canvas.setAlpha(0.6f);
+            assertTrue(canvas.clipRect(30, 30, 90, 90));
+
+            canvas.save(canvas.SAVE_FLAG_CLIP | canvas.SAVE_FLAG_ALPHA);
+            canvas.setAlpha(0.5f);
+            assertTrue(canvas.clipRect(40, 40, 60, 90));
+
+            assertEquals(0.5f, canvas.getAlpha());
+            assertClipRect(40, 40, 20, 30);
+
+            canvas.restore();  // now both clipping rect and alpha are restored.
+            assertEquals(0.6f, canvas.getAlpha());
+            assertClipRect(30, 30, 40, 40);
+
+            canvas.restore();  // now only clipping rect is restored.
+
+            canvas.save(0);
+            canvas.save(0);
+            canvas.restore();
+            canvas.restore();
+
+            assertEquals(0.6f, canvas.getAlpha());
+            assertTrue(canvas.clipRect(10, 10, 60, 60));
         }
     }
 
