@@ -41,6 +41,7 @@ public interface GLCanvas {
     // (current alpha) = (current alpha) * alpha
     public void multiplyAlpha(float alpha);
 
+    // Change the current transform matrix.
     public void translate(float x, float y, float z);
     public void scale(float sx, float sy, float sz);
     public void rotate(float angle, float x, float y, float z);
@@ -48,7 +49,7 @@ public interface GLCanvas {
     // Modifies the current clip with the specified rectangle.
     // (current clip) = (current clip) intersect (specified rectangle).
     // Returns true if the result clip is non-empty.
-    public boolean clipRect(int x, int y, int width, int height);
+    public boolean clipRect(int left, int top, int right, int bottom);
 
     // Pushes the configuration state (matrix, alpha, and clip) onto
     // a private stack.
