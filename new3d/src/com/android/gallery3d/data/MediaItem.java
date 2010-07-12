@@ -18,8 +18,6 @@ public interface MediaItem {
         public void onImageCanceled(MediaItem abstractMediaItem, int type);
     }
 
-    public String getMediaUri();
-
     public String getTitle();
 
     public Bitmap getImage(int type);

@@ -19,17 +19,18 @@ public class GridSlotAdapter implements SlotView.Model {
     private static final double EXPECTED_AREA = 150 * 120;
     private static final int SLOT_WIDTH = 162;
     private static final int SLOT_HEIGHT = 132;
-    private static final int INITIAL_CACHE_CAPACITY = 48;
+    private static final int CACHE_CAPACITY = 48;
 
     private final Map<Integer, MyDisplayItem> mItemMap =
-            new HashMap<Integer, MyDisplayItem>(INITIAL_CACHE_CAPACITY);
+            new HashMap<Integer, MyDisplayItem>(CACHE_CAPACITY);
     private final LinkedHashSet<Integer> mLruSlot =
-            new LinkedHashSet<Integer>(INITIAL_CACHE_CAPACITY);
+            new LinkedHashSet<Integer>(CACHE_CAPACITY);
     private final NinePatchTexture mFrame;
 
     private final MediaSet mMediaSet;
     private final Texture mWaitLoadingTexture;
     private final SlotView mSlotView;
+    private boolean mContentInvalidated = false;
 
     public GridSlotAdapter(Context context, MediaSet mediaSet, SlotView slotView) {
         mSlotView = slotView;
@@ -38,11 +39,13 @@ public class GridSlotAdapter implements SlotView.Model {
         ColorTexture gray = new ColorTexture(Color.GRAY);
         gray.setSize(64, 48);
         mWaitLoadingTexture = gray;
+        mediaSet.setContentListener(new MyContentListener());
     }
 
     public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
         MyDisplayItem displayItem = mItemMap.get(slotIndex);
-        if (displayItem == null) {
+
+        if (displayItem == null || mContentInvalidated) {
             MediaItem item = mMediaSet.getMediaItem(slotIndex);
             item.setListener(new MyMediaItemListener(slotIndex));
             switch (item.requestImage(MediaItem.TYPE_MICROTHUMBNAIL)) {
@@ -57,16 +60,17 @@ public class GridSlotAdapter implements SlotView.Model {
 
             }
             // Remove an item if the size of mItemsetMap is no less than
-            // INITIAL_CACHE_CAPACITY and there exists a slot in mLruSlot.
-            if (mItemMap.size() >= INITIAL_CACHE_CAPACITY && !mLruSlot.isEmpty()) {
-                Iterator<Integer> iter = mLruSlot.iterator();
-                int index = iter.next();
-                mItemMap.remove(index);
-                mLruSlot.remove(index);
+            // CACHE_CAPACITY and there exists a slot in mLruSlot.
+            Iterator<Integer> iter = mLruSlot.iterator();
+            while (mItemMap.size() >= CACHE_CAPACITY && iter.hasNext()) {
+                mItemMap.remove(iter.next());
+                iter.remove();
             }
             mItemMap.put(slotIndex, displayItem);
-            mLruSlot.remove(slotIndex);
         }
+
+        // Reclaim the slot
+        mLruSlot.remove(slotIndex);
 
         x += getSlotWidth() / 2;
         y += getSlotHeight() / 2;
@@ -105,6 +109,16 @@ public class GridSlotAdapter implements SlotView.Model {
             MyDisplayItem displayItem = mItemMap.get(mSlotIndex);
             displayItem.updateContent(new BitmapTexture(bitmap));
             mSlotView.notifyDataInvalidate();
+        }
+    }
+
+    private void onContentChanged() {
+        mContentInvalidated = true;
+        mSlotView.notifyDataChanged();
+        mContentInvalidated = false;
+
+        for (Integer index : mLruSlot) {
+            mItemMap.remove(index);
         }
     }
 
@@ -157,7 +171,15 @@ public class GridSlotAdapter implements SlotView.Model {
     }
 
     public void freeSlot(int index, DisplayItemPanel panel) {
-        panel.removeDisplayItem(mItemMap.get(index));
+        DisplayItem item = mItemMap.get(index);
+        panel.removeDisplayItem(item);
         mLruSlot.add(index);
     }
+
+    private class MyContentListener implements MediaSet.MediaSetListener {
+        public void onContentChanged() {
+            GridSlotAdapter.this.onContentChanged();
+        }
+    }
+
 }

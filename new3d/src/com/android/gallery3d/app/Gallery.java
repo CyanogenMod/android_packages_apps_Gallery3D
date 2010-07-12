@@ -27,11 +27,11 @@ import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.data.MediaDbAccessor;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.Compositor;
-import com.android.gallery3d.ui.GLHandler;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.GridSlotAdapter;
 import com.android.gallery3d.ui.MediaSetSlotAdapter;
 import com.android.gallery3d.ui.SlotView;
+import com.android.gallery3d.ui.SynchronizedHandler;
 
 public final class Gallery extends Activity implements SlotView.SlotTapListener {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
@@ -40,7 +40,7 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
 
     private static final String TAG = "Gallery";
     private GLRootView mGLRootView;
-    private GLHandler mHandler;
+    private SynchronizedHandler mHandler;
     private Compositor mCompositor;
     private MediaSet mRootSet;
     private SlotView mSlotView;
@@ -48,19 +48,20 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ImageService.initialize(this);
-
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
 
-        mRootSet = MediaDbAccessor.getMediaSets(this);
+        ImageService.initialize(this);
+        MediaDbAccessor.initialize(this, mGLRootView);
+
+        mRootSet = MediaDbAccessor.getInstance().getRootMediaSets();
         mCompositor = new Compositor(this);
         mSlotView = mCompositor.getSlotView();
         mSlotView.setModel(new MediaSetSlotAdapter(this, mRootSet, mSlotView));
         mSlotView.setSlotTapListener(this);
         mGLRootView.setContentPane(mCompositor);
 
-        mHandler = new GLHandler(mGLRootView) {
+        mHandler = new SynchronizedHandler(mGLRootView) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -71,7 +72,6 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
                 }
             }
         };
-
     }
 
     public void onSingleTapUp(int slotIndex) {

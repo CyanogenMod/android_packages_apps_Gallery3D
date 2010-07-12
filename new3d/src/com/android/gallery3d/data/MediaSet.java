@@ -1,5 +1,6 @@
 package com.android.gallery3d.data;
 
+
 //
 // MediaSet is a directory-like data structure.
 // It contains MediaItems and sub-MediaSets.
@@ -29,4 +30,6 @@ public interface MediaSet {
     public String getTitle();
 
     public MediaItem[] getCoverMediaItems();
+
+    public void setContentListener(MediaSetListener listener);
 }

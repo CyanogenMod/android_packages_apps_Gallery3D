@@ -6,6 +6,7 @@ import android.graphics.Rect;
 import com.android.gallery3d.R;
 
 import java.util.Random;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
 public class SlotViewMockData implements SlotView.Model {
     private static final int LENGTH_LIMIT = 150;
@@ -124,4 +125,7 @@ public class SlotViewMockData implements SlotView.Model {
         }
     }
 
+    public ReadLock readLock() {
+        return null;
+    }
 }

@@ -4,7 +4,6 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 //
@@ -20,15 +19,15 @@ public class LocalMediaSet implements MediaSet {
 
     private static final int MAX_NUM_COVERED_ITEMS = 4;
 
-    private ArrayList<LocalMediaSet> mSubMediaSets =
+    private final ArrayList<LocalMediaSet> mSubMediaSets =
             new ArrayList<LocalMediaSet>();
-    private Map<Integer, Integer> mIdsToIndice =
+    private final Map<Integer, Integer> mIdsToIndice =
             new HashMap<Integer, Integer>();
 
-    private ArrayList<MediaItem> mMediaItems = new ArrayList<MediaItem>();
+    private final ArrayList<MediaItem> mMediaItems = new ArrayList<MediaItem>();
 
-    private int mBucketId;
-    private String mTitle;
+    private final int mBucketId;
+    private final String mTitle;
 
     public LocalMediaSet(int bucketId, String title) {
         mBucketId = bucketId;
@@ -126,5 +125,8 @@ public class LocalMediaSet implements MediaSet {
         for (LocalMediaSet set: mSubMediaSets) {
             set.printOut();
         }
+    }
+
+    public void setContentListener(MediaSetListener listener) {
     }
 }
