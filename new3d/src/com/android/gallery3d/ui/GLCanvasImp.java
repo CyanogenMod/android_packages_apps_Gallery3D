@@ -408,7 +408,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     private void drawBoundTexture(
-            BasicTexture texture, int x, int y, int width, int height) {
+            BasicTexture texture, int x, int y, int width, int height, float alpha) {
         // Test whether it has been rotated or flipped, if so, glDrawTexiOES
         // won't work
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
@@ -425,7 +425,7 @@ public class GLCanvasImp implements GLCanvas {
             y = (int) points[1];
             width = (int) points[2] - x;
             height = (int) points[3] - y;
-            mGLState.setTextureAlpha(mAlpha);
+            mGLState.setTextureAlpha(alpha);
             if (width > 0 && height > 0) {
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
             }
@@ -444,7 +444,7 @@ public class GLCanvasImp implements GLCanvas {
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
         texture.bind(this);
-        drawBoundTexture(texture, x, y, width, height);
+        drawBoundTexture(texture, x, y, width, height, alpha);
     }
 
     public void drawMixed(BasicTexture from, BasicTexture to,
@@ -501,7 +501,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_OPERAND2_ALPHA, GL11.GL_SRC_ALPHA);
 
         // Draw the combined texture.
-        drawBoundTexture(to, x, y, width, height);
+        drawBoundTexture(to, x, y, width, height, mAlpha);
 
         // Disable TEXTURE1.
         gl.glDisable(GL11.GL_TEXTURE_2D);
@@ -520,8 +520,7 @@ public class GLCanvasImp implements GLCanvas {
                 || matrix[MSCALE_X] < 0 || matrix[MSCALE_Y] > 0;
     }
 
-    public void copyTexture2D(
-            RawTexture texture, int x, int y, int width, int height) {
+    public BasicTexture copyTexture(int x, int y, int width, int height) {
 
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
             throw new IllegalArgumentException("cannot support rotated matrix");
@@ -537,6 +536,7 @@ public class GLCanvasImp implements GLCanvas {
         int newHeight = Util.nextPowerOf2(height);
         int glError = GL11.GL_NO_ERROR;
 
+        RawTexture texture = RawTexture.newInstance(gl);
         gl.glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
 
         int[] cropRect = {0,  0, width, height};
@@ -551,7 +551,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glTexParameterf(GL11.GL_TEXTURE_2D,
                 GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         gl.glCopyTexImage2D(GL11.GL_TEXTURE_2D, 0,
-                GL11.GL_RGBA, x, y, newWidth, newHeight, 0);
+                GL11.GL_RGB, x, y, newWidth, newHeight, 0);
         glError = gl.glGetError();
 
         if (glError == GL11.GL_OUT_OF_MEMORY) {
@@ -565,6 +565,7 @@ public class GLCanvasImp implements GLCanvas {
 
         texture.setSize(width, height);
         texture.setTextureSize(newWidth, newHeight);
+        return texture;
     }
 
     private static class GLState {

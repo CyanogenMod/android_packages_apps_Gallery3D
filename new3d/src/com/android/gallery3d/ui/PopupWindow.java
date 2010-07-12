@@ -35,7 +35,6 @@ class PopupWindow extends GLView {
     protected int mAnchorOffset;
 
     protected int mAnchorPosition;
-    private RawTexture mBackupTexture;
     private GLView mContent;
 
     protected Texture mBackground;
@@ -153,17 +152,12 @@ class PopupWindow extends GLView {
             mAnchor.draw(canvas, aXoffset, aYoffset);
         }
 
-        GL11 gl = canvas.getGLInstance();
-        if (mBackupTexture == null || mBackupTexture.getBoundGL() != gl) {
-            mBackupTexture = RawTexture.newInstance(gl);
-        }
-
-        RawTexture backup = mBackupTexture;
+        BasicTexture backup = null;
         try {
             // Copy the current drawing results of the triangle area into
             // "backup", so that we can restore the content after it is
             // overlaid by the background.
-            canvas.copyTexture2D(backup, aXoffset, aYoffset, aWidth, aHeight);
+            backup = canvas.copyTexture(aXoffset, aYoffset, aWidth, aHeight);
         } catch (GLOutOfMemoryException e) {
             Log.e(TAG, "out of memory", e);
         }
@@ -173,9 +167,9 @@ class PopupWindow extends GLView {
                     width, height - aHeight + mAnchorOffset);
         }
 
-        gl.glBlendFunc(GL11.GL_ONE, GL11.GL_ZERO);
-        backup.drawBack(canvas, aXoffset, aYoffset, aWidth, aHeight);
-        gl.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        // restore the backup with alpha = 1
+        canvas.drawTexture(backup, aXoffset, aYoffset, aWidth, aHeight, 1f);
+        backup.deleteFromGL(canvas);
     }
 
     @Override
