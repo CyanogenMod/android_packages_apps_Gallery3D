@@ -25,10 +25,6 @@ class RawTexture extends BasicTexture {
         super(gl, id, STATE_LOADED);
     }
 
-    public GL11 getBoundGL() {
-        return mGL;
-    }
-
     public static RawTexture newInstance(GL11 gl) {
         int[] textureId = new int[1];
         gl.glGenTextures(1, textureId, 0);
@@ -48,11 +44,7 @@ class RawTexture extends BasicTexture {
         canvas.bindTexture(this);
     }
 
-    public void drawBack(GLCanvas canvas, int x, int y, int w, int h) {
-        canvas.drawTexture(this, x, y, w, h, 1f);
-    }
-
     public boolean isOpaque() {
-        return false;
+        return true;
     }
 }

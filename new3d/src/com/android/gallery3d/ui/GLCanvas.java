@@ -100,14 +100,14 @@ public interface GLCanvas {
     public void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int width, int height, float alpha);
 
-    // Copies the specified rectangle to the RawTexture.
-    public void copyTexture2D(
-            RawTexture texture, int x, int y, int width, int height);
+    // Return a texture copied from the specified rectangle.
+    public BasicTexture copyTexture(int x, int y, int width, int height);
 
     // TODO: Remove this or document it.
     public void releaseTextures(Collection<? extends BasicTexture> c);
 
-    // Gets the underlying GL instance. This is used when
+    // Gets the underlying GL instance. This is used only when direct access to
+    // GL is needed.
     public GL11 getGLInstance();
 
     // Binds the texture to the canvas for the following drawing calls. This
