@@ -13,14 +13,17 @@ import java.nio.ShortBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 public class PointerInfo {
+
     /**
      * The number of coordinates per vertex. 1..4
      */
     public int mSize;
+
     /**
      * The type of each coordinate.
      */
     public int mType;
+
     /**
      * The byte offset between consecutive vertices. 0 means mSize *
      * sizeof(mType)
