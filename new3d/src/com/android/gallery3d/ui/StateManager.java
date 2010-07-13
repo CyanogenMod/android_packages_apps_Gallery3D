@@ -2,12 +2,16 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.app.Gallery;
+
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import java.util.Stack;
 
 public class StateManager {
+    private static final String TAG = "StateManager";
     private static StateManager mInstance;
     private Context mContext;
     private GLRootView mRootView;
@@ -50,10 +54,31 @@ public class StateManager {
         stateView.onStart(data);
     }
 
-    void popState() {
-        if (!mStateStack.isEmpty()) {
-            mStateStack.pop();
-            mBundleStack.pop();
+    public StateView peekState() {
+        return mStateStack.isEmpty() ? null : mStateStack.peek();
+    }
+
+    void finish(StateView stateView) {
+        if (stateView != mStateStack.peek()) {
+            throw new IllegalArgumentException("The stateview to be finished"
+                    + " is not at the top of the stack!");
         }
+        // Remove the top stateview.
+        popState();
+        stateView.onPause();
+        stateView.onDestroy();
+        if (mStateStack.isEmpty()) {
+            ((Gallery) mContext).finish();
+        } else {
+            // Restore the immediately previous stateview
+            StateView restoredState = mStateStack.peek();
+            mRootView.setContentPane(restoredState);
+            restoredState.onResume();
+        }
+    }
+
+    private void popState() {
+        mStateStack.pop();
+        mBundleStack.pop();
     }
 }

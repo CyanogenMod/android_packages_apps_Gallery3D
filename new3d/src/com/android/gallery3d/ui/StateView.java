@@ -17,6 +17,10 @@ abstract public class StateView extends GLView {
 
     abstract public void onStart(Bundle data);
 
+    public void onBackPressed() {
+        StateManager.getInstance().finish(this);
+    }
+
     public void onPause() {}
 
     public void onResume() {}

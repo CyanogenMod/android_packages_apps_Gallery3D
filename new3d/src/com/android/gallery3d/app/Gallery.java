@@ -28,6 +28,7 @@ import com.android.gallery3d.data.MediaDbAccessor;
 import com.android.gallery3d.ui.GalleryView;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.StateManager;
+import com.android.gallery3d.ui.StateView;
 
 public final class Gallery extends Activity {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
@@ -83,6 +84,18 @@ public final class Gallery extends Activity {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
         ImageService.getInstance().close();
+    }
+
+    @Override
+    public void onBackPressed() {
+        StateView stateView = StateManager.getInstance().peekState();
+        if (stateView != null) {
+            synchronized (mGLRootView) {
+                stateView.onBackPressed();
+            }
+        } else {
+            finish();
+        }
     }
 
     private boolean isPickIntent() {
