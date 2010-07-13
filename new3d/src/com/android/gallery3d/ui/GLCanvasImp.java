@@ -4,6 +4,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLU;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -16,6 +17,7 @@ import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
 
 public class GLCanvasImp implements GLCanvas {
+    private static final String TAG = "GLCanvasImp";
 
     // We need 16 vertices for a normal nine-patch image (the 4x4 vertices)
     private static final int VERTEX_BUFFER_SIZE = 16 * 2;
@@ -53,6 +55,9 @@ public class GLCanvasImp implements GLCanvas {
     private final Stack<ConfigState> mRestoreStack =
             new Stack<ConfigState>();
     private ConfigState mRecycledRestoreAction;
+
+    private RectF mDrawTextureSourceRect = new RectF();
+    private Rect mDrawTextureTargetRect = new Rect();
 
     GLCanvasImp(GL11 gl) {
         mGL = gl;
@@ -159,10 +164,6 @@ public class GLCanvasImp implements GLCanvas {
         gl.glDrawArrays(GL11.GL_LINE_STRIP, 0, 2);
     }
 
-    public void fillRect(Rect r) {
-        fillRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
-    }
-
     public void translate(float x, float y, float z) {
         Matrix.translateM(mMatrixValues, 0, x, y, z);
     }
@@ -195,7 +196,7 @@ public class GLCanvasImp implements GLCanvas {
             throw new RuntimeException("unsupported nine patch");
         }
         tex.bind(this);
-        if (width <= 0 || height <= 0) return ;
+        if (width <= 0 || height <= 0) return;
 
         int divX[] = mNinePatchX;
         int divY[] = mNinePatchY;
@@ -440,11 +441,59 @@ public class GLCanvasImp implements GLCanvas {
 
     public void drawTexture(BasicTexture texture,
             int x, int y, int width, int height, float alpha) {
-        if (width <= 0 || height <= 0) return ;
+        if (width <= 0 || height <= 0) return;
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
         texture.bind(this);
         drawBoundTexture(texture, x, y, width, height, alpha);
+    }
+
+    public void drawTexture(BasicTexture texture, RectF source, Rect target) {
+        if (target.width() <= 0 || target.height() <= 0) return;
+
+        // Copy the input to avoid changing it.
+        mDrawTextureSourceRect.set(source);
+        mDrawTextureTargetRect.set(target);
+        source = mDrawTextureSourceRect;
+        target = mDrawTextureTargetRect;
+
+        mGLState.setBlendEnabled(!texture.isOpaque() || mAlpha < OPAQUE_ALPHA);
+        texture.bind(this);
+        convertCoordinate(source, target, texture);
+        setTextureCoords(source);
+        fillRect(target.left, target.top, target.right - target.left,
+                target.bottom - target.top);
+    }
+
+    // This function changes the source coordinate to the texture coordinates.
+    // It also clips the source and target coordinates if it is beyond the
+    // bound of the texture.
+    private void convertCoordinate(RectF source, Rect target,
+            BasicTexture texture) {
+
+        // Convert to texture coordinates
+        source.left /= texture.mTextureWidth;
+        source.right /= texture.mTextureWidth;
+        source.top /= texture.mTextureHeight;
+        source.bottom /= texture.mTextureHeight;
+
+        // Clip if the rendering range is beyond the bound of the texture.
+        if (texture.mWidth < texture.mTextureWidth) {
+            float xBound = (texture.mWidth - 0.5f) / texture.mTextureWidth;
+            if (source.right > xBound) {
+                target.right = Math.round(target.left + target.width() *
+                        (xBound - source.left) / source.width());
+                source.right = xBound;
+            }
+        }
+        if (texture.mHeight < texture.mTextureHeight) {
+            float yBound = (texture.mHeight - 0.5f) / texture.mTextureHeight;
+            if (source.bottom > yBound) {
+                target.bottom = Math.round(target.top + target.height() *
+                        (yBound - source.top) / source.height());
+                source.bottom = yBound;
+            }
+        }
     }
 
     public void drawMixed(BasicTexture from, BasicTexture to,
@@ -690,7 +739,7 @@ public class GLCanvasImp implements GLCanvas {
         mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
     }
 
-    public void setTextureCoords(RectF source) {
+    private void setTextureCoords(RectF source) {
         float buffer[] = mUvBuffer;
         buffer[0] = source.left;
         buffer[1] = source.top;

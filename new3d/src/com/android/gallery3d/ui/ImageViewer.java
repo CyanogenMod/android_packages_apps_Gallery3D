@@ -83,14 +83,12 @@ public class ImageViewer extends GLView {
         return mScaleDetector.onTouchEvent(event);
     }
 
-    private static int floorLog2(int value) {
-        // return the max x such that (1 << x) <= value
-        if (value < 2) return 0;
-        int s = 0, e = 31;
-        for (int x = (s + e) >> 1; s + 1 < e; x = (s + e) >> 1) {
-            if ((1 << x) <= value) s = x; else e = x;
+    private static int ceilLog2(float value) {
+        int i;
+        for (i = 0; i < 30; i++) {
+            if ((1 << i) > value) break;
         }
-        return s;
+        return i;
     }
 
     @Override
@@ -108,7 +106,8 @@ public class ImageViewer extends GLView {
         // get layout position
         int fromIndex;
 
-        mIndex = Util.clamp(floorLog2((int) (1f / scale)), 0, levelCount);
+        mIndex = Util.clamp(ceilLog2(1f / scale), 0, levelCount);
+
         if (mIndex != levelCount) {
             Rect range = mTileRange;
             getRange(range, centerX, centerY, mIndex, scale);
@@ -323,9 +322,7 @@ public class ImageViewer extends GLView {
             TileTexture tile, GLCanvas canvas, RectF source, Rect target) {
         while (true) {
             if (tile.isContentValid(canvas)) {
-                tile.bind(canvas);
-                canvas.setTextureCoords(source);
-                canvas.fillRect(target);
+                canvas.drawTexture(tile, source, target);
                 return true;
             }
 
@@ -336,15 +333,15 @@ public class ImageViewer extends GLView {
                 source.left /= 2f;
                 source.right /= 2f;
             } else {
-                source.left = 0.5f + source.left / 2f;
-                source.right = 0.5f + source.right / 2f;
+                source.left = (TILE_SIZE + source.left) / 2f;
+                source.right = (TILE_SIZE + source.right) / 2f;
             }
             if (tile.mY == parent.mY) {
                 source.top /= 2f;
                 source.bottom /= 2f;
             } else {
-                source.top = 0.5f + source.top / 2f;
-                source.bottom = 0.5f + source.bottom / 2f;
+                source.top = (TILE_SIZE + source.top) / 2f;
+                source.bottom = (TILE_SIZE + source.bottom) / 2f;
             }
             tile = parent;
         }
@@ -413,7 +410,7 @@ public class ImageViewer extends GLView {
             RectF source = mSourceRect;
             Rect target = mTargetRect;
             target.set(x, y, x + length, y + length);
-            source.set(0, 0, 1f, 1f);
+            source.set(0, 0, TILE_SIZE, TILE_SIZE);
             drawTile(canvas, source, target);
         }
 
@@ -443,29 +440,10 @@ public class ImageViewer extends GLView {
                         : (float) backup.getHeight() / height;
                 int length = TILE_SIZE << mScaleIndex;
 
-                // bind backup first to get mTextureWidth and mTextureHeight
-                backup.bind(canvas);
-                float xScale = scale / backup.mTextureWidth;
-                float yScale = scale / backup.mTextureHeight;
-                source.set(mX * xScale, mY * yScale,
-                        (mX + length) * xScale, (mY + length) * yScale);
+                source.set(mX * scale, mY * scale, (mX + length) * scale,
+                        (mY + length) * scale);
 
-                // In case that the rendering range is beyond the bound of the
-                // backup texture
-                float xBound = (backup.mWidth - 0.5f) / backup.mTextureWidth;
-                float yBound = (backup.mHeight - 0.5f) / backup.mTextureHeight;
-                if (source.right > xBound) {
-                    target.right = (int) (target.left + target.width() *
-                            (xBound - source.left) / source.width() + 0.5f);
-                    source.right = xBound;
-                }
-                if (source.bottom > yBound) {
-                    target.bottom = (int) (target.top + target.height() *
-                            (yBound - source.top) / source.height() + 0.5f);
-                    source.bottom = yBound;
-                }
-                canvas.setTextureCoords(source);
-                canvas.fillRect(target);
+                canvas.drawTexture(backup, source, target);
             }
         }
     }
