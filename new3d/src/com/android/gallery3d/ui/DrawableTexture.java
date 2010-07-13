@@ -14,11 +14,6 @@ public class DrawableTexture extends CanvasTexture {
     }
 
     @Override
-    public void setSize(int width, int height) {
-        super.setSize(width, height);
-    }
-
-    @Override
     protected void onDraw(Canvas canvas, Bitmap backing) {
         mDrawable.setBounds(0, 0, mWidth, mHeight);
         mDrawable.draw(canvas);

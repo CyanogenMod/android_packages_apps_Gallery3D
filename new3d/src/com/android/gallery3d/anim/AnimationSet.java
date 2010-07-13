@@ -20,8 +20,8 @@ public class AnimationSet extends CanvasAnimation {
 
     @Override
     public void apply(GLCanvas canvas) {
-        for (CanvasAnimation anim : mAnimations) {
-            anim.apply(canvas);
+        for (int i = 0, n = mAnimations.size(); i < n; i++) {
+            mAnimations.get(i).apply(canvas);
         }
     }
 

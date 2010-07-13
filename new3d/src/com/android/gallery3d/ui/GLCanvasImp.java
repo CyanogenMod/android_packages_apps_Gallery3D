@@ -58,6 +58,7 @@ public class GLCanvasImp implements GLCanvas {
 
     private RectF mDrawTextureSourceRect = new RectF();
     private Rect mDrawTextureTargetRect = new Rect();
+    private float[] mTempMatrix = new float[32];
 
     GLCanvasImp(GL11 gl) {
         mGL = gl;
@@ -173,7 +174,10 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void rotate(float angle, float x, float y, float z) {
-        Matrix.rotateM(mMatrixValues, 0, angle, x, y, z);
+        float[] temp = mTempMatrix;
+        Matrix.setRotateM(temp, 0, angle, x, y, z);
+        Matrix.multiplyMM(temp, 16, mMatrixValues, 0, temp, 0);
+        System.arraycopy(temp, 16, mMatrixValues, 0, 16);
     }
 
     public void fillRect(int x, int y, int width, int height) {
