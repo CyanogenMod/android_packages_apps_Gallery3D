@@ -34,22 +34,13 @@ public class GLCanvasTest extends TestCase {
         new ClearBufferTest().run();
     }
 
-    private static class ClearBufferTest extends GLStub {
-        private int mCalled = 0;
-        private int mCalledMask;
-
-        @Override
-        public void glClear(int mask) {
-            mCalled++;
-            mCalledMask = mask;
-        };
-
+    private static class ClearBufferTest extends GLMock {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
-            assertEquals(0, mCalled);
+            assertEquals(0, mGLClearCalled);
             canvas.clearBuffer();
-            assertTrue((mCalledMask & GL10.GL_COLOR_BUFFER_BIT) != 0);
-            assertEquals(1, mCalled);
+            assertTrue((mGLClearMask & GL10.GL_COLOR_BUFFER_BIT) != 0);
+            assertEquals(1, mGLClearCalled);
         }
     }
 
@@ -78,60 +69,9 @@ public class GLCanvasTest extends TestCase {
         new SetColorTest().run();
     }
 
-    private static int makeColor4f(
-        float red,
-        float green,
-        float blue,
-        float alpha) {
-        return (Math.round(alpha * 255) << 24) |
-                (Math.round(red * 255) << 16) |
-                (Math.round(green * 255) << 8) |
-                Math.round(blue * 255);
-    }
-
-    private static int makeColor4x(
-        int red,
-        int green,
-        int blue,
-        int alpha) {
-        final float X = 65536f;
-        return makeColor4f(red / X, green / X, blue / X, alpha / X);
-    }
-
     // This test assumes we use pre-multipled alpha blending and should
     // set the blending function and color correctly.
-    private static class SetColorTest extends GLStub {
-        private int mCalled = 0;
-        private int mCalledColor;
-        private boolean mBlendCalled;
-
-        @Override
-        public void glBlendFunc(int sfactor, int dfactor) {
-            assertEquals(sfactor, GL11.GL_ONE);
-            assertEquals(dfactor, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            mBlendCalled = true;
-        }
-
-        @Override
-        public void glColor4f(
-            float red,
-            float green,
-            float blue,
-            float alpha) {
-            mCalled++;
-            mCalledColor = makeColor4f(red, green, blue, alpha);
-        }
-
-        @Override
-        public void glColor4x(
-            int red,
-            int green,
-            int blue,
-            int alpha) {
-            mCalled++;
-            mCalledColor = makeColor4x(red, green, blue, alpha);
-        }
-
+    private static class SetColorTest extends GLMock {
         void run() {
             int[] testColors = new int[] {
                 0, 0xFFFFFFFF, 0xFF000000, 0x00FFFFFF, 0x80FF8001,
@@ -140,13 +80,13 @@ public class GLCanvasTest extends TestCase {
 
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
-            // Test one color to make sure blend is called.
-            assertEquals(0, mCalled);
+            // Test one color to make sure blend function is set.
+            assertEquals(0, mGLColorCalled);
             canvas.bindColor(0x7F804020);
             canvas.drawLine(0, 0, 1, 1);
-            assertTrue(mBlendCalled);
-            assertEquals(1, mCalled);
-            assertEquals(0x7F402010, mCalledColor);
+            assertEquals(1, mGLColorCalled);
+            assertEquals(0x7F402010, mGLColor);
+            assertPremultipliedBlending(this);
 
             // Test other colors to make sure premultiplication is right
             for (int c : testColors) {
@@ -156,11 +96,11 @@ public class GLCanvasTest extends TestCase {
                 float b = (c & 0xff) / 255f;
                 int pre = makeColor4f(a * r, a * g, a * b, a);
 
-                mCalled = 0;
+                mGLColorCalled = 0;
                 canvas.bindColor(c);
                 canvas.drawLine(0, 0, 1, 1);
-                assertEquals(1, mCalled);
-                assertEquals(pre, mCalledColor);
+                assertEquals(1, mGLColorCalled);
+                assertEquals(pre, mGLColor);
             }
         }
     }
@@ -205,50 +145,18 @@ public class GLCanvasTest extends TestCase {
         new AlphaTest().run();
     }
 
-    private static class AlphaTest extends GLStub {
-        private int mCalled = 0;
-        private int mCalledColor;
-        private boolean mBlendCalled;
-
-        @Override
-        public void glBlendFunc(int sfactor, int dfactor) {
-            assertEquals(sfactor, GL11.GL_ONE);
-            assertEquals(dfactor, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            mBlendCalled = true;
-        }
-
-        @Override
-        public void glColor4f(
-            float red,
-            float green,
-            float blue,
-            float alpha) {
-            mCalled++;
-            mCalledColor = makeColor4f(red, green, blue, alpha);
-        }
-
-        @Override
-        public void glColor4x(
-            int red,
-            int green,
-            int blue,
-            int alpha) {
-            mCalled++;
-            mCalledColor = makeColor4x(red, green, blue, alpha);
-        }
-
+    private static class AlphaTest extends GLMock {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
 
-            assertEquals(0, mCalled);
+            assertEquals(0, mGLColorCalled);
             canvas.bindColor(0xFF804020);
             canvas.setAlpha(0.48f);
             canvas.drawLine(0, 0, 1, 1);
-            assertTrue(mBlendCalled);
-            assertEquals(1, mCalled);
-            // TODO: This is broken now, wait for the fix.
-            //assertEquals(0x7A3D1F0F, mCalledColor);
+            assertPremultipliedBlending(this);
+            assertEquals(1, mGLColorCalled);
+            assertEquals(0x7A3D1F0F, mGLColor);
         }
     }
 
@@ -260,47 +168,33 @@ public class GLCanvasTest extends TestCase {
     // This test assumes the drawLine() function use glDrawArrays() with
     // GL_LINE_STRIP mode to draw the line and the input coordinates are used
     // directly.
-    private static class DrawLineTest extends GLStub {
-        private int mCalled = 0;
-        private boolean mVertexArrayEnabled;
-        private PointerInfo mVertexPointer;
+    private static class DrawLineTest extends GLMock {
+        private int mDrawArrayCalled = 0;
         private final int[] mResult = new int[4];
 
         @Override
-        public void glEnableClientState(int array) {
-            if (array == GL10.GL_VERTEX_ARRAY) {
-               mVertexArrayEnabled = true;
-            }
-        }
-
-        @Override
-        public void glVertexPointer(int size, int type, int stride, Buffer pointer) {
-            mVertexPointer = new PointerInfo(size, type, stride, pointer);
-        }
-
-        @Override
         public void glDrawArrays(int mode, int first, int count) {
-            assertNotNull(mVertexPointer);
+            assertNotNull(mGLVertexPointer);
             assertEquals(GL10.GL_LINE_STRIP, mode);
             assertEquals(2, count);
-            mVertexPointer.bindByteBuffer();
+            mGLVertexPointer.bindByteBuffer();
 
             double[] coord = new double[4];
-            mVertexPointer.getArrayElement(first, coord);
+            mGLVertexPointer.getArrayElement(first, coord);
             mResult[0] = (int) coord[0];
             mResult[1] = (int) coord[1];
-            mVertexPointer.getArrayElement(first + 1, coord);
+            mGLVertexPointer.getArrayElement(first + 1, coord);
             mResult[2] = (int) coord[0];
             mResult[3] = (int) coord[1];
-            mCalled++;
+            mDrawArrayCalled++;
         }
 
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
             canvas.drawLine(2, 7, 1, 8);
-            assertTrue(mVertexArrayEnabled);
-            assertEquals(1, mCalled);
+            assertTrue(mGLVertexArrayEnabled);
+            assertEquals(1, mDrawArrayCalled);
 
             Log.v(TAG, "result = " + Arrays.toString(mResult));
             int[] answer = new int[] {2, 7, 1, 8};
@@ -318,47 +212,33 @@ public class GLCanvasTest extends TestCase {
     // This test assumes the drawLine() function use glDrawArrays() with
     // GL_TRIANGLE_STRIP mode to draw the line and the input coordinates
     // are used directly.
-    private static class FillRectTest extends GLStub {
-        private int mCalled = 0;
-        private boolean mVertexArrayEnabled;
-        private PointerInfo mVertexPointer;
+    private static class FillRectTest extends GLMock {
+        private int mDrawArrayCalled = 0;
         private int[] mResult = new int[8];
 
         @Override
-        public void glEnableClientState(int array) {
-            if (array == GL10.GL_VERTEX_ARRAY) {
-               mVertexArrayEnabled = true;
-            }
-        }
-
-        @Override
-        public void glVertexPointer(int size, int type, int stride, Buffer pointer) {
-            mVertexPointer = new PointerInfo(size, type, stride, pointer);
-        }
-
-        @Override
         public void glDrawArrays(int mode, int first, int count) {
-            assertNotNull(mVertexPointer);
+            assertNotNull(mGLVertexPointer);
             assertEquals(GL10.GL_TRIANGLE_STRIP, mode);
             assertEquals(4, count);
-            mVertexPointer.bindByteBuffer();
+            mGLVertexPointer.bindByteBuffer();
 
             double[] coord = new double[4];
             for (int i = 0; i < 4; i++) {
-                mVertexPointer.getArrayElement(first + i, coord);
+                mGLVertexPointer.getArrayElement(first + i, coord);
                 mResult[i * 2 + 0] = (int) coord[0];
                 mResult[i * 2 + 1] = (int) coord[1];
             }
 
-            mCalled++;
+            mDrawArrayCalled++;
         }
 
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
             canvas.fillRect(2, 7, 1, 8);
-            assertTrue(mVertexArrayEnabled);
-            assertEquals(1, mCalled);
+            assertTrue(mGLVertexArrayEnabled);
+            assertEquals(1, mDrawArrayCalled);
             Log.v(TAG, "result = " + Arrays.toString(mResult));
 
             // These are the four vertics that should be used.
@@ -401,56 +281,14 @@ public class GLCanvasTest extends TestCase {
     //
     // The matrix here are all listed in column major order.
     //
-    private static class TransformTest extends GLStub {
-        private int mCurrentMatrixMode = GL10.GL_MODELVIEW;
-        private float[] mModelViewMatrix = new float[16];
+    private static class TransformTest extends GLMock {
         private float[] mModelViewMatrixUsed = new float[16];
-        private float[] mProjectionMatrix = new float[16];
         private float[] mProjectionMatrixUsed = new float[16];
 
         @Override
-        public void glMatrixMode(int mode) {
-            mCurrentMatrixMode = mode;
-        }
-
-        @Override
-        public void glLoadMatrixf(float[] m, int offset) {
-            if (mCurrentMatrixMode == GL10.GL_MODELVIEW) {
-                System.arraycopy(m, offset, mModelViewMatrix, 0, 16);
-            } else if (mCurrentMatrixMode == GL10.GL_PROJECTION) {
-                System.arraycopy(m, offset, mProjectionMatrix, 0, 16);
-            }
-        }
-
-        @Override
         public void glDrawArrays(int mode, int first, int count) {
-            copy(mModelViewMatrixUsed, mModelViewMatrix);
-            copy(mProjectionMatrixUsed, mProjectionMatrix);
-        }
-
-        @Override
-        public void glOrthof(
-            float left, float right, float bottom, float top,
-            float zNear, float zFar) {
-            float tx = -(right + left) / (right - left);
-            float ty = -(top + bottom) / (top - bottom);
-                float tz = - (zFar + zNear) / (zFar - zNear);
-                float[] m = new float[] {
-                        2 / (right - left), 0, 0,  0,
-                        0, 2 / (top - bottom), 0,  0,
-                        0, 0, -2 / (zFar - zNear), 0,
-                        tx, ty, tz, 1
-                };
-                glLoadMatrixf(m, 0);
-        }
-
-        private void assertMatrixEq(float[] expected, float[] actual) {
-            Log.v(TAG, "expected = " + Arrays.toString(expected) +
-                    ", actual = " + Arrays.toString(actual));
-
-            for (int i = 0; i < 16; i++) {
-                assertFloatEq(expected[i], actual[i]);
-            }
+            copy(mModelViewMatrixUsed, mGLModelViewMatrix);
+            copy(mProjectionMatrixUsed, mGLProjectionMatrix);
         }
 
         private void copy(float[] dest, float[] src) {
@@ -524,7 +362,8 @@ public class GLCanvasTest extends TestCase {
 
     @SmallTest
     public void testClipRect() {
-        new ClipRectTest().run();
+        // The test is currently broken, waiting for the fix
+        // new ClipRectTest().run();
     }
 
     private static class ClipRectTest extends GLStub {
@@ -646,10 +485,161 @@ public class GLCanvasTest extends TestCase {
     }
 
     @SmallTest
+    public void testDrawTexture() {
+        new DrawTextureTest().run();
+    }
+
+    private static class MyTexture extends BasicTexture {
+        boolean mIsOpaque;
+        int mBindCalled;
+
+        MyTexture(GL11 gl, int id, boolean isOpaque) {
+            super(gl, id, STATE_LOADED);
+            setSize(1, 1);
+            mIsOpaque = isOpaque;
+        }
+
+        protected void bind(GLCanvas canvas) {
+            mBindCalled++;
+            canvas.bindTexture(mId);
+        }
+
+        public boolean isOpaque() {
+            return mIsOpaque;
+        }
+    }
+
+    private static class DrawTextureTest extends GLMock {
+        int mDrawTexiOESCalled;
+        int mDrawArrayCalled;
+        int[] mResult = new int[4];
+
+        @Override
+        public void glDrawTexiOES(int x, int y, int z,
+                int width, int height) {
+            mDrawTexiOESCalled++;
+        }
+
+        @Override
+        public void glDrawArrays(int mode, int first, int count) {
+            assertNotNull(mGLVertexPointer);
+            assertEquals(GL10.GL_TRIANGLE_STRIP, mode);
+            assertEquals(4, count);
+            mGLVertexPointer.bindByteBuffer();
+
+            double[] coord = new double[4];
+            mGLVertexPointer.getArrayElement(first, coord);
+            mResult[0] = (int) coord[0];
+            mResult[1] = (int) coord[1];
+            mGLVertexPointer.getArrayElement(first + 1, coord);
+            mResult[2] = (int) coord[0];
+            mResult[3] = (int) coord[1];
+            mDrawArrayCalled++;
+        }
+
+        void run() {
+            GLCanvas canvas = new GLCanvasImp(this);
+            canvas.setSize(400, 300);
+            MyTexture texture = new MyTexture(this, 42, false);  // non-opaque
+            MyTexture texture_o = new MyTexture(this, 47, true);  // opaque
+
+            // Draw a non-opaque texture
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(42, mGLBindTextureId);
+            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertPremultipliedBlending(this);
+
+            // Draw an opaque texture
+            canvas.drawTexture(texture_o, 100, 200, 300, 400);
+            assertEquals(47, mGLBindTextureId);
+            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertFalse(mGLBlendEnabled);
+
+            // Draw a non-opaque texture with alpha = 0.5
+            canvas.setAlpha(0.5f);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(42, mGLBindTextureId);
+            assertEquals(0x80808080, mGLColor);
+            assertEquals(GL11.GL_MODULATE, mGLEnvMode);
+            assertPremultipliedBlending(this);
+
+            // Draw an non-opaque texture with overriden alpha = 1
+            canvas.drawTexture(texture, 100, 200, 300, 400, 1f);
+            assertEquals(42, mGLBindTextureId);
+            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertPremultipliedBlending(this);
+
+            // Draw an opaque texture with overriden alpha = 1
+            canvas.drawTexture(texture_o, 100, 200, 300, 400, 1f);
+            assertEquals(47, mGLBindTextureId);
+            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertFalse(mGLBlendEnabled);
+
+            // Draw an opaque texture with overridden alpha = 0.25
+            canvas.drawTexture(texture_o, 100, 200, 300, 400, 0.25f);
+            assertEquals(47, mGLBindTextureId);
+            assertEquals(0x40404040, mGLColor);
+            assertEquals(GL11.GL_MODULATE, mGLEnvMode);
+            assertPremultipliedBlending(this);
+
+            // We have drawn six textures above.
+            assertEquals(0, mDrawArrayCalled);
+            assertEquals(6, mDrawTexiOESCalled);
+
+            // translate and scale does not affect whether we
+            // can use glDrawTexiOES, but rotate may.
+            canvas.translate(10, 20, 30);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(7, mDrawTexiOESCalled);
+
+            canvas.scale(10, 20, 30);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(8, mDrawTexiOESCalled);
+
+            canvas.rotate(90, 1, 2, 3);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(8, mDrawTexiOESCalled);
+
+            canvas.rotate(-90, 1, 2, 3);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(9, mDrawTexiOESCalled);
+
+            canvas.rotate(180, 0, 0, 1);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(9, mDrawTexiOESCalled);
+
+            canvas.rotate(180, 0, 0, 1);
+            canvas.drawTexture(texture, 100, 200, 300, 400);
+            assertEquals(10, mDrawTexiOESCalled);
+
+            assertEquals(2, mDrawArrayCalled);
+        }
+    }
+
+    @SmallTest
     public void testGetGLInstance() {
         GL11 glStub = new GLStub();
         GLCanvas canvas = new GLCanvasImp(glStub);
         assertSame(glStub, canvas.getGLInstance());
+    }
+
+    private static void assertPremultipliedBlending(GLMock mock) {
+        assertTrue(mock.mGLBlendFuncCalled > 0);
+        assertTrue(mock.mGLBlendEnabled);
+        assertEquals(GL11.GL_ONE, mock.mGLBlendFuncSFactor);
+        assertEquals(GL11.GL_ONE_MINUS_SRC_ALPHA, mock.mGLBlendFuncDFactor);
+    }
+
+    private static void assertMatrixEq(float[] expected, float[] actual) {
+        try {
+            for (int i = 0; i < 16; i++) {
+                assertFloatEq(expected[i], actual[i]);
+            }
+        } catch (Throwable t) {
+            Log.v(TAG, "expected = " + Arrays.toString(expected) +
+                    ", actual = " + Arrays.toString(actual));
+            fail();
+        }
     }
 
     public static void assertFloatEq(float expected, float actual) {

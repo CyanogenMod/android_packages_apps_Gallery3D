@@ -88,11 +88,10 @@ public class AnimationTest extends TestCase {
         assertFloatEq(a.get(), -1.6f);
         a.calculate(5);            // calculate value for time 5
         assertTrue(a.get() == 0);  //
-        // TODO: These are broken now, waiting for the bug fix.
-        //a.calculate(9);            // calculate value for time 9
-        //assertFloatEq(a.get(), 1.6f);
-        //a.calculate(10);           // calculate value for time 10
-        //assertTrue(a.get() == 2);  //
+        a.calculate(9);            // calculate value for time 9
+        assertFloatEq(a.get(), 1.6f);
+        a.calculate(10);           // calculate value for time 10
+        assertTrue(a.get() == 2);  //
     }
 
     public static void assertFloatEq(float expected, float actual) {
