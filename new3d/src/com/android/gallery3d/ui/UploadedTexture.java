@@ -85,23 +85,28 @@ abstract class UploadedTexture extends BasicTexture {
         }
     }
 
+    static int[] sTextureId = new int[1];
+    static int[] sCropRect = new int[4];
+
     private void uploadToGL(GL11 gl) {
         Bitmap bitmap = getBitmap();
         int glError = GL11.GL_NO_ERROR;
         if (bitmap != null) {
-            int[] textureId = new int[1];
             try {
                 // Define a vertically flipped crop rectangle for
                 // OES_draw_texture.
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
-                int[] cropRect = {0,  height, width, -height};
+                sCropRect[0] = 0;
+                sCropRect[1] = height;
+                sCropRect[2] = width;
+                sCropRect[3] = -height;
 
                 // Upload the bitmap to a new texture.
-                gl.glGenTextures(1, textureId, 0);
-                gl.glBindTexture(GL11.GL_TEXTURE_2D, textureId[0]);
+                gl.glGenTextures(1, sTextureId, 0);
+                gl.glBindTexture(GL11.GL_TEXTURE_2D, sTextureId[0]);
                 gl.glTexParameteriv(GL11.GL_TEXTURE_2D,
-                        GL11Ext.GL_TEXTURE_CROP_RECT_OES, cropRect, 0);
+                        GL11Ext.GL_TEXTURE_CROP_RECT_OES, sCropRect, 0);
                 gl.glTexParameteri(GL11.GL_TEXTURE_2D,
                         GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP_TO_EDGE);
                 gl.glTexParameteri(GL11.GL_TEXTURE_2D,
@@ -138,7 +143,7 @@ abstract class UploadedTexture extends BasicTexture {
             } else {
                 // Update texture state.
                 mGL = gl;
-                mId = textureId[0];
+                mId = sTextureId[0];
                 mState = UploadedTexture.STATE_LOADED;
             }
         } else {
