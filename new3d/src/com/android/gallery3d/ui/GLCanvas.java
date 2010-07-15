@@ -30,10 +30,6 @@ public interface GLCanvas {
     public void setCurrentAnimationTimeMillis(long time);
     public long currentAnimationTimeMillis();
 
-    // Bindss the current drawing color to the canvas. It will be used for
-    // drawLine and fillRect. The format is 0xaarrggbb.
-    public void bindColor(int color);
-
     // Sets and gets the current alpha, alpha must be in [0, 1].
     public void setAlpha(float alpha);
     public float getAlpha();
@@ -69,17 +65,16 @@ public interface GLCanvas {
     // last save call.
     public void restore();
 
+    // Binds the current drawing color to the canvas. It will be used for
+    // drawLine and fillRect. The format is 0xaarrggbb.
+    public void bindColor(int color);
+
     // Draws a line using current drawing color from (x1, y1) to (x2, y2).
     // (Both end points are included).
     public void drawLine(int x1, int y1, int x2, int y2);
 
-    // Fills the specified rectange with the current drawing color or
-    // the color of texture.
+    // Fills the specified rectange with the current drawing color.
     public void fillRect(int x, int y, int width, int height);
-    public void fillRect(Rect r);
-
-    // Sets the texture coordinates for fillRect calls.
-    public void setTextureCoords(RectF source);
 
     // Draws a texture to the specified rectangle.
     public void drawTexture(
@@ -91,6 +86,9 @@ public interface GLCanvas {
     // overrides the current drawing alpha value.
     public void drawTexture(BasicTexture texture,
             int x, int y, int width, int height, float alpha);
+
+    // Draws a the source rectangle part of the texture to the target rectangle.
+    public void drawTexture(BasicTexture texture, RectF source, Rect target);
 
     // Draw two textures to the specified rectange. The actual texture used is
     // from * (1 - ratio) + to * ratio

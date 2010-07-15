@@ -53,6 +53,7 @@ public class ViewImage extends Activity {
 
     @Override
     protected void onDestroy() {
+        super.onDestroy();
         for(Bitmap bitmap : mScaledBitmaps) {
             bitmap.recycle();
         }
