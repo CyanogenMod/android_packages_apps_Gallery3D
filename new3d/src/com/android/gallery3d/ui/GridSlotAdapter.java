@@ -93,17 +93,14 @@ public class GridSlotAdapter implements SlotView.Model {
             mSlotIndex = slotIndex;
         }
 
-        @Override
         public void onImageCanceled(MediaItem abstractMediaItem, int type) {
             // Do nothing
         }
 
-        @Override
         public void onImageError(MediaItem item, int type, Throwable error) {
             // Do nothing
         }
 
-        @Override
         public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
             MyDisplayItem displayItem = mItemMap.get(mSlotIndex);
             displayItem.updateContent(new BitmapTexture(bitmap));

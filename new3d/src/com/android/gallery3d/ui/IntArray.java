@@ -26,4 +26,13 @@ public class IntArray {
         System.arraycopy(mData, 0, result, 0, mSize);
         return result;
     }
+
+    public int[] getInternelArray() {
+        return mData;
+    }
+
+    public void clear() {
+        mSize = 0;
+        if (mData.length != INIT_CAPACITY) mData = new int[INIT_CAPACITY];
+    }
 }

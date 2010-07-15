@@ -136,17 +136,14 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             mItemIndex = itemIndex;
         }
 
-        @Override
         public void onImageCanceled(MediaItem abstractMediaItem, int type) {
             // Do nothing
         }
 
-        @Override
         public void onImageError(MediaItem item, int type, Throwable error) {
             // Do nothing
         }
 
-        @Override
         public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
             MyDisplayItem[] items = mItemsetMap.get(mSlotIndex);
             items[mItemIndex].updateContent(new BitmapTexture(bitmap));

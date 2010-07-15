@@ -47,7 +47,9 @@ public class ViewImage extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        mImageViewer.releaseTiles();
+        synchronized (mGLRootView) {
+            mImageViewer.close();
+        }
         mGLRootView.onPause();
     }
 

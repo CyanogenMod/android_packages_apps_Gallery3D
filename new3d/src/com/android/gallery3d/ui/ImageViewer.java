@@ -11,13 +11,9 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 
 public class ImageViewer extends GLView {
     private static final String TAG = "ImageViewer";
@@ -191,39 +187,20 @@ public class ImageViewer extends GLView {
         invalidate();
     }
 
-    public void releaseTiles() {
-        GLRootView root = getGLRootView();
-        FutureTask<Void> task = new FutureTask<Void>(new ReleaseTiles());
-        synchronized (root) {
-            root.queueEvent(task);
-            try {
-                task.get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
-                Log.e(TAG, "release tiles fail", e);
-            }
+    public void close() {
+        GLCanvas canvas = getGLRootView().getCanvas();
+        for (TileTexture texture : mActiveTiles.values()) {
+            canvas.unloadTexture(texture);
+            texture.recycle();
         }
-    }
-
-    private class ReleaseTiles implements Callable<Void> {
-        public Void call() throws Exception {
-            ArrayList<TileTexture> tiles = new ArrayList<TileTexture>();
-            tiles.addAll(mActiveTiles.values());
-            mActiveTiles.clear();
-
-            TileTexture tile = mRecycledHead;
-            while (tile != null) {
-                tiles.add(tile);
-                tile = tile.mNextFree;
-            }
-            mRecycledHead = null;
-            GLRootView root = getGLRootView();
-            if (root != null) {
-                root.getCanvas().releaseTextures(tiles);
-            }
-            return null;
+        mActiveTiles.clear();
+        TileTexture tile = mRecycledHead;
+        while (tile != null) {
+            canvas.unloadTexture(tile);
+            tile.recycle();
+            tile = tile.mNextFree;
         }
+        mRecycledHead = null;
     }
 
     @Override
