@@ -89,8 +89,8 @@ public class DisplayItemPanel extends GLView {
     protected void render(GLCanvas canvas) {
         canvas.translate(-mScrollX, 0, 0);
         if (mAnimationStartTime == NO_ANIMATION) {
-            for (DisplayItem item: mItems) {
-                renderItem(canvas, item);
+            for (int i = 0, n = mItems.size(); i < n; i++) {
+                renderItem(canvas, mItems.get(i));
             }
         } else {
             long now = canvas.currentAnimationTimeMillis();

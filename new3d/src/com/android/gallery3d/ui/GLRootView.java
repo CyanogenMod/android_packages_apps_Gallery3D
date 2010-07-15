@@ -214,8 +214,8 @@ public class GLRootView extends GLSurfaceView
 
         if (!mAnimations.isEmpty()) {
             long now = SystemClock.uptimeMillis();
-            for (CanvasAnimation anim : mAnimations) {
-                anim.setStartTime(now);
+            for (int i = 0, n = mAnimations.size(); i < n; i++) {
+                mAnimations.get(i).setStartTime(now);
             }
             mAnimations.clear();
         }
