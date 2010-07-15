@@ -110,5 +110,5 @@ public interface GLCanvas {
 
     // Binds the texture to the canvas for the following drawing calls. This
     // function should only be called in Texture.
-    public void bindTexture(BasicTexture texture);
+    public void bindTexture(int id);
 }

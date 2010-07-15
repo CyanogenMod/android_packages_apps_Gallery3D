@@ -26,7 +26,7 @@ public class UtilsTest extends AndroidTestCase {
 
     private static final int [] testData = new int [] {
         /* outWidth, outHeight, minSideLength, maxNumOfPixels, sample size */
-        0, 0, 0, 0, 1,
+        1, 1, Utils.UNCONSTRAINED, Utils.UNCONSTRAINED, 1,
         1, 1, 1, 1, 1,
         100, 100, 100, 10000, 1,
         100, 100, 100, 2500, 2,

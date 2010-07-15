@@ -505,9 +505,9 @@ public class GLCanvasImp implements GLCanvas {
         drawMixed(from, to, ratio, x, y, w, h, mAlpha);
     }
 
-    public void bindTexture(BasicTexture texture) {
+    public void bindTexture(int id) {
         mGLState.setTexture2DEnabled(true);
-        mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.mId);
+        mGL.glBindTexture(GL11.GL_TEXTURE_2D, id);
     }
 
     private void setTextureColor(float r, float g, float b, float alpha) {
@@ -569,8 +569,11 @@ public class GLCanvasImp implements GLCanvas {
     private static final int MSCALE_Y = 5;
 
     private static boolean isMatrixRotatedOrFlipped(float matrix[]) {
-        return matrix[MSKEW_X] != 0 || matrix[MSKEW_Y] != 0
-                || matrix[MSCALE_X] < 0 || matrix[MSCALE_Y] > 0;
+        final float eps = 1e-5f;
+        return Math.abs(matrix[MSKEW_X]) > eps
+                || Math.abs(matrix[MSKEW_Y]) > eps
+                || matrix[MSCALE_X] < -eps
+                || matrix[MSCALE_Y] > eps;
     }
 
     public BasicTexture copyTexture(int x, int y, int width, int height) {

@@ -41,7 +41,7 @@ class RawTexture extends BasicTexture {
         if (mGL != gl) {
             throw new RuntimeException("cannot bind to different GL");
         }
-        canvas.bindTexture(this);
+        canvas.bindTexture(mId);
     }
 
     public boolean isOpaque() {
