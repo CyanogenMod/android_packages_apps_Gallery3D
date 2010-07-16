@@ -18,9 +18,9 @@ public abstract class AbstractMediaItem implements MediaItem {
     private MediaItemListener mListener;
 
     protected AbstractMediaItem() {
-        mBitmap = new Bitmap[IMAGE_TYPE_NUMBER];
-        mBitmapStatus = new int[IMAGE_TYPE_NUMBER];
-        mRequestId = new int[IMAGE_TYPE_NUMBER];
+        mBitmap = new Bitmap[TYPE_COUNT];
+        mBitmapStatus = new int[TYPE_COUNT];
+        mRequestId = new int[TYPE_COUNT];
     }
 
     public Bitmap getImage(int type) {

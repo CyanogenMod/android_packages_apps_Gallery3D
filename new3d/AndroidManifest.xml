@@ -91,5 +91,18 @@
                 <data android:mimeType="video/*" />
              </intent-filter>
         </activity>
+        <provider android:label="Picasa Web Albums2"
+                android:name="com.android.gallery3d.picasa.PicasaContentProvider"
+                android:grantUriPermissions="true"
+                android:syncable="true"
+                android:authorities="com.android.gallery3d.picasa.contentprovider">
+        </provider>
+        <service android:label="Picasa Sync Service"
+                android:name="com.android.gallery3d.picasa.PicasaService">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/syncadapter" />
+        </service>
     </application>
 </manifest>

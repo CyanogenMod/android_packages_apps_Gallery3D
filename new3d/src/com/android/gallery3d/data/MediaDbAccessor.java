@@ -17,10 +17,10 @@ public class MediaDbAccessor {
     private final HandlerThread mThread =
             new HandlerThread(TAG, Process.THREAD_PRIORITY_BACKGROUND);
 
-    private final RootMediaSet mRootMediaSet;
     private final Context mContext;
     private final Looper mMainLooper;
     private final Object mUiMonitor;
+    private final MediaSet mRoot;
 
     public MediaDbAccessor(Context context, Object uiMonitor) {
         mThread.start();
@@ -28,7 +28,11 @@ public class MediaDbAccessor {
         mContext = context;
         mUiMonitor = Util.checkNotNull(uiMonitor);
 
-        mRootMediaSet = new RootMediaSet(this);
+        RootMediaSet mediaRoot = new RootMediaSet(this);
+        PicasaUserAlbums picasaRoot = new PicasaUserAlbums(this);
+        picasaRoot.invalidate();
+
+        mRoot = new ComboMediaSet(mediaRoot, picasaRoot);
     }
 
     public static void initialize(Context context, Object uiMonitor) {
@@ -41,7 +45,7 @@ public class MediaDbAccessor {
     }
 
     public MediaSet getRootMediaSets() {
-        return mRootMediaSet;
+        return mRoot;
     }
 
     public ContentResolver getContentResolver() {

@@ -87,7 +87,7 @@ public final class EntrySchema {
         db.execSQL(sql);
     }
 
-    public void cursorToObject(Cursor cursor, Entry object) {
+    public <T extends Entry> T cursorToObject(Cursor cursor, T object) {
         try {
             for (ColumnInfo column : mColumnInfo) {
                 int columnIndex = column.projectionIndex;
@@ -119,6 +119,7 @@ public final class EntrySchema {
                     break;
                 }
             }
+            return object;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

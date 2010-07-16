@@ -25,122 +25,147 @@ import org.xml.sax.Attributes;
 public final class PhotoEntry extends Entry {
     public static final EntrySchema SCHEMA = new EntrySchema(PhotoEntry.class);
 
+    public static class Columns {
+        public static final String SYNC_ACCOUNT = "sync_account";
+        public static final String EDIT_URI = "edit_uri";
+        public static final String ALBUM_ID = "album_id";
+        public static final String DISPLAY_INDEX = "display_index";
+        public static final String TITLE = "title";
+        public static final String SUMMARY = "summary";
+        public static final String DATE_PUBLISHED = "date_published";
+        public static final String DATE_UPDATED = "date_updated";
+        public static final String DATE_EDITED = "date_edited";
+        public static final String DATE_TAKEN = "date_taken";
+        public static final String COMMENT_COUNT = "comment_count";
+        public static final String WIDTH = "width";
+        public static final String HEIGHT = "height";
+        public static final String ROTATION = "ratation";
+        public static final String SIZE = "size";
+        public static final String LATITUDE = "latitude";
+        public static final String LONGITUDE = "longitude";
+        public static final String THUMBNAIL_URL = "thumbnail_url";
+        public static final String SCREENNAIL_URL = "screennail_url";
+        public static final String CONTENT_URL = "content_url";
+        public static final String CONTENT_TYPE = "content_type";
+        public static final String HTML_PAGE_URL = "html_page_url";
+    }
+
     /**
      * The user account that is the sync source for this entry. Must be set
      * before insert/update.
      */
-    @Column("sync_account")
+    @Column(Columns.SYNC_ACCOUNT)
     public String syncAccount;
 
     /**
      * The "edit" URI of the photo.
      */
-    @Column("edit_uri")
+    @Column(Columns.EDIT_URI)
     public String editUri;
 
     /**
      * The containing album ID.
      */
-    @Column(value = "album_id", indexed = true)
+    @Column(value = Columns.ALBUM_ID, indexed = true)
     public long albumId;
 
     /**
      * The display index of the photo within the album. Must be set before
      * insert/update.
      */
-    @Column(value = "display_index", indexed = true)
+    @Column(value = Columns.DISPLAY_INDEX, indexed = true)
     public int displayIndex;
 
     /**
      * The title of the photo.
      */
-    @Column("title")
+    @Column(Columns.TITLE)
     public String title;
 
     /**
      * A short summary of the photo.
      */
-    @Column("summary")
+    @Column(Columns.SUMMARY)
     public String summary;
 
     /**
      * The date the photo was added.
      */
-    @Column("date_published")
+    @Column(Columns.DATE_PUBLISHED)
     public long datePublished;
 
     /**
      * The date the photo was last updated.
      */
-    @Column("date_updated")
+    @Column(Columns.DATE_UPDATED)
     public long dateUpdated;
 
     /**
      * The date the photo entry was last edited. May be more recent than
      * dateUpdated.
      */
-    @Column("date_edited")
+    @Column(Columns.DATE_EDITED)
     public long dateEdited;
 
     /**
      * The date the photo was captured as specified in the EXIF data.
      */
-    @Column("date_taken")
+    @Column(Columns.DATE_TAKEN)
     public long dateTaken;
 
     /**
      * The number of comments associated with the photo.
      */
-    @Column("comment_count")
+    @Column(Columns.COMMENT_COUNT)
     public int commentCount;
 
     /**
      * The width of the photo in pixels.
      */
-    @Column("width")
+    @Column(Columns.WIDTH)
     public int width;
 
     /**
      * The height of the photo in pixels.
      */
-    @Column("height")
+    @Column(Columns.HEIGHT)
     public int height;
 
     /**
      * The rotation of the photo in degrees, if rotation has not already been
      * applied.
      */
-    @Column("rotation")
+    @Column(Columns.ROTATION)
     public int rotation;
 
     /**
      * The size of the photo is bytes.
      */
-    @Column("size")
+    @Column(Columns.SIZE)
     public int size;
 
     /**
      * The latitude associated with the photo.
      */
-    @Column("latitude")
+    @Column(Columns.LATITUDE)
     public double latitude;
 
     /**
      * The longitude associated with the photo.
      */
-    @Column("longitude")
+    @Column(Columns.LONGITUDE)
     public double longitude;
 
     /**
      * The "mini-thumbnail" URL for the photo (currently 144px-cropped).
      */
-    @Column("thumbnail_url")
+    @Column(Columns.THUMBNAIL_URL)
     public String thumbnailUrl;
 
     /**
      * The "screennail" URL for the photo (currently 800px).
      */
-    @Column("screennail_url")
+    @Column(Columns.SCREENNAIL_URL)
     public String screennailUrl;
 
     /**
@@ -148,19 +173,19 @@ public final class PhotoEntry extends Entry {
      * original image URL is not fetched since "imgmax" accepts one size, used
      * to get this resource.
      */
-    @Column("content_url")
+    @Column(Columns.CONTENT_URL)
     public String contentUrl;
 
     /**
      * The MIME type of the content URL.
      */
-    @Column("content_type")
+    @Column(Columns.CONTENT_TYPE)
     public String contentType;
 
     /**
      * A link to the HTML page associated with the album.
      */
-    @Column("html_page_url")
+    @Column(Columns.HTML_PAGE_URL)
     public String htmlPageUrl;
 
     /**
