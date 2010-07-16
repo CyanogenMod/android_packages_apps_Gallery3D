@@ -38,6 +38,7 @@ public final class DiskCache {
     private static final int INDEX_HEADER_VERSION = 2;
     private static final String INDEX_FILE_NAME = "index";
     private static final String CHUNK_FILE_PREFIX = "chunk_";
+    private final File mCacheDirectory;
     private final String mCacheDirectoryPath;
     private LongSparseArray<Record> mIndexMap;
     private final LongSparseArray<RandomAccessFile> mChunkFiles = new LongSparseArray<RandomAccessFile>();
@@ -52,6 +53,7 @@ public final class DiskCache {
         if (!cacheDirectory.isDirectory() && !cacheDirectory.mkdirs()) {
             Log.e(TAG, "Unable to create cache directory " + cacheDirectoryPath);
         }
+        mCacheDirectory = cacheDirectory;
         mCacheDirectoryPath = cacheDirectoryPath;
         loadIndex();
     }
@@ -106,8 +108,20 @@ public final class DiskCache {
     }
 
     public void put(long key, byte[] data, long timestamp) {
-        // Check to see if the record already exists.
         Record record = null;
+        // Recreate the cache directory in case it is unexpectedly deleted by user
+        // during caching.  This restores "/Android/data/com.cooliris.media/cache/".
+        if (!mCacheDirectory.isDirectory()) {
+            File cacheDirectory = new File(mCacheDirectoryPath);
+            if (!cacheDirectory.isDirectory() && !cacheDirectory.mkdirs()) {
+                Log.e(TAG, "Unable to create cache directory " + mCacheDirectoryPath);
+                return;
+            };
+            // Reload index
+            loadIndex();
+        }
+
+        // Check to see if the record already exists.
         synchronized (mIndexMap) {
             record = mIndexMap.get(key);
         }
