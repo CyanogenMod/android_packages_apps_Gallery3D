@@ -54,7 +54,7 @@ public class GLRootView extends GLSurfaceView
     private static final int FLAG_NEED_LAYOUT = 2;
 
     private GL11 mGL;
-    private GLCanvas mCanvas;
+    private GLCanvasImp mCanvas;
 
     private GLView mContentView;
     private DisplayMetrics mDisplayMetrics;
@@ -202,6 +202,9 @@ public class GLRootView extends GLSurfaceView
             }
             ++mFrameCount;
         }
+
+        // release the unbound textures
+        mCanvas.deleteRecycledTextures();
 
         mRenderRequested = false;
 

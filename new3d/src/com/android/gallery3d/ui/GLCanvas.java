@@ -3,8 +3,6 @@ package com.android.gallery3d.ui;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
-import java.util.Collection;
-
 import javax.microedition.khronos.opengles.GL11;
 
 //
@@ -101,9 +99,6 @@ public interface GLCanvas {
     // Return a texture copied from the specified rectangle.
     public BasicTexture copyTexture(int x, int y, int width, int height);
 
-    // TODO: Remove this or document it.
-    public void releaseTextures(Collection<? extends BasicTexture> c);
-
     // Gets the underlying GL instance. This is used only when direct access to
     // GL is needed.
     public GL11 getGLInstance();
@@ -111,4 +106,13 @@ public interface GLCanvas {
     // Binds the texture to the canvas for the following drawing calls. This
     // function should only be called in Texture.
     public void bindTexture(int id);
+
+    // Unloads the specified texture from the canvas. The resource allocated
+    // to draw the texture will be released. The specified texture will return
+    // to the unloaded state.
+    public boolean unloadTexture(BasicTexture texture);
+
+    // Delete the textures in GL side. This function should only be called in
+    // GL thread.
+    public void deleteRecycledTextures();
 }

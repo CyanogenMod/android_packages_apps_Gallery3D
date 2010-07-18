@@ -9,7 +9,6 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.Collection;
 import java.util.Stack;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -29,6 +28,7 @@ public class GLCanvasImp implements GLCanvas {
 
     private final GL11 mGL;
 
+    private final int mTextureId[] = new int[1];
     private final float mMatrixValues[] = new float[16];
 
     private final float mUvBuffer[] = new float[VERTEX_BUFFER_SIZE];
@@ -59,6 +59,7 @@ public class GLCanvasImp implements GLCanvas {
     private RectF mDrawTextureSourceRect = new RectF();
     private Rect mDrawTextureTargetRect = new Rect();
     private float[] mTempMatrix = new float[32];
+    private final IntArray mUnboundIds = new IntArray();
 
     GLCanvasImp(GL11 gl) {
         mGL = gl;
@@ -759,13 +760,19 @@ public class GLCanvasImp implements GLCanvas {
         mUvPointer.put(buffer, 0, 8).position(0);
     }
 
-    public void releaseTextures(Collection<? extends BasicTexture> c) {
-        IntArray array = new IntArray();
-        for (BasicTexture t : c) {
-            if (t.isLoaded(this)) array.add(t.mId);
-        }
-        if (array.size() > 0) {
-            mGL.glDeleteTextures(array.size(), array.toArray(null), 0);
+    public boolean unloadTexture(BasicTexture t) {
+        if (!t.isLoaded(this)) return false;
+        mUnboundIds.add(t.mId);
+        t.mGL = null;
+        t.mState = BasicTexture.STATE_UNLOADED;
+        return true;
+    }
+
+    public void deleteRecycledTextures() {
+        IntArray ids = mUnboundIds;
+        if (ids.size() > 0) {
+            mGL.glDeleteTextures(ids.size(), ids.getInternelArray(), 0);
+            ids.clear();
         }
     }
 
