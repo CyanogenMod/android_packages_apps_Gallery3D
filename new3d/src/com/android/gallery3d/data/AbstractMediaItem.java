@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 //
 public abstract class AbstractMediaItem implements MediaItem {
 
+    private static final String TAG = AbstractMediaItem.class.getSimpleName();
     protected int mRequestId[];
     private MyFuture mFutureBitmaps[];
 
@@ -31,24 +32,30 @@ public abstract class AbstractMediaItem implements MediaItem {
             // Replace the listener. This is not right, we should consider
             // what we should do here.
             mFutureBitmaps[type].setListener(listener);
+            return mFutureBitmaps[type];
         } else {
             mFutureBitmaps[type] = new MyFuture(type, listener);
-            mImageService.requestImage(this, type);
+            mRequestId[type] = mImageService.requestImage(this, type);
+            return mFutureBitmaps[type];
         }
-        return mFutureBitmaps[type];
     }
 
-    private synchronized void cancelImageRequest(int type) {
-        mImageService.cancelRequest(mRequestId[type]);
+    private synchronized void cancelImageRequest(int type, boolean mayInterrupt) {
+        if (mayInterrupt) {
+            mImageService.cancelRequest(mRequestId[type]);
+        }
+        mFutureBitmaps[type] = null;
     }
 
     protected synchronized void onImageReady(int type, Bitmap bitmap) {
         FutureHelper<Bitmap> helper = mFutureBitmaps[type];
+        mFutureBitmaps[type] = null;
         if (helper != null) helper.setResult(bitmap);
     }
 
     protected synchronized void onImageError(int type, Throwable e) {
         FutureHelper<Bitmap> helper = mFutureBitmaps[type];
+        mFutureBitmaps[type] = null;
         if (helper != null) helper.setException(e);
     }
 
@@ -74,7 +81,7 @@ public abstract class AbstractMediaItem implements MediaItem {
         @Override
         public boolean cancel(boolean mayInterrupt) {
             if (super.cancel(mayInterrupt)) {
-                if (mayInterrupt) cancelImageRequest(mSizeType);
+                cancelImageRequest(mSizeType, mayInterrupt);
             }
             return false;
         }

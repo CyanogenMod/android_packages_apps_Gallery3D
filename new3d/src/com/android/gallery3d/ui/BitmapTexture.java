@@ -27,6 +27,7 @@ public class BitmapTexture extends UploadedTexture {
     protected Bitmap mContentBitmap;
 
     public BitmapTexture(Bitmap bitmap) {
+        Util.Assert(bitmap != null && !bitmap.isRecycled());
         mContentBitmap = bitmap;
     }
 

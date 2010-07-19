@@ -13,7 +13,7 @@ public abstract class UberFuture<E> extends FutureHelper<E>
 
     private static final String TAG = "UberFuture";
 
-    private FutureTask<?> mCurrentTask;
+    private Future<?> mCurrentTask;
     private int mStep = 0;
 
     public UberFuture(FutureListener<? super E> listener) {
@@ -25,7 +25,7 @@ public abstract class UberFuture<E> extends FutureHelper<E>
         mLock.lock();
         try {
             if (super.cancel(mayInterruptIfRunning)) {
-                FutureTask<?> task = mCurrentTask;
+                Future<?> task = mCurrentTask;
                 if (task != null) task.cancel(mayInterruptIfRunning);
                 return true;
             } else {
@@ -65,6 +65,6 @@ public abstract class UberFuture<E> extends FutureHelper<E>
         }
     }
 
-    abstract protected FutureTask<?>
+    abstract protected Future<?>
             executeNextTask(int index, FutureTask<?> current) throws Exception;
 }

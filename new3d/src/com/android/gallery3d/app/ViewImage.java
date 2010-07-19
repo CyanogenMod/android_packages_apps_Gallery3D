@@ -1,6 +1,7 @@
 package com.android.gallery3d.app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -8,12 +9,16 @@ import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.data.DataManager;
+import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.ImageViewer;
+import com.android.gallery3d.ui.StateManager;
+import com.android.gallery3d.ui.ImageViewer.ImageData;
 
 import java.util.ArrayList;
 
-public class ViewImage extends Activity {
+public class ViewImage extends Activity implements GalleryContext {
 
     private static final int BACKUP_SIZE = 512;
     private static final String FILE_NAME = "/sdcard/image.jpg";
@@ -32,10 +37,47 @@ public class ViewImage extends Activity {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Config.RGB_565;
         Bitmap bitmap = BitmapFactory.decodeFile(FILE_NAME, options);
-        mScaledBitmaps = getScaledBitmaps(bitmap);
+
+        mScaledBitmaps = getMipmaps(bitmap);
         mBackupBitmap = getBackupBitmap(bitmap);
-        mImageViewer = new ImageViewer(this, mScaledBitmaps, mBackupBitmap);
+
+        mImageViewer = new ImageViewer(this);
+        mImageViewer.setModel(new MyModel(mBackupBitmap, mScaledBitmaps));
+
         mGLRootView.setContentPane(mImageViewer);
+    }
+
+
+    private static class MyModel implements ImageViewer.Model {
+        private static final int SIZE = 3;
+
+        private final Bitmap[] mMipmap;
+        private final Bitmap mBackupImage;
+        private int mIndex = 0;
+
+        public MyModel(Bitmap backup, Bitmap mipmap[]) {
+            mMipmap = mipmap;
+            mBackupImage = backup;
+        }
+
+        public Bitmap[] getMipmaps() {
+            return mMipmap;
+        }
+
+        public void next() {
+            ++mIndex;
+        }
+
+        public void previous() {
+            --mIndex;
+        }
+
+        public ImageData getImageData(int which) {
+            int index = mIndex + which - INDEX_CURRENT;
+            if (index < 0 || index >= SIZE) return null;
+            return new ImageData(mMipmap[0].getWidth(),
+                    mMipmap[0].getHeight(), mBackupImage);
+        }
     }
 
     @Override
@@ -77,7 +119,7 @@ public class ViewImage extends Activity {
         return result;
     }
 
-    static private Bitmap[] getScaledBitmaps(Bitmap bitmap) {
+    static private Bitmap[] getMipmaps(Bitmap bitmap) {
         Config config = bitmap.hasAlpha() ? Config.ARGB_8888 : Config.RGB_565;
 
         int width = bitmap.getWidth() / 2;
@@ -96,6 +138,26 @@ public class ViewImage extends Activity {
             list.add(bitmap);
         }
         return list.toArray(new Bitmap[list.size()]);
+    }
+
+    public Context getAndroidContext() {
+        return this;
+    }
+
+    public DataManager getDataManager() {
+        throw new UnsupportedOperationException();
+    }
+
+    public ImageService getImageService() {
+        throw new UnsupportedOperationException();
+    }
+
+    public StateManager getStateManager() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Object getUiMonitor() {
+        return mGLRootView;
     }
 
 }

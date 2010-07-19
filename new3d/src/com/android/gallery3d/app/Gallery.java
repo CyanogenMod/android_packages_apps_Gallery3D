@@ -111,7 +111,8 @@ public final class Gallery extends Activity implements GalleryContext {
         return mStateManager;
     }
 
-    public Object getUIMonitor() {
+    public Object getUiMonitor() {
         return mGLRootView;
     }
+
 }

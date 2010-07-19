@@ -24,7 +24,7 @@ public class PicasaPhoto implements MediaItem {
         return null;
     }
 
-    private PicasaTask createTask(
+    private PicasaTask newPicasaTask(
                 int type, FutureListener<? super Bitmap> listener) {
         URL url = null;
         try {
@@ -37,7 +37,7 @@ public class PicasaPhoto implements MediaItem {
             } else {
                 throw new AssertionError();
             }
-            return new PicasaTask(url, listener);
+            return new PicasaTask(type, url, listener);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -46,21 +46,31 @@ public class PicasaPhoto implements MediaItem {
     public synchronized Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener) {
         if (mTasks[type] != null) {
-            mTasks[type].setListener(listener);
+            throw new IllegalStateException();
         } else {
-            mTasks[type] = createTask(type, listener);
+            mTasks[type] = newPicasaTask(type, listener);
         }
         return mTasks[type];
     }
 
     private class PicasaTask extends UberFuture<Bitmap> {
         private final URL mUrl;
+        private final int mType;
 
         public PicasaTask(
-                URL url, FutureListener<? super Bitmap> listener) {
+                int type, URL url, FutureListener<? super Bitmap> listener) {
             super(listener);
+            mType = type;
             mUrl = url;
             execute();
+        }
+
+        @Override
+        protected void onDone() {
+            super.onDone();
+            synchronized (PicasaPhoto.this) {
+                mTasks[mType] = null;
+            }
         }
 
         @Override
