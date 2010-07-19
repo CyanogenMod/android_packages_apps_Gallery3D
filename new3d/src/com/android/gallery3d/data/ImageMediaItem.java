@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
+import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -14,10 +15,11 @@ import java.io.IOException;
 public class ImageMediaItem extends DatabaseMediaItem {
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
-    private static final int JPEG_MARK_POSITION = 10 * 1024;
+    private static final int JPEG_MARK_POSITION = 60 * 1024;
 
     private static final int FULLIMAGE_TARGET_SIZE = 1024;
     private static final int FULLIMAGE_MAX_NUM_PIXELS = 2 * 1024 * 1024;
+    private static final String TAG = "ImageMediaItem";
 
     // Must preserve order between these indices and the order of the terms in
     // PROJECTION_IMAGES.
@@ -49,6 +51,7 @@ public class ImageMediaItem extends DatabaseMediaItem {
     private final BitmapFactory.Options mOptions = new BitmapFactory.Options();
 
     protected Bitmap decodeImage(String path) throws IOException {
+        // TODO: need to figure out why simply setting JPEG_MARK_POSITION doesn't work!
         BufferedInputStream bis = new BufferedInputStream(
                 new FileInputStream(path), JPEG_MARK_POSITION);
         try {
@@ -57,13 +60,14 @@ public class ImageMediaItem extends DatabaseMediaItem {
             options.inJustDecodeBounds = true;
             bis.mark(JPEG_MARK_POSITION);
             BitmapFactory.decodeStream(bis, null, options);
-
             if (options.mCancel) return null;
 
             try {
                 bis.reset();
             } catch (IOException e) {
-                throw new AssertionError();
+                Log.w(TAG, "failed in resetting the buffer after reading the jpeg header", e);
+                bis.close();
+                bis = new BufferedInputStream(new FileInputStream(path));
             }
 
             options.inSampleSize =  Utils.computeSampleSize(options,

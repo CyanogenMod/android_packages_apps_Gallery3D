@@ -19,31 +19,21 @@ package com.android.gallery3d.app;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Message;
 import android.util.Log;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.data.MediaDbAccessor;
-import com.android.gallery3d.data.MediaSet;
-import com.android.gallery3d.ui.Compositor;
+import com.android.gallery3d.ui.GalleryView;
 import com.android.gallery3d.ui.GLRootView;
-import com.android.gallery3d.ui.GridSlotAdapter;
-import com.android.gallery3d.ui.MediaSetSlotAdapter;
-import com.android.gallery3d.ui.SlotView;
-import com.android.gallery3d.ui.SynchronizedHandler;
+import com.android.gallery3d.ui.StateManager;
 
-public final class Gallery extends Activity implements SlotView.SlotTapListener {
+public final class Gallery extends Activity {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
-
-    private static final int CHANGE_BACKGROUND = 1;
 
     private static final String TAG = "Gallery";
     private GLRootView mGLRootView;
-    private SynchronizedHandler mHandler;
-    private Compositor mCompositor;
-    private MediaSet mRootSet;
-    private SlotView mSlotView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -51,32 +41,14 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
 
+        // Initialize various managers.
+        StateManager.initialize(this, mGLRootView);
         ImageService.initialize(this);
         MediaDbAccessor.initialize(this, mGLRootView);
+        DataManager.initialize(this);
 
-        mRootSet = MediaDbAccessor.getInstance().getRootMediaSets();
-        mCompositor = new Compositor(this);
-        mSlotView = mCompositor.getSlotView();
-        mSlotView.setModel(new MediaSetSlotAdapter(this, mRootSet, mSlotView));
-        mSlotView.setSlotTapListener(this);
-        mGLRootView.setContentPane(mCompositor);
-
-        mHandler = new SynchronizedHandler(mGLRootView) {
-            @Override
-            public void handleMessage(Message message) {
-                switch (message.what) {
-                    case CHANGE_BACKGROUND:
-                        mCompositor.changeBackground();
-                        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 3000);
-                        break;
-                }
-            }
-        };
-    }
-
-    public void onSingleTapUp(int slotIndex) {
-        mCompositor.getSlotView().setModel(new GridSlotAdapter(
-                this, mRootSet.getSubMediaSet(slotIndex), mSlotView));
+        StateManager.getInstance().startStateView(
+                GalleryView.class, new Bundle());
     }
 
     @Override
@@ -93,14 +65,12 @@ public final class Gallery extends Activity implements SlotView.SlotTapListener 
     public void onResume() {
         super.onResume();
         mGLRootView.onResume();
-        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 3000);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mGLRootView.onPause();
-        mHandler.removeMessages(CHANGE_BACKGROUND);
     }
 
     @Override
