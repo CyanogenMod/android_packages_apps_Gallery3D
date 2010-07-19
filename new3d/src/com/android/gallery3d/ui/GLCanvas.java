@@ -72,7 +72,7 @@ public interface GLCanvas {
     public void drawLine(int x1, int y1, int x2, int y2);
 
     // Fills the specified rectange with the current drawing color.
-    public void fillRect(int x, int y, int width, int height);
+    public void fillRect(float x, float y, float width, float height);
 
     // Draws a texture to the specified rectangle.
     public void drawTexture(
@@ -86,7 +86,7 @@ public interface GLCanvas {
             int x, int y, int width, int height, float alpha);
 
     // Draws a the source rectangle part of the texture to the target rectangle.
-    public void drawTexture(BasicTexture texture, RectF source, Rect target);
+    public void drawTexture(BasicTexture texture, RectF source, RectF target);
 
     // Draw two textures to the specified rectange. The actual texture used is
     // from * (1 - ratio) + to * ratio

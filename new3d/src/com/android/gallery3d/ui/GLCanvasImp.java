@@ -57,7 +57,7 @@ public class GLCanvasImp implements GLCanvas {
     private ConfigState mRecycledRestoreAction;
 
     private RectF mDrawTextureSourceRect = new RectF();
-    private Rect mDrawTextureTargetRect = new Rect();
+    private RectF mDrawTextureTargetRect = new RectF();
     private float[] mTempMatrix = new float[32];
     private final IntArray mUnboundIds = new IntArray();
 
@@ -181,7 +181,7 @@ public class GLCanvasImp implements GLCanvas {
         System.arraycopy(temp, 16, mMatrixValues, 0, 16);
     }
 
-    public void fillRect(int x, int y, int width, int height) {
+    public void fillRect(float x, float y, float width, float height) {
         mGLState.setColorAlpha(mBoundColor, mAlpha);
         GL11 gl = mGL;
         gl.glLoadMatrixf(mMatrixValues, 0);
@@ -453,7 +453,7 @@ public class GLCanvasImp implements GLCanvas {
         drawBoundTexture(texture, x, y, width, height, alpha);
     }
 
-    public void drawTexture(BasicTexture texture, RectF source, Rect target) {
+    public void drawTexture(BasicTexture texture, RectF source, RectF target) {
         if (target.width() <= 0 || target.height() <= 0) return;
 
         // Copy the input to avoid changing it.
@@ -473,7 +473,7 @@ public class GLCanvasImp implements GLCanvas {
     // This function changes the source coordinate to the texture coordinates.
     // It also clips the source and target coordinates if it is beyond the
     // bound of the texture.
-    private void convertCoordinate(RectF source, Rect target,
+    private void convertCoordinate(RectF source, RectF target,
             BasicTexture texture) {
 
         // Convert to texture coordinates
@@ -486,16 +486,16 @@ public class GLCanvasImp implements GLCanvas {
         if (texture.mWidth < texture.mTextureWidth) {
             float xBound = (texture.mWidth - 0.5f) / texture.mTextureWidth;
             if (source.right > xBound) {
-                target.right = Math.round(target.left + target.width() *
-                        (xBound - source.left) / source.width());
+                target.right = target.left + target.width() *
+                        (xBound - source.left) / source.width();
                 source.right = xBound;
             }
         }
         if (texture.mHeight < texture.mTextureHeight) {
             float yBound = (texture.mHeight - 0.5f) / texture.mTextureHeight;
             if (source.bottom > yBound) {
-                target.bottom = Math.round(target.top + target.height() *
-                        (yBound - source.top) / source.height());
+                target.bottom = target.top + target.height() *
+                        (yBound - source.top) / source.height();
                 source.bottom = yBound;
             }
         }
