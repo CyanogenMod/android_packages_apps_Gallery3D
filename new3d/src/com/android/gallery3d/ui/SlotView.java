@@ -1,8 +1,6 @@
 package com.android.gallery3d.ui;
 
 import android.content.Context;
-import android.graphics.Rect;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
@@ -24,6 +22,7 @@ public class SlotView extends GLView {
     private Model mModel;
     private final DisplayItemPanel mPanel;
 
+    private int mSlotCount;
     private int mVerticalGap;
     private int mHorizontalGap;
     private int mSlotWidth;
@@ -58,21 +57,23 @@ public class SlotView extends GLView {
 
     public void setModel(Model model) {
         if (model == mModel) return;
-        setVisibleRange(0, 0);
+        if (mModel != null) {
+            // free all the slot in the old model
+            setVisibleRange(0, 0);
+        }
         mModel = model;
-        if (model != null) initializeLayoutParams();
         notifyDataChanged();
     }
 
     private void initializeLayoutParams() {
-        int size = mModel.size();
+        mSlotCount = mModel.size();
         mSlotWidth = mModel.getSlotWidth();
         mSlotHeight = mModel.getSlotHeight();
         int rowCount = (getHeight() - mVerticalGap)
                 / (mVerticalGap + mSlotHeight);
         if (rowCount == 0) rowCount = 1;
         mRowCount = rowCount;
-        mScrollLimit = ((size + rowCount - 1) / rowCount)
+        mScrollLimit = ((mSlotCount + rowCount - 1) / rowCount)
                 * (mHorizontalGap + mSlotWidth)
                 + mHorizontalGap - getWidth();
         if (mScrollLimit < 0) mScrollLimit = 0;
@@ -104,6 +105,10 @@ public class SlotView extends GLView {
     }
 
     public void notifyDataChanged() {
+        // free all slots in previous data
+        setVisibleRange(0, 0);
+
+        if (mModel != null) initializeLayoutParams();
         setScrollPosition(0, true);
         notifyDataInvalidate();
     }
@@ -143,7 +148,7 @@ public class SlotView extends GLView {
         int rowCount = mRowCount;
         DisplayItemPanel panel = mPanel;
         for (int i = columnIndex * rowCount,
-                n = Math.min(mModel.size(), i + rowCount); i < n; ++i) {
+                n = Math.min(mSlotCount, i + rowCount); i < n; ++i) {
             mModel.freeSlot(i, panel);
         }
     }
@@ -156,9 +161,20 @@ public class SlotView extends GLView {
 
         DisplayItemPanel panel = mPanel;
         for (int i = columnIndex * rowCount,
-                n = Math.min(mModel.size(), i + rowCount); i < n; ++i) {
+                n = Math.min(mSlotCount, i + rowCount); i < n; ++i) {
             mModel.putSlot(i, x, y, panel);
             y += rowHeight;
+        }
+    }
+
+    public void notifySlotInvalidate(int slotIndex) {
+        int columnIndex = slotIndex / mRowCount;
+        if (columnIndex >= mVisibleStart && columnIndex < mVisibleEnd) {
+            mModel.freeSlot(slotIndex, mPanel);
+            int x = columnIndex * (mHorizontalGap + mSlotWidth) + mHorizontalGap;
+            int rowIndex = slotIndex - (columnIndex * mRowCount);
+            int y = mVerticalGap + (mVerticalGap + mSlotHeight) * rowIndex;
+            mModel.putSlot(slotIndex, x, y, mPanel);
         }
     }
 
@@ -166,7 +182,7 @@ public class SlotView extends GLView {
     private void setVisibleRange(int start, int end) {
         if (start == mVisibleStart && end == mVisibleEnd) return;
         int rowCount = mRowCount;
-        if (start >= mVisibleEnd || end < mVisibleStart) {
+        if (start >= mVisibleEnd || end <= mVisibleStart) {
             for (int i = mVisibleStart, n = mVisibleEnd; i < n; ++i) {
                 freeSlotsInColumn(i);
             }
@@ -245,7 +261,7 @@ public class SlotView extends GLView {
             return NOT_AT_SLOTPOSITION;
         }
         int index = columnIdx * mRowCount + rowIdx;
-        return index >= mModel.size() ? NOT_AT_SLOTPOSITION : index;
+        return index >= mSlotCount ? NOT_AT_SLOTPOSITION : index;
     }
 
     public interface SlotTapListener {

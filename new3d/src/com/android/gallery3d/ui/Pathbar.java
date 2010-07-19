@@ -162,7 +162,7 @@ public class Pathbar extends GLView {
     @Override
     protected void onAttachToRoot(GLRootView root) {
         super.onAttachToRoot(root);
-        mHandler = new GLHandler(root) {
+        mHandler = new SynchronizedHandler(root) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {

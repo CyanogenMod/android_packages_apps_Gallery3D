@@ -21,7 +21,8 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private static final int SLOT_WIDTH = 220;
     private static final int SLOT_HEIGHT = 200;
     private static final int MARGIN_TO_SLOTSIDE = 10;
-    private static final int INITIAL_CACHE_CAPACITY = 32;
+    private static final int CACHE_CAPACITY = 32;
+    private static final int INDEX_NONE = -1;
 
     private final NinePatchTexture mFrame;
 
@@ -31,10 +32,13 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private final Texture mWaitLoadingTexture;
 
     private final Map<Integer, MyDisplayItem[]> mItemsetMap =
-            new HashMap<Integer, MyDisplayItem[]>(INITIAL_CACHE_CAPACITY);
+            new HashMap<Integer, MyDisplayItem[]>(CACHE_CAPACITY);
     private final LinkedHashSet<Integer> mLruSlot =
-            new LinkedHashSet<Integer>(INITIAL_CACHE_CAPACITY);
+            new LinkedHashSet<Integer>(CACHE_CAPACITY);
     private final SlotView mSlotView;
+
+    private boolean mContentInvalidated = false;
+    private int mInvalidateIndex = INDEX_NONE;
 
     public MediaSetSlotAdapter(
             Context context, MediaSet rootSet, SlotView view) {
@@ -44,15 +48,23 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         gray.setSize(64, 48);
         mWaitLoadingTexture = gray;
         mSlotView = view;
+
+        rootSet.setContentListener(new MyContentListener());
     }
 
-    public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
+    public void putSlot(
+            int slotIndex, int x, int y, DisplayItemPanel panel) {
 
         // Get displayItems from mItemsetMap or create them from MediaSet.
         MyDisplayItem[] displayItems = mItemsetMap.get(slotIndex);
-        if (displayItems == null) {
+        if (displayItems == null
+                || mContentInvalidated || mInvalidateIndex == slotIndex) {
             displayItems = createDisplayItems(slotIndex);
+            addSlotToCache(slotIndex, displayItems);
         }
+
+        // Reclaim the slot
+        mLruSlot.remove(slotIndex);
 
         // Put displayItems to the panel.
         Random random = mRandom;
@@ -72,11 +84,14 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             int theta = random.nextInt(31) - 15;
             panel.putDisplayItem(displayItems[i], itemX, y + dy, theta);
         }
-        panel.putDisplayItem(displayItems[0], x, y, 0);
+        if (displayItems.length > 0) {
+            panel.putDisplayItem(displayItems[0], x, y, 0);
+        }
     }
 
     private MyDisplayItem[] createDisplayItems(int slotIndex) {
         MediaSet set = mRootSet.getSubMediaSet(slotIndex);
+        set.setContentListener(new SlotContentListener(slotIndex));
         MediaItem[] items = set.getCoverMediaItems();
 
         MyDisplayItem[] displayItems = new MyDisplayItem[items.length];
@@ -86,8 +101,6 @@ public class MediaSetSlotAdapter implements SlotView.Model {
                 case MediaItem.IMAGE_READY:
                     Bitmap bitmap =
                             items[i].getImage(MediaItem.TYPE_MICROTHUMBNAIL);
-                    // TODO: Need to replace BitmapTexture with something else
-                    // whose bitmap is freeable.
                     displayItems[i] = new MyDisplayItem(
                             new BitmapTexture(bitmap), mFrame);
                     break;
@@ -97,7 +110,6 @@ public class MediaSetSlotAdapter implements SlotView.Model {
                     break;
             }
         }
-        addSlotToCache(slotIndex, displayItems);
         return displayItems;
     }
 
@@ -105,13 +117,12 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         // Remove an itemset if the size of mItemsetMap is no less than
         // INITIAL_CACHE_CAPACITY and there exists a slot in mLruSlot.
         Iterator<Integer> iter = mLruSlot.iterator();
-        for (int i = mItemsetMap.size() - INITIAL_CACHE_CAPACITY;
+        for (int i = mItemsetMap.size() - CACHE_CAPACITY;
                 i >= 0 && iter.hasNext(); --i) {
             mItemsetMap.remove(iter.next());
             iter.remove();
         }
         mItemsetMap.put(slotIndex, displayItems);
-        mLruSlot.remove(slotIndex);
     }
 
     public int getSlotHeight() {
@@ -200,11 +211,65 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     }
 
     public void freeSlot(int index, DisplayItemPanel panel) {
-        MyDisplayItem[] displayItems = mItemsetMap.get(index);
+        MyDisplayItem[] displayItems;
+        if (mContentInvalidated) {
+            displayItems = mItemsetMap.remove(index);
+        } else {
+            displayItems = mItemsetMap.get(index);
+            mLruSlot.add(index);
+        }
         for (MyDisplayItem item : displayItems) {
             panel.removeDisplayItem(item);
         }
-        mLruSlot.add(index);
+    }
+
+    private void onContentChanged() {
+        // 1. Remove the original visible itemsets from the display panel.
+        //    These itemsets will be recorded in mLruSlot.
+        // 2. Add the new visible itemsets to the display panel and cache
+        //    (mItemsetMap).
+        mContentInvalidated = true;
+        mSlotView.notifyDataChanged();
+        mContentInvalidated = false;
+
+        // Clean up the cache by removing all itemsets recorded in mLruSlot.
+        for (Integer index : mLruSlot) {
+            mItemsetMap.remove(index);
+        }
+        mLruSlot.clear();
+    }
+
+    private class SlotContentListener implements MediaSet.MediaSetListener {
+        private final int mSlotIndex;
+
+        public SlotContentListener(int slotIndex) {
+            mSlotIndex = slotIndex;
+        }
+
+        public void onContentChanged() {
+            // Update the corresponding itemset to the slot based on whether
+            // the slot is visible or in mLruSlot.
+            // Remove the original corresponding itemset from cache if the
+            // slot was already in mLruSlot. That is the itemset was invisible
+            // and freed before.
+            if (mLruSlot.remove(mSlotIndex)) {
+                mItemsetMap.remove(mSlotIndex);
+            } else {
+                // Refresh the corresponding items in the slot if the slot is
+                // visible. Note that only visible slots are refreshed in
+                // mSlotView.notifySlotInvalidate(mSlotIndex).
+                mInvalidateIndex = mSlotIndex;
+                mSlotView.notifySlotInvalidate(mSlotIndex);
+                mInvalidateIndex = INDEX_NONE;
+            }
+        }
+    }
+
+    private class MyContentListener implements MediaSet.MediaSetListener {
+
+        public void onContentChanged() {
+            MediaSetSlotAdapter.this.onContentChanged();
+        }
     }
 }
 
