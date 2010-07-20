@@ -36,12 +36,11 @@ class RawTexture extends BasicTexture {
     }
 
     @Override
-    protected void bind(GLCanvas canvas) {
+    protected void onBind(GLCanvas canvas) {
         GL11 gl = canvas.getGLInstance();
         if (mGL != gl) {
             throw new RuntimeException("cannot bind to different GL");
         }
-        canvas.bindTexture(mId);
     }
 
     public boolean isOpaque() {

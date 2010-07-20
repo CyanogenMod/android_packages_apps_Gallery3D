@@ -63,16 +63,12 @@ public interface GLCanvas {
     // last save call.
     public void restore();
 
-    // Binds the current drawing color to the canvas. It will be used for
-    // drawLine and fillRect. The format is 0xaarrggbb.
-    public void bindColor(int color);
-
-    // Draws a line using current drawing color from (x1, y1) to (x2, y2).
+    // Draws a line using the specified color from (x1, y1) to (x2, y2).
     // (Both end points are included).
-    public void drawLine(int x1, int y1, int x2, int y2);
+    public void drawLine(int x1, int y1, int x2, int y2, int color);
 
-    // Fills the specified rectange with the current drawing color.
-    public void fillRect(float x, float y, float width, float height);
+    // Fills the specified rectange with the specified color.
+    public void fillRect(float x, float y, float width, float height, int color);
 
     // Draws a texture to the specified rectangle.
     public void drawTexture(
@@ -102,10 +98,6 @@ public interface GLCanvas {
     // Gets the underlying GL instance. This is used only when direct access to
     // GL is needed.
     public GL11 getGLInstance();
-
-    // Binds the texture to the canvas for the following drawing calls. This
-    // function should only be called in Texture.
-    public void bindTexture(int id);
 
     // Unloads the specified texture from the canvas. The resource allocated
     // to draw the texture will be released. The specified texture will return

@@ -153,9 +153,8 @@ abstract class UploadedTexture extends BasicTexture {
     }
 
     @Override
-    protected void bind(GLCanvas canvas) {
+    protected void onBind(GLCanvas canvas) {
         updateContent(canvas);
-        canvas.bindTexture(mId);
     }
 
     public boolean isOpaque() {

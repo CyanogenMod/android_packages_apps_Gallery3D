@@ -73,7 +73,7 @@ abstract class BasicTexture implements Texture {
         canvas.drawTexture(this, x, y, w, h);
     }
 
-    abstract protected void bind(GLCanvas canvas);
+    abstract protected void onBind(GLCanvas canvas);
 
     public boolean isLoaded(GLCanvas canvas) {
         return mState == STATE_LOADED && mGL == canvas.getGLInstance();

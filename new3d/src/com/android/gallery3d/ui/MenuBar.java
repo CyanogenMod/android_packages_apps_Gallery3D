@@ -104,12 +104,11 @@ class MenuBar extends GLView {
         int left = p.left;
         int right = left + width;
 
-        canvas.bindColor(BORDER_COLOR);
-        canvas.drawLine(left, top, right, top);
-        canvas.drawLine(left, bottom - 1, right, bottom -1);
+        canvas.drawLine(left, top, right, top, BORDER_COLOR);
+        canvas.drawLine(left, bottom - 1, right, bottom - 1, BORDER_COLOR);
         for (int i = 0, n = getComponentCount() - 1; i < n; ++i) {
             Rect bounds = getComponent(i).mBounds;
-            canvas.drawLine(bounds.right, top, bounds.right, bottom);
+            canvas.drawLine(bounds.right, top + 1, bounds.right, bottom - 2, BORDER_COLOR);
         }
     }
 }

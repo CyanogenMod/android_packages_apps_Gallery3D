@@ -3,6 +3,7 @@ package com.android.gallery3d.ui;
 import android.util.Log;
 
 import java.nio.Buffer;
+import java.util.HashMap;
 
 import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
@@ -38,7 +39,9 @@ public class GLMock extends GLStub {
     // glBindTexture
     int mGLBindTextureId;
     // glTexEnvf
-    int mGLEnvMode;
+    HashMap<Integer, Float> mGLTexEnv = new HashMap<Integer, Float>();
+    // glActiveTexture
+    int mGLActiveTexture = GL11.GL_TEXTURE0;
 
     @Override
     public void glClear(int mask) {
@@ -131,10 +134,18 @@ public class GLMock extends GLStub {
 
     @Override
     public void glTexEnvf(int target, int pname, float param) {
-        if (target == GL11.GL_TEXTURE_ENV
-                && pname == GL11.GL_TEXTURE_ENV_MODE) {
-            mGLEnvMode = (int) param;
+        if (target == GL11.GL_TEXTURE_ENV) {
+            mGLTexEnv.put(pname, param);
         }
+    }
+
+    public int getTexEnvi(int pname) {
+        return (int) mGLTexEnv.get(pname).floatValue();
+    }
+
+    @Override
+    public void glActiveTexture(int texture) {
+        mGLActiveTexture = texture;
     }
 
     public static int makeColor4f(float red, float green, float blue,

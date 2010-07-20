@@ -33,8 +33,7 @@ class ColorTexture implements Texture {
     }
 
     public void draw(GLCanvas canvas, int x, int y, int w, int h) {
-        canvas.bindColor(mColor);
-        canvas.fillRect(x, y, w, h);
+        canvas.fillRect(x, y, w, h, mColor);
     }
 
     public boolean isOpaque() {
