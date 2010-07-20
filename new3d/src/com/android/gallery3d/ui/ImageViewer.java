@@ -18,17 +18,28 @@ import java.util.Map;
 public class ImageViewer extends GLView {
     private static final String TAG = "ImageViewer";
 
-    private static final int TILE_SIZE = 128;
+    // TILE_SIZE must be 2^N - 2. We put one pixel border in each side of the
+    // texture to avoid seams between tiles.
+    private static final int TILE_SIZE = 254;
+    private static final int TILE_BORDER = 1;
     private static final int UPLOAD_LIMIT = 4;
 
     private final Bitmap mScaledBitmaps[];
     private final BitmapTexture mBackupTexture;
+    private final int mLevelCount;  // cache the value of mScaledBitmaps.length
 
     private int mCenterX = Integer.MIN_VALUE; // some invalid value
     private int mCenterY = Integer.MIN_VALUE;
 
     private float mScale = -1; // some invalid value;
-    private int mIndex = 0;
+
+    // The mLevel variable indicates which level of bitmap we should use.
+    // Level 0 means the original full-sized bitmap, and a larger value means
+    // a smaller scaled bitmap (The width and height of each scaled bitmap is
+    // half size of the previous one). If the value is in [0, mLevelCount), we
+    // use the bitmap in mScaledBitmaps[mLevel] for display, otherwise the value
+    // is mLevelCount, and that means we use mBackupTexture for display.
+    private int mLevel = 0;
 
     // The offsets of the (left, top) of the upper-left tile to the (left, top)
     // of the view.
@@ -39,33 +50,34 @@ public class ImageViewer extends GLView {
     private boolean mRenderComplete;
 
     private final RectF mSourceRect = new RectF();
-    private final Rect mTargetRect = new Rect();
+    private final RectF mTargetRect = new RectF();
 
     private final ScaleGestureDetector mScaleDetector;
     private final GestureDetector mGestureDetector;
 
-    private final HashMap<TileKey, TileTexture> mActiveTiles =
-            new HashMap<TileKey, TileTexture>();
-    private Iterator<TileTexture> mUploadIter;
+    private final HashMap<Long, Tile> mActiveTiles = new HashMap<Long, Tile>();
+    private Iterator<Tile> mUploadIter;
 
-    private TileTexture mRecycledHead = null;
+    private Tile mRecycledHead = null;
 
+    // The width and height of the full-sized bitmap
     private final int mImageWidth;
     private final int mImageHeight;
 
-    private final TileKey mTileKey = new TileKey(0, 0, 0);
+    // Temp variables to avoid memory allocation
     private final Rect mTileRange = new Rect();
-    private final Rect mActiveRange[] =  {new Rect(), new Rect()};
+    private final Rect mActiveRange[] = {new Rect(), new Rect()};
 
     private final Uploader mUploader = new Uploader();
 
     public ImageViewer(Context context, Bitmap scaledBitmaps[], Bitmap backup) {
         mScaledBitmaps = scaledBitmaps;
+        mLevelCount = mScaledBitmaps.length;
         mBackupTexture = new BitmapTexture(backup);
 
         mImageWidth = scaledBitmaps[0].getWidth();
         mImageHeight = scaledBitmaps[0].getHeight();
-        setPosition(mImageWidth / 2, mImageHeight / 2, 0.51f);
+        setPosition(mImageWidth / 2, mImageHeight / 2, 0.5f);
 
         mScaleDetector = new ScaleGestureDetector(context, new MyScaleListener());
         mGestureDetector = new GestureDetector(context, new MyGestureListener());
@@ -73,10 +85,9 @@ public class ImageViewer extends GLView {
 
     @Override
     protected boolean onTouch(MotionEvent event) {
-        if (event.getPointerCount() == 1) {
-            mGestureDetector.onTouchEvent(event);
-        }
-        return mScaleDetector.onTouchEvent(event);
+        mGestureDetector.onTouchEvent(event);
+        mScaleDetector.onTouchEvent(event);
+        return true;
     }
 
     private static int ceilLog2(float value) {
@@ -92,82 +103,101 @@ public class ImageViewer extends GLView {
         if (changeSize) layoutTiles(mCenterX, mCenterY, mScale);
     }
 
+    // Prepare the tiles we want to use for display.
+    //
+    // 1. Decide the tile level we want to use for display.
+    // 2. Decide the tile levels we want to keep as texture (in addition to
+    //    the one we use for display).
+    // 3. Recycle unused tiles.
+    // 4. Activate the tiles we want.
     private void layoutTiles(int centerX, int centerY, float scale) {
 
-        // TODO: use clip region to solve the transparency issue
-        int levelCount = mScaledBitmaps.length;
+        // The width and height of this view.
         int width = getWidth();
         int height = getHeight();
 
-        // get layout position
-        int fromIndex;
+        // The tile levels we want to keep as texture is in the range
+        // [fromLevel, endLevel).
+        int fromLevel;
+        int endLevel;
 
-        mIndex = Util.clamp(ceilLog2(1f / scale), 0, levelCount);
+        // We want to use a texture smaller than the display size to avoid
+        // displaying artifacts.
+        mLevel = Util.clamp(ceilLog2(1f / scale), 0, mLevelCount);
 
-        if (mIndex != levelCount) {
+        // We want to keep one more tile level as texture in addition to what
+        // we use for display. So it can be faster when the scale moves to the
+        // next level. We choose a level closer to the current scale.
+        if (mLevel != mLevelCount) {
             Rect range = mTileRange;
-            getRange(range, centerX, centerY, mIndex, scale);
-            mOffsetX = (int) (width / 2f + (range.left - centerX) * scale);
-            mOffsetY = (int) (height / 2f + (range.top - centerY) * scale);
-            fromIndex = Math.max(0,
-                    mScale * (1 << mIndex) > 0.75f ? mIndex - 1 : mIndex);
+            getRange(range, centerX, centerY, mLevel, scale);
+            mOffsetX = Math.round(width / 2f + (range.left - centerX) * scale);
+            mOffsetY = Math.round(height / 2f + (range.top - centerY) * scale);
+            fromLevel = scale * (1 << mLevel) > 1.5f ? mLevel - 1 : mLevel;
         } else {
-            mOffsetX = (int) (width / 2 - mCenterX * mScale);
-            mOffsetY = (int) (height / 2 - mCenterY * mScale);
-            fromIndex = Math.max(mIndex - 2, 0);
+            mOffsetX = Math.round(width / 2f - centerX * scale);
+            mOffsetY = Math.round(height / 2f - centerY * scale);
+            // If mLevel == mLevelCount, we will use the backup texture for
+            // display, so keep two smallest levels of tiles.
+            fromLevel = mLevel - 2;
         }
 
-        int endIndex  = Math.min(fromIndex + 2, levelCount);
+        fromLevel = Math.max(fromLevel, 0);
+        endLevel = Math.min(fromLevel + 2, mLevelCount);
         Rect range[] = mActiveRange;
-        for (int i = fromIndex; i < endIndex; ++i) {
-            getRange(range[i - fromIndex], centerX, centerY, i);
+        for (int i = fromLevel; i < endLevel; ++i) {
+            getRange(range[i - fromLevel], centerX, centerY, i);
         }
 
-        // remove unused tiles;
-        Iterator<Map.Entry<TileKey, TileTexture>>
+        // Recycle unused tiles: if the level of the active tile is outside the
+        // range [fromLevel, endLevel) or not in the visible range.
+        Iterator<Map.Entry<Long, Tile>>
                 iter = mActiveTiles.entrySet().iterator();
         while (iter.hasNext()) {
-            TileTexture tile = iter.next().getValue();
-            int index = tile.mScaleIndex;
-            if (index < fromIndex || index >= endIndex
-                    || !range[index - fromIndex].contains(tile.mX, tile.mY)) {
+            Tile tile = iter.next().getValue();
+            int level = tile.mTileLevel;
+            if (level < fromLevel || level >= endLevel
+                    || !range[level - fromLevel].contains(tile.mX, tile.mY)) {
                 iter.remove();
-                tile.mNextFree = mRecycledHead;
-                mRecycledHead = tile;
+                recycleTile(tile);
             }
         }
 
-        for (int i = fromIndex; i < endIndex; ++i) {
+        for (int i = fromLevel; i < endLevel; ++i) {
             int size = TILE_SIZE << i;
-            Rect r = range[i - fromIndex];
+            Rect r = range[i - fromLevel];
             for (int y = r.top, bottom = r.bottom; y < bottom; y += size) {
                 for (int x = r.left, right = r.right; x < right; x += size) {
-                    activateTileTexture(x, y, i);
+                    activateTile(x, y, i);
                 }
             }
         }
         mUploadIter = mActiveTiles.values().iterator();
     }
 
-    private void getRange(Rect out, int cX, int cY, int index) {
-        getRange(out, cX, cY, index, 1f / (1 << (index + 1)));
+    private void getRange(Rect out, int cX, int cY, int level) {
+        getRange(out, cX, cY, level, 1f / (1 << (level + 1)));
     }
 
-    // Get a rectangle range from a mScaledBitmap. The rectangle is centered
-    // at (cX, cY) and will fill the ImageView.
-    private void getRange(Rect out, int cX, int cY, int index, float scale) {
+    // If the bitmap is scaled by the given factor "scale", return the
+    // rectangle containing visible range. The left-top coordinate returned is
+    // aligned to the tile boundary.
+    //
+    // (cX, cY) is the point on the original bitmap which will be put in the
+    // center of the ImageViewer.
+    private void getRange(Rect out, int cX, int cY, int level, float scale) {
         int width = getWidth();
         int height = getHeight();
 
-        int left = (int) (cX - width / (2f * scale) + 0.5f);
-        int top = (int) (cY - height / (2f * scale) + 0.5f);
-        int right = left + (int) (width / scale + 0.5f);
-        int bottom = top + (int) (height / scale + 0.5f);
+        int left = Math.round(cX - width / (2f * scale));
+        int top = Math.round(cY - height / (2f * scale));
+        int right = (int) Math.ceil(left + width / scale);
+        int bottom = (int) Math.ceil(top + height / scale);
 
         // align the rectangle to tile boundary
-        int length = TILE_SIZE << index;
-        left = Math.max(0, length * (left / length));
-        top = Math.max(0, length * (top / length));
+        int size = TILE_SIZE << level;
+        left = Math.max(0, size * (left / size));
+        top = Math.max(0, size * (top / size));
         right = Math.min(mImageWidth, right);
         bottom = Math.min(mImageHeight, bottom);
 
@@ -189,39 +219,33 @@ public class ImageViewer extends GLView {
 
     public void close() {
         GLCanvas canvas = getGLRootView().getCanvas();
-        for (TileTexture texture : mActiveTiles.values()) {
+        for (Tile texture : mActiveTiles.values()) {
             canvas.unloadTexture(texture);
             texture.recycle();
         }
         mActiveTiles.clear();
-        TileTexture tile = mRecycledHead;
-        while (tile != null) {
-            canvas.unloadTexture(tile);
-            tile.recycle();
-            tile = tile.mNextFree;
-        }
-        mRecycledHead = null;
+        freeRecycledTile(canvas);
     }
 
     @Override
     protected void render(GLCanvas canvas) {
-
         mUploadQuota = UPLOAD_LIMIT;
         mRenderComplete = true;
 
-        int index = mIndex;
-        if (index == mScaledBitmaps.length) {
+        int level = mLevel;
+        if (level == mLevelCount) {
             mBackupTexture.draw(canvas, mOffsetX, mOffsetY,
                     (int) (mImageWidth * mScale), (int) (mImageHeight * mScale));
         } else {
-            int tileLength = (TILE_SIZE << index);
-            int length = (int) (tileLength * mScale);
+            int size = (TILE_SIZE << level);
+            float length = size * mScale;
             Rect r = mTileRange;
-            for (int y = mOffsetY, ty = r.top, bottom = r.bottom;
-                    ty < bottom; y += length, ty += tileLength) {
-                for (int x = mOffsetX, tx = r.left, right = r.right;
-                        tx < right; x += length, tx += tileLength) {
-                    TileTexture tile = getTileTexture(tx, ty, index);
+
+            for (int ty = r.top, i = 0; ty < r.bottom; ty += size, i++) {
+                float y = mOffsetY + i * length;
+                for (int tx = r.left, j = 0; tx < r.right; tx += size, j++) {
+                    float x = mOffsetX + j * length;
+                    Tile tile = getTile(tx, ty, level);
                     tile.drawTile(canvas, x, y, length);
                 }
             }
@@ -236,75 +260,65 @@ public class ImageViewer extends GLView {
         }
     }
 
-    private void activateTileTexture(int x, int y, int scaleIndex) {
-        TileKey key = mTileKey.set(x, y, scaleIndex);
-        TileTexture tile = mActiveTiles.get(key);
-        if (tile != null) return;
-
+    private Tile obtainTile(int x, int y, int level) {
+        Tile tile;
         if (mRecycledHead != null) {
             tile = mRecycledHead;
             mRecycledHead = tile.mNextFree;
-            tile.update(x, y, scaleIndex);
+            tile.update(x, y, level);
         } else {
-            tile = new TileTexture(x, y, scaleIndex);
+            tile = new Tile(x, y, level);
         }
-        mActiveTiles.put(key.clone(), tile);
+        return tile;
     }
 
-    private TileTexture getTileTexture(int x, int y, int scaleIndex) {
-        return mActiveTiles.get(mTileKey.set(x, y, scaleIndex));
+    private void recycleTile(Tile tile) {
+        tile.mNextFree = mRecycledHead;
+        mRecycledHead = tile;
     }
 
-    public static class TileKey implements Cloneable {
-        private int mX;
-        private int mY;
-        private int mScaleIndex;
-
-        public TileKey(int x, int y, int index) {
-            set(x, y, index);
+    private void freeRecycledTile(GLCanvas canvas) {
+        Tile tile = mRecycledHead;
+        while (tile != null) {
+            canvas.unloadTexture(tile);
+            tile.recycle();
+            tile = tile.mNextFree;
         }
-
-        public TileKey set(int x, int y, int index) {
-            mX = x;
-            mY = y;
-            mScaleIndex = index;
-            return this;
-        }
-
-        @Override
-        public TileKey clone() {
-            try {
-                return (TileKey) super.clone();
-            } catch (CloneNotSupportedException e) {
-                throw new AssertionError();
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            int hashCode = 31 + mX;
-            hashCode = hashCode * 31 + mY;
-            return hashCode * 31 + mScaleIndex;
-        }
-
-        @Override
-        public boolean equals(Object another) {
-            if (!(another instanceof TileKey)) return false;
-            TileKey t = (TileKey) another;
-            return t.mX == mX && t.mY == mY && t.mScaleIndex == mScaleIndex;
-        }
+        mRecycledHead = null;
     }
 
+    private void activateTile(int x, int y, int level) {
+        Long key = makeTileKey(x, y, level);
+        Tile tile = mActiveTiles.get(key);
+        if (tile != null) return;
+        tile = obtainTile(x, y, level);
+        mActiveTiles.put(key, tile);
+    }
+
+    private Tile getTile(int x, int y, int level) {
+        return mActiveTiles.get(makeTileKey(x, y, level));
+    }
+
+    public static Long makeTileKey(int x, int y, int level) {
+        long result = x;
+        result = (result << 16) | y;
+        result = (result << 16) | level;
+        return Long.valueOf(result);
+    }
+
+    // TODO: avoid drawing the unused part of the textures.
     static boolean drawTile(
-            TileTexture tile, GLCanvas canvas, RectF source, Rect target) {
+            Tile tile, GLCanvas canvas, RectF source, RectF target) {
         while (true) {
             if (tile.isContentValid(canvas)) {
+                // offset source rectangle for the texture border.
+                source.offset(TILE_BORDER, TILE_BORDER);
                 canvas.drawTexture(tile, source, target);
                 return true;
             }
 
             // Parent can be divided to four quads and tile is one of the four.
-            TileTexture parent = tile.getParentTile();
+            Tile parent = tile.getParentTile();
             if (parent == null) return false;
             if (tile.mX == parent.mX) {
                 source.left /= 2f;
@@ -332,14 +346,15 @@ public class ImageViewer extends GLView {
             int quota = UPLOAD_LIMIT;
             GLCanvas canvas = root.getCanvas();
 
-            Iterator<TileTexture> iter = mUploadIter;
+            Iterator<Tile> iter = mUploadIter;
             while (iter.hasNext() && quota > 0) {
-                TileTexture tile = iter.next();
+                Tile tile = iter.next();
                 if (!tile.isContentValid(canvas)) {
                     tile.updateContent(canvas);
                     Log.v(TAG, String.format(
                             "update tile in background: %s %s %s",
-                            tile.mX, tile.mY, tile.mScaleIndex));
+                            tile.mX / TILE_SIZE, tile.mY / TILE_SIZE,
+                            tile.mTileLevel));
                     --quota;
                 }
             }
@@ -348,16 +363,16 @@ public class ImageViewer extends GLView {
         }
     }
 
-    private class TileTexture extends UploadedTexture {
+    private class Tile extends UploadedTexture {
         int mX;
         int mY;
-        int mScaleIndex;
-        TileTexture mNextFree;
+        int mTileLevel;
+        Tile mNextFree;
 
-        public TileTexture(int x, int y, int scale) {
+        public Tile(int x, int y, int level) {
             mX = x;
             mY = y;
-            mScaleIndex = scale;
+            mTileLevel = level;
         }
 
         @Override
@@ -367,39 +382,41 @@ public class ImageViewer extends GLView {
 
         @Override
         protected Bitmap onGetBitmap() {
-            int index = mScaleIndex;
-            Bitmap source = mScaledBitmaps[index];
-            Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE, TILE_SIZE,
+            int level = mTileLevel;
+            Bitmap source = mScaledBitmaps[level];
+            Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE + 2 * TILE_BORDER,
+                    TILE_SIZE + 2 * TILE_BORDER,
                     source.hasAlpha() ? Config.ARGB_8888 : Config.RGB_565);
             Canvas canvas = new Canvas(bitmap);
-            canvas.drawBitmap(source, -(mX >> index), -(mY >> index), null);
+            canvas.drawBitmap(source, -(mX >> level) + TILE_BORDER,
+                    -(mY >> level) + TILE_BORDER, null);
             return bitmap;
         }
 
-        public void update(int x, int y, int index) {
+        public void update(int x, int y, int level) {
             mX = x;
             mY = y;
-            mScaleIndex = index;
+            mTileLevel = level;
             invalidateContent();
         }
 
-        public void drawTile(GLCanvas canvas, int x, int y, int length) {
+        public void drawTile(GLCanvas canvas, float x, float y, float length) {
             RectF source = mSourceRect;
-            Rect target = mTargetRect;
+            RectF target = mTargetRect;
             target.set(x, y, x + length, y + length);
             source.set(0, 0, TILE_SIZE, TILE_SIZE);
             drawTile(canvas, source, target);
         }
 
-        public TileTexture getParentTile() {
-            if (mScaleIndex + 1 == mScaledBitmaps.length) return null;
-            int size = TILE_SIZE << (mScaleIndex + 1);
+        public Tile getParentTile() {
+            if (mTileLevel + 1 == mLevelCount) return null;
+            int size = TILE_SIZE << (mTileLevel + 1);
             int x = size * (mX / size);
             int y = size * (mY / size);
-            return getTileTexture(x, y, mScaleIndex + 1);
+            return getTile(x, y, mTileLevel + 1);
         }
 
-        public void drawTile(GLCanvas canvas, RectF source, Rect target) {
+        public void drawTile(GLCanvas canvas, RectF source, RectF target) {
             if (!isContentValid(canvas)) {
                 if (mUploadQuota > 0) {
                     --mUploadQuota;
@@ -412,13 +429,12 @@ public class ImageViewer extends GLView {
                 BitmapTexture backup = mBackupTexture;
                 int width = mImageWidth;
                 int height = mImageHeight;
-                float scale = width > height
-                        ? (float) backup.getWidth() / width
-                        : (float) backup.getHeight() / height;
-                int length = TILE_SIZE << mScaleIndex;
+                float scaleX = (float) backup.getWidth() / width;
+                float scaleY = (float) backup.getHeight() / height;
+                int size = TILE_SIZE << mTileLevel;
 
-                source.set(mX * scale, mY * scale, (mX + length) * scale,
-                        (mY + length) * scale);
+                source.set(mX * scaleX, mY * scaleY, (mX + size) * scaleX,
+                        (mY + size) * scaleY);
 
                 canvas.drawTexture(backup, source, target);
             }
@@ -450,7 +466,7 @@ public class ImageViewer extends GLView {
             if (Float.isNaN(scale) || Float.isInfinite(scale)) return true;
             scale = Util.clamp(scale * mScale, 0.02f, 2);
 
-            //  The focus point should keep this position on the ImageView.
+            // The focus point should keep this position on the ImageView.
             // So, mCenterX + mPrevOffsetX = mCenterX' + offsetX.
             // mCenterY + mPrevOffsetY = mCenterY' + offsetY.
             float offsetX = (detector.getFocusX() - getWidth() / 2) / scale;
