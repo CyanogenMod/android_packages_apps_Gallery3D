@@ -218,6 +218,7 @@ public class ImageViewer extends GLView {
     }
 
     public void close() {
+        mUploadIter = null;
         GLCanvas canvas = getGLRootView().getCanvas();
         for (Tile texture : mActiveTiles.values()) {
             canvas.unloadTexture(texture);
@@ -346,6 +347,7 @@ public class ImageViewer extends GLView {
             int quota = UPLOAD_LIMIT;
             GLCanvas canvas = root.getCanvas();
 
+            if (mUploadIter == null) return false;
             Iterator<Tile> iter = mUploadIter;
             while (iter.hasNext() && quota > 0) {
                 Tile tile = iter.next();

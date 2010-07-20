@@ -10,6 +10,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.app.Gallery;
 import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.MediaSet;
 
