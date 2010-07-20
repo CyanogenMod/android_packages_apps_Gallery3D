@@ -82,8 +82,7 @@ public class GLCanvasTest extends TestCase {
             canvas.setSize(400, 300);
             // Test one color to make sure blend function is set.
             assertEquals(0, mGLColorCalled);
-            canvas.bindColor(0x7F804020);
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, 0x7F804020);
             assertEquals(1, mGLColorCalled);
             assertEquals(0x7F402010, mGLColor);
             assertPremultipliedBlending(this);
@@ -97,8 +96,7 @@ public class GLCanvasTest extends TestCase {
                 int pre = makeColor4f(a * r, a * g, a * b, a);
 
                 mGLColorCalled = 0;
-                canvas.bindColor(c);
-                canvas.drawLine(0, 0, 1, 1);
+                canvas.drawLine(0, 0, 1, 1, c);
                 assertEquals(1, mGLColorCalled);
                 assertEquals(pre, mGLColor);
             }
@@ -151,9 +149,8 @@ public class GLCanvasTest extends TestCase {
             canvas.setSize(400, 300);
 
             assertEquals(0, mGLColorCalled);
-            canvas.bindColor(0xFF804020);
             canvas.setAlpha(0.48f);
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, 0xFF804020);
             assertPremultipliedBlending(this);
             assertEquals(1, mGLColorCalled);
             assertEquals(0x7A3D1F0F, mGLColor);
@@ -192,7 +189,7 @@ public class GLCanvasTest extends TestCase {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
-            canvas.drawLine(2, 7, 1, 8);
+            canvas.drawLine(2, 7, 1, 8, 0 /* color */);
             assertTrue(mGLVertexArrayEnabled);
             assertEquals(1, mDrawArrayCalled);
 
@@ -236,7 +233,7 @@ public class GLCanvasTest extends TestCase {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
-            canvas.fillRect(2, 7, 1, 8);
+            canvas.fillRect(2, 7, 1, 8, 0 /* color */);
             assertTrue(mGLVertexArrayEnabled);
             assertEquals(1, mDrawArrayCalled);
             Log.v(TAG, "result = " + Arrays.toString(mResult));
@@ -298,9 +295,10 @@ public class GLCanvasTest extends TestCase {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(40, 50);
+            int color = 0;
 
             // Initial matrix
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, color);
             assertMatrixEq(new float[] {
                     1,  0, 0, 0,
                     0, -1, 0, 0,
@@ -317,7 +315,7 @@ public class GLCanvasTest extends TestCase {
 
             // Translation
             canvas.translate(3, 4, 5);
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, color);
             assertMatrixEq(new float[] {
                     1,  0, 0, 0,
                     0, -1, 0, 0,
@@ -328,7 +326,7 @@ public class GLCanvasTest extends TestCase {
 
             // Scaling
             canvas.scale(0.7f, 0.6f, 0.5f);
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, color);
             assertMatrixEq(new float[] {
                     0.7f,     0,    0, 0,
                     0,    -0.6f,    0, 0,
@@ -338,7 +336,7 @@ public class GLCanvasTest extends TestCase {
 
             // Rotation
             canvas.rotate(90, 0, 0, 1);
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, color);
             assertMatrixEq(new float[] {
                         0, -0.6f,    0, 0,
                     -0.7f,     0,    0, 0,
@@ -350,7 +348,7 @@ public class GLCanvasTest extends TestCase {
             // After restoring to the point just after translation,
             // do rotation again.
             canvas.rotate(180, 1, 0, 0);
-            canvas.drawLine(0, 0, 1, 1);
+            canvas.drawLine(0, 0, 1, 1, color);
             assertMatrixEq(new float[] {
                     1,  0,  0, 0,
                     0,  1,  0, 0,
@@ -487,6 +485,7 @@ public class GLCanvasTest extends TestCase {
     @SmallTest
     public void testDrawTexture() {
         new DrawTextureTest().run();
+        new DrawTextureMixedTest().run();
     }
 
     private static class MyTexture extends BasicTexture {
@@ -499,9 +498,8 @@ public class GLCanvasTest extends TestCase {
             mIsOpaque = isOpaque;
         }
 
-        protected void bind(GLCanvas canvas) {
+        protected void onBind(GLCanvas canvas) {
             mBindCalled++;
-            canvas.bindTexture(mId);
         }
 
         public boolean isOpaque() {
@@ -546,13 +544,13 @@ public class GLCanvasTest extends TestCase {
             // Draw a non-opaque texture
             canvas.drawTexture(texture, 100, 200, 300, 400);
             assertEquals(42, mGLBindTextureId);
-            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertPremultipliedBlending(this);
 
             // Draw an opaque texture
             canvas.drawTexture(texture_o, 100, 200, 300, 400);
             assertEquals(47, mGLBindTextureId);
-            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertFalse(mGLBlendEnabled);
 
             // Draw a non-opaque texture with alpha = 0.5
@@ -560,30 +558,41 @@ public class GLCanvasTest extends TestCase {
             canvas.drawTexture(texture, 100, 200, 300, 400);
             assertEquals(42, mGLBindTextureId);
             assertEquals(0x80808080, mGLColor);
-            assertEquals(GL11.GL_MODULATE, mGLEnvMode);
+            assertEquals(GL_MODULATE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertPremultipliedBlending(this);
 
             // Draw an non-opaque texture with overriden alpha = 1
             canvas.drawTexture(texture, 100, 200, 300, 400, 1f);
             assertEquals(42, mGLBindTextureId);
-            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertPremultipliedBlending(this);
 
             // Draw an opaque texture with overriden alpha = 1
             canvas.drawTexture(texture_o, 100, 200, 300, 400, 1f);
             assertEquals(47, mGLBindTextureId);
-            assertEquals(GL11.GL_REPLACE, mGLEnvMode);
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertFalse(mGLBlendEnabled);
 
             // Draw an opaque texture with overridden alpha = 0.25
             canvas.drawTexture(texture_o, 100, 200, 300, 400, 0.25f);
             assertEquals(47, mGLBindTextureId);
             assertEquals(0x40404040, mGLColor);
-            assertEquals(GL11.GL_MODULATE, mGLEnvMode);
+            assertEquals(GL_MODULATE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertPremultipliedBlending(this);
 
-            // We have drawn six textures above.
-            assertEquals(0, mDrawArrayCalled);
+            // Draw an opaque texture with overridden alpha = 0.125
+            // but with some rotation so it will use DrawArray.
+            canvas.save();
+            canvas.rotate(30, 0, 0, 1);
+            canvas.drawTexture(texture_o, 100, 200, 300, 400, 0.125f);
+            canvas.restore();
+            assertEquals(47, mGLBindTextureId);
+            assertEquals(0x20202020, mGLColor);
+            assertEquals(GL_MODULATE, getTexEnvi(GL_TEXTURE_ENV_MODE));
+            assertPremultipliedBlending(this);
+
+            // We have drawn seven textures above.
+            assertEquals(1, mDrawArrayCalled);
             assertEquals(6, mDrawTexiOESCalled);
 
             // translate and scale does not affect whether we
@@ -612,7 +621,89 @@ public class GLCanvasTest extends TestCase {
             canvas.drawTexture(texture, 100, 200, 300, 400);
             assertEquals(10, mDrawTexiOESCalled);
 
-            assertEquals(2, mDrawArrayCalled);
+            assertEquals(3, mDrawArrayCalled);
+
+            assertTrue(texture.isLoaded(canvas));
+            assertTrue(canvas.unloadTexture(texture));
+            assertFalse(texture.isLoaded(canvas));
+            canvas.deleteRecycledTextures();
+
+            assertTrue(texture_o.isLoaded(canvas));
+            assertTrue(canvas.unloadTexture(texture_o));
+            assertFalse(texture_o.isLoaded(canvas));
+        }
+    }
+
+    private static class DrawTextureMixedTest extends GLMock {
+
+        boolean mTexture2DEnabled0, mTexture2DEnabled1;
+        @Override
+        public void glEnable(int cap) {
+            if (cap == GL_TEXTURE_2D) {
+                texture2DEnable(true);
+            }
+        }
+
+        @Override
+        public void glDisable(int cap) {
+            if (cap == GL_TEXTURE_2D) {
+                texture2DEnable(false);
+            }
+        }
+
+        private void texture2DEnable(boolean enable) {
+            if (mGLActiveTexture == GL_TEXTURE0) {
+                mTexture2DEnabled0 = enable;
+            } else if (mGLActiveTexture == GL_TEXTURE1) {
+                mTexture2DEnabled1 = enable;
+            } else {
+                fail();
+            }
+        }
+
+        @Override
+        public void glTexEnvfv(int target, int pname, float[] params, int offset) {
+            if (target == GL_TEXTURE_ENV && pname == GL_TEXTURE_ENV_COLOR) {
+                for (int i = 0; i < 4; i++) {
+                    assertEquals(0.5f, params[offset + i]);
+                }
+            }
+        }
+
+        @Override
+        public void glBindTexture(int target, int texture) {
+            if (target == GL_TEXTURE_2D) {
+                if (mGLActiveTexture == GL_TEXTURE0) {
+                    assertEquals(42, texture);
+                } else if (mGLActiveTexture == GL_TEXTURE1) {
+                    assertEquals(47, texture);
+                } else {
+                    fail();
+                }
+            }
+        }
+
+        void run() {
+            GLCanvas canvas = new GLCanvasImp(this);
+            canvas.setSize(400, 300);
+            MyTexture from = new MyTexture(this, 42, false);  // non-opaque
+            MyTexture to = new MyTexture(this, 47, true);  // opaque
+
+            canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
+            assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));
+            assertEquals(GL_INTERPOLATE, getTexEnvi(GL_COMBINE_RGB));
+            assertEquals(GL_INTERPOLATE, getTexEnvi(GL_COMBINE_ALPHA));
+            assertEquals(GL_CONSTANT, getTexEnvi(GL_SRC2_RGB));
+            assertEquals(GL_CONSTANT, getTexEnvi(GL_SRC2_ALPHA));
+            assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_OPERAND2_RGB));
+            assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_OPERAND2_ALPHA));
+            assertTrue(mTexture2DEnabled0);
+            assertFalse(mTexture2DEnabled1);
+
+            // The test is currently broken, waiting for the fix
+            //canvas.setAlpha(0.3f);
+            //canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
+            //assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));
         }
     }
 

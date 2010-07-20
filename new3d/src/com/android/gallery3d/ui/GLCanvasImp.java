@@ -50,7 +50,6 @@ public class GLCanvasImp implements GLCanvas {
     private long mAnimationTime;
 
     private float mAlpha;
-    private int mBoundColor;
     private final Rect mClipRect = new Rect();
     private final Stack<ConfigState> mRestoreStack =
             new Stack<ConfigState>();
@@ -148,13 +147,8 @@ public class GLCanvasImp implements GLCanvas {
         pointer.put(buffer, 0, 8).position(0);
     }
 
-    public void bindColor(int color) {
-        mBoundColor = color;
-        mGLState.setTexture2DEnabled(false);
-    }
-
-    public void drawLine(int x1, int y1, int x2, int y2) {
-        mGLState.setColorAlpha(mBoundColor, mAlpha);
+    public void drawLine(int x1, int y1, int x2, int y2, int color) {
+        mGLState.setColorMode(color, mAlpha);
         GL11 gl = mGL;
         gl.glLoadMatrixf(mMatrixValues, 0);
         float buffer[] = mXyBuffer;
@@ -164,6 +158,14 @@ public class GLCanvasImp implements GLCanvas {
         buffer[3] = y2;
         mXyPointer.put(buffer, 0, 4).position(0);
         gl.glDrawArrays(GL11.GL_LINE_STRIP, 0, 2);
+    }
+
+    public void fillRect(float x, float y, float width, float height, int color) {
+        mGLState.setColorMode(color, mAlpha);
+        GL11 gl = mGL;
+        gl.glLoadMatrixf(mMatrixValues, 0);
+        putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
+        gl.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
     }
 
     public void translate(float x, float y, float z) {
@@ -181,8 +183,8 @@ public class GLCanvasImp implements GLCanvas {
         System.arraycopy(temp, 16, mMatrixValues, 0, 16);
     }
 
-    public void fillRect(float x, float y, float width, float height) {
-        mGLState.setColorAlpha(mBoundColor, mAlpha);
+    private void textureRect(float x, float y, float width, float height, float alpha) {
+        mGLState.setTextureAlpha(alpha);
         GL11 gl = mGL;
         gl.glLoadMatrixf(mMatrixValues, 0);
         putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
@@ -200,7 +202,7 @@ public class GLCanvasImp implements GLCanvas {
         if (chunk.mDivX.length != 2 || chunk.mDivY.length != 2) {
             throw new RuntimeException("unsupported nine patch");
         }
-        tex.bind(this);
+        bindTexture(tex);
         if (width <= 0 || height <= 0) return;
 
         int divX[] = mNinePatchX;
@@ -422,7 +424,7 @@ public class GLCanvasImp implements GLCanvas {
                     (texture.mWidth - 0.5f) / texture.mTextureWidth,
                     (texture.mHeight - 0.5f) / texture.mTextureHeight,
                     mUvBuffer, mUvPointer);
-            fillRect(x, y, width, height);
+            textureRect(x, y, width, height, alpha);
         } else {
             // draw the rect from bottom-left to top-right
             float points[] = mapPoints(
@@ -449,7 +451,7 @@ public class GLCanvasImp implements GLCanvas {
         if (width <= 0 || height <= 0) return;
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
-        texture.bind(this);
+        bindTexture(texture);
         drawBoundTexture(texture, x, y, width, height, alpha);
     }
 
@@ -463,11 +465,11 @@ public class GLCanvasImp implements GLCanvas {
         target = mDrawTextureTargetRect;
 
         mGLState.setBlendEnabled(!texture.isOpaque() || mAlpha < OPAQUE_ALPHA);
-        texture.bind(this);
+        bindTexture(texture);
         convertCoordinate(source, target, texture);
         setTextureCoords(source);
-        fillRect(target.left, target.top, target.right - target.left,
-                target.bottom - target.top);
+        textureRect(target.left, target.top, target.right - target.left,
+                target.bottom - target.top, mAlpha);
     }
 
     // This function changes the source coordinate to the texture coordinates.
@@ -506,9 +508,10 @@ public class GLCanvasImp implements GLCanvas {
         drawMixed(from, to, ratio, x, y, w, h, mAlpha);
     }
 
-    public void bindTexture(int id) {
+    private void bindTexture(BasicTexture texture) {
+        texture.onBind(this);
         mGLState.setTexture2DEnabled(true);
-        mGL.glBindTexture(GL11.GL_TEXTURE_2D, id);
+        mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.mId);
     }
 
     private void setTextureColor(float r, float g, float b, float alpha) {
@@ -530,10 +533,10 @@ public class GLCanvasImp implements GLCanvas {
         mGLState.setBlendEnabled(!from.isOpaque() || !to.isOpaque());
 
         final GL11 gl = mGL;
-        from.bind(this);
+        bindTexture(from);
 
         gl.glActiveTexture(GL11.GL_TEXTURE1);
-        to.bind(this);
+        bindTexture(to);
         gl.glEnable(GL11.GL_TEXTURE_2D);
 
         // Interpolate the RGB and alpha values between both textures.
@@ -542,7 +545,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_COMBINE_ALPHA, GL11.GL_INTERPOLATE);
 
         // Specify the interpolation factor via the alpha component of
-        // GL_TEXTURE_ENV_COLORes.
+        // GL_TEXTURE_ENV_COLORs.
         setTextureColor(ratio, ratio, ratio, ratio);
         gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, mTextureColor, 0);
 
@@ -555,7 +558,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_OPERAND2_ALPHA, GL11.GL_SRC_ALPHA);
 
         // Draw the combined texture.
-        drawBoundTexture(to, x, y, width, height, mAlpha);
+        drawBoundTexture(to, x, y, width, height, alpha);
 
         // Disable TEXTURE1.
         gl.glDisable(GL11.GL_TEXTURE_2D);
@@ -667,15 +670,6 @@ public class GLCanvasImp implements GLCanvas {
             mGL.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, mode);
         }
 
-        public void setColorAlpha(int color, float alpha) {
-            if (mTexture2DEnabled) {
-                setTextureAlpha(alpha);
-            } else {
-                setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
-                setFragmentColor(color, alpha);
-            }
-        }
-
         public void setTextureAlpha(float alpha) {
             if (mTextureAlpha == alpha) return;
             mTextureAlpha = alpha;
@@ -689,7 +683,9 @@ public class GLCanvasImp implements GLCanvas {
             }
         }
 
-        public void setFragmentColor(int color, float alpha) {
+        public void setColorMode(int color, float alpha) {
+            setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
+
             // Set mTextureAlpha to an invalid value, so that it will reset
             // again in setTextureAlpha(float) later.
             mTextureAlpha = -1.0f;
