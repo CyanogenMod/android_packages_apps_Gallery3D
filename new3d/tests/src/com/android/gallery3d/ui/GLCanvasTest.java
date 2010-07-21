@@ -5,7 +5,6 @@ import android.util.Log;
 
 import junit.framework.TestCase;
 
-import java.nio.Buffer;
 import java.util.Arrays;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -211,7 +210,7 @@ public class GLCanvasTest extends TestCase {
     // are used directly.
     private static class FillRectTest extends GLMock {
         private int mDrawArrayCalled = 0;
-        private int[] mResult = new int[8];
+        private final int[] mResult = new int[8];
 
         @Override
         public void glDrawArrays(int mode, int first, int count) {
@@ -279,8 +278,8 @@ public class GLCanvasTest extends TestCase {
     // The matrix here are all listed in column major order.
     //
     private static class TransformTest extends GLMock {
-        private float[] mModelViewMatrixUsed = new float[16];
-        private float[] mProjectionMatrixUsed = new float[16];
+        private final float[] mModelViewMatrixUsed = new float[16];
+        private final float[] mProjectionMatrixUsed = new float[16];
 
         @Override
         public void glDrawArrays(int mode, int first, int count) {
@@ -498,6 +497,7 @@ public class GLCanvasTest extends TestCase {
             mIsOpaque = isOpaque;
         }
 
+        @Override
         protected void onBind(GLCanvas canvas) {
             mBindCalled++;
         }
@@ -664,9 +664,7 @@ public class GLCanvasTest extends TestCase {
         @Override
         public void glTexEnvfv(int target, int pname, float[] params, int offset) {
             if (target == GL_TEXTURE_ENV && pname == GL_TEXTURE_ENV_COLOR) {
-                for (int i = 0; i < 4; i++) {
-                    assertEquals(0.5f, params[offset + i]);
-                }
+                assertEquals(0.5f, params[offset + 3]);
             }
         }
 
@@ -701,9 +699,9 @@ public class GLCanvasTest extends TestCase {
             assertFalse(mTexture2DEnabled1);
 
             // The test is currently broken, waiting for the fix
-            //canvas.setAlpha(0.3f);
-            //canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
-            //assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));
+            canvas.setAlpha(0.3f);
+            canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
+            assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));
         }
     }
 

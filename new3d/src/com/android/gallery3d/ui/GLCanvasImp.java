@@ -4,7 +4,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLU;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -16,6 +15,7 @@ import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
 
 public class GLCanvasImp implements GLCanvas {
+    @SuppressWarnings("unused")
     private static final String TAG = "GLCanvasImp";
 
     // We need 16 vertices for a normal nine-patch image (the 4x4 vertices)
@@ -28,7 +28,6 @@ public class GLCanvasImp implements GLCanvas {
 
     private final GL11 mGL;
 
-    private final int mTextureId[] = new int[1];
     private final float mMatrixValues[] = new float[16];
 
     private final float mUvBuffer[] = new float[VERTEX_BUFFER_SIZE];
@@ -55,9 +54,9 @@ public class GLCanvasImp implements GLCanvas {
             new Stack<ConfigState>();
     private ConfigState mRecycledRestoreAction;
 
-    private RectF mDrawTextureSourceRect = new RectF();
-    private RectF mDrawTextureTargetRect = new RectF();
-    private float[] mTempMatrix = new float[32];
+    private final RectF mDrawTextureSourceRect = new RectF();
+    private final RectF mDrawTextureTargetRect = new RectF();
+    private final float[] mTempMatrix = new float[32];
     private final IntArray mUnboundIds = new IntArray();
 
     GLCanvasImp(GL11 gl) {
@@ -183,8 +182,7 @@ public class GLCanvasImp implements GLCanvas {
         System.arraycopy(temp, 16, mMatrixValues, 0, 16);
     }
 
-    private void textureRect(float x, float y, float width, float height, float alpha) {
-        mGLState.setTextureAlpha(alpha);
+    private void textureRect(float x, float y, float width, float height) {
         GL11 gl = mGL;
         gl.glLoadMatrixf(mMatrixValues, 0);
         putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
@@ -416,7 +414,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     private void drawBoundTexture(
-            BasicTexture texture, int x, int y, int width, int height, float alpha) {
+            BasicTexture texture, int x, int y, int width, int height) {
         // Test whether it has been rotated or flipped, if so, glDrawTexiOES
         // won't work
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
@@ -424,7 +422,7 @@ public class GLCanvasImp implements GLCanvas {
                     (texture.mWidth - 0.5f) / texture.mTextureWidth,
                     (texture.mHeight - 0.5f) / texture.mTextureHeight,
                     mUvBuffer, mUvPointer);
-            textureRect(x, y, width, height, alpha);
+            textureRect(x, y, width, height);
         } else {
             // draw the rect from bottom-left to top-right
             float points[] = mapPoints(
@@ -433,12 +431,10 @@ public class GLCanvasImp implements GLCanvas {
             y = (int) points[1];
             width = (int) points[2] - x;
             height = (int) points[3] - y;
-            mGLState.setTextureAlpha(alpha);
             if (width > 0 && height > 0) {
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
             }
         }
-
     }
 
     public void drawTexture(
@@ -452,7 +448,8 @@ public class GLCanvasImp implements GLCanvas {
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
         bindTexture(texture);
-        drawBoundTexture(texture, x, y, width, height, alpha);
+        mGLState.setTextureAlpha(alpha);
+        drawBoundTexture(texture, x, y, width, height);
     }
 
     public void drawTexture(BasicTexture texture, RectF source, RectF target) {
@@ -468,8 +465,8 @@ public class GLCanvasImp implements GLCanvas {
         bindTexture(texture);
         convertCoordinate(source, target, texture);
         setTextureCoords(source);
-        textureRect(target.left, target.top, target.right - target.left,
-                target.bottom - target.top, mAlpha);
+        mGLState.setTextureAlpha(mAlpha);
+        textureRect(target.left, target.top, target.width(), target.height());
     }
 
     // This function changes the source coordinate to the texture coordinates.
@@ -527,13 +524,29 @@ public class GLCanvasImp implements GLCanvas {
 
     public void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int width, int height, float alpha) {
-        if (alpha < OPAQUE_ALPHA) {
-            throw new RuntimeException("Cannot support alpha value");
-        }
-        mGLState.setBlendEnabled(!from.isOpaque() || !to.isOpaque());
+        mGLState.setBlendEnabled(!from.isOpaque()
+                || !to.isOpaque() || alpha < OPAQUE_ALPHA);
 
         final GL11 gl = mGL;
         bindTexture(from);
+
+        //
+        // The formula we want:
+        //     alpha * ((1 - ratio) * from + ratio * to)
+        // The formula that GL supports is in the form of:
+        //     (1 - combo) * (modulate * from) + combo * to
+        //
+        // So, we have combo = alpha * ratio
+        //     and     modulate = alpha * (1f - ratio) / (1 - combo)
+        //
+        float comboRatio = alpha * ratio;
+
+        // handle the case that (1 - comboRatio) == 0
+        if (alpha < OPAQUE_ALPHA) {
+            mGLState.setTextureAlpha(alpha * (1f - ratio) / (1f - comboRatio));
+        } else {
+            mGLState.setTextureAlpha(1f);
+        }
 
         gl.glActiveTexture(GL11.GL_TEXTURE1);
         bindTexture(to);
@@ -546,7 +559,8 @@ public class GLCanvasImp implements GLCanvas {
 
         // Specify the interpolation factor via the alpha component of
         // GL_TEXTURE_ENV_COLORs.
-        setTextureColor(ratio, ratio, ratio, ratio);
+        // We don't use the RGB color, so just give them 0s.
+        setTextureColor(0, 0, 0, comboRatio);
         gl.glTexEnvfv(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_COLOR, mTextureColor, 0);
 
         // Wire up the interpolation factor for RGB.
@@ -558,7 +572,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_OPERAND2_ALPHA, GL11.GL_SRC_ALPHA);
 
         // Draw the combined texture.
-        drawBoundTexture(to, x, y, width, height, alpha);
+        drawBoundTexture(to, x, y, width, height);
 
         // Disable TEXTURE1.
         gl.glDisable(GL11.GL_TEXTURE_2D);
@@ -645,9 +659,7 @@ public class GLCanvasImp implements GLCanvas {
 
             // Enable used features
             gl.glEnable(GL11.GL_DITHER);
-
             gl.glEnable(GL11.GL_SCISSOR_TEST);
-            gl.glEnable(GL11.GL_STENCIL_TEST);
 
             gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
             gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
