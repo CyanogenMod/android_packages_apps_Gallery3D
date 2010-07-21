@@ -4,6 +4,7 @@ package com.android.gallery3d.data;
 
 import android.database.Cursor;
 
+import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.picasa.AlbumEntry;
 import com.android.gallery3d.picasa.EntrySchema;
 import com.android.gallery3d.picasa.PhotoEntry;
@@ -19,8 +20,8 @@ public class PicasaAlbum extends DatabaseMediaSet {
     private final ArrayList<PicasaPhoto> mPhotos = new ArrayList<PicasaPhoto>();
     private final ArrayList<PicasaPhoto> mLoadBuffer = new ArrayList<PicasaPhoto>();
 
-    public PicasaAlbum(MediaDbAccessor accessor, AlbumEntry entry) {
-        super(accessor);
+    public PicasaAlbum(GalleryContext context, AlbumEntry entry) {
+        super(context);
         mData = entry;
     }
 
@@ -62,7 +63,7 @@ public class PicasaAlbum extends DatabaseMediaSet {
         StringBuilder whereClause = new StringBuilder(PhotoEntry.Columns.ALBUM_ID);
         whereClause.append(" = ").append(mData.id);
 
-        Cursor cursor = mAccessor.getContentResolver().query(
+        Cursor cursor = mContext.getContentResolver().query(
                 PicasaContentProvider.PHOTOS_URI,
                 SCHEMA.getProjection(), whereClause.toString(), null, null);
         try {

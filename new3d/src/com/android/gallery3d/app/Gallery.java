@@ -17,24 +17,27 @@
 package com.android.gallery3d.app;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.ImageService;
-import com.android.gallery3d.data.MediaDbAccessor;
-import com.android.gallery3d.ui.GalleryView;
 import com.android.gallery3d.ui.GLRootView;
+import com.android.gallery3d.ui.GalleryView;
 import com.android.gallery3d.ui.StateManager;
 import com.android.gallery3d.ui.StateView;
 
-public final class Gallery extends Activity {
+public final class Gallery extends Activity implements GalleryContext {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
 
     private static final String TAG = "Gallery";
     private GLRootView mGLRootView;
+
+    private StateManager mStateManager;
+    private ImageService mImageService;
+    private DataManager mDataManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -42,24 +45,7 @@ public final class Gallery extends Activity {
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
 
-        // Initialize various managers.
-        StateManager.initialize(this, mGLRootView);
-        ImageService.initialize(this);
-        MediaDbAccessor.initialize(this, mGLRootView);
-        DataManager.initialize(this);
-
-        StateManager.getInstance().startStateView(
-                GalleryView.class, new Bundle());
-    }
-
-    @Override
-    public void onRestart() {
-        super.onRestart();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
+        getStateManager().startStateView(GalleryView.class, new Bundle());
     }
 
     @Override
@@ -83,12 +69,14 @@ public final class Gallery extends Activity {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
-        ImageService.getInstance().close();
+        synchronized (this) {
+            if (mImageService != null) mImageService.close();
+        }
     }
 
     @Override
     public void onBackPressed() {
-        StateView stateView = StateManager.getInstance().peekState();
+        StateView stateView = getStateManager().peekState();
         if (stateView != null) {
             synchronized (mGLRootView) {
                 stateView.onBackPressed();
@@ -98,26 +86,32 @@ public final class Gallery extends Activity {
         }
     }
 
-    private boolean isPickIntent() {
-        String action = getIntent().getAction();
-        return (Intent.ACTION_PICK.equals(action) || Intent.ACTION_GET_CONTENT.equals(action));
+    public Context getAndroidContext() {
+        return this;
     }
 
-    private boolean isViewIntent() {
-        String action = getIntent().getAction();
-        return Intent.ACTION_VIEW.equals(action);
+    public synchronized ImageService getImageService() {
+        if (mImageService == null) {
+            mImageService = new ImageService(getContentResolver());
+        }
+        return mImageService;
     }
 
-    private boolean isReviewIntent() {
-        String action = getIntent().getAction();
-        return REVIEW_ACTION.equals(action);
+    public synchronized DataManager getDataManager() {
+        if (mDataManager == null) {
+            mDataManager = new DataManager(this);
+        }
+        return mDataManager;
     }
 
-    private boolean isImageType(String type) {
-        return type.contains("*/") || type.equals("vnd.android.cursor.dir/image") || type.equals("image/*");
+    public synchronized StateManager getStateManager() {
+        if (mStateManager == null) {
+            mStateManager = new StateManager(this, mGLRootView);
+        }
+        return mStateManager;
     }
 
-    private boolean isVideoType(String type) {
-        return type.contains("*/") || type.equals("vnd.android.cursor.dir/video") || type.equals("video/*");
+    public Object getUIMonitor() {
+        return mGLRootView;
     }
 }

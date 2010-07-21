@@ -144,7 +144,7 @@ public class GLRootView extends GLSurfaceView
         requestRender();
     }
 
-    private synchronized void layoutContentPane() {
+    private void layoutContentPane() {
         mFlags &= ~FLAG_NEED_LAYOUT;
         int width = getWidth();
         int height = getHeight();
@@ -196,19 +196,21 @@ public class GLRootView extends GLSurfaceView
         mClipRetryCount = 2;
     }
 
-    public synchronized void onDrawFrame(GL10 gl) {
-        if (ENABLE_FPS_TEST) {
-            long now = System.nanoTime();
-            if (mFrameCountingStart == 0) {
-                mFrameCountingStart = now;
-            } else if ((now - mFrameCountingStart) > 1000000000) {
-                Log.v(TAG, "fps: " + (double) mFrameCount
-                        * 1000000000 / (now - mFrameCountingStart));
-                mFrameCountingStart = now;
-                mFrameCount = 0;
-            }
-            ++mFrameCount;
+    private void outputFps() {
+        long now = System.nanoTime();
+        if (mFrameCountingStart == 0) {
+            mFrameCountingStart = now;
+        } else if ((now - mFrameCountingStart) > 1000000000) {
+            Log.v(TAG, "fps: " + (double) mFrameCount
+                    * 1000000000 / (now - mFrameCountingStart));
+            mFrameCountingStart = now;
+            mFrameCount = 0;
         }
+        ++mFrameCount;
+    }
+
+    public synchronized void onDrawFrame(GL10 gl) {
+        if (ENABLE_FPS_TEST) outputFps();
 
         // release the unbound textures
         mCanvas.deleteRecycledTextures();

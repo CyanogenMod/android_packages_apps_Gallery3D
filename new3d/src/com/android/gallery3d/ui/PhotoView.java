@@ -2,17 +2,16 @@
 
 package com.android.gallery3d.ui;
 
-import com.android.gallery3d.data.DataManager;
-import com.android.gallery3d.data.MediaItem;
-import com.android.gallery3d.data.MediaSet;
-
-import java.util.ArrayList;
-
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import android.os.Message;
+
+import com.android.gallery3d.data.MediaItem;
+import com.android.gallery3d.data.MediaSet;
+
+import java.util.ArrayList;
 
 public class PhotoView extends StateView implements SlotView.SlotTapListener {
     public static final String KEY_SET_INDEX = "keySetIndex";
@@ -38,7 +37,7 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
                 switch (message.what) {
                     case ON_IMAGE_READY:
                         setImageViewer(new ImageViewer(
-                                mContext, mScaledBitmaps,
+                                mContext.getAndroidContext(), mScaledBitmaps,
                                 mBackupBitmap));
                         break;
                 }
@@ -57,7 +56,7 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
     private void initializeData(Bundle data) {
         mSetIndex = data.getInt(KEY_SET_INDEX);
         mPhotoIndex = data.getInt(KEY_PHOTO_INDEX);
-        MediaSet set = DataManager.getInstance().getSubMediaSet(mSetIndex);
+        MediaSet set = mContext.getDataManager().getSubMediaSet(mSetIndex);
         MediaItem item = set.getMediaItem(mPhotoIndex);
         item.setListener(new MyMediaItemListener());
         item.requestImage(MediaItem.TYPE_FULL_IMAGE);

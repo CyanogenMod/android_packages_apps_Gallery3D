@@ -2,15 +2,14 @@
 
 package com.android.gallery3d.ui;
 
-import com.android.gallery3d.R;
-import com.android.gallery3d.data.DataManager;
-import com.android.gallery3d.data.MediaSet;
-
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Message;
+
+import com.android.gallery3d.R;
+import com.android.gallery3d.data.MediaSet;
 
 public class AlbumView extends StateView implements SlotView.SlotTapListener {
     public static final String KEY_BUCKET_INDEX = "keyBucketIndex";
@@ -57,9 +56,9 @@ public class AlbumView extends StateView implements SlotView.SlotTapListener {
     private void initializeViews() {
         mBackground = new AdaptiveBackground();
         addComponent(mBackground);
-        mSlotView = new SlotView(mContext);
+        mSlotView = new SlotView(mContext.getAndroidContext());
         addComponent(mSlotView);
-        mHud = new HeadUpDisplay(mContext);
+        mHud = new HeadUpDisplay(mContext.getAndroidContext());
         addComponent(mHud);
         mSlotView.setGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
         mSlotView.setSlotTapListener(this);
@@ -71,9 +70,9 @@ public class AlbumView extends StateView implements SlotView.SlotTapListener {
 
     private void intializeData(Bundle data) {
         mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
-        MediaSet mediaSet = DataManager.getInstance()
-                .getSubMediaSet(mBucketIndex);
-        mSlotView.setModel(new GridSlotAdapter(mContext, mediaSet, mSlotView));
+        MediaSet mediaSet = mContext.getDataManager().getSubMediaSet(mBucketIndex);
+        mSlotView.setModel(new GridSlotAdapter(
+                mContext.getAndroidContext(), mediaSet, mSlotView));
     }
 
     public SlotView getSlotView() {
@@ -115,7 +114,7 @@ public class AlbumView extends StateView implements SlotView.SlotTapListener {
         data.putInt(PhotoView.KEY_SET_INDEX, mBucketIndex);
         data.putInt(PhotoView.KEY_PHOTO_INDEX, slotIndex);
 
-        StateManager.getInstance().startStateView(PhotoView.class, data);
+        mContext.getStateManager().startStateView(PhotoView.class, data);
     }
 
     @Override

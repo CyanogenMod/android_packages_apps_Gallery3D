@@ -1,6 +1,7 @@
 package com.android.gallery3d.data;
 
 
+
 public abstract class DatabaseMediaItem extends AbstractMediaItem {
 
     protected int mId;
@@ -12,6 +13,10 @@ public abstract class DatabaseMediaItem extends AbstractMediaItem {
     protected long mDateAddedInSec;
     protected long mDateModifiedInSec;
     protected String mFilePath;
+
+    protected DatabaseMediaItem(ImageService imageService) {
+        super(imageService);
+    }
 
     public String getTitle() {
         return mCaption;
