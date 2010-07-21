@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Bitmap.Config;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -22,7 +23,7 @@ public class ImageViewer extends GLView {
     // texture to avoid seams between tiles.
     private static final int TILE_SIZE = 254;
     private static final int TILE_BORDER = 1;
-    private static final int UPLOAD_LIMIT = 4;
+    private static final int UPLOAD_LIMIT = 1;
 
     private final Bitmap mScaledBitmaps[];
     private final BitmapTexture mBackupTexture;
@@ -54,6 +55,7 @@ public class ImageViewer extends GLView {
 
     private final ScaleGestureDetector mScaleDetector;
     private final GestureDetector mGestureDetector;
+    private final DownUpDetector mDownUpDetector;
 
     private final HashMap<Long, Tile> mActiveTiles = new HashMap<Long, Tile>();
     private Iterator<Tile> mUploadIter;
@@ -69,6 +71,7 @@ public class ImageViewer extends GLView {
     private final Rect mActiveRange[] = {new Rect(), new Rect()};
 
     private final Uploader mUploader = new Uploader();
+    private final AnimationController mAnimationController;
 
     public ImageViewer(Context context, Bitmap scaledBitmaps[], Bitmap backup) {
         mScaledBitmaps = scaledBitmaps;
@@ -77,30 +80,39 @@ public class ImageViewer extends GLView {
 
         mImageWidth = scaledBitmaps[0].getWidth();
         mImageHeight = scaledBitmaps[0].getHeight();
-        setPosition(mImageWidth / 2, mImageHeight / 2, 0.5f);
+
+        mAnimationController = new AnimationController(this,
+                mImageWidth, mImageHeight);
 
         mScaleDetector = new ScaleGestureDetector(context, new MyScaleListener());
-        mGestureDetector = new GestureDetector(context, new MyGestureListener());
+        mGestureDetector = new GestureDetector(context,
+                new MyGestureListener(),
+                null /* handler */,
+                true /* ignoreMultitouch */);
+        mDownUpDetector = new DownUpDetector(new MyDownUpListener());
     }
 
     @Override
     protected boolean onTouch(MotionEvent event) {
         mGestureDetector.onTouchEvent(event);
         mScaleDetector.onTouchEvent(event);
+        mDownUpDetector.onTouchEvent(event);
         return true;
     }
 
     private static int ceilLog2(float value) {
         int i;
         for (i = 0; i < 30; i++) {
-            if ((1 << i) > value) break;
+            if ((1 << i) >= value) break;
         }
         return i;
     }
 
     @Override
     protected void onLayout(boolean changeSize, int l, int t, int r, int b) {
-        if (changeSize) layoutTiles(mCenterX, mCenterY, mScale);
+        if (changeSize) {
+            mAnimationController.updateViewSize(getWidth(), getHeight());
+        }
     }
 
     // Prepare the tiles we want to use for display.
@@ -189,8 +201,8 @@ public class ImageViewer extends GLView {
         int width = getWidth();
         int height = getHeight();
 
-        int left = Math.round(cX - width / (2f * scale));
-        int top = Math.round(cY - height / (2f * scale));
+        int left = (int) Math.floor(cX - width / (2f * scale));
+        int top = (int) Math.floor(cY - height / (2f * scale));
         int right = (int) Math.ceil(left + width / scale);
         int bottom = (int) Math.ceil(top + height / scale);
 
@@ -205,16 +217,265 @@ public class ImageViewer extends GLView {
     }
 
     public void setPosition(int centerX, int centerY, float scale) {
-        if (centerX == mCenterX && centerY == mCenterY && scale == mScale) {
-            return;
-        }
-
         mCenterX = centerX;
         mCenterY = centerY;
         mScale = scale;
 
         layoutTiles(centerX, centerY, scale);
         invalidate();
+    }
+
+    private static class AnimationController {
+        private long mAnimationStartTime = NO_ANIMATION;
+        private static final long NO_ANIMATION = -1;
+        private static final long LAST_ANIMATION = -2;
+
+        // Animation time in milliseconds.
+        private static final float ANIM_TIME_SCROLL = 0;
+        private static final float ANIM_TIME_SCALE = 50;
+        private static final float ANIM_TIME_SNAPBACK = 600;
+
+        private int mAnimationKind;
+        private final static int ANIM_KIND_SCROLL = 0;
+        private final static int ANIM_KIND_SCALE = 1;
+        private final static int ANIM_KIND_SNAPBACK = 2;
+
+        private ImageViewer mViewer;
+        private int mImageW, mImageH;
+        private int mViewW, mViewH;
+
+        // The X, Y are the coordinate on bitmap which shows on the center of
+        // the view. We always keep the mCurrent{X,Y,SCALE} sync with the actual
+        // values used currently.
+        private int mCurrentX, mFromX, mToX;
+        private int mCurrentY, mFromY, mToY;
+        private float mCurrentScale, mFromScale, mToScale;
+
+        // The offsets from the center of the view to the user's focus point,
+        // converted to the bitmap domain.
+        private float mPrevOffsetX;
+        private float mPrevOffsetY;
+        private boolean mInScale;
+
+        // The limits for position and scale.
+        private float mScaleMin = 0.25f, mScaleMax = 4f;
+
+        AnimationController(ImageViewer viewer, int imageW, int imageH) {
+            mViewer = viewer;
+            mImageW = imageW;
+            mImageH = imageH;
+            mCurrentX = mImageW / 2;
+            mCurrentY = mImageH / 2;
+            mCurrentScale = 0.5f;
+            mViewer.setPosition(mCurrentX, mCurrentY, mCurrentScale);
+        }
+
+        public void updateViewSize(int viewW, int viewH) {
+            mViewW = viewW;
+            mViewH = viewH;
+            mScaleMin = Math.min((float) viewW / mImageW, (float) viewH / mImageH);
+            mScaleMin = Math.min(1f, mScaleMin);
+            mCurrentScale = Util.clamp(mCurrentScale, mScaleMin, mScaleMax);
+            mViewer.setPosition(mCurrentX, mCurrentY, mCurrentScale);
+        }
+
+        public void scrollBy(float dx, float dy) {
+            startAnimation(getTargetX() + Math.round(dx / mCurrentScale),
+                           getTargetY() + Math.round(dy / mCurrentScale),
+                           mCurrentScale,
+                           ANIM_KIND_SCROLL);
+        }
+
+        public void beginScale(float focusX, float focusY) {
+            mInScale = true;
+            mPrevOffsetX = (focusX - mViewW / 2f) / mCurrentScale;
+            mPrevOffsetY = (focusY - mViewH / 2f) / mCurrentScale;
+        }
+
+        public void scaleBy(float s, float focusX, float focusY) {
+            // The focus point should keep this position on the ImageView.
+            // So, mCurrentX + mPrevOffsetX = mCurrentX' + offsetX.
+            // mCurrentY + mPrevOffsetY = mCurrentY' + offsetY.
+            float offsetX = (focusX - mViewW / 2f) / mCurrentScale;
+            float offsetY = (focusY - mViewH / 2f) / mCurrentScale;
+            startAnimation(getTargetX() - Math.round(offsetX - mPrevOffsetX),
+                           getTargetY() - Math.round(offsetY - mPrevOffsetY),
+                           getTargetScale() * s,
+                           ANIM_KIND_SCALE);
+            mPrevOffsetX = offsetX;
+            mPrevOffsetY = offsetY;
+        }
+
+        public void endScale() {
+            mInScale = false;
+            startSnapbackIfNeeded();
+        }
+
+        public void up() {
+            startSnapbackIfNeeded();
+        }
+
+        private void startAnimation(int centerX, int centerY, float scale, int kind) {
+            if (centerX == mCurrentX && centerY == mCurrentY
+                    && scale == mCurrentScale) {
+                return;
+            }
+
+            mFromX = mCurrentX;
+            mFromY = mCurrentY;
+            mFromScale = mCurrentScale;
+
+            mToX = centerX;
+            mToY = centerY;
+            mToScale = Util.clamp(scale, 0.6f * mScaleMin, 1.4f * mScaleMax);
+
+            // If the scaled dimension is smaller than the view,
+            // force it to be in the center.
+            if (mImageW * mToScale < mViewW) {
+                mToX = mImageW / 2;
+            }
+            if (mImageH * mToScale < mViewH) {
+                mToY = mImageH / 2;
+            }
+
+            mAnimationStartTime = SystemClock.uptimeMillis();
+            mAnimationKind = kind;
+            advanceAnimation();
+        }
+
+        // Returns true if redraw is needed.
+        public boolean advanceAnimation() {
+            if (mAnimationStartTime == NO_ANIMATION) {
+                return false;
+            } else if (mAnimationStartTime == LAST_ANIMATION) {
+                mAnimationStartTime = NO_ANIMATION;
+                return startSnapbackIfNeeded();
+            }
+
+            float animationTime;
+            if (mAnimationKind == ANIM_KIND_SCROLL) {
+                animationTime = ANIM_TIME_SCROLL;
+            } else if (mAnimationKind == ANIM_KIND_SCALE) {
+                animationTime = ANIM_TIME_SCALE;
+            } else /* if (mAnimationKind == ANIM_KIND_SNAPBACK) */ {
+                animationTime = ANIM_TIME_SNAPBACK;
+            }
+
+            float progress;
+            if (animationTime == 0) {
+                progress = 1;
+            } else {
+                long now = SystemClock.uptimeMillis();
+                progress = (now - mAnimationStartTime) / animationTime;
+            }
+
+            if (progress >= 1) {
+                progress = 1;
+                mCurrentX = mToX;
+                mCurrentY = mToY;
+                mCurrentScale = mToScale;
+                mAnimationStartTime = LAST_ANIMATION;
+            } else {
+                float f = 1 - progress;
+                if (mAnimationKind == ANIM_KIND_SCROLL) {
+                    f = 1 - f;  // linear
+                } else if (mAnimationKind == ANIM_KIND_SCALE) {
+                    f = 1 - f * f;  // quadratic
+                } else /* if (mAnimationKind == ANIM_KIND_SNAPBACK */ {
+                    f = 1 - f * f * f * f * f; // x^5
+                }
+                mCurrentX = Math.round(mFromX + f * (mToX - mFromX));
+                mCurrentY = Math.round(mFromY + f * (mToY - mFromY));
+                mCurrentScale = mFromScale + f * (mToScale - mFromScale);
+            }
+            mViewer.setPosition(mCurrentX, mCurrentY, mCurrentScale);
+            return true;
+        }
+
+        // Returns true if redraw is needed.
+        private boolean startSnapbackIfNeeded() {
+            if (mAnimationStartTime != NO_ANIMATION) return false;
+            if (mInScale) return false;
+            if (mAnimationKind == ANIM_KIND_SCROLL && mViewer.isDown()) {
+                return false;
+            }
+
+            boolean needAnimation = false;
+            int x = mCurrentX;
+            int y = mCurrentY;
+            float scale = mCurrentScale;
+
+            if (mCurrentScale < mScaleMin || mCurrentScale > mScaleMax) {
+                needAnimation = true;
+                scale = Util.clamp(mCurrentScale, mScaleMin, mScaleMax);
+            }
+
+            // The number of pixels when the edge is aliged.
+            int left = (int) Math.ceil(mViewW / (2 * scale));
+            int right = mImageW - left;
+            int top = (int) Math.ceil(mViewH / (2 * scale));
+            int bottom = mImageH - top;
+
+            if (mImageW * scale > mViewW) {
+                if (mCurrentX < left) {
+                    needAnimation = true;
+                    x = left;
+                } else if (mCurrentX > right) {
+                    needAnimation = true;
+                    x = right;
+                }
+            } else {
+                if (mCurrentX > left) {
+                    needAnimation = true;
+                    x = left;
+                } else if (mCurrentX < right) {
+                    needAnimation = true;
+                    x = right;
+                }
+            }
+
+            if (mImageH * scale > mViewH) {
+                if (mCurrentY < top) {
+                    needAnimation = true;
+                    y = top;
+                } else if (mCurrentY > bottom) {
+                    needAnimation = true;
+                    y = bottom;
+                }
+            } else {
+                if (mCurrentY > top) {
+                    needAnimation = true;
+                    y = top;
+                } else if (mCurrentY < bottom) {
+                    needAnimation = true;
+                    y = bottom;
+                }
+            }
+
+            if (needAnimation) {
+                startAnimation(x, y, scale, ANIM_KIND_SNAPBACK);
+            }
+
+            return needAnimation;
+        }
+
+        private float getTargetScale() {
+            if (mAnimationStartTime == NO_ANIMATION
+                    || mAnimationKind == ANIM_KIND_SNAPBACK) return mCurrentScale;
+            return mToScale;
+        }
+
+        private int getTargetX() {
+            if (mAnimationStartTime == NO_ANIMATION
+                    || mAnimationKind == ANIM_KIND_SNAPBACK) return mCurrentX;
+            return mToX;
+        }
+
+        private int getTargetY() {
+            if (mAnimationStartTime == NO_ANIMATION
+                    || mAnimationKind == ANIM_KIND_SNAPBACK) return mCurrentY;
+            return mToY;
+        }
     }
 
     public void close() {
@@ -251,6 +512,11 @@ public class ImageViewer extends GLView {
                 }
             }
         }
+
+        if (mAnimationController.advanceAnimation()) {
+            mRenderComplete = false;
+        }
+
         if (mRenderComplete) {
             if (mUploadIter.hasNext() && !mUploader.mActive) {
                 mUploader.mActive = true;
@@ -448,8 +714,7 @@ public class ImageViewer extends GLView {
         @Override
         public boolean onScroll(
                 MotionEvent e1, MotionEvent e2, float dx, float dy) {
-            setPosition((int) (mCenterX + dx / mScale),
-                    (int) (mCenterY + dy / mScale), mScale);
+            mAnimationController.scrollBy(dx, dy);
             return true;
         }
     }
@@ -457,35 +722,38 @@ public class ImageViewer extends GLView {
     private class MyScaleListener
             extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
-        // The offsets of the focus point to the center of the image on the
-        // image domain.
-        private float mPrevOffsetX;
-        private float mPrevOffsetY;
-
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             float scale = detector.getScaleFactor();
             if (Float.isNaN(scale) || Float.isInfinite(scale)) return true;
-            scale = Util.clamp(scale * mScale, 0.02f, 2);
-
-            // The focus point should keep this position on the ImageView.
-            // So, mCenterX + mPrevOffsetX = mCenterX' + offsetX.
-            // mCenterY + mPrevOffsetY = mCenterY' + offsetY.
-            float offsetX = (detector.getFocusX() - getWidth() / 2) / scale;
-            float offsetY = (detector.getFocusY() - getHeight() / 2) / scale;
-            setPosition((int) (mCenterX - (offsetX - mPrevOffsetX) + 0.5),
-                    (int) (mCenterY - (offsetY - mPrevOffsetY) + 0.5), scale);
-            mPrevOffsetX = offsetX;
-            mPrevOffsetY = offsetY;
-
+            mAnimationController.scaleBy(scale,
+                    detector.getFocusX(), detector.getFocusY());
             return true;
         }
 
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector) {
-            mPrevOffsetX = (detector.getFocusX() - getWidth() / 2) / mScale;
-            mPrevOffsetY = (detector.getFocusY() - getHeight() / 2) / mScale;
+            mAnimationController.beginScale(
+                detector.getFocusX(), detector.getFocusY());
             return true;
         }
+
+        @Override
+        public void onScaleEnd(ScaleGestureDetector detector) {
+            mAnimationController.endScale();
+        }
+    }
+
+    private class MyDownUpListener implements DownUpDetector.DownUpListener {
+        public void onDown(MotionEvent e) {
+        }
+
+        public void onUp(MotionEvent e) {
+            mAnimationController.up();
+        }
+    }
+
+    private boolean isDown() {
+        return mDownUpDetector.isDown();
     }
 }
