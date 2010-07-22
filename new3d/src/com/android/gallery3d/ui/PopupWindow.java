@@ -159,14 +159,11 @@ class PopupWindow extends GLView {
         }
 
         BasicTexture backup = null;
-        try {
-            // Copy the current drawing results of the triangle area into
-            // "backup", so that we can restore the content after it is
-            // overlaid by the background.
-            backup = canvas.copyTexture(aXoffset, aYoffset, aWidth, aHeight);
-        } catch (GLOutOfMemoryException e) {
-            Log.e(TAG, "out of memory", e);
-        }
+
+        // Copy the current drawing results of the triangle area into
+        // "backup", so that we can restore the content after it is
+        // overlaid by the background.
+        backup = canvas.copyTexture(aXoffset, aYoffset, aWidth, aHeight);
 
         if (mBackground != null) {
             mBackground.draw(canvas, 0, 0,
@@ -175,7 +172,7 @@ class PopupWindow extends GLView {
 
         // restore the backup with alpha = 1
         canvas.drawTexture(backup, aXoffset, aYoffset, aWidth, aHeight, 1f);
-        backup.deleteFromGL(canvas);
+        canvas.unloadTexture(backup);
     }
 
     @Override

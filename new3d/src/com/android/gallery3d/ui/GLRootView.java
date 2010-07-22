@@ -91,6 +91,9 @@ public class GLRootView extends GLSurfaceView
         setBackgroundDrawable(null);
         setEGLConfigChooser(mEglConfigChooser);
         setRenderer(this);
+
+        // Remove this before release.
+        setDebugFlags(DEBUG_CHECK_GL_ERROR);
     }
 
     public GalleryEGLConfigChooser getEGLConfigChooser() {

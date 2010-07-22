@@ -2,6 +2,9 @@ package com.android.gallery3d.ui;
 
 import javax.microedition.khronos.opengles.GL11;
 
+// BasicTexture is a Texture corresponds to a real GL texture.
+// The state of a BasicTexture indicates whether its data is loaded to GL memory.
+// If a BasicTexture is loaded into GL memory, it has a GL texture id.
 abstract class BasicTexture implements Texture {
 
     protected static final int UNSPECIFIED = -1;
@@ -18,8 +21,8 @@ abstract class BasicTexture implements Texture {
     protected int mWidth = UNSPECIFIED;
     protected int mHeight = UNSPECIFIED;
 
-    protected int mTextureWidth;
-    protected int mTextureHeight;
+    private int mTextureWidth;
+    private int mTextureHeight;
 
     protected BasicTexture(GL11 gl, int id, int state) {
         mGL = gl;
@@ -27,23 +30,15 @@ abstract class BasicTexture implements Texture {
         mState = state;
     }
 
-    protected BasicTexture() {
-        this(null, 0, STATE_UNLOADED);
-    }
-
+    /**
+     * Sets the content size of this texture. In OpenGL, the actual texture
+     * size must be of power of 2, the size of the content may be smaller.
+     */
     protected void setSize(int width, int height) {
         mWidth = width;
         mHeight = height;
-    }
-
-    /**
-     * Sets the size of the texture. Due to the limit of OpenGL, the texture
-     * size must be of power of 2, the size of the content may not be the size
-     * of the texture.
-     */
-    protected void setTextureSize(int width, int height) {
-        mTextureWidth = width;
-        mTextureHeight = height;
+        mTextureWidth = Util.nextPowerOf2(width);
+        mTextureHeight = Util.nextPowerOf2(height);
     }
 
     public int getId() {
@@ -58,11 +53,14 @@ abstract class BasicTexture implements Texture {
         return mHeight;
     }
 
-    public void deleteFromGL(GLCanvas canvas) {
-        if (mState == STATE_LOADED && mGL == canvas.getGLInstance()) {
-            mGL.glDeleteTextures(1, new int[]{mId}, 0);
-        }
-        mState = STATE_UNLOADED;
+    // Returns the width rounded to the next power of 2.
+    public int getTextureWidth() {
+        return mTextureWidth;
+    }
+
+    // Returns the height rounded to the next power of 2.
+    public int getTextureHeight() {
+        return mTextureHeight;
     }
 
     public void draw(GLCanvas canvas, int x, int y) {
@@ -73,6 +71,8 @@ abstract class BasicTexture implements Texture {
         canvas.drawTexture(this, x, y, w, h);
     }
 
+    // onBind is called before GLCanvas binds this texture.
+    // It should make sure the data is uploaded to GL memory.
     abstract protected void onBind(GLCanvas canvas);
 
     public boolean isLoaded(GLCanvas canvas) {

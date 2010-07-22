@@ -561,6 +561,7 @@ public class GLCanvasTest extends TestCase {
             assertEquals(0x80808080, mGLColor);
             assertEquals(GL_MODULATE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertPremultipliedBlending(this);
+            assertFalse(mGLStencilEnabled);
 
             // Draw an non-opaque texture with overriden alpha = 1
             canvas.drawTexture(texture, 100, 200, 300, 400, 1f);
