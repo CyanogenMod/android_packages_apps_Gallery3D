@@ -119,8 +119,7 @@ abstract class UploadedTexture extends BasicTexture {
                 int widthExt = Util.nextPowerOf2(width);
                 int heightExt = Util.nextPowerOf2(height);
                 int format = GLUtils.getInternalFormat(bitmap);
-                mOpaque =
-                        (format == GL11.GL_RGB || format == GL11.GL_LUMINANCE);
+                mOpaque = !bitmap.hasAlpha();
                 int type = GLUtils.getType(bitmap);
 
                 mTextureWidth = widthExt;
@@ -158,7 +157,7 @@ abstract class UploadedTexture extends BasicTexture {
     }
 
     public boolean isOpaque() {
-        return mOpaque ;
+        return mOpaque;
     }
 
     public void recycle() {

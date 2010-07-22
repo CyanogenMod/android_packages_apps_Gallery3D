@@ -139,6 +139,10 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
             }
             return list.toArray(new Bitmap[list.size()]);
         }
+    }
 
+    @Override
+    protected void renderBackground(GLCanvas view) {
+        view.clearBuffer();
     }
 }

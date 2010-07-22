@@ -28,7 +28,7 @@ class StringTexture extends CanvasTexture {
     private final Paint mPaint;
     private final FontMetricsInt mMetrics;
 
-    public StringTexture(String text, Paint paint,
+    private StringTexture(String text, Paint paint,
             FontMetricsInt metrics, int width, int height) {
         super(width, height);
         mText = text;
@@ -36,8 +36,7 @@ class StringTexture extends CanvasTexture {
         mMetrics = metrics;
     }
 
-
-    public static StringTexture newInstance(String text, Paint paint) {
+    private static StringTexture newInstance(String text, Paint paint) {
         FontMetricsInt metrics = paint.getFontMetricsInt();
         int width = (int) (.5f + paint.measureText(text)) + DEFAULT_PADDING * 2;
         int height = metrics.bottom - metrics.top + DEFAULT_PADDING * 2;
