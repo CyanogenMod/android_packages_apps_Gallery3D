@@ -38,7 +38,7 @@ public class GLCanvasTest extends TestCase {
             GLCanvas canvas = new GLCanvasImp(this);
             assertEquals(0, mGLClearCalled);
             canvas.clearBuffer();
-            assertTrue((mGLClearMask & GL10.GL_COLOR_BUFFER_BIT) != 0);
+            assertEquals(GL10.GL_COLOR_BUFFER_BIT, mGLClearMask);
             assertEquals(1, mGLClearCalled);
         }
     }
@@ -546,6 +546,7 @@ public class GLCanvasTest extends TestCase {
             assertEquals(42, mGLBindTextureId);
             assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE_ENV_MODE));
             assertPremultipliedBlending(this);
+            assertFalse(mGLStencilEnabled);
 
             // Draw an opaque texture
             canvas.drawTexture(texture_o, 100, 200, 300, 400);
@@ -697,6 +698,7 @@ public class GLCanvasTest extends TestCase {
             assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_OPERAND2_ALPHA));
             assertTrue(mTexture2DEnabled0);
             assertFalse(mTexture2DEnabled1);
+            assertFalse(mGLBlendEnabled);
 
             // The test is currently broken, waiting for the fix
             canvas.setAlpha(0.3f);

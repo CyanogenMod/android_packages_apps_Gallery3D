@@ -27,6 +27,7 @@ public class GLMock extends GLStub {
     int mGLColor;
     // glEnable, glDisable
     boolean mGLBlendEnabled;
+    boolean mGLStencilEnabled;
     // glEnableClientState
     boolean mGLVertexArrayEnabled;
     // glVertexPointer
@@ -73,6 +74,8 @@ public class GLMock extends GLStub {
     public void glEnable(int cap) {
         if (cap == GL11.GL_BLEND) {
             mGLBlendEnabled = true;
+        } else if (cap == GL11.GL_STENCIL_TEST) {
+            mGLStencilEnabled = true;
         }
     }
 
@@ -80,6 +83,8 @@ public class GLMock extends GLStub {
     public void glDisable(int cap) {
         if (cap == GL11.GL_BLEND) {
             mGLBlendEnabled = false;
+        } else if (cap == GL11.GL_STENCIL_TEST) {
+            mGLStencilEnabled = false;
         }
     }
 

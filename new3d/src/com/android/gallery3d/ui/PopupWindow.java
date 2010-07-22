@@ -124,6 +124,7 @@ class PopupWindow extends GLView {
         GL11 gl = canvas.getGLInstance();
         if (mAnchor != null) {
             gl.glEnable(GL11.GL_STENCIL_TEST);
+            gl.glClear(GL11.GL_STENCIL_BUFFER_BIT);
             gl.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
             gl.glStencilFunc(GL11.GL_ALWAYS, 1, 1);
             mAnchor.draw(canvas, aXoffset, aYoffset);

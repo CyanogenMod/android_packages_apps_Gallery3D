@@ -4,6 +4,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLU;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -65,8 +66,6 @@ public class GLCanvasImp implements GLCanvas {
         initialize();
     }
 
-    private int mClipRetryCount = 0;
-
     public void setSize(int width, int height) {
         Util.Assert(width >= 0 && height >= 0);
 
@@ -88,7 +87,7 @@ public class GLCanvasImp implements GLCanvas {
         Matrix.scaleM(matrix, 0, 1, -1, 1);
 
         mClipRect.set(0, 0, width, height);
-        mClipRetryCount = 2;
+        gl.glScissor(0, 0, width, height);
     }
 
     public long currentAnimationTimeMillis() {
@@ -743,16 +742,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void clearBuffer() {
-        // OpenGL seems having a bug causing us not being able to reset the
-        // scissor box in "setSize()". We have to do it in the second
-        // onDrawFrame().
-        if (mClipRetryCount > 0) {
-            --mClipRetryCount;
-            Rect clip = mClipRect;
-            mGL.glScissor(clip.left, clip.top, clip.width(), clip.height());
-        }
-
-        mGL.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_STENCIL_BUFFER_BIT);
+        mGL.glClear(GL10.GL_COLOR_BUFFER_BIT);
     }
 
     private void setTextureCoords(RectF source) {

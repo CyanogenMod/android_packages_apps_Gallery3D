@@ -18,6 +18,7 @@ package com.android.gallery3d.ui;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Rect;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.util.AttributeSet;
@@ -61,6 +62,9 @@ public class GLRootView extends GLSurfaceView
 
     private int mFlags = FLAG_NEED_LAYOUT;
     private volatile boolean mRenderRequested = false;
+
+    private Rect mClipRect = new Rect();
+    private int mClipRetryCount = 0;
 
     private final GalleryEGLConfigChooser mEglConfigChooser =
             new GalleryEGLConfigChooser();
@@ -187,6 +191,9 @@ public class GLRootView extends GLSurfaceView
         Util.Assert(mGL == gl);
 
         mCanvas.setSize(width, height);
+
+        mClipRect.set(0, 0, width, height);
+        mClipRetryCount = 2;
     }
 
     public synchronized void onDrawFrame(GL10 gl) {
@@ -209,7 +216,16 @@ public class GLRootView extends GLSurfaceView
         mRenderRequested = false;
 
         if ((mFlags & FLAG_NEED_LAYOUT) != 0) layoutContentPane();
-        mCanvas.clearBuffer();
+
+        // OpenGL seems having a bug causing us not being able to reset the
+        // scissor box in "onSurfaceChanged()". We have to do it in the second
+        // onDrawFrame().
+        if (mClipRetryCount > 0) {
+            --mClipRetryCount;
+            Rect clip = mClipRect;
+            gl.glScissor(clip.left, clip.top, clip.width(), clip.height());
+        }
+
         mCanvas.setCurrentAnimationTimeMillis(SystemClock.uptimeMillis());
         if (mContentView != null) {
            mContentView.render(mCanvas);

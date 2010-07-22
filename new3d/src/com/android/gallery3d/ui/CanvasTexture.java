@@ -23,10 +23,11 @@ import android.graphics.Bitmap.Config;
 /** Using a canvas to draw the texture */
 abstract class CanvasTexture extends UploadedTexture {
     protected Canvas mCanvas;
-    private final Config mConfig = Config.ARGB_8888;
+    private final Config mConfig;
 
     public CanvasTexture(int width, int height, Config config) {
         setSize(width, height);
+        mConfig = config;
     }
 
     public CanvasTexture(int width, int height) {
