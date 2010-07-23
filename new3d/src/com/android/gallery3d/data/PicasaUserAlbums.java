@@ -4,6 +4,7 @@ package com.android.gallery3d.data;
 
 import android.database.Cursor;
 
+import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.picasa.AlbumEntry;
 import com.android.gallery3d.picasa.EntrySchema;
 import com.android.gallery3d.picasa.PicasaContentProvider;
@@ -17,8 +18,8 @@ public class PicasaUserAlbums extends DatabaseMediaSet {
     private int mCachedTotalCount = -1;
     private final ArrayList<PicasaAlbum> mLoadBuffer = new ArrayList<PicasaAlbum>();
 
-    public PicasaUserAlbums(MediaDbAccessor accessor) {
-        super(accessor);
+    public PicasaUserAlbums(GalleryContext context) {
+        super(context);
     }
 
     public MediaItem[] getCoverMediaItems() {
@@ -58,13 +59,13 @@ public class PicasaUserAlbums extends DatabaseMediaSet {
     @Override
     protected void onLoadFromDatabase() {
         mLoadBuffer.clear();
-        Cursor cursor = mAccessor.getContentResolver().query(
+        Cursor cursor = mContext.getContentResolver().query(
                 PicasaContentProvider.ALBUMS_URI,
                 SCHEMA.getProjection(), null, null, null);
         try {
             while (cursor.moveToNext()) {
                 AlbumEntry entry = SCHEMA.cursorToObject(cursor, new AlbumEntry());
-                mLoadBuffer.add(new PicasaAlbum(mAccessor, entry));
+                mLoadBuffer.add(new PicasaAlbum(mContext, entry));
             }
         } finally {
             cursor.close();

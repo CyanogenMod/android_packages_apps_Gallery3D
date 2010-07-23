@@ -2,37 +2,42 @@
 
 package com.android.gallery3d.data;
 
-import android.content.Context;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Process;
+
+import com.android.gallery3d.app.GalleryContext;
 
 public class DataManager {
-    private static DataManager mInstance;
+    private GalleryContext mContext;
     private MediaSet mRootSet;
-    private Context mContext;
+    private HandlerThread mDataThread;
 
-    public DataManager(Context context) {
+    public DataManager(GalleryContext context) {
         mContext = context;
-    }
-
-    public static void initialize(Context context) {
-        mInstance = new DataManager(context);
-    }
-
-    public static synchronized DataManager getInstance() {
-        if (mInstance == null) throw new IllegalStateException();
-        return mInstance;
     }
 
     public MediaSet getRootSet() {
         if (mRootSet == null) {
-            mRootSet = MediaDbAccessor.getInstance().getRootMediaSets();
+            PicasaUserAlbums picasaRoot = new PicasaUserAlbums(mContext);
+            RootMediaSet mediaRoot = new RootMediaSet(mContext);
+            picasaRoot.invalidate();
+
+            mRootSet = new ComboMediaSet(mediaRoot, picasaRoot);
         }
         return mRootSet;
     }
 
     public MediaSet getSubMediaSet(int subSetIndex) {
-        if (mRootSet == null) {
-            mRootSet = MediaDbAccessor.getInstance().getRootMediaSets();
+        return getRootSet().getSubMediaSet(subSetIndex);
+    }
+
+    public synchronized Looper getDataLooper() {
+        if (mDataThread == null ) {
+            mDataThread = new HandlerThread(
+                    "DataThread", Process.THREAD_PRIORITY_BACKGROUND);
+            mDataThread.start();
         }
-        return mRootSet.getSubMediaSet(subSetIndex);
+        return mDataThread.getLooper();
     }
 }

@@ -3,7 +3,6 @@
 package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
@@ -21,13 +20,11 @@ public class ImageService {
     private static final int INITIAL_TIMEOUT = 2000;
     private static final int MAXIMAL_TIMEOUT = 32000;
 
-    private static ImageService mInstance;
-
     private final HashMap<Integer, DecodeTask> mMap =
             new HashMap<Integer, DecodeTask>();
     private final PriorityQueue<DecodeTask> mQueue = new PriorityQueue<DecodeTask>();
     private final Handler mHandler;
-    private final Context mContext;
+    private final ContentResolver mContentResolver;
 
     private boolean mActive = true;
     private int mTimeSerial;
@@ -35,8 +32,8 @@ public class ImageService {
     private DecodeTask mCurrentTask;
     private final DecodeThread mDecodeThread = new DecodeThread();
 
-    private ImageService(Context context) {
-        mContext = context;
+    public ImageService(ContentResolver contentResolver) {
+        mContentResolver = contentResolver;
 
         mHandler = new Handler() {
             @Override
@@ -44,22 +41,12 @@ public class ImageService {
                 if (m.what != DECODE_TIMEOUT) return;
                 DecodeTask task = mCurrentTask;
                 if (task != null) {
-                    task.mItem.cancelImageGeneration(
-                            mContext.getContentResolver(), task.mType);
+                    task.mItem.cancelImageGeneration(mContentResolver, task.mType);
                 }
             }
         };
 
         mDecodeThread.start();
-    }
-
-    public static void initialize(Context context) {
-        mInstance = new ImageService(context);
-    }
-
-    public static synchronized ImageService getInstance() {
-        if (mInstance == null) throw new IllegalStateException();
-        return mInstance;
     }
 
     protected int requestImage(AbstractMediaItem item, int type) {
@@ -85,8 +72,7 @@ public class ImageService {
             if (mQueue.remove(task)) {
                 task.mItem.onImageCanceled(task.mType);
             } else {
-                task.mItem.cancelImageGeneration(
-                        mContext.getContentResolver(), task.mType);
+                task.mItem.cancelImageGeneration(mContentResolver, task.mType);
             }
         }
     }
@@ -118,7 +104,7 @@ public class ImageService {
         @Override
         public void run() {
             PriorityQueue<DecodeTask> queue = mQueue;
-            ContentResolver resolver = mContext.getContentResolver();
+            ContentResolver resolver = mContentResolver;
 
             while (true) {
                 DecodeTask task = nextDecodeTask();

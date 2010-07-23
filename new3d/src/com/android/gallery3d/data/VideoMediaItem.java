@@ -9,6 +9,7 @@ import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.Video.VideoColumns;
 
 public class VideoMediaItem extends DatabaseMediaItem {
+
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
 
     // Must preserve order between these indices and the order of the terms in
@@ -38,6 +39,10 @@ public class VideoMediaItem extends DatabaseMediaItem {
 
     public int mDurationInSec;
 
+    protected VideoMediaItem(ImageService imageService) {
+        super(imageService);
+    }
+
     @Override
     protected void cancelImageGeneration(ContentResolver resolver, int type) {
         Video.Thumbnails.cancelThumbnailRequest(resolver, mId);
@@ -63,8 +68,8 @@ public class VideoMediaItem extends DatabaseMediaItem {
         }
     }
 
-    public static VideoMediaItem load(Cursor cursor) {
-        VideoMediaItem item = new VideoMediaItem();
+    public static VideoMediaItem load(ImageService imageService, Cursor cursor) {
+        VideoMediaItem item = new VideoMediaItem(imageService);
 
         item.mId = cursor.getInt(INDEX_ID);
         item.mCaption = cursor.getString(INDEX_CAPTION);

@@ -39,7 +39,7 @@ public final class PhotoEntry extends Entry {
         public static final String COMMENT_COUNT = "comment_count";
         public static final String WIDTH = "width";
         public static final String HEIGHT = "height";
-        public static final String ROTATION = "ratation";
+        public static final String ROTATION = "rotation";
         public static final String SIZE = "size";
         public static final String LATITUDE = "latitude";
         public static final String LONGITUDE = "longitude";

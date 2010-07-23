@@ -13,6 +13,7 @@ import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.Video.VideoColumns;
 import android.util.Log;
 
+import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.SynchronizedHandler;
 
 import java.util.ArrayList;
@@ -40,7 +41,6 @@ public class RootMediaSet implements MediaSet{
             VideoColumns.BUCKET_ID,
             VideoColumns.BUCKET_DISPLAY_NAME };
 
-    private final MediaDbAccessor mAccessor;
     private int mTotalCountCached = -1;
 
     private final ArrayList<BucketMediaSet>
@@ -51,12 +51,14 @@ public class RootMediaSet implements MediaSet{
     private final Handler mDataHandler;
     private final Handler mMainHandler;
 
+    private final GalleryContext mContext;
     private MediaSetListener mListener;
 
-    public RootMediaSet(MediaDbAccessor accessor) {
-        mAccessor = accessor;
+    public RootMediaSet(GalleryContext context) {
 
-        mDataHandler = new Handler(accessor.getLooper()) {
+        mContext = context;
+
+        mDataHandler = new Handler(context.getDataManager().getDataLooper()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -70,8 +72,7 @@ public class RootMediaSet implements MediaSet{
         };
 
         mMainHandler = new SynchronizedHandler(
-                accessor.getUiMonitor(), accessor.getMainLooper()) {
-
+                context.getUIMonitor(), context.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -126,7 +127,7 @@ public class RootMediaSet implements MediaSet{
     }
 
     private void loadBucketsFromDatabase() {
-        ContentResolver resolver = mAccessor.getContentResolver();
+        ContentResolver resolver = mContext.getContentResolver();
         HashMap<Integer, String> map = new HashMap<Integer, String>();
         mLoadBuffer = map;
 
@@ -168,9 +169,10 @@ public class RootMediaSet implements MediaSet{
         HashMap<Integer, String> map = mLoadBuffer;
         if (map == null) throw new IllegalStateException();
 
+        GalleryContext context = mContext;
         for (Map.Entry<Integer, String> entry : map.entrySet()) {
             mSubsets.add(new BucketMediaSet(
-                    mAccessor, entry.getKey(), entry.getValue()));
+                    context, entry.getKey(), entry.getValue()));
         }
         mLoadBuffer = null;
 

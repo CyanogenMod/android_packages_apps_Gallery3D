@@ -46,9 +46,13 @@ public class ImageMediaItem extends DatabaseMediaItem {
             ImageColumns.DATA,          // 8
             ImageColumns.ORIENTATION};  // 9
 
+    private final BitmapFactory.Options mOptions = new BitmapFactory.Options();
+
     private int mRotation;
 
-    private final BitmapFactory.Options mOptions = new BitmapFactory.Options();
+    protected ImageMediaItem(ImageService imageService) {
+        super(imageService);
+    }
 
     protected Bitmap decodeImage(String path) throws IOException {
         // TODO: need to figure out why simply setting JPEG_MARK_POSITION doesn't work!
@@ -118,8 +122,8 @@ public class ImageMediaItem extends DatabaseMediaItem {
         }
     }
 
-    public static ImageMediaItem load(Cursor cursor) {
-        ImageMediaItem item = new ImageMediaItem();
+    public static ImageMediaItem load(ImageService imageService, Cursor cursor) {
+        ImageMediaItem item = new ImageMediaItem(imageService);
 
         item.mId = cursor.getInt(INDEX_ID);
         item.mCaption = cursor.getString(INDEX_CAPTION);

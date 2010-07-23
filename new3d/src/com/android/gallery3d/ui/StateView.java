@@ -2,23 +2,24 @@
 
 package com.android.gallery3d.ui;
 
-import android.content.Context;
 import android.os.Bundle;
 
+import com.android.gallery3d.app.GalleryContext;
+
 abstract public class StateView extends GLView {
-    protected Context mContext;
+    protected GalleryContext mContext;
 
     public StateView() {
     }
 
-    void setContext(Context context) {
+    void setContext(GalleryContext context) {
         mContext = context;
     }
 
     abstract public void onStart(Bundle data);
 
     public void onBackPressed() {
-        StateManager.getInstance().finish(this);
+        mContext.getStateManager().finish(this);
     }
 
     public void onPause() {}

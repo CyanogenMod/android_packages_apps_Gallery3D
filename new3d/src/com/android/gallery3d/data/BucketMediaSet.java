@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.Handler;
 import android.os.Message;
 
+import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.SynchronizedHandler;
 
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ public class BucketMediaSet implements MediaSet {
 
     public static final Comparator<BucketMediaSet> sNameComparator = new MyComparator();
 
-    private final MediaDbAccessor mAccessor;
     private final int mBucketId;
     private final String mBucketTitle;
     private final ArrayList<DatabaseMediaItem> mMediaItems =
@@ -33,17 +33,20 @@ public class BucketMediaSet implements MediaSet {
     private final Handler mMainHandler;
 
     private MediaSetListener mListener;
+    private ImageService mImageService;
+    private ContentResolver mContentResolver;
 
     protected void invalidate() {
         mHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
     }
 
-    public BucketMediaSet(MediaDbAccessor accessor, int id, String title) {
-        mAccessor = accessor;
+    public BucketMediaSet(GalleryContext context, int id, String title) {
+        mContentResolver = context.getContentResolver();
+        mImageService = context.getImageService();
         mBucketId = id;
         mBucketTitle= title;
 
-        mHandler = new Handler(accessor.getLooper()) {
+        mHandler = new Handler(context.getDataManager().getDataLooper()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -56,7 +59,7 @@ public class BucketMediaSet implements MediaSet {
         };
 
         mMainHandler = new SynchronizedHandler(
-                accessor.getUiMonitor(), accessor.getMainLooper()) {
+                context.getUIMonitor(), context.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -111,12 +114,12 @@ public class BucketMediaSet implements MediaSet {
         ArrayList<DatabaseMediaItem> items = new ArrayList<DatabaseMediaItem>();
         mLoadBuffer = items;
 
-        ContentResolver resolver = mAccessor.getContentResolver();
+        ContentResolver resolver = mContentResolver;
 
         Cursor cursor = ImageMediaItem.queryImageInBucket(resolver, mBucketId);
         try {
             while (cursor.moveToNext()) {
-                items.add(ImageMediaItem.load(cursor));
+                items.add(ImageMediaItem.load(mImageService, cursor));
             }
         } finally {
             cursor.close();
@@ -125,7 +128,7 @@ public class BucketMediaSet implements MediaSet {
         cursor = VideoMediaItem.queryVideoInBucket(resolver, mBucketId);
         try {
             while (cursor.moveToNext()) {
-                items.add(VideoMediaItem.load(cursor));
+                items.add(VideoMediaItem.load(mImageService, cursor));
             }
         } finally {
             cursor.close();

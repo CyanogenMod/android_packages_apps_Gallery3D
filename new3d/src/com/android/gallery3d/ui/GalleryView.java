@@ -7,11 +7,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Message;
-import android.util.Log;
 
 import com.android.gallery3d.R;
-import com.android.gallery3d.app.Gallery;
-import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.MediaSet;
 
 public class GalleryView extends StateView implements SlotView.SlotTapListener {
@@ -35,7 +32,7 @@ public class GalleryView extends StateView implements SlotView.SlotTapListener {
     public void onStart(Bundle data) {
         initializeViews();
         intializeData();
-        mHandler = new SynchronizedHandler(getGLRootView()) {
+        mHandler = new SynchronizedHandler(mContext.getUIMonitor()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -61,17 +58,17 @@ public class GalleryView extends StateView implements SlotView.SlotTapListener {
     }
 
     private void intializeData() {
-        MediaSet mediaSet = DataManager.getInstance().getRootSet();
+        MediaSet mediaSet = mContext.getDataManager().getRootSet();
         mSlotView.setModel(new MediaSetSlotAdapter(
-                mContext, mediaSet, mSlotView));
+                mContext.getAndroidContext(), mediaSet, mSlotView));
     }
 
     private void initializeViews() {
         mBackground = new AdaptiveBackground();
         addComponent(mBackground);
-        mSlotView = new SlotView(mContext);
+        mSlotView = new SlotView(mContext.getAndroidContext());
         addComponent(mSlotView);
-        mHud = new HeadUpDisplay(mContext);
+        mHud = new HeadUpDisplay(mContext.getAndroidContext());
         addComponent(mHud);
         mSlotView.setGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
         mSlotView.setSlotTapListener(this);
@@ -118,6 +115,6 @@ public class GalleryView extends StateView implements SlotView.SlotTapListener {
     public void onSingleTapUp(int slotIndex) {
         Bundle data = new Bundle();
         data.putInt(AlbumView.KEY_BUCKET_INDEX, slotIndex);
-        StateManager.getInstance().startStateView(AlbumView.class, data);
+        mContext.getStateManager().startStateView(AlbumView.class, data);
     }
 }

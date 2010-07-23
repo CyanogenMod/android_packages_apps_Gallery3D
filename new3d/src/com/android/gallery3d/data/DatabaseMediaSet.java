@@ -5,6 +5,7 @@ package com.android.gallery3d.data;
 import android.os.Handler;
 import android.os.Message;
 
+import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.SynchronizedHandler;
 import com.android.gallery3d.ui.Util;
 
@@ -15,15 +16,15 @@ public abstract class DatabaseMediaSet implements MediaSet {
 
     protected Handler mMainHandler;
     protected Handler mDbHandler;
-    protected MediaDbAccessor mAccessor;
+    protected final GalleryContext mContext;
 
     protected MediaSetListener mListener;
 
-    protected DatabaseMediaSet(MediaDbAccessor accessor) {
-        mAccessor = accessor;
+    protected DatabaseMediaSet(GalleryContext context) {
+        mContext = context;
 
         mMainHandler = new SynchronizedHandler(
-                accessor.getUiMonitor(), accessor.getMainLooper()) {
+                context.getUIMonitor(), context.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
                 Util.Assert(message.what == MSG_UPDATE_CONTENT);
@@ -32,7 +33,7 @@ public abstract class DatabaseMediaSet implements MediaSet {
             }
         };
 
-        mDbHandler = new Handler(accessor.getLooper()) {
+        mDbHandler = new Handler(context.getDataManager().getDataLooper()) {
             @Override
             public void handleMessage(Message message) {
                 Util.Assert(message.what == MSG_LOAD_DATABASE);

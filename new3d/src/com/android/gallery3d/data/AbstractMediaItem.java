@@ -16,8 +16,10 @@ public abstract class AbstractMediaItem implements MediaItem {
     protected int mRequestId[];
 
     private MediaItemListener mListener;
+    protected final ImageService mImageService;
 
-    protected AbstractMediaItem() {
+    protected AbstractMediaItem(ImageService imageService) {
+        mImageService = imageService;
         mBitmap = new Bitmap[TYPE_COUNT];
         mBitmapStatus = new int[TYPE_COUNT];
         mRequestId = new int[TYPE_COUNT];
@@ -31,15 +33,14 @@ public abstract class AbstractMediaItem implements MediaItem {
         if (mBitmap[type] == null && mBitmapStatus[type] == IMAGE_READY) {
             //  Initial state: the image is not requested yet!
             mBitmapStatus[type] = IMAGE_WAIT;
-            mRequestId[type] =
-                    ImageService.getInstance().requestImage(this, type);
+            mRequestId[type] = mImageService.requestImage(this, type);
         }
         return mBitmapStatus[type];
     }
 
     public synchronized void cancelImageRequest(int type) {
         if (mBitmapStatus[type] != IMAGE_WAIT) return;
-        ImageService.getInstance().cancelRequest(mRequestId[type]);
+        mImageService.cancelRequest(mRequestId[type]);
     }
 
     protected synchronized void onImageReady(int type, Bitmap bitmap) {
