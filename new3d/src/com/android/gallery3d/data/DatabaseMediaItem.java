@@ -11,7 +11,6 @@ public abstract class DatabaseMediaItem extends AbstractMediaItem {
     protected long mDateTakenInMs;
     protected long mDateAddedInSec;
     protected long mDateModifiedInSec;
-
     protected String mFilePath;
 
     public String getTitle() {

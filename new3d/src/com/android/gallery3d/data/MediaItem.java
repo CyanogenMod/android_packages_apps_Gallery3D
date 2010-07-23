@@ -3,7 +3,7 @@ package com.android.gallery3d.data;
 import android.graphics.Bitmap;
 
 public interface MediaItem {
-    public static final int IMAGE_TYPE_NUMBER = 3;
+    public static final int TYPE_COUNT = 3;
     public static final int TYPE_FULL_IMAGE = 0;
     public static final int TYPE_THUMBNAIL = 1;
     public static final int TYPE_MICROTHUMBNAIL = 2;
