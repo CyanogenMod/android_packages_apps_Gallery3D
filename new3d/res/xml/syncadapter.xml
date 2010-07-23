@@ -21,6 +21,6 @@
 <!-- for the SyncAdapter. -->
 
 <sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
-    android:contentAuthority="com.cooliris.picasa.contentprovider"
+    android:contentAuthority="com.android.gallery3d.picasa.contentprovider"
     android:accountType="com.google"
 />
