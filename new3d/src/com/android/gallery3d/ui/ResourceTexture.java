@@ -20,6 +20,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+// ResourceTexture is a texture whose Bitmap is decoded from a resource.
+// By default ResourceTexture is not opaque.
 class ResourceTexture extends UploadedTexture {
 
     protected final Context mContext;
@@ -28,6 +30,7 @@ class ResourceTexture extends UploadedTexture {
     public ResourceTexture(Context context, int resId) {
         mContext = Util.checkNotNull(context);
         mResId = resId;
+        setOpaque(false);
     }
 
     @Override

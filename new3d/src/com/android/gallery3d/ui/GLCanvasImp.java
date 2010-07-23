@@ -522,9 +522,6 @@ public class GLCanvasImp implements GLCanvas {
         color[3] = alpha;
     }
 
-    public void handleLowMemory() {
-    }
-
     public void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int width, int height, float alpha) {
         mGLState.setBlendEnabled(!from.isOpaque()
@@ -799,12 +796,6 @@ public class GLCanvasImp implements GLCanvas {
         ConfigState config = mRestoreStack.pop();
         config.restore(this);
         freeRestoreConfig(config);
-    }
-
-    public void restoreToCount(int saveCount) {
-        while (mRestoreStack.size() > saveCount) {
-            restore();
-        }
     }
 
     private void freeRestoreConfig(ConfigState action) {

@@ -64,7 +64,7 @@ abstract class BasicTexture implements Texture {
     }
 
     public void draw(GLCanvas canvas, int x, int y) {
-        canvas.drawTexture(this, x, y, mWidth, mHeight);
+        canvas.drawTexture(this, x, y, getWidth(), getHeight());
     }
 
     public void draw(GLCanvas canvas, int x, int y, int w, int h) {

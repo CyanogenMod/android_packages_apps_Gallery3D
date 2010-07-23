@@ -1,5 +1,7 @@
 package com.android.gallery3d.ui;
 
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
 
@@ -37,7 +39,6 @@ public class TextureTest extends TestCase {
     public void testBasicTexture() {
         GL11 glStub = new GLStub();
         GLCanvas canvas = new GLCanvasImp(glStub);
-        canvas.setSize(400, 300);
         MyBasicTexture texture = new MyBasicTexture(glStub, 47);
 
         assertEquals(47, texture.getId());
@@ -68,5 +69,93 @@ public class TextureTest extends TestCase {
         texture.draw(canvas, 0, 0);
         assertEquals(2, texture.mOnBindCalled);
         assertEquals(2, texture.mOpaqueCalled);
+    }
+
+    @SmallTest
+    public void testRawTexture() {
+        GL11 glStub = new GLStub();
+        GLCanvas canvas = new GLCanvasImp(glStub);
+        RawTexture texture = RawTexture.newInstance(glStub);
+        texture.onBind(canvas);
+
+        GLCanvas canvas2 = new GLCanvasImp(new GLStub());
+        try {
+            texture.onBind(canvas2);
+            fail();
+        } catch (RuntimeException ex) {
+            // expected.
+        }
+
+        assertTrue(texture.isOpaque());
+    }
+
+    @SmallTest
+    public void testColorTexture() {
+        GLCanvasMock canvas = new GLCanvasMock();
+        ColorTexture texture = new ColorTexture(0x12345678);
+
+        texture.setSize(42, 47);
+        assertEquals(texture.getWidth(), 42);
+        assertEquals(texture.getHeight(), 47);
+        assertEquals(0, canvas.mFillRectCalled);
+        texture.draw(canvas, 0, 0);
+        assertEquals(1, canvas.mFillRectCalled);
+        assertEquals(0x12345678, canvas.mFillRectColor);
+        assertEquals(42f, canvas.mFillRectWidth);
+        assertEquals(47f, canvas.mFillRectHeight);
+        assertFalse(texture.isOpaque());
+        assertTrue(new ColorTexture(0xFF000000).isOpaque());
+    }
+
+    private class MyUploadedTexture extends UploadedTexture {
+        int mGetCalled;
+        int mFreeCalled;
+        Bitmap mBitmap;
+        protected Bitmap onGetBitmap() {
+            mGetCalled++;
+            Config config = Config.ARGB_8888;
+            mBitmap = Bitmap.createBitmap(47, 42, config);
+            return mBitmap;
+        }
+        protected void onFreeBitmap(Bitmap bitmap) {
+            mFreeCalled++;
+            assertSame(mBitmap, bitmap);
+            mBitmap.recycle();
+            mBitmap = null;
+        }
+    }
+
+    @SmallTest
+    public void testUploadedTexture() {
+        GL11 glStub = new GLStub();
+        GLCanvas canvas = new GLCanvasImp(glStub);
+        MyUploadedTexture texture = new MyUploadedTexture();
+
+        // draw it and the bitmap should be fetched.
+        assertEquals(0, texture.mFreeCalled);
+        assertEquals(0, texture.mGetCalled);
+        texture.draw(canvas, 0, 0);
+        assertEquals(1, texture.mGetCalled);
+        assertTrue(texture.isLoaded(canvas));
+        assertTrue(texture.isContentValid(canvas));
+
+        // invalidate content and it should be freed.
+        texture.invalidateContent();
+        assertFalse(texture.isContentValid(canvas));
+        assertEquals(1, texture.mFreeCalled);
+        assertTrue(texture.isLoaded(canvas));  // But it's still loaded
+
+        // draw it again and the bitmap should be fetched again.
+        texture.draw(canvas, 0, 0);
+        assertEquals(2, texture.mGetCalled);
+        assertTrue(texture.isLoaded(canvas));
+        assertTrue(texture.isContentValid(canvas));
+
+        // recycle the texture and it should be freed again.
+        texture.recycle();
+        assertEquals(2, texture.mFreeCalled);
+        // TODO: these two are broken and waiting for fix.
+        //assertFalse(texture.isLoaded(canvas));
+        //assertFalse(texture.isContentValid(canvas));
     }
 }
