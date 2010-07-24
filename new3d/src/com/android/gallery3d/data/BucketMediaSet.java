@@ -4,73 +4,31 @@ package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
-import android.os.Handler;
-import android.os.Message;
 
 import com.android.gallery3d.app.GalleryContext;
-import com.android.gallery3d.ui.SynchronizedHandler;
+import com.android.gallery3d.ui.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class BucketMediaSet implements MediaSet {
+public class BucketMediaSet extends DatabaseMediaSet {
     private static final int MAX_NUM_COVER_ITEMS = 4;
-
-    private static final int MSG_LOAD_DATABASE = 1;
-    private static final int MSG_UPDATE_BUCKET = 2;
 
     public static final Comparator<BucketMediaSet> sNameComparator = new MyComparator();
 
     private final int mBucketId;
     private final String mBucketTitle;
+
     private final ArrayList<DatabaseMediaItem> mMediaItems =
             new ArrayList<DatabaseMediaItem>();
     private ArrayList<DatabaseMediaItem> mLoadBuffer =
             new ArrayList<DatabaseMediaItem>();
 
-    private final Handler mHandler;
-    private final Handler mMainHandler;
-
-    private MediaSetListener mListener;
-    private ImageService mImageService;
-    private ContentResolver mContentResolver;
-
-    protected void invalidate() {
-        mHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
-    }
-
     public BucketMediaSet(GalleryContext context, int id, String title) {
-        mContentResolver = context.getContentResolver();
-        mImageService = context.getImageService();
+        super(context);
         mBucketId = id;
         mBucketTitle= title;
-
-        mHandler = new Handler(context.getDataManager().getDataLooper()) {
-            @Override
-            public void handleMessage(Message message) {
-                switch (message.what) {
-                    case MSG_LOAD_DATABASE:
-                        loadMediaItemsFromDatabase();
-                        break;
-                    default: throw new IllegalArgumentException();
-                }
-            }
-        };
-
-        mMainHandler = new SynchronizedHandler(
-                context.getUIMonitor(), context.getMainLooper()) {
-            @Override
-            public void handleMessage(Message message) {
-                switch (message.what) {
-                    case MSG_UPDATE_BUCKET:
-                        updateContent();
-                        break;
-                    default: throw new IllegalArgumentException();
-                }
-            }
-        };
-
     }
 
     public MediaItem[] getCoverMediaItems() {
@@ -106,20 +64,18 @@ public class BucketMediaSet implements MediaSet {
         return mMediaItems.size();
     }
 
-    public void setContentListener(MediaSetListener listener) {
-        mListener = listener;
-    }
-
-    private void loadMediaItemsFromDatabase() {
+    @Override
+    protected void onLoadFromDatabase() {
         ArrayList<DatabaseMediaItem> items = new ArrayList<DatabaseMediaItem>();
         mLoadBuffer = items;
 
-        ContentResolver resolver = mContentResolver;
+        ContentResolver resolver = mContext.getContentResolver();
+        ImageService imageService = mContext.getImageService();
 
         Cursor cursor = ImageMediaItem.queryImageInBucket(resolver, mBucketId);
         try {
             while (cursor.moveToNext()) {
-                items.add(ImageMediaItem.load(mImageService, cursor));
+                items.add(ImageMediaItem.load(imageService, cursor));
             }
         } finally {
             cursor.close();
@@ -128,7 +84,7 @@ public class BucketMediaSet implements MediaSet {
         cursor = VideoMediaItem.queryVideoInBucket(resolver, mBucketId);
         try {
             while (cursor.moveToNext()) {
-                items.add(VideoMediaItem.load(mImageService, cursor));
+                items.add(VideoMediaItem.load(imageService, cursor));
             }
         } finally {
             cursor.close();
@@ -144,12 +100,11 @@ public class BucketMediaSet implements MediaSet {
                         : result > 0 ? 1 : -1;
             }
         });
-
-        mMainHandler.sendEmptyMessage(MSG_UPDATE_BUCKET);
     }
 
-    private void updateContent() {
-        if (mLoadBuffer == null) throw new IllegalArgumentException();
+    @Override
+    protected void onUpdateContent() {
+        Util.Assert(mLoadBuffer != null);
 
         mMediaItems.clear();
         mMediaItems.addAll(mLoadBuffer);
