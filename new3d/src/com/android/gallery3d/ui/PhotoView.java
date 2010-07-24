@@ -21,13 +21,18 @@ import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import android.os.Message;
+import android.util.Log;
 
+import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 
 import java.util.ArrayList;
+import java.util.concurrent.Future;
 
 public class PhotoView extends StateView implements SlotView.SlotTapListener {
+    private static final String TAG = PhotoView.class.getSimpleName();
+
     public static final String KEY_SET_INDEX = "keySetIndex";
     public static final String KEY_PHOTO_INDEX = "keyPhotoIndex";
 
@@ -72,8 +77,7 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
         mPhotoIndex = data.getInt(KEY_PHOTO_INDEX);
         MediaSet set = mContext.getDataManager().getSubMediaSet(mSetIndex);
         MediaItem item = set.getMediaItem(mPhotoIndex);
-        item.setListener(new MyMediaItemListener());
-        item.requestImage(MediaItem.TYPE_FULL_IMAGE);
+        item.requestImage(MediaItem.TYPE_FULL_IMAGE, new MyMediaItemListener());
     }
 
     @Override
@@ -97,23 +101,8 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
         requestLayout();
     }
 
-    private class MyMediaItemListener implements MediaItem.MediaItemListener {
+    private class MyMediaItemListener implements FutureListener<Bitmap> {
         private static final int BACKUP_SIZE = 512;
-        public MyMediaItemListener() {}
-
-        public void onImageCanceled(MediaItem abstractMediaItem, int type) {
-            // Do nothing
-        }
-
-        public void onImageError(MediaItem item, int type, Throwable error) {
-            // Do nothing
-        }
-
-        public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
-            mScaledBitmaps = getScaledBitmaps(bitmap);
-            mBackupBitmap = getBackupBitmap(bitmap);
-            mHandler.sendEmptyMessage(ON_IMAGE_READY);
-        }
 
         private Bitmap getBackupBitmap(Bitmap bitmap) {
             Config config = bitmap.hasAlpha()
@@ -151,6 +140,17 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
                 list.add(bitmap);
             }
             return list.toArray(new Bitmap[list.size()]);
+        }
+
+        public void onFutureDone(Future<? extends Bitmap> future) {
+            try {
+                Bitmap bitmap = future.get();
+                mScaledBitmaps = getScaledBitmaps(bitmap);
+                mBackupBitmap = getBackupBitmap(bitmap);
+                mHandler.sendEmptyMessage(ON_IMAGE_READY);
+            } catch (Exception e) {
+                Log.e(TAG, "failt to get image", e);
+            }
         }
     }
 

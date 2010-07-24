@@ -77,4 +77,5 @@ public class Utils {
         original.recycle();
         return bitmap;
     }
+
 }
