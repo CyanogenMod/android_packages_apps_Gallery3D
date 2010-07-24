@@ -172,7 +172,7 @@ class PopupWindow extends GLView {
 
         // restore the backup with alpha = 1
         canvas.drawTexture(backup, aXoffset, aYoffset, aWidth, aHeight, 1f);
-        canvas.unloadTexture(backup);
+        backup.recycle();
     }
 
     @Override

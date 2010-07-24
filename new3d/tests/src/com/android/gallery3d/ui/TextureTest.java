@@ -3,7 +3,6 @@ package com.android.gallery3d.ui;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.test.suitebuilder.annotation.SmallTest;
-import android.util.Log;
 
 import junit.framework.TestCase;
 
@@ -17,10 +16,11 @@ public class TextureTest extends TestCase {
         int mOnBindCalled;
         int mOpaqueCalled;
 
-        MyBasicTexture(GL11 gl, int id) {
-            super(gl, id, BasicTexture.STATE_UNLOADED);
+        MyBasicTexture(GLCanvas canvas, int id) {
+            super(canvas, id, BasicTexture.STATE_UNLOADED);
         }
 
+        @Override
         protected void onBind(GLCanvas canvas) {
             mOnBindCalled++;
         }
@@ -39,7 +39,7 @@ public class TextureTest extends TestCase {
     public void testBasicTexture() {
         GL11 glStub = new GLStub();
         GLCanvas canvas = new GLCanvasImp(glStub);
-        MyBasicTexture texture = new MyBasicTexture(glStub, 47);
+        MyBasicTexture texture = new MyBasicTexture(canvas, 47);
 
         assertEquals(47, texture.getId());
         texture.setSize(1, 1);
@@ -75,7 +75,7 @@ public class TextureTest extends TestCase {
     public void testRawTexture() {
         GL11 glStub = new GLStub();
         GLCanvas canvas = new GLCanvasImp(glStub);
-        RawTexture texture = RawTexture.newInstance(glStub);
+        RawTexture texture = RawTexture.newInstance(canvas);
         texture.onBind(canvas);
 
         GLCanvas canvas2 = new GLCanvasImp(new GLStub());
@@ -111,12 +111,14 @@ public class TextureTest extends TestCase {
         int mGetCalled;
         int mFreeCalled;
         Bitmap mBitmap;
+        @Override
         protected Bitmap onGetBitmap() {
             mGetCalled++;
             Config config = Config.ARGB_8888;
             mBitmap = Bitmap.createBitmap(47, 42, config);
             return mBitmap;
         }
+        @Override
         protected void onFreeBitmap(Bitmap bitmap) {
             mFreeCalled++;
             assertSame(mBitmap, bitmap);
@@ -160,10 +162,11 @@ public class TextureTest extends TestCase {
     }
 
     class MyTextureForMixed extends BasicTexture {
-        MyTextureForMixed(GL11 gl, int id) {
-            super(gl, id, BasicTexture.STATE_UNLOADED);
+        MyTextureForMixed(GLCanvas canvas, int id) {
+            super(canvas, id, BasicTexture.STATE_UNLOADED);
         }
 
+        @Override
         protected void onBind(GLCanvas canvas) {
         }
 
@@ -176,8 +179,8 @@ public class TextureTest extends TestCase {
     public void testMixedTexture() {
         GL11 glStub = new GLStub();
         GLCanvasMock canvas = new GLCanvasMock(glStub);
-        MyTextureForMixed texture1 = new MyTextureForMixed(glStub, 47);
-        MyTextureForMixed texture2 = new MyTextureForMixed(glStub, 42);
+        MyTextureForMixed texture1 = new MyTextureForMixed(canvas, 47);
+        MyTextureForMixed texture2 = new MyTextureForMixed(canvas, 42);
 
         MixedTexture texture = new MixedTexture(texture1);
         assertFalse(texture.hasSource());

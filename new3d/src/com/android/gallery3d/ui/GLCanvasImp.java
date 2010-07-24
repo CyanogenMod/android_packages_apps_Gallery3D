@@ -4,7 +4,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLU;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -607,7 +606,7 @@ public class GLCanvasImp implements GLCanvas {
 
         GL11 gl = mGL;
 
-        RawTexture texture = RawTexture.newInstance(gl);
+        RawTexture texture = RawTexture.newInstance(this);
         gl.glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
         texture.setSize(width, height);
 
@@ -748,9 +747,7 @@ public class GLCanvasImp implements GLCanvas {
 
     public boolean unloadTexture(BasicTexture t) {
         if (!t.isLoaded(this)) return false;
-        mUnboundIds.add(t.getId());
-        t.mGL = null;
-        t.mState = BasicTexture.STATE_UNLOADED;
+        mUnboundIds.add(t.mId);
         return true;
     }
 

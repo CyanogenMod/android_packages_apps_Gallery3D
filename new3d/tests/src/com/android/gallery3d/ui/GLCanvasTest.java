@@ -491,8 +491,8 @@ public class GLCanvasTest extends TestCase {
         boolean mIsOpaque;
         int mBindCalled;
 
-        MyTexture(GL11 gl, int id, boolean isOpaque) {
-            super(gl, id, STATE_LOADED);
+        MyTexture(GLCanvas canvas, int id, boolean isOpaque) {
+            super(canvas, id, STATE_LOADED);
             setSize(1, 1);
             mIsOpaque = isOpaque;
         }
@@ -538,8 +538,8 @@ public class GLCanvasTest extends TestCase {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
-            MyTexture texture = new MyTexture(this, 42, false);  // non-opaque
-            MyTexture texture_o = new MyTexture(this, 47, true);  // opaque
+            MyTexture texture = new MyTexture(canvas, 42, false);  // non-opaque
+            MyTexture texture_o = new MyTexture(canvas, 47, true);  // opaque
 
             // Draw a non-opaque texture
             canvas.drawTexture(texture, 100, 200, 300, 400);
@@ -626,12 +626,12 @@ public class GLCanvasTest extends TestCase {
             assertEquals(3, mDrawArrayCalled);
 
             assertTrue(texture.isLoaded(canvas));
-            assertTrue(canvas.unloadTexture(texture));
+            texture.recycle();
             assertFalse(texture.isLoaded(canvas));
             canvas.deleteRecycledTextures();
 
             assertTrue(texture_o.isLoaded(canvas));
-            assertTrue(canvas.unloadTexture(texture_o));
+            texture_o.recycle();
             assertFalse(texture_o.isLoaded(canvas));
         }
     }
@@ -686,8 +686,8 @@ public class GLCanvasTest extends TestCase {
         void run() {
             GLCanvas canvas = new GLCanvasImp(this);
             canvas.setSize(400, 300);
-            MyTexture from = new MyTexture(this, 42, false);  // non-opaque
-            MyTexture to = new MyTexture(this, 47, true);  // opaque
+            MyTexture from = new MyTexture(canvas, 42, false);  // non-opaque
+            MyTexture to = new MyTexture(canvas, 47, true);  // opaque
 
             canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
             assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));

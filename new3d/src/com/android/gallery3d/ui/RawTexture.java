@@ -24,21 +24,22 @@ import javax.microedition.khronos.opengles.GL11;
 // context. It is only used internally by copyTexture() in GLCanvas.
 class RawTexture extends BasicTexture {
 
-    private RawTexture(GL11 gl, int id) {
-        super(gl, id, STATE_LOADED);
+    private RawTexture(GLCanvas canvas, int id) {
+        super(canvas, id, STATE_LOADED);
     }
 
-    public static RawTexture newInstance(GL11 gl) {
+    public static RawTexture newInstance(GLCanvas canvas) {
         int[] textureId = new int[1];
+        GL11 gl = canvas.getGLInstance();
         gl.glGenTextures(1, textureId, 0);
-        return new RawTexture(gl, textureId[0]);
+        return new RawTexture(canvas, textureId[0]);
     }
 
     @Override
     protected void onBind(GLCanvas canvas) {
         GL11 gl = canvas.getGLInstance();
-        if (mGL != gl) {
-            throw new RuntimeException("cannot bind to different GL");
+        if (mCanvasRef.get() != canvas) {
+            throw new RuntimeException("cannot bind to different canvas");
         }
     }
 

@@ -1,6 +1,5 @@
 package com.android.gallery3d.ui;
 
-import android.graphics.Rect;
 import android.graphics.RectF;
 
 import javax.microedition.khronos.opengles.GL11;
@@ -101,7 +100,8 @@ public interface GLCanvas {
 
     // Unloads the specified texture from the canvas. The resource allocated
     // to draw the texture will be released. The specified texture will return
-    // to the unloaded state.
+    // to the unloaded state. This function should be called only from
+    // BasicTexture or its descendant
     public boolean unloadTexture(BasicTexture texture);
 
     // Delete the textures in GL side. This function should only be called in

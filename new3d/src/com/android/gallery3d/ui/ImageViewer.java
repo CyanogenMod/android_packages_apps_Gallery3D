@@ -482,7 +482,6 @@ public class ImageViewer extends GLView {
         mUploadIter = null;
         GLCanvas canvas = getGLRootView().getCanvas();
         for (Tile texture : mActiveTiles.values()) {
-            canvas.unloadTexture(texture);
             texture.recycle();
         }
         mActiveTiles.clear();
@@ -547,7 +546,6 @@ public class ImageViewer extends GLView {
     private void freeRecycledTile(GLCanvas canvas) {
         Tile tile = mRecycledHead;
         while (tile != null) {
-            canvas.unloadTexture(tile);
             tile.recycle();
             tile = tile.mNextFree;
         }
