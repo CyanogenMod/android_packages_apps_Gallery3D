@@ -16,7 +16,6 @@
 
 package com.android.gallery3d.ui;
 
-
 import javax.microedition.khronos.opengles.GL11;
 
 class RawTexture extends BasicTexture {
@@ -28,10 +27,6 @@ class RawTexture extends BasicTexture {
     public static RawTexture newInstance(GL11 gl) {
         int[] textureId = new int[1];
         gl.glGenTextures(1, textureId, 0);
-        int glError = gl.glGetError();
-        if (glError != GL11.GL_NO_ERROR) {
-            throw new RuntimeException("GL_ERROR: " + glError);
-        }
         return new RawTexture(gl, textureId[0]);
     }
 

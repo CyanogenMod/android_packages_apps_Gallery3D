@@ -90,7 +90,6 @@ abstract class UploadedTexture extends BasicTexture {
 
     private void uploadToGL(GL11 gl) {
         Bitmap bitmap = getBitmap();
-        int glError = GL11.GL_NO_ERROR;
         if (bitmap != null) {
             try {
                 // Define a vertically flipped crop rectangle for
@@ -116,35 +115,23 @@ abstract class UploadedTexture extends BasicTexture {
                 gl.glTexParameterf(GL11.GL_TEXTURE_2D,
                         GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
-                int widthExt = Util.nextPowerOf2(width);
-                int heightExt = Util.nextPowerOf2(height);
                 int format = GLUtils.getInternalFormat(bitmap);
                 mOpaque = !bitmap.hasAlpha();
                 int type = GLUtils.getType(bitmap);
 
-                mTextureWidth = widthExt;
-                mTextureHeight = heightExt;
                 gl.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format,
-                        widthExt, heightExt, 0, format, type, null);
+                        getTextureWidth(), getTextureHeight(),
+                        0, format, type, null);
                 GLUtils.texSubImage2D(
                         GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap, format, type);
             } finally {
                 freeBitmap();
             }
-            if (glError == GL11.GL_OUT_OF_MEMORY) {
-                throw new GLOutOfMemoryException();
-            }
-            if (glError != GL11.GL_NO_ERROR) {
-                mId = 0;
-                mState = STATE_UNLOADED;
-                throw new RuntimeException(
-                        "Texture upload fail, glError " + glError);
-            } else {
-                // Update texture state.
-                mGL = gl;
-                mId = sTextureId[0];
-                mState = UploadedTexture.STATE_LOADED;
-            }
+
+            // Update texture state.
+            mGL = gl;
+            mId = sTextureId[0];
+            mState = UploadedTexture.STATE_LOADED;
         } else {
             mState = STATE_ERROR;
             throw new RuntimeException("Texture load fail, no bitmap");

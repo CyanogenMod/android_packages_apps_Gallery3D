@@ -418,8 +418,8 @@ public class GLCanvasImp implements GLCanvas {
         // won't work
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
             putRectangle(0, 0,
-                    (texture.mWidth - 0.5f) / texture.mTextureWidth,
-                    (texture.mHeight - 0.5f) / texture.mTextureHeight,
+                    (texture.getWidth() - 0.5f) / texture.getTextureWidth(),
+                    (texture.getHeight() - 0.5f) / texture.getTextureHeight(),
                     mUvBuffer, mUvPointer);
             textureRect(x, y, width, height);
         } else {
@@ -474,23 +474,27 @@ public class GLCanvasImp implements GLCanvas {
     private void convertCoordinate(RectF source, RectF target,
             BasicTexture texture) {
 
+        int width = texture.getWidth();
+        int height = texture.getHeight();
+        int texWidth = texture.getTextureWidth();
+        int texHeight = texture.getTextureHeight();
         // Convert to texture coordinates
-        source.left /= texture.mTextureWidth;
-        source.right /= texture.mTextureWidth;
-        source.top /= texture.mTextureHeight;
-        source.bottom /= texture.mTextureHeight;
+        source.left /= texWidth;
+        source.right /= texWidth;
+        source.top /= texHeight;
+        source.bottom /= texHeight;
 
         // Clip if the rendering range is beyond the bound of the texture.
-        if (texture.mWidth < texture.mTextureWidth) {
-            float xBound = (texture.mWidth - 0.5f) / texture.mTextureWidth;
+        if (width < texWidth) {
+            float xBound = (width - 0.5f) / texWidth;
             if (source.right > xBound) {
                 target.right = target.left + target.width() *
                         (xBound - source.left) / source.width();
                 source.right = xBound;
             }
         }
-        if (texture.mHeight < texture.mTextureHeight) {
-            float yBound = (texture.mHeight - 0.5f) / texture.mTextureHeight;
+        if (height < texHeight) {
+            float yBound = (height - 0.5f) / texHeight;
             if (source.bottom > yBound) {
                 target.bottom = target.top + target.height() *
                         (yBound - source.top) / source.height();
@@ -507,7 +511,7 @@ public class GLCanvasImp implements GLCanvas {
     private void bindTexture(BasicTexture texture) {
         texture.onBind(this);
         mGLState.setTexture2DEnabled(true);
-        mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.mId);
+        mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
     }
 
     private void setTextureColor(float r, float g, float b, float alpha) {
@@ -605,12 +609,10 @@ public class GLCanvasImp implements GLCanvas {
         height = (int) points[3] - y;
 
         GL11 gl = mGL;
-        int newWidth = Util.nextPowerOf2(width);
-        int newHeight = Util.nextPowerOf2(height);
-        int glError = GL11.GL_NO_ERROR;
 
         RawTexture texture = RawTexture.newInstance(gl);
         gl.glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
+        texture.setSize(width, height);
 
         int[] cropRect = {0,  0, width, height};
         gl.glTexParameteriv(GL11.GL_TEXTURE_2D,
@@ -624,20 +626,9 @@ public class GLCanvasImp implements GLCanvas {
         gl.glTexParameterf(GL11.GL_TEXTURE_2D,
                 GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         gl.glCopyTexImage2D(GL11.GL_TEXTURE_2D, 0,
-                GL11.GL_RGB, x, y, newWidth, newHeight, 0);
-        glError = gl.glGetError();
+                GL11.GL_RGB, x, y, texture.getTextureWidth(),
+                texture.getTextureHeight(), 0);
 
-        if (glError == GL11.GL_OUT_OF_MEMORY) {
-            throw new GLOutOfMemoryException();
-        }
-
-        if (glError != GL11.GL_NO_ERROR) {
-            throw new RuntimeException(
-                    "Texture copy fail, glError " + glError);
-        }
-
-        texture.setSize(width, height);
-        texture.setTextureSize(newWidth, newHeight);
         return texture;
     }
 
@@ -760,7 +751,7 @@ public class GLCanvasImp implements GLCanvas {
 
     public boolean unloadTexture(BasicTexture t) {
         if (!t.isLoaded(this)) return false;
-        mUnboundIds.add(t.mId);
+        mUnboundIds.add(t.getId());
         t.mGL = null;
         t.mState = BasicTexture.STATE_UNLOADED;
         return true;
