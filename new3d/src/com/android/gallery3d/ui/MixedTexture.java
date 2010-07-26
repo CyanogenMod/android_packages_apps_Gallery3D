@@ -1,7 +1,18 @@
 package com.android.gallery3d.ui;
 
-
-
+// MixedTexture is a texture whose color is mixed from two textures: source
+// and destination:
+//   color = (1 - r) * source + r * destination
+// The mix ratio r is set by setMixtureRatio().
+// The two textures must have the same size.
+//
+// Initially only the destination texture is set in the constructor, and there
+// is no source texture. When setNewDestination() is called, the original
+// destination texture becomes source texture, and the new destination texture
+// is set.
+//
+// If there is no source texture, hasSource() returns false, and draw() just
+// draws the destination texture.
 public class MixedTexture implements Texture {
     private BasicTexture mSource;
     private BasicTexture mDestination;
@@ -19,7 +30,6 @@ public class MixedTexture implements Texture {
         if (texture.getWidth() != mWidth || texture.getHeight() != mHeight) {
             throw new IllegalArgumentException();
         }
-        mMixRatio = 0f;
         BasicTexture result = mSource;
         mSource = mDestination;
         mDestination = texture;
@@ -45,6 +55,10 @@ public class MixedTexture implements Texture {
         } else {
             canvas.drawMixed(mSource, mDestination, mMixRatio, x, y, w, h);
         }
+    }
+
+    public boolean hasSource() {
+        return mSource != null;
     }
 
     public int getWidth() {

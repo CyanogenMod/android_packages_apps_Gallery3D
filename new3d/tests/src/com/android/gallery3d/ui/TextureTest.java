@@ -158,4 +158,66 @@ public class TextureTest extends TestCase {
         //assertFalse(texture.isLoaded(canvas));
         //assertFalse(texture.isContentValid(canvas));
     }
+
+    class MyTextureForMixed extends BasicTexture {
+        MyTextureForMixed(GL11 gl, int id) {
+            super(gl, id, BasicTexture.STATE_UNLOADED);
+        }
+
+        protected void onBind(GLCanvas canvas) {
+        }
+
+        public boolean isOpaque() {
+            return true;
+        }
+    }
+
+    @SmallTest
+    public void testMixedTexture() {
+        GL11 glStub = new GLStub();
+        GLCanvasMock canvas = new GLCanvasMock(glStub);
+        MyTextureForMixed texture1 = new MyTextureForMixed(glStub, 47);
+        MyTextureForMixed texture2 = new MyTextureForMixed(glStub, 42);
+
+        MixedTexture texture = new MixedTexture(texture1);
+        assertFalse(texture.hasSource());
+        texture.draw(canvas, 0, 0);
+        assertEquals(0, canvas.mDrawMixedCalled);
+        assertEquals(1, canvas.mDrawTextureCalled);
+
+        texture.setMixtureRatio(0.5f);
+        texture.setNewDestination(texture2);
+        assertTrue(texture.hasSource());
+        texture.draw(canvas, 0, 0);
+        assertEquals(1, canvas.mDrawMixedCalled);
+        assertEquals(1, canvas.mDrawTextureCalled);
+
+        texture.setMixtureRatio(0.3f);
+        texture.draw(canvas, 0, 0);
+        assertEquals(0.3f, canvas.mDrawMixedRatio);
+        assertEquals(2, canvas.mDrawMixedCalled);
+        assertEquals(1, canvas.mDrawTextureCalled);
+
+        texture.setMixtureRatio(0f);
+        texture.draw(canvas, 0, 0);
+        assertEquals(2, canvas.mDrawMixedCalled);
+        assertEquals(2, canvas.mDrawTextureCalled);
+
+        texture.setMixtureRatio(1f);
+        texture.draw(canvas, 0, 0);
+        assertEquals(2, canvas.mDrawMixedCalled);
+        assertEquals(3, canvas.mDrawTextureCalled);
+    }
+
+    @SmallTest
+    public void testBitmapTexture() {
+        Config config = Config.ARGB_8888;
+        Bitmap bitmap = Bitmap.createBitmap(47, 42, config);
+        assertFalse(bitmap.isRecycled());
+        BitmapTexture texture = new BitmapTexture(bitmap);
+        texture.recycle();
+        assertFalse(bitmap.isRecycled());
+        bitmap.recycle();
+        assertTrue(bitmap.isRecycled());
+    }
 }

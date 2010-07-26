@@ -58,7 +58,9 @@ public class AdaptiveBackground extends GLView {
             mMixedTexture.setNewDestination(texture);
         }
         mMixedTexture.setMixtureRatio(0);
-        mAnimation.start();
+        if (mMixedTexture.hasSource()) {
+            mAnimation.start();
+        }
         invalidate();
     }
 

@@ -21,6 +21,10 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.FontMetricsInt;
 
+// StringTexture is a texture shows the content of a specified String.
+//
+// To create a StringTexture, use the newInstance() method and specify
+// the String, the font size, and the color.
 class StringTexture extends CanvasTexture {
     private static int DEFAULT_PADDING = 1;
 
@@ -36,13 +40,6 @@ class StringTexture extends CanvasTexture {
         mMetrics = metrics;
     }
 
-    private static StringTexture newInstance(String text, Paint paint) {
-        FontMetricsInt metrics = paint.getFontMetricsInt();
-        int width = (int) (.5f + paint.measureText(text)) + DEFAULT_PADDING * 2;
-        int height = metrics.bottom - metrics.top + DEFAULT_PADDING * 2;
-        return new StringTexture(text, paint, metrics, width, height);
-    }
-
     public static StringTexture newInstance(
             String text, float textSize, int color) {
         Paint paint = new Paint();
@@ -51,6 +48,13 @@ class StringTexture extends CanvasTexture {
         paint.setColor(color);
 
         return newInstance(text, paint);
+    }
+
+    private static StringTexture newInstance(String text, Paint paint) {
+        FontMetricsInt metrics = paint.getFontMetricsInt();
+        int width = (int) (.5f + paint.measureText(text)) + DEFAULT_PADDING * 2;
+        int height = metrics.bottom - metrics.top + DEFAULT_PADDING * 2;
+        return new StringTexture(text, paint, metrics, width, height);
     }
 
     @Override

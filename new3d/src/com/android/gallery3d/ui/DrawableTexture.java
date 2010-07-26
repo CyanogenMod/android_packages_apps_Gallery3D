@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 
+// DrawableTexture is a texture whose content is from a Drawable.
+// The width and height of a DrawableTexture is its intrinsic width and height.
 public class DrawableTexture extends CanvasTexture {
 
     private final Drawable mDrawable;

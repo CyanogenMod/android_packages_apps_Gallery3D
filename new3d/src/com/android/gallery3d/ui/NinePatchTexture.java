@@ -21,6 +21,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 
+// NinePatchTexture is a texture backed by a NinePatch resource.
+//
+// getPaddings() returns paddings specified in the NinePatch.
+// getNinePatchChunk() returns the layout data specified in the NinePatch.
+//
 class NinePatchTexture extends ResourceTexture {
     private NinePatchChunk mChunk;
 

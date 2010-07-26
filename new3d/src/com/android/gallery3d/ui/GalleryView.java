@@ -44,7 +44,7 @@ public class GalleryView extends StateView implements SlotView.SlotTapListener {
                 }
             }
         };
-        mHandler.sendEmptyMessage(CHANGE_BACKGROUND);
+        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 3000);
     }
 
     @Override

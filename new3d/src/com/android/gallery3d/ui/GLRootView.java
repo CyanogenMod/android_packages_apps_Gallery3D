@@ -47,9 +47,12 @@ public class GLRootView extends GLSurfaceView
         implements GLSurfaceView.Renderer {
     private static final String TAG = "GLRootView";
 
-    private final boolean ENABLE_FPS_TEST = false;
+    private final boolean DEBUG_FPS = false;
     private int mFrameCount = 0;
     private long mFrameCountingStart = 0;
+
+    private final boolean DEBUG_INVALIDATE = false;
+    private int mInvalidateColor = 0;
 
     private static final int FLAG_INITIALIZED = 1;
     private static final int FLAG_NEED_LAYOUT = 2;
@@ -131,6 +134,11 @@ public class GLRootView extends GLSurfaceView
 
     @Override
     public void requestRender() {
+        if (DEBUG_INVALIDATE) {
+            StackTraceElement e = Thread.currentThread().getStackTrace()[4];
+            String caller = e.getFileName() + ":" + e.getLineNumber() + " ";
+            Log.v(TAG, "invalidate: " + caller);
+        }
         if (mRenderRequested) return;
         mRenderRequested = true;
         super.requestRender();
@@ -175,7 +183,7 @@ public class GLRootView extends GLSurfaceView
         }
         mGL = gl;
         mCanvas = new GLCanvasImp(gl);
-        if (!ENABLE_FPS_TEST) {
+        if (!DEBUG_FPS) {
             setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         } else {
             setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
@@ -213,7 +221,7 @@ public class GLRootView extends GLSurfaceView
     }
 
     public synchronized void onDrawFrame(GL10 gl) {
-        if (ENABLE_FPS_TEST) outputFps();
+        if (DEBUG_FPS) outputFps();
 
         // release the unbound textures
         mCanvas.deleteRecycledTextures();
@@ -248,6 +256,11 @@ public class GLRootView extends GLSurfaceView
                 && !mIdleRunner.mActive && !mIdleListeners.isEmpty()) {
             mIdleRunner.mActive = true;
             queueEvent(mIdleRunner);
+        }
+
+        if (DEBUG_INVALIDATE) {
+            mCanvas.fillRect(10, 10, 5, 5, mInvalidateColor);
+            mInvalidateColor = ~mInvalidateColor;
         }
     }
 
