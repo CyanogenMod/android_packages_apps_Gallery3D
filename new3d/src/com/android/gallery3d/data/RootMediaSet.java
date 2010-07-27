@@ -5,8 +5,6 @@ package com.android.gallery3d.data;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Images.ImageColumns;
@@ -14,18 +12,14 @@ import android.provider.MediaStore.Video.VideoColumns;
 import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
-import com.android.gallery3d.ui.SynchronizedHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RootMediaSet implements MediaSet{
+public class RootMediaSet extends DatabaseMediaSet {
     private static final String TITLE = "RootSet";
-
-    private static final int MSG_LOAD_DATA = 0;
-    private static final int MSG_UPDATE_CONTENT = 0;
 
     // Must preserve order between these indices and the order of the terms in
     // BUCKET_PROJECTION_IMAGES, BUCKET_PROJECTION_VIDEOS.
@@ -48,44 +42,9 @@ public class RootMediaSet implements MediaSet{
 
     private HashMap<Integer, String> mLoadBuffer;
 
-    private final Handler mDataHandler;
-    private final Handler mMainHandler;
-
-    private final GalleryContext mContext;
-    private MediaSetListener mListener;
-
     public RootMediaSet(GalleryContext context) {
-
-        mContext = context;
-
-        mDataHandler = new Handler(context.getDataManager().getDataLooper()) {
-            @Override
-            public void handleMessage(Message message) {
-                switch (message.what) {
-                    case MSG_LOAD_DATA:
-                        loadBucketsFromDatabase();
-                        break;
-                    default:
-                        throw new IllegalArgumentException();
-                }
-            }
-        };
-
-        mMainHandler = new SynchronizedHandler(
-                context.getUIMonitor(), context.getMainLooper()) {
-            @Override
-            public void handleMessage(Message message) {
-                switch (message.what) {
-                    case MSG_UPDATE_CONTENT:
-                        updateContent();
-                        break;
-                    default:
-                        throw new IllegalArgumentException();
-                }
-            }
-        };
-
-        mDataHandler.sendEmptyMessage(MSG_LOAD_DATA);
+        super(context);
+        invalidate();
     }
 
     public MediaItem[] getCoverMediaItems() {
@@ -122,11 +81,9 @@ public class RootMediaSet implements MediaSet{
         return total;
     }
 
-    public void setContentListener(MediaSetListener listener) {
-        mListener = listener;
-    }
+    @Override
+    protected void onLoadFromDatabase() {
 
-    private void loadBucketsFromDatabase() {
         ContentResolver resolver = mContext.getContentResolver();
         HashMap<Integer, String> map = new HashMap<Integer, String>();
         mLoadBuffer = map;
@@ -161,11 +118,10 @@ public class RootMediaSet implements MediaSet{
         } finally {
             cursor.close();
         }
-
-        mMainHandler.sendEmptyMessage(MSG_UPDATE_CONTENT);
     }
 
-    private void updateContent() {
+    @Override
+    protected void onUpdateContent() {
         HashMap<Integer, String> map = mLoadBuffer;
         if (map == null) throw new IllegalStateException();
 
