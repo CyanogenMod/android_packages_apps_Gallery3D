@@ -1,6 +1,6 @@
 package com.android.gallery3d.ui;
 
-import javax.microedition.khronos.opengles.GL11;
+import java.lang.ref.WeakReference;
 
 // BasicTexture is a Texture corresponds to a real GL texture.
 // The state of a BasicTexture indicates whether its data is loaded to GL memory.
@@ -13,8 +13,6 @@ abstract class BasicTexture implements Texture {
     protected static final int STATE_LOADED = 1;
     protected static final int STATE_ERROR = -1;
 
-    protected GL11 mGL;
-
     protected int mId;
     protected int mState;
 
@@ -24,10 +22,22 @@ abstract class BasicTexture implements Texture {
     private int mTextureWidth;
     private int mTextureHeight;
 
-    protected BasicTexture(GL11 gl, int id, int state) {
-        mGL = gl;
+    protected WeakReference<GLCanvas> mCanvasRef = null;
+
+    protected BasicTexture(GLCanvas canvas, int id, int state) {
+        setAssociatedCanvas(canvas);
         mId = id;
         mState = state;
+    }
+
+    protected BasicTexture() {
+        this(null, 0, STATE_UNLOADED);
+    }
+
+    protected void setAssociatedCanvas(GLCanvas canvas) {
+        mCanvasRef = canvas == null
+                ? null
+                : new WeakReference<GLCanvas>(canvas);
     }
 
     /**
@@ -76,6 +86,15 @@ abstract class BasicTexture implements Texture {
     abstract protected void onBind(GLCanvas canvas);
 
     public boolean isLoaded(GLCanvas canvas) {
-        return mState == STATE_LOADED && mGL == canvas.getGLInstance();
+        return mState == STATE_LOADED && mCanvasRef.get() == canvas;
+    }
+
+    public void recycle() {
+        GLCanvas canvas = mCanvasRef == null ? null : mCanvasRef.get();
+        if (canvas != null) {
+            canvas.unloadTexture(this);
+            setAssociatedCanvas(null);
+            mState = BasicTexture.STATE_UNLOADED;
+        }
     }
 }

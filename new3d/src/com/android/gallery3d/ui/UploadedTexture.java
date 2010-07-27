@@ -86,12 +86,12 @@ abstract class UploadedTexture extends BasicTexture {
      */
     public void updateContent(GLCanvas canvas) {
         if (!isLoaded(canvas)) {
-            uploadToGL(canvas.getGLInstance());
+            uploadToCanvas(canvas);
         } else if (!mContentValid) {
             Bitmap bitmap = getBitmap();
             int format = GLUtils.getInternalFormat(bitmap);
             int type = GLUtils.getType(bitmap);
-            mGL.glBindTexture(GL11.GL_TEXTURE_2D, mId);
+            canvas.getGLInstance().glBindTexture(GL11.GL_TEXTURE_2D, mId);
             GLUtils.texSubImage2D(
                     GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap, format, type);
             freeBitmap();
@@ -102,7 +102,9 @@ abstract class UploadedTexture extends BasicTexture {
     static int[] sTextureId = new int[1];
     static int[] sCropRect = new int[4];
 
-    private void uploadToGL(GL11 gl) {
+    private void uploadToCanvas(GLCanvas canvas) {
+        GL11 gl = canvas.getGLInstance();
+
         Bitmap bitmap = getBitmap();
         if (bitmap != null) {
             try {
@@ -144,9 +146,8 @@ abstract class UploadedTexture extends BasicTexture {
             } finally {
                 freeBitmap();
             }
-
             // Update texture state.
-            mGL = gl;
+            setAssociatedCanvas(canvas);
             mId = sTextureId[0];
             mState = UploadedTexture.STATE_LOADED;
         } else {
@@ -168,7 +169,9 @@ abstract class UploadedTexture extends BasicTexture {
         return mOpaque;
     }
 
+    @Override
     public void recycle() {
+        super.recycle();
         if (mBitmap != null) freeBitmap();
     }
 }
