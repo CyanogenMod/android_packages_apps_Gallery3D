@@ -84,11 +84,11 @@ public class SlotView extends GLView {
         mPanel.layout(0, 0, r - l, b - t);
         mVisibleStart = 0;
         mVisibleEnd = 0;
-        mPanel.prepareTransition();
+//        mPanel.prepareTransition();
         initializeLayoutParams();
         // The scroll limit could be changed
         setScrollPosition(mPanel.mScrollX, true);
-        mPanel.startTransition();
+//        mPanel.startTransition();
     }
 
     private void setScrollPosition(int position, boolean force) {

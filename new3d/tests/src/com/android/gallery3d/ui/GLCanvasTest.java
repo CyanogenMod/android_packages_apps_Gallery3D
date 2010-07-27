@@ -701,7 +701,6 @@ public class GLCanvasTest extends TestCase {
             assertFalse(mTexture2DEnabled1);
             assertFalse(mGLBlendEnabled);
 
-            // The test is currently broken, waiting for the fix
             canvas.setAlpha(0.3f);
             canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
             assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));

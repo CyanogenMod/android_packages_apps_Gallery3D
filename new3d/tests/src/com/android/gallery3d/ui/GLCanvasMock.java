@@ -15,6 +15,11 @@ public class GLCanvasMock extends GLCanvasStub {
     float mFillRectWidth;
     float mFillRectHeight;
     int mFillRectColor;
+    // drawMixed
+    int mDrawMixedCalled;
+    float mDrawMixedRatio;
+    // drawTexture;
+    int mDrawTextureCalled;
 
     private GL11 mGL;
 
@@ -35,5 +40,16 @@ public class GLCanvasMock extends GLCanvasStub {
         mFillRectWidth = width;
         mFillRectHeight = height;
         mFillRectColor = color;
+    }
+
+    public void drawTexture(
+                BasicTexture texture, int x, int y, int width, int height) {
+        mDrawTextureCalled++;
+    }
+
+    public void drawMixed(BasicTexture from, BasicTexture to,
+            float ratio, int x, int y, int w, int h) {
+        mDrawMixedCalled++;
+        mDrawMixedRatio = ratio;
     }
 }
