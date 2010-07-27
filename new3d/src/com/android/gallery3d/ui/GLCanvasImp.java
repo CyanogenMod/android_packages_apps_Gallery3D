@@ -537,8 +537,22 @@ public class GLCanvasImp implements GLCanvas {
         color[3] = alpha;
     }
 
-    public void drawMixed(BasicTexture from, BasicTexture to,
+    private void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int width, int height, float alpha) {
+
+        if (ratio <= 0) {
+            drawTexture(from, x, y, width, height, alpha);
+            return;
+        } else if (ratio >= 1) {
+            drawTexture(to, x, y, width, height, alpha);
+            return;
+        }
+
+        // In the current implementation the two textures must have the
+        // same size.
+        Util.Assert(from.getWidth() == to.getWidth()
+                && from.getHeight() == to.getHeight());
+
         mGLState.setBlendEnabled(!from.isOpaque()
                 || !to.isOpaque() || alpha < OPAQUE_ALPHA);
 

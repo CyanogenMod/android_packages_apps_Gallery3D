@@ -1,16 +1,10 @@
 package com.android.gallery3d.ui;
 
-import android.util.Log;
-
 import java.nio.Buffer;
 import java.util.HashMap;
 
-import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
-import javax.microedition.khronos.opengles.GL10Ext;
 import javax.microedition.khronos.opengles.GL11;
-import javax.microedition.khronos.opengles.GL11Ext;
-import javax.microedition.khronos.opengles.GL11ExtensionPack;
 
 public class GLMock extends GLStub {
     private static final String TAG = "GLMock";
@@ -40,7 +34,8 @@ public class GLMock extends GLStub {
     // glBindTexture
     int mGLBindTextureId;
     // glTexEnvf
-    HashMap<Integer, Float> mGLTexEnv = new HashMap<Integer, Float>();
+    HashMap<Integer, Float> mGLTexEnv0 = new HashMap<Integer, Float>();
+    HashMap<Integer, Float> mGLTexEnv1 = new HashMap<Integer, Float>();
     // glActiveTexture
     int mGLActiveTexture = GL11.GL_TEXTURE0;
 
@@ -140,12 +135,28 @@ public class GLMock extends GLStub {
     @Override
     public void glTexEnvf(int target, int pname, float param) {
         if (target == GL11.GL_TEXTURE_ENV) {
-            mGLTexEnv.put(pname, param);
+            if (mGLActiveTexture == GL11.GL_TEXTURE0) {
+                mGLTexEnv0.put(pname, param);
+            } else if (mGLActiveTexture == GL11.GL_TEXTURE1) {
+                mGLTexEnv1.put(pname, param);
+            } else {
+                throw new AssertionError();
+            }
         }
     }
 
     public int getTexEnvi(int pname) {
-        return (int) mGLTexEnv.get(pname).floatValue();
+        return getTexEnvi(mGLActiveTexture, pname);
+    }
+
+    public int getTexEnvi(int activeTexture, int pname) {
+        if (activeTexture == GL11.GL_TEXTURE0) {
+            return (int) mGLTexEnv0.get(pname).floatValue();
+        } else if (activeTexture == GL11.GL_TEXTURE1) {
+            return (int) mGLTexEnv1.get(pname).floatValue();
+        } else {
+            throw new AssertionError();
+        }
     }
 
     @Override

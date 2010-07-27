@@ -16,12 +16,12 @@
 
 package com.android.gallery3d.ui;
 
-import com.android.gallery3d.anim.FloatAnimation;
-
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LightingColorFilter;
 import android.graphics.Paint;
+
+import com.android.gallery3d.anim.FloatAnimation;
 
 public class AdaptiveBackground extends GLView {
 
@@ -30,7 +30,9 @@ public class AdaptiveBackground extends GLView {
     private static final int FILTERED_COLOR = 0xffaaaaaa;
     private static final int ANIMATION_DURATION = 500;
 
-    private MixedTexture mMixedTexture;
+    private BasicTexture mOldBackground;
+    private BasicTexture mBackground;
+
     private final Paint mPaint;
     private Bitmap mPendingBitmap;
     private final FloatAnimation mAnimation =
@@ -68,13 +70,12 @@ public class AdaptiveBackground extends GLView {
 
     private void startTransition(Bitmap bitmap) {
         BitmapTexture texture = new BitmapTexture(bitmap);
-        if (mMixedTexture == null) {
-            mMixedTexture = new MixedTexture(texture);
+        if (mBackground == null) {
+            mBackground = texture;
         } else {
-            mMixedTexture.setNewDestination(texture);
-        }
-        mMixedTexture.setMixtureRatio(0);
-        if (mMixedTexture.hasSource()) {
+            if (mOldBackground != null) mOldBackground.recycle();
+            mOldBackground = mBackground;
+            mBackground = texture;
             mAnimation.start();
         }
         invalidate();
@@ -96,15 +97,7 @@ public class AdaptiveBackground extends GLView {
 
     @Override
     protected void render(GLCanvas canvas) {
-        if (mMixedTexture == null) return;
-
-        if (mAnimation.calculate(canvas.currentAnimationTimeMillis())) {
-            mMixedTexture.setMixtureRatio(mAnimation.get());
-            invalidate();
-        } else if (mPendingBitmap != null) {
-            startTransition(mPendingBitmap);
-            mPendingBitmap = null;
-        }
+        if (mBackground == null) return;
 
         int height = getHeight();
         float scale = (float) height / BACKGROUND_HEIGHT;
@@ -112,9 +105,24 @@ public class AdaptiveBackground extends GLView {
         int scroll = mScrollX;
         int start = (scroll / width) * width;
 
-        MixedTexture mixed = mMixedTexture;
-        for (int i = start, n = scroll + getWidth(); i < n; i += width) {
-            mMixedTexture.draw(canvas, i - scroll, 0, width, height);
+        if (mOldBackground == null) {
+            for (int i = start, n = scroll + getWidth(); i < n; i += width) {
+                mBackground.draw(canvas, i - scroll, 0, width, height);
+            }
+        } else {
+            boolean moreAnimation =
+                    mAnimation.calculate(canvas.currentAnimationTimeMillis());
+            float ratio = mAnimation.get();
+            for (int i = start, n = scroll + getWidth(); i < n; i += width) {
+                canvas.drawMixed(mOldBackground,
+                        mBackground, ratio, i - scroll, 0, width, height);
+            }
+            if (moreAnimation) {
+                invalidate();
+            } else if (mPendingBitmap != null) {
+                mPendingBitmap = null;
+                startTransition(mPendingBitmap);
+            }
         }
     }
 }
