@@ -101,11 +101,9 @@ public interface GLCanvas {
 
     // Draw two textures to the specified rectange. The actual texture used is
     // from * (1 - ratio) + to * ratio
+    // The two textures must have the same size.
     public void drawMixed(BasicTexture from, BasicTexture to,
             float ratio, int x, int y, int w, int h);
-
-    public void drawMixed(BasicTexture from, BasicTexture to,
-            float ratio, int x, int y, int width, int height, float alpha);
 
     // Return a texture copied from the specified rectangle.
     public BasicTexture copyTexture(int x, int y, int width, int height);

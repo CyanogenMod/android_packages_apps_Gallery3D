@@ -639,6 +639,9 @@ public class GLCanvasTest extends TestCase {
     private static class DrawTextureMixedTest extends GLMock {
 
         boolean mTexture2DEnabled0, mTexture2DEnabled1;
+        int mBindTexture0;
+        int mBindTexture1;
+
         @Override
         public void glEnable(int cap) {
             if (cap == GL_TEXTURE_2D) {
@@ -674,9 +677,9 @@ public class GLCanvasTest extends TestCase {
         public void glBindTexture(int target, int texture) {
             if (target == GL_TEXTURE_2D) {
                 if (mGLActiveTexture == GL_TEXTURE0) {
-                    assertEquals(42, texture);
+                    mBindTexture0 = texture;
                 } else if (mGLActiveTexture == GL_TEXTURE1) {
-                    assertEquals(47, texture);
+                    mBindTexture1 = texture;
                 } else {
                     fail();
                 }
@@ -689,21 +692,31 @@ public class GLCanvasTest extends TestCase {
             MyTexture from = new MyTexture(canvas, 42, false);  // non-opaque
             MyTexture to = new MyTexture(canvas, 47, true);  // opaque
 
-            canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
-            assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));
-            assertEquals(GL_INTERPOLATE, getTexEnvi(GL_COMBINE_RGB));
-            assertEquals(GL_INTERPOLATE, getTexEnvi(GL_COMBINE_ALPHA));
-            assertEquals(GL_CONSTANT, getTexEnvi(GL_SRC2_RGB));
-            assertEquals(GL_CONSTANT, getTexEnvi(GL_SRC2_ALPHA));
-            assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_OPERAND2_RGB));
-            assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_OPERAND2_ALPHA));
+            canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400);
+            assertEquals(42, mBindTexture0);
+            assertEquals(47, mBindTexture1);
             assertTrue(mTexture2DEnabled0);
             assertFalse(mTexture2DEnabled1);
+
+            assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE1, GL_TEXTURE_ENV_MODE));
+            assertEquals(GL_INTERPOLATE, getTexEnvi(GL_TEXTURE1, GL_COMBINE_RGB));
+            assertEquals(GL_INTERPOLATE, getTexEnvi(GL_TEXTURE1, GL_COMBINE_ALPHA));
+            assertEquals(GL_CONSTANT, getTexEnvi(GL_TEXTURE1, GL_SRC2_RGB));
+            assertEquals(GL_CONSTANT, getTexEnvi(GL_TEXTURE1, GL_SRC2_ALPHA));
+            assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_TEXTURE1, GL_OPERAND2_RGB));
+            assertEquals(GL_SRC_ALPHA, getTexEnvi(GL_TEXTURE1, GL_OPERAND2_ALPHA));
+
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE0, GL_TEXTURE_ENV_MODE));
+
             assertFalse(mGLBlendEnabled);
 
-            canvas.setAlpha(0.3f);
-            canvas.drawMixed(from, to, 0.5f, 100, 200, 300, 400, 1.0f);
-            assertEquals(GL_COMBINE, getTexEnvi(GL_TEXTURE_ENV_MODE));
+            canvas.drawMixed(from, to, 0, 100, 200, 300, 400);
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE0, GL_TEXTURE_ENV_MODE));
+            assertEquals(42, mBindTexture0);
+
+            canvas.drawMixed(from, to, 1, 100, 200, 300, 400);
+            assertEquals(GL_REPLACE, getTexEnvi(GL_TEXTURE0, GL_TEXTURE_ENV_MODE));
+            assertEquals(47, mBindTexture0);
         }
     }
 
