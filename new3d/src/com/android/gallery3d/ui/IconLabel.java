@@ -16,10 +16,11 @@
 
 package com.android.gallery3d.ui;
 
-import static com.android.gallery3d.ui.Util.dpToPixel;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
+
+import com.android.gallery3d.util.Utils;
 
 public class IconLabel extends GLView {
 
@@ -55,14 +56,14 @@ public class IconLabel extends GLView {
     private static void initializeStaticVariables(Context context) {
         if (sHorizontalPaddings >= 0) return;
 
-        sNoIconLeadingSpace = dpToPixel(context, NO_ICON_LEADING_SPACE);
-        sTextLeftPadding = dpToPixel(context, TEXT_LEFT_PADDING);
-        sTextRightPadding = dpToPixel(context, TEXT_RIGHT_PADDING);
-        sMinimalHeight = dpToPixel(context, MINIMAL_HEIGHT);
-        sHorizontalPaddings = dpToPixel(context, HORIZONTAL_PADDINGS);
-        sVerticalPaddings = dpToPixel(context, VERTICAL_PADDINGS);
+        sNoIconLeadingSpace = Utils.dpToPixel(context, NO_ICON_LEADING_SPACE);
+        sTextLeftPadding = Utils.dpToPixel(context, TEXT_LEFT_PADDING);
+        sTextRightPadding = Utils.dpToPixel(context, TEXT_RIGHT_PADDING);
+        sMinimalHeight = Utils.dpToPixel(context, MINIMAL_HEIGHT);
+        sHorizontalPaddings = Utils.dpToPixel(context, HORIZONTAL_PADDINGS);
+        sVerticalPaddings = Utils.dpToPixel(context, VERTICAL_PADDINGS);
 
-        sFontSize = dpToPixel(context, FONT_SIZE);
+        sFontSize = Utils.dpToPixel(context, FONT_SIZE);
     }
 
     public IconLabel(Context context, int iconId, int stringId) {

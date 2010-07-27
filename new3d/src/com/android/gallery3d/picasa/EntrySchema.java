@@ -21,7 +21,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import com.android.gallery3d.ui.Util;
+import com.android.gallery3d.util.Utils;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -197,7 +197,7 @@ public final class EntrySchema {
     public void createTables(SQLiteDatabase db) {
         // Wrapped class must have a @Table.Definition.
         String tableName = mTableName;
-        Util.Assert(tableName != null);
+        Utils.Assert(tableName != null);
 
         // Add the CREATE TABLE statement for the main table.
         StringBuilder sql = new StringBuilder("CREATE TABLE ");

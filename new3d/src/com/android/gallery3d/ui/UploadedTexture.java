@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.Utils;
+
 import android.graphics.Bitmap;
 import android.opengl.GLUtils;
 
@@ -63,7 +65,7 @@ abstract class UploadedTexture extends BasicTexture {
     }
 
     private void freeBitmap() {
-        Util.Assert(mBitmap != null);
+        Utils.Assert(mBitmap != null);
         onFreeBitmap(mBitmap);
         mBitmap = null;
     }

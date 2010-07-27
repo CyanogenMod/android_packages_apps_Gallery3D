@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.gallery3d.ui;
+package com.android.gallery3d.util;
+
+import com.android.gallery3d.util.IntArray;
 
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;

@@ -25,6 +25,7 @@ import com.android.gallery3d.anim.AlphaAnimation;
 import com.android.gallery3d.anim.AnimationSet;
 import com.android.gallery3d.anim.CanvasAnimation;
 import com.android.gallery3d.anim.ScaleAnimation;
+import com.android.gallery3d.util.Utils;
 
 import javax.microedition.khronos.opengles.GL11;
 
@@ -118,7 +119,7 @@ class PopupWindow extends GLView {
 
         Rect p = mPaddings;
 
-        int aXoffset = Util.clamp(mAnchorPosition - aWidth / 2,
+        int aXoffset = Utils.clamp(mAnchorPosition - aWidth / 2,
                 p.left, width - p.right - aWidth);
         int aYoffset = height - aHeight;
         GL11 gl = canvas.getGLInstance();
@@ -150,7 +151,7 @@ class PopupWindow extends GLView {
 
         Rect p = mPaddings;
 
-        int aXoffset = Util.clamp(mAnchorPosition - aWidth / 2,
+        int aXoffset = Utils.clamp(mAnchorPosition - aWidth / 2,
                 p.left, width - p.right - aWidth);
         int aYoffset = height - aHeight;
 

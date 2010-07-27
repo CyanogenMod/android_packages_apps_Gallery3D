@@ -28,6 +28,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.util.Utils;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -234,7 +235,7 @@ public class ImageViewer extends GLView {
         // layout the next image
         entry = mScreenNails[ENTRY_NEXT];
         if (entry.mBitmap != null) {
-            float s = Util.clamp(Math.min((float) width / entry.mWidth,
+            float s = Utils.clamp(Math.min((float) width / entry.mWidth,
                     (float) height / entry.mHeight), 0, 2);
             entry.mDrawWidth = Math.round(entry.mWidth * s);
             entry.mDrawHeight = Math.round(entry.mHeight * s);
@@ -276,7 +277,7 @@ public class ImageViewer extends GLView {
 
         // We want to use a texture smaller than the display size to avoid
         // displaying artifacts.
-        mLevel = Util.clamp(ceilLog2(1f / scale), 0, mLevelCount);
+        mLevel = Utils.clamp(ceilLog2(1f / scale), 0, mLevelCount);
 
         ScreenNailEntry entry = mScreenNails[ENTRY_CURRENT];
 
@@ -439,7 +440,8 @@ public class ImageViewer extends GLView {
 
             mScaleMin = Math.min((float) viewW / mImageW, (float) viewH / mImageH);
             mScaleMin = Math.min(1f, mScaleMin);
-            mCurrentScale = Util.clamp(mCurrentScale, mScaleMin, mScaleMax);
+
+            mCurrentScale = Utils.clamp(mCurrentScale, mScaleMin, mScaleMax);
             mCurrentX = mImageW / 2;
             mCurrentY = mImageH / 2;
 
@@ -499,7 +501,7 @@ public class ImageViewer extends GLView {
 
             mToX = centerX;
             mToY = centerY;
-            mToScale = Util.clamp(scale, 0.6f * mScaleMin, 1.4f * mScaleMax);
+            mToScale = Utils.clamp(scale, 0.6f * mScaleMin, 1.4f * mScaleMax);
 
             // If the scaled dimension is smaller than the view,
             // force it to be in the center.
@@ -584,7 +586,7 @@ public class ImageViewer extends GLView {
 
             if (mCurrentScale < mScaleMin || mCurrentScale > mScaleMax) {
                 needAnimation = true;
-                scale = Util.clamp(mCurrentScale, mScaleMin, mScaleMax);
+                scale = Utils.clamp(mCurrentScale, mScaleMin, mScaleMax);
             }
 
             // The number of pixels when the edge is aliged.
@@ -990,8 +992,8 @@ public class ImageViewer extends GLView {
         } else {
             throw new AssertionError();
         }
-        Util.swap(screenNails, ENTRY_CURRENT, mSwitchIndex);
-        Util.swap(screenNails, ENTRY_PREVIOUS, ENTRY_NEXT);
+        Utils.swap(screenNails, ENTRY_CURRENT, mSwitchIndex);
+        Utils.swap(screenNails, ENTRY_PREVIOUS, ENTRY_NEXT);
 
         notifyScreenNailInvalidated(mSwitchIndex);
         notifyMipmapsInvalidated();

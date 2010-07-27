@@ -2,7 +2,7 @@ package com.android.gallery3d.anim;
 
 import android.view.animation.Interpolator;
 
-import com.android.gallery3d.ui.Util;
+import com.android.gallery3d.util.Utils;
 
 // Animation calculates a value according to the current input time.
 //
@@ -61,7 +61,7 @@ abstract public class Animation {
         if (mStartTime == NO_ANIMATION) return false;
         if (mStartTime == ANIMATION_START) mStartTime = currentTimeMillis;
         int elapse = (int) (currentTimeMillis - mStartTime);
-        float x = Util.clamp((float) elapse / mDuration, 0f, 1f);
+        float x = Utils.clamp((float) elapse / mDuration, 0f, 1f);
         onCalculate(mInterpolator != null
                 ? mInterpolator.getInterpolation(x)
                 : x);

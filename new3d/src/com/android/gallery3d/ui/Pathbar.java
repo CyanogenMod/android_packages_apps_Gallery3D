@@ -16,7 +16,6 @@
 
 package com.android.gallery3d.ui;
 
-import static com.android.gallery3d.ui.Util.dpToPixel;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -27,6 +26,7 @@ import android.view.MotionEvent;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.anim.IntAnimation;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -84,9 +84,9 @@ public class Pathbar extends GLView {
 
     private static void initializeStaticVariables(Context context) {
         if (sHorizontalPadding >= 0) return;
-        sHorizontalPadding = dpToPixel(context, HORIZONTAL_PADDING);
-        sVerticalPadding = dpToPixel(context, VERTICAL_PADDING);
-        sFontSize = dpToPixel(context, FONT_SIZE);
+        sHorizontalPadding = Utils.dpToPixel(context, HORIZONTAL_PADDING);
+        sVerticalPadding = Utils.dpToPixel(context, VERTICAL_PADDING);
+        sFontSize = Utils.dpToPixel(context, FONT_SIZE);
     }
 
     public Pathbar(Context context) {

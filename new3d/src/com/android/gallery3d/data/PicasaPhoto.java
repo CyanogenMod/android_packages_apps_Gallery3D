@@ -5,11 +5,12 @@ package com.android.gallery3d.data;
 import android.graphics.Bitmap;
 
 import com.android.gallery3d.picasa.PhotoEntry;
+import com.android.gallery3d.util.ComboFuture;
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 public class PicasaPhoto implements MediaItem {
     private final PicasaTask[] mTasks = new PicasaTask[MediaItem.TYPE_COUNT];
@@ -46,14 +47,15 @@ public class PicasaPhoto implements MediaItem {
     public synchronized Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener) {
         if (mTasks[type] != null) {
-            throw new IllegalStateException();
+            // TODO: enable the check when cancelling is done
+            // throw new IllegalStateException();
         } else {
             mTasks[type] = newPicasaTask(type, listener);
         }
         return mTasks[type];
     }
 
-    private class PicasaTask extends UberFuture<Bitmap> {
+    private class PicasaTask extends ComboFuture<Bitmap> {
         private final URL mUrl;
         private final int mType;
 
@@ -66,15 +68,7 @@ public class PicasaPhoto implements MediaItem {
         }
 
         @Override
-        protected void onDone() {
-            super.onDone();
-            synchronized (PicasaPhoto.this) {
-                mTasks[mType] = null;
-            }
-        }
-
-        @Override
-        protected FutureTask<?> executeNextTask(int step, FutureTask<?> current)
+        protected Future<?> executeNextTask(int step, Future<?> current)
                 throws Exception {
             switch (step) {
                 case 0: {
@@ -89,6 +83,5 @@ public class PicasaPhoto implements MediaItem {
             }
             return null;
         }
-
     }
 }

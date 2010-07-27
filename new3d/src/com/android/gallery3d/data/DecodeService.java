@@ -6,10 +6,13 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
 
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
+import com.android.gallery3d.util.FutureTask;
+
 import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -30,10 +33,10 @@ public class DecodeService {
         return sInstance;
     }
 
-    public FutureTask<Bitmap> requestDecode(
+    public Future<Bitmap> requestDecode(
             File file, Options options, FutureListener<? super Bitmap> listener) {
         if (options == null) options = new Options();
-        FutureTask<Bitmap> task = new DecodeFutureTask<Bitmap>(
+        FutureTask<Bitmap> task = new DecodeFutureTask(
                 new DecodeFile(file, options), listener);
         mExecutor.execute(task);
         return task;
@@ -53,33 +56,24 @@ public class DecodeService {
                     "offset = %s, length = %s, bytes = %s",
                     offset, length, bytes.length));
         }
-        FutureTask<Bitmap> task = new DecodeFutureTask<Bitmap>(
+        FutureTask<Bitmap> task = new DecodeFutureTask(
                 new DecodeByteArray(bytes, offset, length, options), listener);
         mExecutor.execute(task);
         return task;
     }
 
-    private static class DecodeFutureTask<E> extends ListenableFutureTask<E> {
+    private static class DecodeFutureTask extends FutureTask<Bitmap> {
 
         private Options mOptions;
 
         public DecodeFutureTask(
-                Callable<E> callable, FutureListener<? super E> listener) {
+                Callable<Bitmap> callable, FutureListener<? super Bitmap> listener) {
             super(callable, listener);
         }
 
         @Override
-        public boolean cancel(boolean mayInterrupt) {
-            if (super.cancel(mayInterrupt)) {
-                if (mayInterrupt) mOptions.requestCancelDecode();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        protected void done() {
-            if (mListener != null) mListener.onFutureDone(this);
+        public void onCancel() {
+            mOptions.requestCancelDecode();
         }
     }
 

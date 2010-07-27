@@ -22,15 +22,15 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.util.Log;
 
-import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 public class GridSlotAdapter implements SlotView.Model {
     private static final String TAG = "GridSlotAdapter";

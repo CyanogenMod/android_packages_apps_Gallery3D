@@ -3,7 +3,7 @@
 package com.android.gallery3d.anim;
 
 import com.android.gallery3d.ui.GLCanvas;
-import com.android.gallery3d.ui.Util;
+import com.android.gallery3d.util.Utils;
 
 public class AlphaAnimation extends CanvasAnimation {
     private final float mStartAlpha;
@@ -28,7 +28,7 @@ public class AlphaAnimation extends CanvasAnimation {
 
     @Override
     protected void onCalculate(float progress) {
-        mCurrentAlpha = Util.clamp(mStartAlpha
+        mCurrentAlpha = Utils.clamp(mStartAlpha
                 + (mEndAlpha - mStartAlpha) * progress, 0f, 1f);
     }
 }

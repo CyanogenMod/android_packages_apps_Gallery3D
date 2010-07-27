@@ -6,7 +6,7 @@ import android.content.ContentResolver;
 import android.database.Cursor;
 
 import com.android.gallery3d.app.GalleryContext;
-import com.android.gallery3d.ui.Util;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -104,7 +104,7 @@ public class BucketMediaSet extends DatabaseMediaSet {
 
     @Override
     protected void onUpdateContent() {
-        Util.Assert(mLoadBuffer != null);
+        Utils.Assert(mLoadBuffer != null);
         mMediaItems.clear();
         mMediaItems.addAll(mLoadBuffer);
         mLoadBuffer = null;

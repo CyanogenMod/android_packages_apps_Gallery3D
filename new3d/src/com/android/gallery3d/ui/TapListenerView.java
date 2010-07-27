@@ -35,10 +35,6 @@ public abstract class TapListenerView extends StateView implements SlotView.Slot
 
     protected abstract void startStateView(int slotIndex);
 
-    /* (non-Javadoc)
-     * @see com.android.gallery3d.ui.SlotView.SlotTapListener#onSingleTapUp(int)
-     */
-    @Override
     public void onSingleTapUp(int slotIndex) {
         if (!mSelectionManager.isSelectionMode()) {
             startStateView(slotIndex);
@@ -47,10 +43,6 @@ public abstract class TapListenerView extends StateView implements SlotView.Slot
         }
     }
 
-    /* (non-Javadoc)
-     * @see com.android.gallery3d.ui.SlotView.SlotTapListener#onLongTap(int)
-     */
-    @Override
     public void onLongTap(int slotIndex) {
         mSelectionManager.switchSelectionMode(slotIndex);
     }
