@@ -20,18 +20,17 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
 
-/** Using a canvas to draw the texture */
+// CanvasTexture is a texture whose content is the drawing on a Canvas.
+// The subclasses should override onDraw() to draw on the bitmap.
+// By default CanvasTexture is not opaque.
 abstract class CanvasTexture extends UploadedTexture {
     protected Canvas mCanvas;
     private final Config mConfig;
 
-    public CanvasTexture(int width, int height, Config config) {
-        setSize(width, height);
-        mConfig = config;
-    }
-
     public CanvasTexture(int width, int height) {
-        this(width, height, Config.ARGB_8888);
+        mConfig = Config.ARGB_8888;
+        setSize(width, height);
+        setOpaque(false);
     }
 
     @Override

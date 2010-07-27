@@ -6,12 +6,26 @@ import android.opengl.GLUtils;
 import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;
 
+// UploadedTextures use a Bitmap for the content of the texture.
+//
+// Subclasses should implement onGetBitmap() to provide the Bitmap and
+// implement onFreeBitmap(mBitmap) which will be called when the Bitmap
+// is not needed anymore.
+//
+// isContentValid() is meaningful only when the isLoaded() returns true.
+// It means whether the content needs to be updated.
+//
+// The user of this class should call recycle() when the texture is not
+// needed anymore.
+//
+// By default an UploadedTexture is opaque (so it can be drawn faster without
+// blending). The user or subclass can override it using setOpaque().
 abstract class UploadedTexture extends BasicTexture {
 
     @SuppressWarnings("unused")
     private static final String TAG = "Texture";
-    private boolean mOpaque;
     private boolean mContentValid = true;
+    private boolean mOpaque = true;
 
     protected Bitmap mBitmap;
 
@@ -56,7 +70,7 @@ abstract class UploadedTexture extends BasicTexture {
 
     protected void invalidateContent() {
         if (mBitmap != null) freeBitmap();
-        if (mState == STATE_LOADED) mContentValid = false;
+        mContentValid = false;
     }
 
     /**
@@ -115,15 +129,18 @@ abstract class UploadedTexture extends BasicTexture {
                 gl.glTexParameterf(GL11.GL_TEXTURE_2D,
                         GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 
-                int format = GLUtils.getInternalFormat(bitmap);
-                mOpaque = !bitmap.hasAlpha();
-                int type = GLUtils.getType(bitmap);
+                if (width == getTextureWidth() && height == getTextureWidth()) {
+                    GLUtils.texImage2D(GL11.GL_TEXTURE_2D, 0, bitmap, 0);
+                } else {
+                    int format = GLUtils.getInternalFormat(bitmap);
+                    int type = GLUtils.getType(bitmap);
 
-                gl.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format,
-                        getTextureWidth(), getTextureHeight(),
-                        0, format, type, null);
-                GLUtils.texSubImage2D(
-                        GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap, format, type);
+                    gl.glTexImage2D(GL11.GL_TEXTURE_2D, 0, format,
+                            getTextureWidth(), getTextureHeight(),
+                            0, format, type, null);
+                    GLUtils.texSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, bitmap,
+                            format, type);
+                }
             } finally {
                 freeBitmap();
             }
@@ -141,6 +158,10 @@ abstract class UploadedTexture extends BasicTexture {
     @Override
     protected void onBind(GLCanvas canvas) {
         updateContent(canvas);
+    }
+
+    public void setOpaque(boolean isOpaque) {
+        mOpaque = isOpaque;
     }
 
     public boolean isOpaque() {

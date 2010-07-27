@@ -16,6 +16,7 @@
 package com.android.gallery3d.ui;
 
 import android.opengl.GLSurfaceView.EGLConfigChooser;
+import android.util.Log;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -29,6 +30,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
  */
 class GalleryEGLConfigChooser implements EGLConfigChooser {
 
+    private static final String TAG = "GalleryEGLConfigChooser";
     private int mStencilBits;
 
     private final int mConfigSpec[] = new int[] {
@@ -74,6 +76,11 @@ class GalleryEGLConfigChooser implements EGLConfigChooser {
         // none is found, choose any one.
         for (int i = 0, n = configs.length; i < n; ++i) {
             if (egl.eglGetConfigAttrib(
+                display, configs[i], EGL10.EGL_RED_SIZE, value)) {
+                // Filter out ARGB 8888 configs.
+                if (value[0] == 8) continue;
+            }
+            if (egl.eglGetConfigAttrib(
                     display, configs[i], EGL10.EGL_STENCIL_SIZE, value)) {
                 if (value[0] == 0) continue;
                 if (value[0] < minStencil) {
@@ -89,6 +96,32 @@ class GalleryEGLConfigChooser implements EGLConfigChooser {
         egl.eglGetConfigAttrib(
                 display, result, EGL10.EGL_STENCIL_SIZE, value);
         mStencilBits = value[0];
+        logConfig(egl, display, result);
         return result;
+    }
+
+    private static final int[] ATTR_ID = {
+            EGL10.EGL_RED_SIZE,
+            EGL10.EGL_GREEN_SIZE,
+            EGL10.EGL_BLUE_SIZE,
+            EGL10.EGL_ALPHA_SIZE,
+            EGL10.EGL_DEPTH_SIZE,
+            EGL10.EGL_STENCIL_SIZE,
+            EGL10.EGL_CONFIG_ID,
+            EGL10.EGL_CONFIG_CAVEAT
+    };
+
+    private static final String[] ATTR_NAME = {
+        "R", "G", "B", "A", "D", "S", "ID", "CAVEAT"
+    };
+
+    private void logConfig(EGL10 egl, EGLDisplay display, EGLConfig config) {
+        int value[] = new int[1];
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < ATTR_ID.length; j++) {
+            egl.eglGetConfigAttrib(display, config, ATTR_ID[j], value);
+            sb.append(ATTR_NAME[j] + value[0] + " ");
+        }
+        Log.v(TAG, "Config chosen: " + sb.toString());
     }
 }

@@ -16,6 +16,7 @@
 
 package com.android.gallery3d.ui;
 
+// ColorTexture is a texture which fills the rectangle with the specified color.
 class ColorTexture implements Texture {
 
     private final int mColor;

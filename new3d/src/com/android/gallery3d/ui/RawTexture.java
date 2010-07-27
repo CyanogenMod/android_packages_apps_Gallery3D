@@ -18,6 +18,10 @@ package com.android.gallery3d.ui;
 
 import javax.microedition.khronos.opengles.GL11;
 
+// RawTexture is used for texture created by glCopyTexImage2D.
+//
+// It will throw RuntimeException in onBind() if used with a different GL
+// context. It is only used internally by copyTexture() in GLCanvas.
 class RawTexture extends BasicTexture {
 
     private RawTexture(GL11 gl, int id) {
