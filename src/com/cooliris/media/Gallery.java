@@ -188,6 +188,8 @@ public final class Gallery extends Activity {
                 mPicasaHandler.removeMessages(GET_PICASA_ACCOUNT_STATUS);
                 mPicasaHandler.sendEmptyMessage(UPDATE_PICASA_ACCOUNT_STATUS);
             }
+            // Stop the thumbnailer
+            CacheService.startCache(this, false);
         	mApp.onResume();
         }
     }
