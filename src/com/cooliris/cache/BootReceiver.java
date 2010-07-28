@@ -25,6 +25,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Environment;
 import android.util.Log;
 
 public class BootReceiver extends BroadcastReceiver {
@@ -33,13 +34,16 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
         final String action = intent.getAction();
+        final Uri fileUri = intent.getData();
         Log.i(TAG, "Got intent with action " + action);
         if (Intent.ACTION_MEDIA_SCANNER_FINISHED.equals(action)) {
-            ;
+            if (Environment.getExternalStorageDirectory().getPath().equals(fileUri.getPath())) {
+                CacheService.markDirty();
+                CacheService.startCache(context, true);
+            }
         } else if (Intent.ACTION_MEDIA_MOUNTED.equals(action)) {
             ;
         } else if (action.equals(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)) {
-            final Uri fileUri = intent.getData();
             final long bucketId = Utils.getBucketIdFromUri(context.getContentResolver(), fileUri);
             if (!CacheService.isPresentInCache(bucketId)) {
                 CacheService.markDirty();
