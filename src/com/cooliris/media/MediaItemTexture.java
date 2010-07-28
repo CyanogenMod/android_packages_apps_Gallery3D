@@ -197,9 +197,8 @@ public final class MediaItemTexture extends Texture {
                     }
                 }
             } else {
-                long dateToUse = (item.mDateAddedInSec > item.mDateModifiedInSec) ? item.mDateAddedInSec : item.mDateModifiedInSec;
                 data = CacheService.queryThumbnail(mContext, Utils.Crc64Long(item.mFilePath), item.mId,
-                        item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO, dateToUse * 1000);
+                        item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO, item.mDateModifiedInSec * 1000);
             }
             if (data != null) {
                 try {
