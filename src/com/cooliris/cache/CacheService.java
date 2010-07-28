@@ -76,9 +76,11 @@ public final class CacheService extends IntentService {
     public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
     public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
     public static final DiskCache sSkipThumbnailIds = new DiskCache("local-skip-cache");
+    public static final DiskCache sSkipVideoThumbnailIds = new DiskCache("local-video-skip-cache");
 
     private static final String TAG = "CacheService";
     private static ImageList sList = null;
+    private static ImageList vList = null;
     private static final boolean DEBUG = true;
 
     // Wait 2 seconds to start the thumbnailer so that the application can load
@@ -110,6 +112,8 @@ public final class CacheService extends IntentService {
     public static final int THUMBNAIL_ORIENTATION_INDEX = 3;
     public static final String[] THUMBNAIL_PROJECTION = new String[] { Images.ImageColumns._ID, Images.ImageColumns.DATE_MODIFIED,
             Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION };
+    public static final String[] THUMBNAIL_PROJECTION_VIDEOS = new String[] { Video.VideoColumns._ID, Video.VideoColumns.DATE_MODIFIED,
+                                                                              Video.VideoColumns.DATA };
 
     public static final String[] SENSE_PROJECTION = new String[] { Images.ImageColumns.BUCKET_ID,
             "MAX(" + Images.ImageColumns.DATE_ADDED + "), COUNT(*)" };
@@ -184,6 +188,7 @@ public final class CacheService extends IntentService {
 
     public static final void markDirty() {
         sList = null;
+        vList = null;
         synchronized (sCacheLock) {
             sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
         }
@@ -194,6 +199,7 @@ public final class CacheService extends IntentService {
             return;
         }
         sList = null;
+        vList = null;
         synchronized (sCacheLock) {
             byte[] data = longToByteArray(id);
             final byte[] existingData = sAlbumCache.get(ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0);
@@ -506,6 +512,44 @@ public final class CacheService extends IntentService {
         return list;
     }
 
+    public static final ImageList getVideoList(final Context context) {
+        if (vList != null)
+            return vList;
+        ImageList list = new ImageList();
+        final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
+        final ContentResolver cr = context.getContentResolver();
+        try {
+            final Cursor cursorVideos = cr.query(uriVideos, THUMBNAIL_PROJECTION_VIDEOS, null, null, null);
+            if (cursorVideos != null && cursorVideos.moveToFirst()) {
+                final int size = cursorVideos.getCount();
+                final long[] ids = new long[size];
+                final long[] thumbnailIds = new long[size];
+                final long[] timestamp = new long[size];
+                int ctr = 0;
+                do {
+                    if (Thread.interrupted()) {
+                        break;
+                    }
+                    ids[ctr] = cursorVideos.getLong(THUMBNAIL_ID_INDEX);
+                    timestamp[ctr] = cursorVideos.getLong(THUMBNAIL_DATE_MODIFIED_INDEX);
+                    thumbnailIds[ctr] = Utils.Crc64Long(cursorVideos.getString(THUMBNAIL_DATA_INDEX));
+                    ++ctr;
+                } while (cursorVideos.moveToNext());
+                cursorVideos.close();
+                list.ids = ids;
+                list.thumbids = thumbnailIds;
+                list.timestamp = timestamp;
+            }
+        } catch (Exception e) {
+            // If the database operation failed for any reason
+            ;
+        }
+        if (vList == null) {
+            vList = list;
+        }
+        return list;
+    }
+
     private static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final boolean isVideo,
             final DiskCache thumbnailCache, final long timestamp) {
         if (!App.get(context).isPaused()) {
@@ -528,6 +572,8 @@ public final class CacheService extends IntentService {
     private static final void buildThumbnails(final Context context) {
         if (DEBUG)
             Log.i(TAG, "Preparing DiskCache for all thumbnails.");
+
+        /* Build thumbnails for images */
         ImageList list = getImageList(context);
         final int size = (list.ids == null) ? 0 : list.ids.length;
         final long[] ids = list.ids;
@@ -554,6 +600,34 @@ public final class CacheService extends IntentService {
             }
         }
         thumbnailCache.flush();
+
+        /* Build thumbnails for videos */
+        list = getVideoList(context);
+        final int videoListSize = (list.ids == null) ? 0 : list.ids.length;
+        final long[] videoIds = list.ids;
+        final long[] videoTimestamp = list.timestamp;
+        final long[] videoThumbnailIds = list.thumbids;
+        final DiskCache videoThumbnailCache = LocalDataSource.sThumbnailCacheVideo;
+        for (int i = 0; i < videoListSize; ++i) {
+            if (Thread.interrupted()) {
+                return;
+            }
+            final long id = videoIds[i];
+            final long timeModifiedInSec = videoTimestamp[i];
+            final long thumbnailId = videoThumbnailIds[i];
+            if (!isInVideoThumbnailerSkipList(thumbnailId)) {
+                if (!videoThumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
+                    byte[] retVal = buildThumbnailForId(context, videoThumbnailCache, thumbnailId, id, true, DEFAULT_THUMBNAIL_WIDTH,
+                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
+                    if (retVal == null || retVal.length == 0) {
+                        // There was an error in building the thumbnail.
+                        // We record this thumbnail id
+                        addToVideoThumbnailerSkipList(thumbnailId);
+                    }
+                }
+            }
+        }
+        videoThumbnailCache.flush();
         if (DEBUG)
             Log.i(TAG, "DiskCache ready for all thumbnails.");
     }
@@ -566,6 +640,21 @@ public final class CacheService extends IntentService {
     private static boolean isInThumbnailerSkipList(long thumbnailId) {
         if (sSkipThumbnailIds != null && sSkipThumbnailIds.isDataAvailable(thumbnailId, 0)) {
             byte[] data = sSkipThumbnailIds.get(thumbnailId, 0);
+            if (data != null && data.length > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void addToVideoThumbnailerSkipList(long thumbnailId) {
+        sSkipVideoThumbnailIds.put(thumbnailId, sDummyData, 0);
+        sSkipVideoThumbnailIds.flush();
+    }
+
+    private static boolean isInVideoThumbnailerSkipList(long thumbnailId) {
+        if (sSkipVideoThumbnailIds.isDataAvailable(thumbnailId, 0)) {
+            byte[] data = sSkipVideoThumbnailIds.get(thumbnailId, 0);
             if (data != null && data.length > 0) {
                 return true;
             }
