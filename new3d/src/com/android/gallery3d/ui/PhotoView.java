@@ -17,8 +17,8 @@
 package com.android.gallery3d.ui;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -91,6 +91,10 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
     public void onSingleTapUp(int slotIndex) {
         // TODO Auto-generated method stub
 
+    }
+
+    public void onLongTap(int slotIndex) {
+        // TODO
     }
 
     public void setImageViewer(ImageViewer imageViewer) {

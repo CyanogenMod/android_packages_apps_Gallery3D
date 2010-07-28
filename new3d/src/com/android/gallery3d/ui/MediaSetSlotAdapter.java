@@ -22,7 +22,6 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.util.Log;
 
-import com.android.gallery3d.R;
 import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
@@ -45,30 +44,27 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private static final int CACHE_CAPACITY = 32;
     private static final int INDEX_NONE = -1;
 
-    private final NinePatchTexture mFrame;
-
-    private final Random mRandom = new Random();
-
     private final MediaSet mRootSet;
     private final Texture mWaitLoadingTexture;
 
-    private final Map<Integer, MyDisplayItem[]> mItemsetMap =
-            new HashMap<Integer, MyDisplayItem[]>(CACHE_CAPACITY);
+    private final Map<Integer, MyDisplayItems> mItemsetMap =
+            new HashMap<Integer, MyDisplayItems>(CACHE_CAPACITY);
     private final LinkedHashSet<Integer> mLruSlot =
             new LinkedHashSet<Integer>(CACHE_CAPACITY);
     private final SlotView mSlotView;
+    private final SelectionManager mSelectionManager;
 
     private boolean mContentInvalidated = false;
     private int mInvalidateIndex = INDEX_NONE;
 
     public MediaSetSlotAdapter(
-            Context context, MediaSet rootSet, SlotView view) {
+            Context context, MediaSet rootSet, SlotView slotView, SelectionManager manager) {
         mRootSet = rootSet;
-        mFrame = new NinePatchTexture(context, R.drawable.stack_frame);
+        mSelectionManager = manager;
         ColorTexture gray = new ColorTexture(Color.GRAY);
         gray.setSize(64, 48);
         mWaitLoadingTexture = gray;
-        mSlotView = view;
+        mSlotView = slotView;
 
         rootSet.setContentListener(new MyContentListener());
     }
@@ -77,7 +73,7 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             int slotIndex, int x, int y, DisplayItemPanel panel) {
 
         // Get displayItems from mItemsetMap or create them from MediaSet.
-        MyDisplayItem[] displayItems = mItemsetMap.get(slotIndex);
+        MyDisplayItems displayItems = mItemsetMap.get(slotIndex);
         if (displayItems == null
                 || mContentInvalidated || mInvalidateIndex == slotIndex) {
             displayItems = createDisplayItems(slotIndex);
@@ -87,49 +83,36 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         mLruSlot.remove(slotIndex);
 
         // Put displayItems to the panel.
-        Random random = mRandom;
         int left = x + MARGIN_TO_SLOTSIDE;
         int right = x + getSlotWidth() - MARGIN_TO_SLOTSIDE;
         x += getSlotWidth() / 2;
         y += getSlotHeight() / 2;
 
-        // Put the cover items in reverse order, so that the first item is on
-        // top of the rest.
-        for (int i = displayItems.length -1; i > 0; --i) {
-            int dx = random.nextInt(11) - 5;
-            int itemX = (i & 0x01) == 0
-                    ? left + dx + displayItems[i].getWidth() / 2
-                    : right + dx - displayItems[i].getWidth() / 2;
-            int dy = random.nextInt(11) - 10;
-            int theta = random.nextInt(31) - 15;
-            panel.putDisplayItem(displayItems[i], itemX, y + dy, theta);
-        }
-        if (displayItems.length > 0) {
-            panel.putDisplayItem(displayItems[0], x, y, 0);
-        }
+        displayItems.putSlot(panel, x, y, left, right, slotIndex);
+
     }
 
-    private MyDisplayItem[] createDisplayItems(int slotIndex) {
+    private MyDisplayItems createDisplayItems(int slotIndex) {
         MediaSet set = mRootSet.getSubMediaSet(slotIndex);
         set.setContentListener(new SlotContentListener(slotIndex));
 
         MediaItem[] items = set.getCoverMediaItems();
-        MyDisplayItem[] displayItems = new MyDisplayItem[items.length];
-
+        MyDisplayItems displayItems = new MyDisplayItems(mSelectionManager, items.length);
         addSlotToCache(slotIndex, displayItems);
 
         for (int i = 0; i < items.length; ++i) {
-            displayItems[i] = new MyDisplayItem(mWaitLoadingTexture, mFrame);
             items[i].requestImage(MediaItem.TYPE_MICROTHUMBNAIL,
                     new MyMediaItemListener(slotIndex, i));
+            displayItems.setDisplayItem(i, mWaitLoadingTexture);
         }
+
         return displayItems;
     }
 
-    private void addSlotToCache(int slotIndex, MyDisplayItem[] displayItems) {
+    private void addSlotToCache(int slotIndex, MyDisplayItems displayItems) {
         mItemsetMap.put(slotIndex, displayItems);
 
-        // Remove itemsets if the size of mItemsetMap is no less than
+        // Remove an itemset if the size of mItemsetMap is no less than
         // INITIAL_CACHE_CAPACITY and there exists a slot in mLruSlot.
         Iterator<Integer> iter = mLruSlot.iterator();
         for (int i = mItemsetMap.size() - CACHE_CAPACITY;
@@ -163,8 +146,8 @@ public class MediaSetSlotAdapter implements SlotView.Model {
 
         public void onFutureDone(Future<? extends Bitmap> future) {
             try {
-                MyDisplayItem[] items = mItemsetMap.get(mSlotIndex);
-                items[mItemIndex].updateContent(new BitmapTexture(future.get()));
+                MyDisplayItems items = mItemsetMap.get(mSlotIndex);
+                items.updateContent(mItemIndex, new BitmapTexture(future.get()));
                 mSlotView.notifyDataInvalidate();
             } catch (Exception e) {
                 Log.v(TAG, "cannot get image", e);
@@ -172,65 +155,105 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         }
     }
 
-    private static class MyDisplayItem extends DisplayItem {
+    private static class MyDisplayItems {
+        MyDisplayItem[] mDisplayItems;
+        SelectionManager mSelectionManager;
+        Random mRandom = new Random();
 
-        private Texture mContent;
-        private final NinePatchTexture mFrame;
+        private static class MyDisplayItem extends DisplayItem {
+            private Texture mContent;
+            private boolean mChecked;
+            private boolean mTopItem;
+            private final SelectionDrawer mDrawer;
 
-        public MyDisplayItem(Texture content, NinePatchTexture frame) {
-            mFrame = frame;
-            updateContent(content);
-        }
-
-        public void updateContent(Texture content) {
-            mContent = content;
-            Rect p = mFrame.getPaddings();
-
-            int width = mContent.getWidth();
-            int height = mContent.getHeight();
-
-            float scale = (float) Math.sqrt(EXPECTED_AREA / (width * height));
-            width = (int) (width * scale + 0.5f);
-            height = (int) (height * scale + 0.5f);
-
-            int widthLimit = LENGTH_LIMIT - p.left - p.right;
-            int heightLimit = LENGTH_LIMIT - p.top - p.bottom;
-
-            if (width > widthLimit || height > heightLimit) {
-                if (width * heightLimit > height * widthLimit) {
-                    height = height * widthLimit / width;
-                    width = widthLimit;
-                } else {
-                    width = width * heightLimit / height;
-                    height = heightLimit;
-                }
+            public MyDisplayItem(Texture content, SelectionDrawer drawer) {
+                mDrawer = drawer;
+                updateContent(content);
             }
-            setSize(width + p.left + p.right, height + p.top + p.bottom);
+
+            public void updateContent(Texture content) {
+                mContent = content;
+                Rect p = mDrawer.getFramePadding();
+
+                int width = mContent.getWidth();
+                int height = mContent.getHeight();
+
+                float scale = (float) Math.sqrt(EXPECTED_AREA / (width * height));
+                width = (int) (width * scale + 0.5f);
+                height = (int) (height * scale + 0.5f);
+
+                int widthLimit = LENGTH_LIMIT - p.left - p.right;
+                int heightLimit = LENGTH_LIMIT - p.top - p.bottom;
+
+                if (width > widthLimit || height > heightLimit) {
+                    if (width * heightLimit > height * widthLimit) {
+                        height = height * widthLimit / width;
+                        width = widthLimit;
+                    } else {
+                        width = width * heightLimit / height;
+                        height = heightLimit;
+                    }
+                }
+                setSize(width + p.left + p.right, height + p.top + p.bottom);
+            }
+
+            @Override
+            public void render(GLCanvas canvas) {
+                mDrawer.draw(canvas, mContent, mWidth, mHeight, mChecked, mTopItem);
+            }
         }
 
-        @Override
-        public void render(GLCanvas canvas) {
-            int x = -mWidth / 2;
-            int y = -mHeight / 2;
+        public MyDisplayItems(SelectionManager manager, int size) {
+            mSelectionManager = manager;
+            mDisplayItems = new MyDisplayItem[size];
+        }
 
-            Rect p = mFrame.getPaddings();
-            mContent.draw(canvas, x + p.left, y + p.top,
-                    mWidth - p.left - p.right, mHeight - p.top - p.bottom);
-            mFrame.draw(canvas, x, y, mWidth, mHeight);
+        public void setDisplayItem(int itemIndex, Texture texture) {
+            mDisplayItems[itemIndex] = new MyDisplayItem(texture,
+                    mSelectionManager.getSelectionDrawer());
+        }
+
+        public void updateContent(int itemIndex, Texture texture) {
+            mDisplayItems[itemIndex].updateContent(texture);
+        }
+
+        public void putSlot(DisplayItemPanel panel, int x, int y, int l, int r, int slotIndex) {
+            // Put the cover items in reverse order, so that the first item is on
+            // top of the rest.
+            for (int i = mDisplayItems.length -1; i > 0; --i) {
+                int dx = mRandom.nextInt(11) - 5;
+                int itemX = (i & 0x01) == 0
+                        ? l + dx + mDisplayItems[i].getWidth() / 2
+                        : r + dx - mDisplayItems[i].getWidth() / 2;
+                int dy = mRandom.nextInt(11) - 10;
+                int theta = mRandom.nextInt(31) - 15;
+                panel.putDisplayItem(mDisplayItems[i], itemX, y + dy, theta);
+            }
+            if (mDisplayItems.length > 0) {
+                if (mSelectionManager.isSelectionMode()) {
+                    mDisplayItems[0].mTopItem = true;
+                    mDisplayItems[0].mChecked = mSelectionManager.isSlotSelected(slotIndex);
+                }
+                panel.putDisplayItem(mDisplayItems[0], x, y, 0);
+            }
+        }
+
+        public void removeDisplayItems(DisplayItemPanel panel) {
+            for (MyDisplayItem item : mDisplayItems) {
+                panel.removeDisplayItem(item);
+            }
         }
     }
 
     public void freeSlot(int index, DisplayItemPanel panel) {
-        MyDisplayItem[] displayItems;
+        MyDisplayItems displayItems;
         if (mContentInvalidated) {
             displayItems = mItemsetMap.remove(index);
         } else {
             displayItems = mItemsetMap.get(index);
             mLruSlot.add(index);
         }
-        for (MyDisplayItem item : displayItems) {
-            panel.removeDisplayItem(item);
-        }
+        displayItems.removeDisplayItems(panel);
     }
 
     private void onContentChanged() {
