@@ -12,14 +12,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 public class PicasaPhoto implements MediaItem {
-    private final int mBitmapStatus[] = new int[MediaItem.TYPE_COUNT];
-    private final Bitmap mBitmap[] = new Bitmap[MediaItem.TYPE_COUNT];
-
-    private final Future<?>[] mTasks = new Future<?>[MediaItem.TYPE_COUNT];
+    private final PicasaTask[] mTasks = new PicasaTask[MediaItem.TYPE_COUNT];
 
     private final PhotoEntry mData;
-    private MediaItemListener mListener;
-    private int mFullSizeRequestCount = 0;
 
     public PicasaPhoto(PhotoEntry entry) {
         mData = entry;
@@ -29,70 +24,49 @@ public class PicasaPhoto implements MediaItem {
         return null;
     }
 
-    public void cancelImageRequest(int type) {
-        if (mBitmapStatus[type] == IMAGE_WAIT) {
-            mBitmapStatus[type] = IMAGE_READY;
-            if (type == MediaItem.TYPE_THUMBNAIL) type = MediaItem.TYPE_FULL_IMAGE;
-            if (type == MediaItem.TYPE_FULL_IMAGE) {
-                if (--mFullSizeRequestCount > 0) return;
+    private PicasaTask createTask(
+                int type, FutureListener<? super Bitmap> listener) {
+        URL url = null;
+        try {
+            if (type == MediaItem.TYPE_MICROTHUMBNAIL) {
+                url = new URL(mData.thumbnailUrl);
+            } else if (type == MediaItem.TYPE_THUMBNAIL) {
+                url = new URL(mData.screennailUrl);
+            } else if (type == MediaItem.TYPE_FULL_IMAGE) {
+                url = new URL(mData.contentUrl);
+            } else {
+                throw new AssertionError();
             }
-            Future<?> task = mTasks[type];
-            if (task != null) task.cancel(true);
+            return new PicasaTask(url, listener);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public Bitmap getImage(int type) {
-        return mBitmap[type];
-    }
-
-    public int requestImage(int type) {
-        if (mBitmap[type] == null && mBitmapStatus[type] == IMAGE_READY) {
-            //  Initial state: the image is not requested yet!
-            DownloadService service = DownloadService.getInstance();
-            mBitmapStatus[type] = IMAGE_WAIT;
-            if (type == MediaItem.TYPE_THUMBNAIL) type = MediaItem.TYPE_FULL_IMAGE;
-
-            try {
-                switch (type) {
-                    case MediaItem.TYPE_MICROTHUMBNAIL: {
-                        mTasks[type] = new PicasaPhotoTask(
-                                new URL(mData.thumbnailUrl),
-                                new PhotoListener(type));
-                        break;
-                    }
-                    case MediaItem.TYPE_FULL_IMAGE: {
-                        ++ mFullSizeRequestCount;
-                        if (mTasks[type] == null) {
-                            mTasks[type] = new PicasaPhotoTask(
-                                    new URL(mData.contentUrl),
-                                    new PhotoListener(type));
-                        }
-                        break;
-                    }
-                    default:
-                        throw new IllegalArgumentException(String.valueOf(type));
-                }
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
+    public synchronized Future<Bitmap>
+            requestImage(int type, FutureListener<? super Bitmap> listener) {
+        if (mTasks[type] != null) {
+            mTasks[type].setListener(listener);
+        } else {
+            mTasks[type] = createTask(type, listener);
         }
-        return mBitmapStatus[type];
+        return mTasks[type];
     }
 
-    private class PicasaPhotoTask extends UberFuture<Bitmap> {
-
+    private class PicasaTask extends UberFuture<Bitmap> {
         private final URL mUrl;
 
-        public PicasaPhotoTask(URL url, FutureListener<Bitmap> listener) {
+        public PicasaTask(
+                URL url, FutureListener<? super Bitmap> listener) {
             super(listener);
             mUrl = url;
-            super.execute();
+            execute();
         }
 
         @Override
-        protected FutureTask<?> executeNextTask(int index, FutureTask<?> current)
+        protected FutureTask<?> executeNextTask(int step, FutureTask<?> current)
                 throws Exception {
-            switch (index) {
+            switch (step) {
                 case 0: {
                     DownloadService service = DownloadService.getInstance();
                     return service.requestDownload(mUrl, this);
@@ -106,50 +80,5 @@ public class PicasaPhoto implements MediaItem {
             return null;
         }
 
-    }
-
-    private class PhotoListener implements FutureListener<Bitmap> {
-        private final int mType;
-
-        public PhotoListener(int type) {
-            mType = type;
-        }
-
-        public void onFutureDone(Future<? extends Bitmap> future) {
-            if (future.isCancelled()) {
-                if (mListener != null) {
-                    mListener.onImageCanceled(PicasaPhoto.this, mType);
-                    if (mType == MediaItem.TYPE_FULL_IMAGE) {
-                        mListener.onImageCanceled(
-                                PicasaPhoto.this, MediaItem.TYPE_THUMBNAIL);
-                    }
-                }
-            } else {
-                try {
-                    Bitmap bitmap = future.get();
-                    mBitmap[mType] = bitmap;
-                    mBitmapStatus[mType] = MediaItem.IMAGE_READY;
-                    if (mListener != null) {
-                        mListener.onImageReady(PicasaPhoto.this, mType, bitmap);
-                        if (mType == MediaItem.TYPE_FULL_IMAGE) {
-                            mListener.onImageReady(PicasaPhoto.this,
-                                    MediaItem.TYPE_THUMBNAIL, bitmap);
-                        }
-                    }
-                } catch (Exception e) {
-                    if (mListener != null) {
-                        mListener.onImageError(PicasaPhoto.this, mType, e);
-                        if (mType == MediaItem.TYPE_FULL_IMAGE) {
-                            mListener.onImageError(PicasaPhoto.this,
-                                    MediaItem.TYPE_THUMBNAIL, e);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void setListener(MediaItemListener listener) {
-        mListener = listener;
     }
 }

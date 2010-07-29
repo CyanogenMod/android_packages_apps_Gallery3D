@@ -20,8 +20,10 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.util.Log;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 
@@ -29,8 +31,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 public class GridSlotAdapter implements SlotView.Model {
+    private static final String TAG = "GridSlotAdapter";
+
     private static final int LENGTH_LIMIT = 162;
     private static final double EXPECTED_AREA = 150 * 120;
     private static final int SLOT_WIDTH = 162;
@@ -60,21 +65,13 @@ public class GridSlotAdapter implements SlotView.Model {
 
     public void putSlot(int slotIndex, int x, int y, DisplayItemPanel panel) {
         MyDisplayItem displayItem = mItemMap.get(slotIndex);
-
         if (displayItem == null || mContentInvalidated) {
             MediaItem item = mMediaSet.getMediaItem(slotIndex);
-            item.setListener(new MyMediaItemListener(slotIndex));
-            switch (item.requestImage(MediaItem.TYPE_MICROTHUMBNAIL)) {
-                case MediaItem.IMAGE_READY:
-                    Bitmap bitmap = item.getImage(MediaItem.TYPE_MICROTHUMBNAIL);
-                    displayItem = new MyDisplayItem(
-                            new BitmapTexture(bitmap), mFrame);
-                    break;
-                default:
-                    displayItem = new MyDisplayItem(mWaitLoadingTexture, mFrame);
-                    break;
+            displayItem = new MyDisplayItem(mWaitLoadingTexture, mFrame);
+            mItemMap.put(slotIndex, displayItem);
+            item.requestImage(MediaItem.TYPE_MICROTHUMBNAIL,
+                    new MyMediaItemListener(slotIndex));
 
-            }
             // Remove an item if the size of mItemsetMap is no less than
             // CACHE_CAPACITY and there exists a slot in mLruSlot.
             Iterator<Integer> iter = mLruSlot.iterator();
@@ -105,7 +102,7 @@ public class GridSlotAdapter implements SlotView.Model {
         return mMediaSet.getMediaItemCount();
     }
 
-    private class MyMediaItemListener implements MediaItem.MediaItemListener {
+    private class MyMediaItemListener implements FutureListener<Bitmap> {
 
         private final int mSlotIndex;
 
@@ -113,18 +110,14 @@ public class GridSlotAdapter implements SlotView.Model {
             mSlotIndex = slotIndex;
         }
 
-        public void onImageCanceled(MediaItem abstractMediaItem, int type) {
-            // Do nothing
-        }
-
-        public void onImageError(MediaItem item, int type, Throwable error) {
-            // Do nothing
-        }
-
-        public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
-            MyDisplayItem displayItem = mItemMap.get(mSlotIndex);
-            displayItem.updateContent(new BitmapTexture(bitmap));
-            mSlotView.notifyDataInvalidate();
+        public void onFutureDone(Future<? extends Bitmap> future) {
+            try {
+                MyDisplayItem displayItem = mItemMap.get(mSlotIndex);
+                displayItem.updateContent(new BitmapTexture(future.get()));
+                mSlotView.notifyDataInvalidate();
+            } catch (Exception e) {
+                Log.v(TAG, "cannot get image", e);
+            }
         }
     }
 

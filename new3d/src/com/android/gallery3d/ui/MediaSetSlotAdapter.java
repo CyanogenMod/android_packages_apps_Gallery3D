@@ -20,8 +20,10 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.util.Log;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 
@@ -30,8 +32,11 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Future;
 
 public class MediaSetSlotAdapter implements SlotView.Model {
+    private static final String TAG = MediaSetSlotAdapter.class.getSimpleName();
+
     private static final int LENGTH_LIMIT = 180;
     private static final double EXPECTED_AREA = LENGTH_LIMIT * LENGTH_LIMIT / 2;
     private static final int SLOT_WIDTH = 220;
@@ -76,7 +81,6 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         if (displayItems == null
                 || mContentInvalidated || mInvalidateIndex == slotIndex) {
             displayItems = createDisplayItems(slotIndex);
-            addSlotToCache(slotIndex, displayItems);
         }
 
         // Reclaim the slot
@@ -108,29 +112,24 @@ public class MediaSetSlotAdapter implements SlotView.Model {
     private MyDisplayItem[] createDisplayItems(int slotIndex) {
         MediaSet set = mRootSet.getSubMediaSet(slotIndex);
         set.setContentListener(new SlotContentListener(slotIndex));
-        MediaItem[] items = set.getCoverMediaItems();
 
+        MediaItem[] items = set.getCoverMediaItems();
         MyDisplayItem[] displayItems = new MyDisplayItem[items.length];
+
+        addSlotToCache(slotIndex, displayItems);
+
         for (int i = 0; i < items.length; ++i) {
-            items[i].setListener(new MyMediaItemListener(slotIndex, i));
-            switch (items[i].requestImage(MediaItem.TYPE_MICROTHUMBNAIL)) {
-                case MediaItem.IMAGE_READY:
-                    Bitmap bitmap =
-                            items[i].getImage(MediaItem.TYPE_MICROTHUMBNAIL);
-                    displayItems[i] = new MyDisplayItem(
-                            new BitmapTexture(bitmap), mFrame);
-                    break;
-                default:
-                    displayItems[i] =
-                            new MyDisplayItem(mWaitLoadingTexture, mFrame);
-                    break;
-            }
+            displayItems[i] = new MyDisplayItem(mWaitLoadingTexture, mFrame);
+            items[i].requestImage(MediaItem.TYPE_MICROTHUMBNAIL,
+                    new MyMediaItemListener(slotIndex, i));
         }
         return displayItems;
     }
 
     private void addSlotToCache(int slotIndex, MyDisplayItem[] displayItems) {
-        // Remove an itemset if the size of mItemsetMap is no less than
+        mItemsetMap.put(slotIndex, displayItems);
+
+        // Remove itemsets if the size of mItemsetMap is no less than
         // INITIAL_CACHE_CAPACITY and there exists a slot in mLruSlot.
         Iterator<Integer> iter = mLruSlot.iterator();
         for (int i = mItemsetMap.size() - CACHE_CAPACITY;
@@ -138,7 +137,6 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             mItemsetMap.remove(iter.next());
             iter.remove();
         }
-        mItemsetMap.put(slotIndex, displayItems);
     }
 
     public int getSlotHeight() {
@@ -153,7 +151,7 @@ public class MediaSetSlotAdapter implements SlotView.Model {
         return mRootSet.getSubMediaSetCount();
     }
 
-    private class MyMediaItemListener implements MediaItem.MediaItemListener {
+    private class MyMediaItemListener implements FutureListener<Bitmap> {
 
         private final int mSlotIndex;
         private final int mItemIndex;
@@ -163,18 +161,14 @@ public class MediaSetSlotAdapter implements SlotView.Model {
             mItemIndex = itemIndex;
         }
 
-        public void onImageCanceled(MediaItem abstractMediaItem, int type) {
-            // Do nothing
-        }
-
-        public void onImageError(MediaItem item, int type, Throwable error) {
-            // Do nothing
-        }
-
-        public void onImageReady(MediaItem item, int type, Bitmap bitmap) {
-            MyDisplayItem[] items = mItemsetMap.get(mSlotIndex);
-            items[mItemIndex].updateContent(new BitmapTexture(bitmap));
-            mSlotView.notifyDataInvalidate();
+        public void onFutureDone(Future<? extends Bitmap> future) {
+            try {
+                MyDisplayItem[] items = mItemsetMap.get(mSlotIndex);
+                items[mItemIndex].updateContent(new BitmapTexture(future.get()));
+                mSlotView.notifyDataInvalidate();
+            } catch (Exception e) {
+                Log.v(TAG, "cannot get image", e);
+            }
         }
     }
 
