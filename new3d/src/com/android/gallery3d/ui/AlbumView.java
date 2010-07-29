@@ -25,7 +25,7 @@ import android.os.Message;
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaSet;
 
-public class AlbumView extends StateView implements SlotView.SlotTapListener {
+public class AlbumView extends TapListenerView {
     public static final String KEY_BUCKET_INDEX = "keyBucketIndex";
     private static final int CHANGE_BACKGROUND = 1;
     private static final int MARGIN_HUD_SLOTVIEW = 5;
@@ -71,6 +71,7 @@ public class AlbumView extends StateView implements SlotView.SlotTapListener {
         mBackground = new AdaptiveBackground();
         addComponent(mBackground);
         mSlotView = new SlotView(mContext.getAndroidContext());
+        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), mSlotView);
         addComponent(mSlotView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
         addComponent(mHud);
@@ -85,8 +86,8 @@ public class AlbumView extends StateView implements SlotView.SlotTapListener {
     private void intializeData(Bundle data) {
         mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
         MediaSet mediaSet = mContext.getDataManager().getSubMediaSet(mBucketIndex);
-        mSlotView.setModel(new GridSlotAdapter(
-                mContext.getAndroidContext(), mediaSet, mSlotView));
+        mSlotView.setModel(new GridSlotAdapter(mContext.getAndroidContext(), mediaSet,
+                mSlotView, mSelectionManager));
     }
 
     public SlotView getSlotView() {
@@ -123,7 +124,8 @@ public class AlbumView extends StateView implements SlotView.SlotTapListener {
         }
     }
 
-    public void onSingleTapUp(int slotIndex) {
+    @Override
+    protected void startStateView(int slotIndex) {
         Bundle data = new Bundle();
         data.putInt(PhotoView.KEY_SET_INDEX, mBucketIndex);
         data.putInt(PhotoView.KEY_PHOTO_INDEX, slotIndex);

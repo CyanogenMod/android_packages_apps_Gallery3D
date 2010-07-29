@@ -21,9 +21,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
 
-public class SlotView extends GLView {
-
-    private static final String TAG = "SlotView";
+public class SlotView extends GLView implements SelectionManager.SelectionChangeListener {
     private static final int MAX_VELOCITY = 2500;
     private static final int NOT_AT_SLOTPOSITION = -1;
 
@@ -131,6 +129,18 @@ public class SlotView extends GLView {
 
     public void notifyDataInvalidate() {
         invalidate();
+    }
+
+    public void onSelectionChange(int index) {
+        notifySlotInvalidate(index);
+    }
+
+    public void onSelectionModeChange() {
+        for (int i = mVisibleStart; i < mVisibleEnd; i++) {
+            for (int j = 0; j < mRowCount; j++) {
+                notifySlotInvalidate(i * mRowCount + j);
+            }
+        }
     }
 
     @Override
@@ -255,6 +265,16 @@ public class SlotView extends GLView {
             }
             return true;
         }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+          float x = e.getX();
+          float y = e.getY();
+          int index = getSlotIndexByPosition(x, y);
+          if (index != SlotView.NOT_AT_SLOTPOSITION) {
+              mSlotTapListener.onLongTap(index);
+          }
+        }
     }
 
     public void setSlotTapListener(SlotTapListener listener) {
@@ -282,6 +302,7 @@ public class SlotView extends GLView {
 
     public interface SlotTapListener {
         public void onSingleTapUp(int slotIndex);
+        public void onLongTap(int slotIndex);
     }
 
     public void setGaps(int horizontalGap, int verticalGap) {

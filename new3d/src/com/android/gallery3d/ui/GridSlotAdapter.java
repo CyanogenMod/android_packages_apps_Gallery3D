@@ -22,7 +22,6 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.util.Log;
 
-import com.android.gallery3d.R;
 import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
@@ -46,17 +45,17 @@ public class GridSlotAdapter implements SlotView.Model {
             new HashMap<Integer, MyDisplayItem>(CACHE_CAPACITY);
     private final LinkedHashSet<Integer> mLruSlot =
             new LinkedHashSet<Integer>(CACHE_CAPACITY);
-    private final NinePatchTexture mFrame;
-
     private final MediaSet mMediaSet;
     private final Texture mWaitLoadingTexture;
     private final SlotView mSlotView;
+    private final SelectionManager mSelectionManager;
     private boolean mContentInvalidated = false;
 
-    public GridSlotAdapter(Context context, MediaSet mediaSet, SlotView slotView) {
+    public GridSlotAdapter(Context context, MediaSet mediaSet, SlotView slotView,
+            SelectionManager selectionManager) {
         mSlotView = slotView;
         mMediaSet = mediaSet;
-        mFrame = new NinePatchTexture(context, R.drawable.grid_frame);
+        mSelectionManager = selectionManager;
         ColorTexture gray = new ColorTexture(Color.GRAY);
         gray.setSize(64, 48);
         mWaitLoadingTexture = gray;
@@ -67,7 +66,8 @@ public class GridSlotAdapter implements SlotView.Model {
         MyDisplayItem displayItem = mItemMap.get(slotIndex);
         if (displayItem == null || mContentInvalidated) {
             MediaItem item = mMediaSet.getMediaItem(slotIndex);
-            displayItem = new MyDisplayItem(mWaitLoadingTexture, mFrame);
+            displayItem = new MyDisplayItem(mWaitLoadingTexture,
+                    mSelectionManager.getSelectionDrawer());
             mItemMap.put(slotIndex, displayItem);
             item.requestImage(MediaItem.TYPE_MICROTHUMBNAIL,
                     new MyMediaItemListener(slotIndex));
@@ -84,6 +84,9 @@ public class GridSlotAdapter implements SlotView.Model {
 
         // Reclaim the slot
         mLruSlot.remove(slotIndex);
+
+        if (mSelectionManager.isSelectionMode())
+            displayItem.mChecked = mSelectionManager.isSlotSelected(slotIndex);
 
         x += getSlotWidth() / 2;
         y += getSlotHeight() / 2;
@@ -134,16 +137,17 @@ public class GridSlotAdapter implements SlotView.Model {
     private static class MyDisplayItem extends DisplayItem {
 
         private Texture mContent;
-        private final NinePatchTexture mFrame;
+        private final SelectionDrawer mDrawer;
+        private boolean mChecked;
 
-        public MyDisplayItem(Texture content, NinePatchTexture frame) {
-            mFrame = frame;
+        public MyDisplayItem(Texture content, SelectionDrawer drawer) {
+            mDrawer = drawer;
             updateContent(content);
         }
 
         public void updateContent(Texture content) {
             mContent = content;
-            Rect p = mFrame.getPaddings();
+            Rect p = mDrawer.getFramePadding();
 
             int width = mContent.getWidth();
             int height = mContent.getHeight();
@@ -169,13 +173,7 @@ public class GridSlotAdapter implements SlotView.Model {
 
         @Override
         public void render(GLCanvas canvas) {
-            int x = -mWidth / 2;
-            int y = -mHeight / 2;
-
-            Rect p = mFrame.getPaddings();
-            mContent.draw(canvas, x + p.left, y + p.top,
-                    mWidth - p.left - p.right, mHeight - p.top - p.bottom);
-            mFrame.draw(canvas, x, y, mWidth, mHeight);
+            mDrawer.draw(canvas, mContent, mWidth, mHeight, mChecked);
         }
     }
 
