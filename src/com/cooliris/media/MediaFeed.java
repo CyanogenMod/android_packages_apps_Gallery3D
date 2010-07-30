@@ -429,7 +429,6 @@ public final class MediaFeed implements Runnable {
             public void run() {
                 if (mContext == null)
                     return;
-                Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 DataSource dataSource = mDataSource;
                 // We must wait while the SD card is mounted or the MediaScanner
                 // is running.
@@ -518,7 +517,6 @@ public final class MediaFeed implements Runnable {
     public void run() {
         DataSource dataSource = mDataSource;
         int sleepMs = 10;
-        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         if (dataSource != null) {
             while (!Thread.interrupted() && !mIsShutdown) {
                 String[] databaseUris = null;
