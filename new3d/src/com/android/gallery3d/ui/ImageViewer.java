@@ -16,7 +16,6 @@
 
 package com.android.gallery3d.ui;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -28,11 +27,16 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
+import com.android.gallery3d.app.GalleryContext;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class ImageViewer extends GLView {
+
+    public static final int SIZE_UNKNOWN = -1;
+
     private static final String TAG = "ImageViewer";
 
     // TILE_SIZE must be 2^N - 2. We put one pixel border in each side of the
@@ -41,14 +45,19 @@ public class ImageViewer extends GLView {
     private static final int TILE_BORDER = 1;
     private static final int UPLOAD_LIMIT = 1;
 
-    private final Bitmap mScaledBitmaps[];
-    private final BitmapTexture mBackupTexture;
-    private final int mLevelCount;  // cache the value of mScaledBitmaps.length
+    private static final int ENTRY_CURRENT = Model.INDEX_CURRENT;
+    private static final int ENTRY_PREVIOUS = Model.INDEX_PREVIOUS;
+    private static final int ENTRY_NEXT = Model.INDEX_NEXT;
 
-    private int mCenterX = Integer.MIN_VALUE; // some invalid value
-    private int mCenterY = Integer.MIN_VALUE;
+    private static final int IMAGE_GAP = 64;
+    private static final int SWITCH_THRESHOLD = 96;
 
-    private float mScale = -1; // some invalid value;
+    // the previous/current/next image entries
+    private final ScreenNailEntry mScreenNails[] = new ScreenNailEntry[3];
+
+    private Bitmap mScaledBitmaps[];
+    private BitmapTexture mBackupTexture;
+    private int mLevelCount;  // cache the value of mScaledBitmaps.length
 
     // The mLevel variable indicates which level of bitmap we should use.
     // Level 0 means the original full-sized bitmap, and a larger value means
@@ -79,8 +88,12 @@ public class ImageViewer extends GLView {
     private Tile mRecycledHead = null;
 
     // The width and height of the full-sized bitmap
-    private final int mImageWidth;
-    private final int mImageHeight;
+    private int mImageWidth;
+    private int mImageHeight;
+
+    private int mCenterX;
+    private int mCenterY;
+    private float mScale;
 
     // Temp variables to avoid memory allocation
     private final Rect mTileRange = new Rect();
@@ -89,23 +102,73 @@ public class ImageViewer extends GLView {
     private final Uploader mUploader = new Uploader();
     private final AnimationController mAnimationController;
 
-    public ImageViewer(Context context, Bitmap scaledBitmaps[], Bitmap backup) {
-        mScaledBitmaps = scaledBitmaps;
-        mLevelCount = mScaledBitmaps.length;
-        mBackupTexture = new BitmapTexture(backup);
+    private Model mModel;
+    private int mSwitchIndex;
+    /*private*/ boolean mInTransition = false;
 
-        mImageWidth = scaledBitmaps[0].getWidth();
-        mImageHeight = scaledBitmaps[0].getHeight();
+    private SynchronizedHandler mHandler;
 
-        mAnimationController = new AnimationController(this,
-                mImageWidth, mImageHeight);
+    public ImageViewer(GalleryContext context) {
 
-        mScaleDetector = new ScaleGestureDetector(context, new MyScaleListener());
-        mGestureDetector = new GestureDetector(context,
-                new MyGestureListener(),
-                null /* handler */,
+        mHandler = new SynchronizedHandler(
+                context.getUiMonitor(), context.getMainLooper());
+
+        mGestureDetector = new GestureDetector(context.getAndroidContext(),
+                new MyGestureListener(), mHandler,
                 true /* ignoreMultitouch */);
+
+        mScaleDetector = new ScaleGestureDetector(
+                context.getAndroidContext(), new MyScaleListener());
         mDownUpDetector = new DownUpDetector(new MyDownUpListener());
+
+        mAnimationController = new AnimationController(this);
+
+        for (int i = 0, n = mScreenNails.length; i < n; ++i) {
+            mScreenNails[i] = new ScreenNailEntry();
+        }
+    }
+
+    public void setModel(Model model) {
+        mModel = model;
+        notifyScreenNailInvalidated(ENTRY_CURRENT);
+        notifyScreenNailInvalidated(ENTRY_PREVIOUS);
+        notifyScreenNailInvalidated(ENTRY_NEXT);
+        notifyMipmapsInvalidated();
+
+        resetCurrentImagePosition();
+    }
+
+    public void notifyMipmapsInvalidated() {
+        mScaledBitmaps = mModel.getMipmaps();
+        if (mScaledBitmaps != null) {
+            mLevelCount = mScaledBitmaps.length;
+            layoutTiles(mCenterX, mCenterY, mScale);
+            invalidate();
+        } else {
+            mLevelCount = 0;
+        }
+    }
+
+    public void notifyScreenNailInvalidated(int which) {
+        ScreenNailEntry entry = mScreenNails[which];
+
+        ImageData data = mModel.getImageData(which);
+        if (data == null) {
+            entry.set(0, 0, null);
+        } else {
+            entry.set(data.fullWidth, data.fullHeight, data.screenNail);
+            if (which == ENTRY_CURRENT) resetCurrentImagePosition();
+        }
+        layoutScreenNails(mCenterX, mCenterY, mScale);
+        if (entry.mVisible) invalidate();
+    }
+
+    private void resetCurrentImagePosition() {
+        ScreenNailEntry entry = mScreenNails[ENTRY_CURRENT];
+        mBackupTexture = entry.mTexture;
+        mImageWidth = entry.mWidth;
+        mImageHeight = entry.mHeight;
+        mAnimationController.onNewImage(mImageWidth, mImageHeight);
     }
 
     @Override
@@ -131,6 +194,75 @@ public class ImageViewer extends GLView {
         }
     }
 
+    private static int gapToSide(int imageWidth, int viewWidth, float scale) {
+        return Math.max(0, Math.round(viewWidth - imageWidth * scale) / 2);
+    }
+
+    /*
+     * Here is how we layout the screen nails
+     *
+     *  previous            current           next
+     *  ___________       ________________     __________
+     * |  _______  |     |   __________   |   |  ______  |
+     * | |       | |     |  |   right->|  |   | |      | |
+     * | |       | |<--->|  |<--left   |  |   | |      | |
+     * | |_______| |  |  |  |__________|  |   | |______| |
+     * |___________|  |  |________________|   |__________|
+     *                |  <--> gapToSide()
+     *                |
+     *            IMAGE_GAP
+     */
+    private void layoutScreenNails(int centerX, int centerY, float scale) {
+        int width = getWidth();
+        int height = getHeight();
+
+        int left = Math.round(width / 2 - centerX * scale);
+        int right = Math.round(left + mImageWidth * scale);
+
+        int gap = IMAGE_GAP + gapToSide(mImageWidth, width, scale);;
+
+        // layout the previous image
+        ScreenNailEntry entry = mScreenNails[ENTRY_PREVIOUS];
+        entry.mVisible = left > gap && entry.mBitmap != null;
+        if (entry.mBitmap != null) {
+            float s = Math.min(1, Math.min((float) width / entry.mWidth,
+                    (float) height / entry.mHeight));
+            entry.mDrawWidth = Math.round(entry.mWidth * s);
+            entry.mDrawHeight = Math.round(entry.mHeight * s);
+            entry.mX = left - gap - gapToSide(
+                    entry.mWidth, width, s) - entry.mDrawWidth;
+            entry.mY = (height - entry.mDrawHeight) / 2;
+            entry.mVisible = (entry.mX + entry.mDrawWidth) > 0;
+
+        } else {
+            entry.mVisible = false;
+        }
+
+        // layout the next image
+        entry = mScreenNails[ENTRY_NEXT];
+        if (entry.mBitmap != null) {
+            float s = Util.clamp(Math.min((float) width / entry.mWidth,
+                    (float) height / entry.mHeight), 0, 2);
+            entry.mDrawWidth = Math.round(entry.mWidth * s);
+            entry.mDrawHeight = Math.round(entry.mHeight * s);
+            entry.mX = right + gap + gapToSide(entry.mWidth, width, s);
+            entry.mY = (height - entry.mDrawHeight) / 2;
+            entry.mVisible = entry.mX < width;
+        } else {
+            entry.mVisible = false;
+        }
+
+        // Layout the current screen nail
+        entry = mScreenNails[ENTRY_CURRENT];
+        entry.mVisible = mLevel == mLevelCount && entry.mBitmap != null;
+        if (entry.mVisible) {
+            entry.mX = (int) (width / 2 - centerX * scale);
+            entry.mY = (int) (height / 2 - centerY * scale);
+            entry.mDrawWidth = Math.round(mImageWidth * scale);
+            entry.mDrawHeight = Math.round(mImageHeight * scale);
+        }
+    }
+
     // Prepare the tiles we want to use for display.
     //
     // 1. Decide the tile level we want to use for display.
@@ -153,6 +285,8 @@ public class ImageViewer extends GLView {
         // displaying artifacts.
         mLevel = Util.clamp(ceilLog2(1f / scale), 0, mLevelCount);
 
+        ScreenNailEntry entry = mScreenNails[ENTRY_CURRENT];
+
         // We want to keep one more tile level as texture in addition to what
         // we use for display. So it can be faster when the scale moves to the
         // next level. We choose a level closer to the current scale.
@@ -163,8 +297,6 @@ public class ImageViewer extends GLView {
             mOffsetY = Math.round(height / 2f + (range.top - centerY) * scale);
             fromLevel = scale * (1 << mLevel) > 1.5f ? mLevel - 1 : mLevel;
         } else {
-            mOffsetX = Math.round(width / 2f - centerX * scale);
-            mOffsetY = Math.round(height / 2f - centerY * scale);
             // If mLevel == mLevelCount, we will use the backup texture for
             // display, so keep two smallest levels of tiles.
             fromLevel = mLevel - 2;
@@ -203,6 +335,15 @@ public class ImageViewer extends GLView {
         mUploadIter = mActiveTiles.values().iterator();
     }
 
+    private void invalidateAllTiles() {
+        Iterator<Map.Entry<Long, Tile>> iter = mActiveTiles.entrySet().iterator();
+        while (iter.hasNext()) {
+            Tile tile = iter.next().getValue();
+            recycleTile(tile);
+        }
+        mActiveTiles.clear();
+    }
+
     private void getRange(Rect out, int cX, int cY, int level) {
         getRange(out, cX, cY, level, 1f / (1 << (level + 1)));
     }
@@ -238,6 +379,7 @@ public class ImageViewer extends GLView {
         mScale = scale;
 
         layoutTiles(centerX, centerY, scale);
+        layoutScreenNails(centerX, centerY, scale);
         invalidate();
     }
 
@@ -250,11 +392,13 @@ public class ImageViewer extends GLView {
         private static final float ANIM_TIME_SCROLL = 0;
         private static final float ANIM_TIME_SCALE = 50;
         private static final float ANIM_TIME_SNAPBACK = 600;
+        private static final float ANIM_TIME_SWITCHIMAGE = 400;
 
         private int mAnimationKind;
         private final static int ANIM_KIND_SCROLL = 0;
         private final static int ANIM_KIND_SCALE = 1;
         private final static int ANIM_KIND_SNAPBACK = 2;
+        private final static int ANIM_KIND_SWITCHIMAGE = 800;
 
         private ImageViewer mViewer;
         private int mImageW, mImageH;
@@ -274,24 +418,38 @@ public class ImageViewer extends GLView {
         private boolean mInScale;
 
         // The limits for position and scale.
-        private float mScaleMin = 0.25f, mScaleMax = 4f;
+        private float mScaleMin, mScaleMax = 4f;
 
-        AnimationController(ImageViewer viewer, int imageW, int imageH) {
+        AnimationController(ImageViewer viewer) {
             mViewer = viewer;
-            mImageW = imageW;
-            mImageH = imageH;
+        }
+
+        public void onNewImage(int width, int height) {
+            mImageW = width;
+            mImageH = height;
+
+            mScaleMin = Math.min(1f, Math.min(
+                    (float) mViewW / mImageW, (float) mViewH / mImageH));
+
+            mCurrentScale = mScaleMin;
             mCurrentX = mImageW / 2;
             mCurrentY = mImageH / 2;
-            mCurrentScale = 0.5f;
+
             mViewer.setPosition(mCurrentX, mCurrentY, mCurrentScale);
         }
 
         public void updateViewSize(int viewW, int viewH) {
             mViewW = viewW;
             mViewH = viewH;
+
+            if (mImageW == 0 || mImageH == 0) return;
+
             mScaleMin = Math.min((float) viewW / mImageW, (float) viewH / mImageH);
             mScaleMin = Math.min(1f, mScaleMin);
             mCurrentScale = Util.clamp(mCurrentScale, mScaleMin, mScaleMax);
+            mCurrentX = mImageW / 2;
+            mCurrentY = mImageH / 2;
+
             mViewer.setPosition(mCurrentX, mCurrentY, mCurrentScale);
         }
 
@@ -331,6 +489,11 @@ public class ImageViewer extends GLView {
             startSnapbackIfNeeded();
         }
 
+        public void startSwitchTransition(int targetX) {
+            startAnimation(targetX,
+                    mCurrentY, mCurrentScale, ANIM_KIND_SWITCHIMAGE);
+        }
+
         private void startAnimation(int centerX, int centerY, float scale, int kind) {
             if (centerX == mCurrentX && centerY == mCurrentY
                     && scale == mCurrentScale) {
@@ -347,10 +510,7 @@ public class ImageViewer extends GLView {
 
             // If the scaled dimension is smaller than the view,
             // force it to be in the center.
-            if (mImageW * mToScale < mViewW) {
-                mToX = mImageW / 2;
-            }
-            if (mImageH * mToScale < mViewH) {
+            if (Math.floor(mImageH * mToScale) <= mViewH) {
                 mToY = mImageH / 2;
             }
 
@@ -365,7 +525,12 @@ public class ImageViewer extends GLView {
                 return false;
             } else if (mAnimationStartTime == LAST_ANIMATION) {
                 mAnimationStartTime = NO_ANIMATION;
-                return startSnapbackIfNeeded();
+                if (mViewer.mInTransition) {
+                    mViewer.onTransitionComplete();
+                    return false;
+                } else {
+                    return startSnapbackIfNeeded();
+                }
             }
 
             float animationTime;
@@ -373,6 +538,8 @@ public class ImageViewer extends GLView {
                 animationTime = ANIM_TIME_SCROLL;
             } else if (mAnimationKind == ANIM_KIND_SCALE) {
                 animationTime = ANIM_TIME_SCALE;
+            } else if (mAnimationKind == ANIM_KIND_SWITCHIMAGE) {
+                animationTime = ANIM_TIME_SWITCHIMAGE;
             } else /* if (mAnimationKind == ANIM_KIND_SNAPBACK) */ {
                 animationTime = ANIM_TIME_SNAPBACK;
             }
@@ -397,7 +564,8 @@ public class ImageViewer extends GLView {
                     f = 1 - f;  // linear
                 } else if (mAnimationKind == ANIM_KIND_SCALE) {
                     f = 1 - f * f;  // quadratic
-                } else /* if (mAnimationKind == ANIM_KIND_SNAPBACK */ {
+                } else /* if mAnimationKind is
+                        ANIM_KIND_SNAPBACK or ANIM_KIND_SWITCHIMAGE */ {
                     f = 1 - f * f * f * f * f; // x^5
                 }
                 mCurrentX = Math.round(mFromX + f * (mToX - mFromX));
@@ -502,22 +670,31 @@ public class ImageViewer extends GLView {
         }
         mActiveTiles.clear();
         freeRecycledTile(canvas);
+
+        for (ScreenNailEntry nail : mScreenNails) {
+            if (nail.mTexture != null) nail.mTexture.recycle();
+            if (nail.mBitmap != null) nail.mBitmap.recycle();
+        }
     }
 
     @Override
     protected void render(GLCanvas canvas) {
+
+        if (mScreenNails[ENTRY_CURRENT].mBitmap == null) return;
+
+        // TODO: remove this line
+        canvas.clearBuffer();
+
         mUploadQuota = UPLOAD_LIMIT;
         mRenderComplete = true;
 
+
         int level = mLevel;
-        if (level == mLevelCount) {
-            mBackupTexture.draw(canvas, mOffsetX, mOffsetY,
-                    (int) (mImageWidth * mScale), (int) (mImageHeight * mScale));
-        } else {
+
+        if (level != mLevelCount) {
             int size = (TILE_SIZE << level);
             float length = size * mScale;
             Rect r = mTileRange;
-
             for (int ty = r.top, i = 0; ty < r.bottom; ty += size, i++) {
                 float y = mOffsetY + i * length;
                 for (int tx = r.left, j = 0; tx < r.right; tx += size, j++) {
@@ -528,12 +705,17 @@ public class ImageViewer extends GLView {
             }
         }
 
+        for (ScreenNailEntry entry : mScreenNails) {
+            if (entry.mVisible) entry.draw(canvas);
+        }
+
         if (mAnimationController.advanceAnimation()) {
             mRenderComplete = false;
         }
 
         if (mRenderComplete) {
-            if (mUploadIter.hasNext() && !mUploader.mActive) {
+            if (mUploadIter != null
+                    && mUploadIter.hasNext() && !mUploader.mActive) {
                 mUploader.mActive = true;
                 getGLRootView().addOnGLIdleListener(mUploader);
             }
@@ -728,6 +910,7 @@ public class ImageViewer extends GLView {
         @Override
         public boolean onScroll(
                 MotionEvent e1, MotionEvent e2, float dx, float dy) {
+            if (mInTransition) return true;
             mAnimationController.scrollBy(dx, dy);
             return true;
         }
@@ -739,7 +922,8 @@ public class ImageViewer extends GLView {
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             float scale = detector.getScaleFactor();
-            if (Float.isNaN(scale) || Float.isInfinite(scale)) return true;
+            if (Float.isNaN(scale)
+                    || Float.isInfinite(scale) || mInTransition) return true;
             mAnimationController.scaleBy(scale,
                     detector.getFocusX(), detector.getFocusY());
             return true;
@@ -747,6 +931,7 @@ public class ImageViewer extends GLView {
 
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector) {
+            if (mInTransition) return false;
             mAnimationController.beginScale(
                 detector.getFocusX(), detector.getFocusY());
             return true;
@@ -763,11 +948,117 @@ public class ImageViewer extends GLView {
         }
 
         public void onUp(MotionEvent e) {
-            mAnimationController.up();
+            if (mInTransition) return;
+
+            ScreenNailEntry next = mScreenNails[ENTRY_NEXT];
+            ScreenNailEntry prev = mScreenNails[ENTRY_PREVIOUS];
+
+            int width = getWidth();
+            int height = getHeight();
+
+            int threshold = SWITCH_THRESHOLD + gapToSide(mImageWidth, width, mScale);
+            int left = Math.round(width / 2 - mCenterX * mScale);
+            int right = Math.round(left + mImageWidth * mScale);
+
+            if (next.mBitmap != null && threshold < width - right) {
+                mInTransition = true;
+                mSwitchIndex = ENTRY_NEXT;
+                float targetX = next.mX + next.mDrawWidth / 2;
+                targetX = mImageWidth + (targetX - right) / mScale;
+                mAnimationController.startSwitchTransition(Math.round(targetX));
+            } else if (prev.mBitmap != null && threshold < left) {
+                mInTransition = true;
+                mSwitchIndex = ENTRY_PREVIOUS;
+                float targetX = prev.mX + prev.mDrawWidth / 2;
+                targetX = (targetX - left) / mScale;
+                mAnimationController.startSwitchTransition(Math.round(targetX));
+            } else {
+                mAnimationController.up();
+            }
         }
+    }
+
+    private void onTransitionComplete() {
+        if (mModel == null) return;
+
+        mInTransition = false;
+
+        invalidateAllTiles();
+
+        ScreenNailEntry screenNails[] = mScreenNails;
+
+        if (mSwitchIndex == ENTRY_NEXT) {
+            mModel.next();
+        } else if (mSwitchIndex == ENTRY_PREVIOUS) {
+            mModel.previous();
+        } else {
+            throw new AssertionError();
+        }
+        Util.swap(screenNails, ENTRY_CURRENT, mSwitchIndex);
+        Util.swap(screenNails, ENTRY_PREVIOUS, ENTRY_NEXT);
+
+        notifyScreenNailInvalidated(mSwitchIndex);
+        notifyMipmapsInvalidated();
+
+        resetCurrentImagePosition();
     }
 
     private boolean isDown() {
         return mDownUpDetector.isDown();
+    }
+
+    public static interface Model {
+        public static final int INDEX_CURRENT = 1;
+        public static final int INDEX_PREVIOUS = 0;
+        public static final int INDEX_NEXT = 2;
+
+        public void next();
+        public void previous();
+
+        // Return null if the specified image is unavailable.
+        public ImageData getImageData(int which);
+        public Bitmap[] getMipmaps();
+    }
+
+    public static class ImageData {
+        public int fullWidth;
+        public int fullHeight;
+        public Bitmap screenNail;
+
+        public ImageData(int width, int height, Bitmap screenNail) {
+            fullWidth = width;
+            fullHeight = height;
+            this.screenNail = screenNail;
+        }
+    }
+
+    private static class ScreenNailEntry {
+        private int mWidth;
+        private int mHeight;
+
+        // if mBitmap is null then this entry is not valid
+        private Bitmap mBitmap;
+        private boolean mVisible;
+
+        private int mX;
+        private int mY;
+        private int mDrawWidth;
+        private int mDrawHeight;
+
+        private BitmapTexture mTexture;
+
+        public void set(int fullWidth, int fullHeight, Bitmap bitmap) {
+            mWidth = fullWidth;
+            mHeight = fullHeight;
+            if (mBitmap != bitmap) {
+                mBitmap = bitmap;
+                if (mTexture != null) mTexture.recycle();
+                if (bitmap != null) mTexture = new BitmapTexture(bitmap);
+            }
+        }
+
+        public void draw(GLCanvas canvas) {
+            mTexture.draw(canvas, mX, mY, mDrawWidth, mDrawHeight);
+        }
     }
 }

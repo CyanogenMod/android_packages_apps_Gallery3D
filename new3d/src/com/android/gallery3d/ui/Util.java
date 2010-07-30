@@ -111,4 +111,10 @@ public class Util {
     public static boolean isOpaque(int color) {
         return color >>> 24 == 0xFF;
     }
+
+    public static <T> void swap(T[] array, int indexA, int indexB) {
+        T temp = array[indexA];
+        array[indexA] = array[indexB];
+        array[indexB] = temp;
+    }
 }

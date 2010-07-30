@@ -12,13 +12,14 @@ import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.ui.StateManager;
 
 public interface GalleryContext {
-    public Object getUIMonitor();
-    public Context getAndroidContext();
-    public Looper getMainLooper();
+    public Object getUiMonitor();
     public ImageService getImageService();
     public StateManager getStateManager();
     public DataManager getDataManager();
 
+    public Context getAndroidContext();
+
+    public Looper getMainLooper();
     public Resources getResources();
     public ContentResolver getContentResolver();
 }

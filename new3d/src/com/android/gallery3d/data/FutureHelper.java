@@ -45,8 +45,13 @@ public class FutureHelper<T> implements Future<T> {
 
     private void done() {
         mIsDone = true;
+        onDone();
         FutureListener<? super T> listener = mListener;
         if (listener != null) mListener.onFutureDone(this);
+    }
+
+    protected void onDone() {
+        // do nothing by default
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {

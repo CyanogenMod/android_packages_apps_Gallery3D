@@ -30,7 +30,7 @@ public abstract class DatabaseMediaSet implements MediaSet {
         mContext = context;
 
         mMainHandler = new SynchronizedHandler(
-                context.getUIMonitor(), context.getMainLooper()) {
+                context.getUiMonitor(), context.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
                 Util.Assert(message.what == MSG_UPDATE_CONTENT);

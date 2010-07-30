@@ -17,8 +17,8 @@ public class ImageMediaItem extends DatabaseMediaItem {
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
     private static final int JPEG_MARK_POSITION = 60 * 1024;
 
-    private static final int FULLIMAGE_TARGET_SIZE = 1024;
-    private static final int FULLIMAGE_MAX_NUM_PIXELS = 2 * 1024 * 1024;
+    private static final int FULLIMAGE_TARGET_SIZE = 2048;
+    private static final int FULLIMAGE_MAX_NUM_PIXELS = 5 * 1024 * 1024;
     private static final String TAG = "ImageMediaItem";
 
     // Must preserve order between these indices and the order of the terms in

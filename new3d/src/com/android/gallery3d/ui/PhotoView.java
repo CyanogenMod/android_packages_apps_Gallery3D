@@ -17,8 +17,8 @@
 package com.android.gallery3d.ui;
 
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
+import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -26,6 +26,7 @@ import android.util.Log;
 import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
+import com.android.gallery3d.ui.ImageViewer.ImageData;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
@@ -36,17 +37,20 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
     public static final String KEY_SET_INDEX = "keySetIndex";
     public static final String KEY_PHOTO_INDEX = "keyPhotoIndex";
 
-    private static final int ON_IMAGE_READY = 1;
+    private static final int MSG_UPDATE_SCREENNAIL = 1;
+    private static final int MSG_UPDATE_FULLIMAGE = 2;
+
+    private static final int TARGET_LENGTH = 1600;
+    private static final int MIPMAPS_MIN_LENGTH = 480;
 
     private SynchronizedHandler mHandler;
-    private ImageViewer mImageViewer;
-    private Bitmap mScaledBitmaps[];
-    private Bitmap mBackupBitmap;
 
+    private ImageViewer mImageViewer;
+    private final MyImageViewerModel mModel = new MyImageViewerModel();
     private int mSetIndex;
     private int mPhotoIndex;
 
-    public PhotoView() {}
+    private MediaSet mMediaSet;
 
     @Override
     public void onStart(Bundle data) {
@@ -54,30 +58,36 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
-                    case ON_IMAGE_READY:
-                        setImageViewer(new ImageViewer(
-                                mContext.getAndroidContext(), mScaledBitmaps,
-                                mBackupBitmap));
+                    case MSG_UPDATE_SCREENNAIL: {
+                        mModel.updateScreenNail(message.arg1, (Bitmap) message.obj);
                         break;
+                    }
+                    case MSG_UPDATE_FULLIMAGE: {
+                        mModel.updateFullImage(message.arg1, (Bitmap) message.obj);
+                        break;
+                    }
+                    default: throw new AssertionError();
                 }
             }
         };
-        initializeData(data);
+
+        mSetIndex = data.getInt(KEY_SET_INDEX);
+        mPhotoIndex = data.getInt(KEY_PHOTO_INDEX);
+
+        mMediaSet = mContext.getDataManager().getSubMediaSet(mSetIndex);
+
+        mImageViewer = new ImageViewer(mContext);
+        mImageViewer.setModel(mModel);
+        addComponent(mImageViewer);
+        mModel.requestNextImage();
     }
+
 
     @Override
     public void onPause() {
         synchronized (getGLRootView()) {
             mImageViewer.close();
         }
-    }
-
-    private void initializeData(Bundle data) {
-        mSetIndex = data.getInt(KEY_SET_INDEX);
-        mPhotoIndex = data.getInt(KEY_PHOTO_INDEX);
-        MediaSet set = mContext.getDataManager().getSubMediaSet(mSetIndex);
-        MediaItem item = set.getMediaItem(mPhotoIndex);
-        item.requestImage(MediaItem.TYPE_FULL_IMAGE, new MyMediaItemListener());
     }
 
     @Override
@@ -89,8 +99,152 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
     }
 
     public void onSingleTapUp(int slotIndex) {
-        // TODO Auto-generated method stub
+    }
 
+    private class MyImageViewerModel implements ImageViewer.Model {
+
+        private Bitmap mScaledBitmaps[];
+        private Bitmap mScreenNails[] = new Bitmap[3]; // prev, curr, next
+
+        public Bitmap[] getMipmaps() {
+            return mScaledBitmaps;
+        }
+
+        public ImageData getImageData(int which) {
+            Bitmap screennail = mScreenNails[which];
+            if (screennail == null) return null;
+
+            int width = 0;
+            int height = 0;
+
+            if (which == INDEX_CURRENT && mScaledBitmaps != null) {
+                width = mScaledBitmaps[0].getWidth();
+                height = mScaledBitmaps[0].getHeight();
+            } else {
+                // We cannot get the size of image before getting the
+                // full-size image. In the future, we should add the data to
+                // database or get it from the header in runtime. Now, we
+                // just use the thumb-nail image to estimate the size
+                float scale = (float) TARGET_LENGTH / Math.max(
+                        screennail.getWidth(), screennail.getHeight());
+                width = Math.round(screennail.getWidth() * scale);
+                height = Math.round(screennail.getHeight() * scale);
+            }
+            return new ImageData(width, height, screennail);
+        }
+
+        public void next() {
+            ++mPhotoIndex;
+            Bitmap[] screenNails = mScreenNails;
+
+            if (screenNails[INDEX_PREVIOUS] != null) {
+                screenNails[INDEX_PREVIOUS].recycle();
+            }
+            screenNails[INDEX_PREVIOUS] = screenNails[INDEX_CURRENT];
+            screenNails[INDEX_CURRENT] = screenNails[INDEX_NEXT];
+            screenNails[INDEX_NEXT] = null;
+
+
+            if (mScaledBitmaps != null) {
+                for (Bitmap bitmap : mScaledBitmaps) {
+                    bitmap.recycle();
+                }
+                mScaledBitmaps = null;
+            }
+
+            requestNextImage();
+        }
+
+        public void previous() {
+            --mPhotoIndex;
+            Bitmap[] screenNails = mScreenNails;
+
+            if (screenNails[INDEX_NEXT] != null) {
+                screenNails[INDEX_NEXT].recycle();
+            }
+            screenNails[INDEX_NEXT] = screenNails[INDEX_CURRENT];
+            screenNails[INDEX_CURRENT] = screenNails[INDEX_PREVIOUS];
+            screenNails[INDEX_PREVIOUS] = null;
+
+            if (mScaledBitmaps != null) {
+                for (Bitmap bitmap : mScaledBitmaps) {
+                    bitmap.recycle();
+                }
+                mScaledBitmaps = null;
+            }
+
+            requestNextImage();
+        }
+
+        public void updateScreenNail(int index, Bitmap screenNail) {
+            int offset = (index - mPhotoIndex) + 1;
+            if (offset < 0 || offset > 2) {
+                screenNail.recycle();
+                return;
+            }
+
+            if (screenNail != null) {
+                mScreenNails[offset] = screenNail;
+                mImageViewer.notifyScreenNailInvalidated(offset);
+            }
+            requestNextImage();
+        }
+
+        public void updateFullImage(int index, Bitmap fullImage) {
+            int offset = (index - mPhotoIndex) + 1;
+            if (offset != INDEX_CURRENT) {
+                fullImage.recycle();
+                return;
+            }
+            Log.v(TAG, String.format("full image %d available: %s %s",
+                    index, fullImage.getWidth(), fullImage.getHeight()));
+
+            if (fullImage != null) {
+                mScaledBitmaps = getScaledBitmaps(fullImage, MIPMAPS_MIN_LENGTH);
+                mImageViewer.notifyMipmapsInvalidated();
+                // We need to update the estimated width and height
+                mImageViewer.notifyScreenNailInvalidated(INDEX_CURRENT);
+            }
+            requestNextImage();
+        }
+
+        public void requestNextImage() {
+            int setSize = mMediaSet.getMediaItemCount();
+
+            if (setSize == 0) return;
+
+            // First request the current screen nail
+            if (mScreenNails[INDEX_CURRENT] == null) {
+                MediaItem current = mMediaSet.getMediaItem(mPhotoIndex);
+                current.requestImage(MediaItem.TYPE_THUMBNAIL,
+                        new ScreenNailListener(mPhotoIndex));
+                return;
+            }
+
+            // Next, the next screen nail
+            if (mScreenNails[INDEX_NEXT] == null && mPhotoIndex + 1 < setSize) {
+                MediaItem next = mMediaSet.getMediaItem(mPhotoIndex + 1);
+                next.requestImage(MediaItem.TYPE_THUMBNAIL,
+                        new ScreenNailListener(mPhotoIndex + 1));
+                return;
+            }
+
+            // Next, the previous screen nail
+            if (mScreenNails[INDEX_PREVIOUS] == null && mPhotoIndex > 0) {
+                MediaItem previous = mMediaSet.getMediaItem(mPhotoIndex - 1);
+                previous.requestImage(MediaItem.TYPE_THUMBNAIL,
+                        new ScreenNailListener(mPhotoIndex - 1));
+                return;
+            }
+
+            // Next, the full size image
+            if (mScaledBitmaps == null) {
+                MediaItem current = mMediaSet.getMediaItem(mPhotoIndex);
+                current.requestImage(MediaItem.TYPE_FULL_IMAGE,
+                        new FullImageListener(mPhotoIndex));
+                return;
+            }
+        }
     }
 
     public void onLongTap(int slotIndex) {
@@ -105,61 +259,70 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
         requestLayout();
     }
 
-    private class MyMediaItemListener implements FutureListener<Bitmap> {
-        private static final int BACKUP_SIZE = 512;
-
-        private Bitmap getBackupBitmap(Bitmap bitmap) {
-            Config config = bitmap.hasAlpha()
-                    ? Config.ARGB_8888 : Config.RGB_565;
-
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
-            float scale = (float) BACKUP_SIZE / (width > height ? width : height);
-            width = (int) (width * scale + 0.5f);
-            height = (int) (height * scale + 0.5f);
-            Bitmap result = Bitmap.createBitmap(width, height, config);
-            Canvas canvas = new Canvas(result);
-            canvas.scale(scale, scale);
-            canvas.drawBitmap(bitmap, 0, 0, null);
-            return result;
-        }
-
-        private Bitmap[] getScaledBitmaps(Bitmap bitmap) {
-            Config config = bitmap.hasAlpha()
-                    ? Config.ARGB_8888 : Config.RGB_565;
-
-            int width = bitmap.getWidth() / 2;
-            int height = bitmap.getHeight() / 2;
-
-            ArrayList<Bitmap> list = new ArrayList<Bitmap>();
-            list.add(bitmap);
-            while (width > BACKUP_SIZE || height > BACKUP_SIZE) {
-                Bitmap half = Bitmap.createBitmap(width, height, config);
-                Canvas canvas = new Canvas(half);
-                canvas.scale(0.5f, 0.5f);
-                canvas.drawBitmap(bitmap, 0, 0, null);
-                width /= 2;
-                height /= 2;
-                bitmap = half;
-                list.add(bitmap);
-            }
-            return list.toArray(new Bitmap[list.size()]);
-        }
-
-        public void onFutureDone(Future<? extends Bitmap> future) {
-            try {
-                Bitmap bitmap = future.get();
-                mScaledBitmaps = getScaledBitmaps(bitmap);
-                mBackupBitmap = getBackupBitmap(bitmap);
-                mHandler.sendEmptyMessage(ON_IMAGE_READY);
-            } catch (Exception e) {
-                Log.e(TAG, "failt to get image", e);
-            }
-        }
-    }
-
     @Override
     protected void renderBackground(GLCanvas view) {
         view.clearBuffer();
+    }
+
+    private static Bitmap[] getScaledBitmaps(Bitmap bitmap, int minLength) {
+        Config config = bitmap.hasAlpha()
+                ? Config.ARGB_8888 : Config.RGB_565;
+
+        int width = bitmap.getWidth() / 2;
+        int height = bitmap.getHeight() / 2;
+
+        ArrayList<Bitmap> list = new ArrayList<Bitmap>();
+        list.add(bitmap);
+        while (width > minLength || height > minLength) {
+            Bitmap half = Bitmap.createBitmap(width, height, config);
+            Canvas canvas = new Canvas(half);
+            canvas.scale(0.5f, 0.5f);
+            canvas.drawBitmap(bitmap, 0, 0, null);
+            width /= 2;
+            height /= 2;
+            bitmap = half;
+            list.add(bitmap);
+        }
+        return list.toArray(new Bitmap[list.size()]);
+    }
+
+    private class ScreenNailListener implements FutureListener<Bitmap> {
+
+        private final int mIndex;
+
+        public ScreenNailListener(int index) {
+            mIndex = index;
+        }
+
+        public void onFutureDone(Future<? extends Bitmap> future) {
+            Bitmap bitmap = null;
+            try {
+                bitmap = future.get();
+            } catch (Exception e) {
+                Log.v(TAG, "fail to get image", e);
+            }
+            mHandler.sendMessage(mHandler.obtainMessage(
+                    MSG_UPDATE_SCREENNAIL, mIndex, 0, bitmap));
+        }
+    }
+
+    private class FullImageListener implements FutureListener<Bitmap> {
+
+        private final int mIndex;
+
+        public FullImageListener(int index) {
+            mIndex = index;
+        }
+
+        public void onFutureDone(Future<? extends Bitmap> future) {
+            Bitmap bitmap = null;
+            try {
+                bitmap = future.get();
+            } catch (Exception e) {
+                Log.v(TAG, "fail to get image", e);
+            }
+            mHandler.sendMessage(mHandler.obtainMessage(
+                    MSG_UPDATE_FULLIMAGE, mIndex, 0, bitmap));
+        }
     }
 }
