@@ -25,9 +25,6 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.ui.GLRootView;
-import com.android.gallery3d.ui.GalleryView;
-import com.android.gallery3d.ui.StateManager;
-import com.android.gallery3d.ui.StateView;
 
 public final class Gallery extends Activity implements GalleryContext {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
@@ -45,19 +42,25 @@ public final class Gallery extends Activity implements GalleryContext {
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
 
-        getStateManager().startStateView(GalleryView.class, new Bundle());
+        if (savedInstanceState != null) {
+            getStateManager().restoreFromState(savedInstanceState);
+        } else {
+            getStateManager().startState(GalleryPage.class, new Bundle());
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
         mGLRootView.onResume();
+        getStateManager().resume();
     }
 
     @Override
     public void onPause() {
         super.onPause();
         mGLRootView.onPause();
+        getStateManager().pause();
     }
 
     @Override
@@ -76,17 +79,14 @@ public final class Gallery extends Activity implements GalleryContext {
 
     @Override
     public void onBackPressed() {
-        StateView stateView = getStateManager().peekState();
-        if (stateView != null) {
-            mGLRootView.lockRenderThread();
-            try {
-                stateView.onBackPressed();
-            } finally {
-                mGLRootView.unlockRenderThread();
-            }
-        } else {
-            finish();
-        }
+        // send the back event to the top sub-state
+        getStateManager().getTopState().onBackPressed();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        getStateManager().saveState(outState);
     }
 
     public Context getAndroidContext() {
@@ -109,8 +109,12 @@ public final class Gallery extends Activity implements GalleryContext {
 
     public synchronized StateManager getStateManager() {
         if (mStateManager == null) {
-            mStateManager = new StateManager(this, mGLRootView);
+            mStateManager = new StateManager(this);
         }
         return mStateManager;
+    }
+
+    public GLRootView getGLRootView() {
+        return mGLRootView;
     }
 }

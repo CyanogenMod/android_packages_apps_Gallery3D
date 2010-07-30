@@ -22,9 +22,6 @@ import android.os.Vibrator;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- *
- */
 public class SelectionManager {
     private Set<Integer> mSelectedSet;
     private Vibrator mVibrator;

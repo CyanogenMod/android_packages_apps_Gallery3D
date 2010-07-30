@@ -9,12 +9,13 @@ import android.os.Looper;
 
 import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.ImageService;
-import com.android.gallery3d.ui.StateManager;
+import com.android.gallery3d.ui.GLRootView;
 
 public interface GalleryContext {
     public ImageService getImageService();
     public StateManager getStateManager();
     public DataManager getDataManager();
+    public GLRootView getGLRootView();
 
     public Context getAndroidContext();
 
