@@ -30,6 +30,7 @@ import com.android.gallery3d.anim.CanvasAnimation;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -44,7 +45,7 @@ import javax.microedition.khronos.opengles.GL11;
 // (2) The public methods of CameraHeadUpDisplay
 // (3) The overridden methods in GLRootView.
 public class GLRootView extends GLSurfaceView
-        implements GLSurfaceView.Renderer {
+        implements GLSurfaceView.Renderer, GLRoot {
     private static final String TAG = "GLRootView";
 
     private final boolean DEBUG_FPS = false;
@@ -80,9 +81,7 @@ public class GLRootView extends GLSurfaceView
 
     private final IdleRunner mIdleRunner = new IdleRunner();
 
-    public static interface OnGLIdleListener {
-        public boolean onGLIdle(GLRootView root);
-    }
+    private ReentrantLock mRenderLock = new ReentrantLock();
 
     public GLRootView(Context context) {
         this(context, null);
@@ -103,7 +102,11 @@ public class GLRootView extends GLSurfaceView
         return mEglConfigChooser;
     }
 
-    void registerLaunchedAnimation(CanvasAnimation animation) {
+    public boolean hasStencil() {
+        return getEGLConfigChooser().getStencilBits() > 0;
+    }
+
+    public void registerLaunchedAnimation(CanvasAnimation animation) {
         // Register the newly launched animation so that we can set the start
         // time more precisely. (Usually, it takes much longer for first
         // rendering, so we set the animation start time as the time we
@@ -111,11 +114,16 @@ public class GLRootView extends GLSurfaceView
         mAnimations.add(animation);
     }
 
-    public synchronized void addOnGLIdleListener(OnGLIdleListener listener) {
-        mIdleListeners.addLast(listener);
-        if (!mRenderRequested && !mIdleRunner.mActive) {
-            mIdleRunner.mActive = true;
-            queueEvent(mIdleRunner);
+    public void addOnGLIdleListener(OnGLIdleListener listener) {
+        mRenderLock.lock();
+        try {
+            mIdleListeners.addLast(listener);
+            if (!mRenderRequested && !mIdleRunner.mActive) {
+                mIdleRunner.mActive = true;
+                queueEvent(mIdleRunner);
+            }
+        } finally {
+            mRenderLock.unlock();
         }
     }
 
@@ -144,15 +152,20 @@ public class GLRootView extends GLSurfaceView
         super.requestRender();
     }
 
-    public synchronized void requestLayoutContentPane() {
-        if (mContentView == null || (mFlags & FLAG_NEED_LAYOUT) != 0) return;
+    public void requestLayoutContentPane() {
+        mRenderLock.lock();
+        try {
+            if (mContentView == null || (mFlags & FLAG_NEED_LAYOUT) != 0) return;
 
-        // "View" system will invoke onLayout() for initialization(bug ?), we
-        // have to ignore it since the GLThread is not ready yet.
-        if ((mFlags & FLAG_INITIALIZED) == 0) return;
+            // "View" system will invoke onLayout() for initialization(bug ?), we
+            // have to ignore it since the GLThread is not ready yet.
+            if ((mFlags & FLAG_INITIALIZED) == 0) return;
 
-        mFlags |= FLAG_NEED_LAYOUT;
-        requestRender();
+            mFlags |= FLAG_NEED_LAYOUT;
+            requestRender();
+        } finally {
+            mRenderLock.unlock();
+        }
     }
 
     private void layoutContentPane() {
@@ -220,7 +233,16 @@ public class GLRootView extends GLSurfaceView
         ++mFrameCount;
     }
 
-    public synchronized void onDrawFrame(GL10 gl) {
+    public void onDrawFrame(GL10 gl) {
+        mRenderLock.lock();
+        try {
+            onDrawFrameLocked(gl);
+        } finally {
+            mRenderLock.unlock();
+        }
+    }
+
+    private void onDrawFrameLocked(GL10 gl) {
         if (DEBUG_FPS) outputFps();
 
         // release the unbound textures
@@ -265,11 +287,16 @@ public class GLRootView extends GLSurfaceView
     }
 
     @Override
-    public synchronized boolean dispatchTouchEvent(MotionEvent event) {
-        // If this has been detached from root, we don't need to handle event
-        return mContentView != null
-                ? mContentView.dispatchTouchEvent(event)
-                : false;
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        mRenderLock.lock();
+        try {
+            // If this has been detached from root, we don't need to handle event
+            return mContentView != null
+                    ? mContentView.dispatchTouchEvent(event)
+                    : false;
+        } finally {
+            mRenderLock.unlock();
+        }
     }
 
     public DisplayMetrics getDisplayMetrics() {
@@ -292,17 +319,28 @@ public class GLRootView extends GLSurfaceView
             if (mRenderRequested) return false;
             if (mIdleListeners.isEmpty()) return false;
             OnGLIdleListener listener = mIdleListeners.removeFirst();
-            if (listener.onGLIdle(GLRootView.this)) {
+            if (listener.onGLIdle(GLRootView.this, mCanvas)) {
                 mIdleListeners.addLast(listener);
             }
             return mIdleListeners.isEmpty();
         }
 
         public void run() {
-            synchronized (GLRootView.this) {
+            mRenderLock.lock();
+            try {
                 mActive = runInternal();
                 if (mActive) queueEvent(this);
+            } finally {
+                mRenderLock.unlock();
             }
         }
+    }
+
+    public void lockRenderThread() {
+        mRenderLock.lock();
+    }
+
+    public void unlockRenderThread() {
+        mRenderLock.unlock();
     }
 }

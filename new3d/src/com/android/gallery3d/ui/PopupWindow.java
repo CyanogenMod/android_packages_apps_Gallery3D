@@ -44,9 +44,9 @@ class PopupWindow extends GLView {
     }
 
     @Override
-    protected void onAttachToRoot(GLRootView root) {
+    protected void onAttachToRoot(GLRoot root) {
         super.onAttachToRoot(root);
-        mUsingStencil = root.getEGLConfigChooser().getStencilBits() > 0;
+        mUsingStencil = root.hasStencil();
     }
 
     public void setBackground(Texture background) {

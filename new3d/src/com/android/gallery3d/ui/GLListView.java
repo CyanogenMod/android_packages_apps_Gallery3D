@@ -75,13 +75,11 @@ public class GLListView extends GLView {
         mHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                GLRootView root = getGLRootView();
-                if (root != null) {
-                    synchronized (root) {
-                        handleMessageLocked(msg);
-                    }
-                } else {
+                lockRendering();
+                try {
                     handleMessageLocked(msg);
+                } finally {
+                    unlockRendering();
                 }
             }
 

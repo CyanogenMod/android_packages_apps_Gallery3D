@@ -89,8 +89,11 @@ public class ViewImage extends Activity implements GalleryContext {
     @Override
     protected void onPause() {
         super.onPause();
-        synchronized (mGLRootView) {
+        mGLRootView.lockRenderThread();
+        try {
             mImageViewer.close();
+        } finally {
+            mGLRootView.unlockRenderThread();
         }
         mGLRootView.onPause();
     }
@@ -155,9 +158,4 @@ public class ViewImage extends Activity implements GalleryContext {
     public StateManager getStateManager() {
         throw new UnsupportedOperationException();
     }
-
-    public Object getUiMonitor() {
-        return mGLRootView;
-    }
-
 }

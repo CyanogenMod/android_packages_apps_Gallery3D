@@ -106,17 +106,10 @@ public class ImageViewer extends GLView {
     private int mSwitchIndex;
     /*private*/ boolean mInTransition = false;
 
-    private SynchronizedHandler mHandler;
-
     public ImageViewer(GalleryContext context) {
 
-        mHandler = new SynchronizedHandler(
-                context.getUiMonitor(), context.getMainLooper());
-
         mGestureDetector = new GestureDetector(context.getAndroidContext(),
-                new MyGestureListener(), mHandler,
-                true /* ignoreMultitouch */);
-
+                new MyGestureListener(), null, true /* ignoreMultitouch */);
         mScaleDetector = new ScaleGestureDetector(
                 context.getAndroidContext(), new MyScaleListener());
         mDownUpDetector = new DownUpDetector(new MyDownUpListener());
@@ -664,12 +657,11 @@ public class ImageViewer extends GLView {
 
     public void close() {
         mUploadIter = null;
-        GLCanvas canvas = getGLRootView().getCanvas();
         for (Tile texture : mActiveTiles.values()) {
             texture.recycle();
         }
         mActiveTiles.clear();
-        freeRecycledTile(canvas);
+        freeRecycledTile();
 
         for (ScreenNailEntry nail : mScreenNails) {
             if (nail.mTexture != null) nail.mTexture.recycle();
@@ -717,7 +709,7 @@ public class ImageViewer extends GLView {
             if (mUploadIter != null
                     && mUploadIter.hasNext() && !mUploader.mActive) {
                 mUploader.mActive = true;
-                getGLRootView().addOnGLIdleListener(mUploader);
+                getGLRoot().addOnGLIdleListener(mUploader);
             }
         } else {
             invalidate();
@@ -741,7 +733,7 @@ public class ImageViewer extends GLView {
         mRecycledHead = tile;
     }
 
-    private void freeRecycledTile(GLCanvas canvas) {
+    private void freeRecycledTile() {
         Tile tile = mRecycledHead;
         while (tile != null) {
             tile.recycle();
@@ -805,9 +797,8 @@ public class ImageViewer extends GLView {
 
         protected boolean mActive;
 
-        public boolean onGLIdle(GLRootView root) {
+        public boolean onGLIdle(GLRoot root, GLCanvas canvas) {
             int quota = UPLOAD_LIMIT;
-            GLCanvas canvas = root.getCanvas();
 
             if (mUploadIter == null) return false;
             Iterator<Tile> iter = mUploadIter;
@@ -910,8 +901,13 @@ public class ImageViewer extends GLView {
         @Override
         public boolean onScroll(
                 MotionEvent e1, MotionEvent e2, float dx, float dy) {
-            if (mInTransition) return true;
-            mAnimationController.scrollBy(dx, dy);
+            lockRendering();
+            try {
+                if (mInTransition) return true;
+                mAnimationController.scrollBy(dx, dy);
+            } finally {
+                unlockRendering();
+            }
             return true;
         }
     }

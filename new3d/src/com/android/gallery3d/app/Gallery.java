@@ -78,8 +78,11 @@ public final class Gallery extends Activity implements GalleryContext {
     public void onBackPressed() {
         StateView stateView = getStateManager().peekState();
         if (stateView != null) {
-            synchronized (mGLRootView) {
+            mGLRootView.lockRenderThread();
+            try {
                 stateView.onBackPressed();
+            } finally {
+                mGLRootView.unlockRenderThread();
             }
         } else {
             finish();
@@ -110,9 +113,4 @@ public final class Gallery extends Activity implements GalleryContext {
         }
         return mStateManager;
     }
-
-    public Object getUiMonitor() {
-        return mGLRootView;
-    }
-
 }
