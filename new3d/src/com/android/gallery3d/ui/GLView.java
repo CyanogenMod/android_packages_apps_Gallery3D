@@ -96,8 +96,7 @@ public class GLView {
     }
 
     protected void onAddToParent(GLView parent) {
-        // TODO: enable the check
-        // if (mParent != null) throw new IllegalStateException();
+        if (mParent != null) throw new IllegalStateException();
         mParent = parent;
         if (parent != null && parent.mRootView != null) {
             onAttachToRoot(parent.mRootView);
@@ -113,10 +112,6 @@ public class GLView {
         }
         onDetachFromRoot();
         mParent = null;
-    }
-
-    public void clearComponents() {
-        mComponents = null;
     }
 
     public int getComponentCount() {
@@ -145,6 +140,13 @@ public class GLView {
             return true;
         }
         return false;
+    }
+
+    public void removeAllComponents() {
+        for (int i = 0, n = mComponents.size(); i < n; ++i) {
+            mComponents.get(i).onRemoveFromParent(this);
+        }
+        mComponents.clear();
     }
 
     public Rect bounds() {
@@ -186,10 +188,7 @@ public class GLView {
     protected void render(GLCanvas canvas) {
         renderBackground(canvas);
         for (int i = 0, n = getComponentCount(); i < n; ++i) {
-            GLView component = getComponent(i);
-            if (component.getVisibility() != GLView.VISIBLE
-                    && component.mAnimation == null) continue;
-            renderChild(canvas, component);
+            renderChild(canvas, getComponent(i));
         }
     }
 
@@ -197,6 +196,9 @@ public class GLView {
     }
 
     protected void renderChild(GLCanvas canvas, GLView component) {
+        if (component.getVisibility() != GLView.VISIBLE
+                && component.mAnimation == null) return;
+
         int xoffset = component.mBounds.left - mScrollX;
         int yoffset = component.mBounds.top - mScrollY;
 
