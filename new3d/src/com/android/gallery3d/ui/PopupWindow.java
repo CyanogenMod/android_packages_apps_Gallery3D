@@ -193,7 +193,7 @@ class PopupWindow extends GLView {
     }
 
     @Override
-    public void clearComponents() {
+    public void removeAllComponents() {
         throw new UnsupportedOperationException();
     }
 

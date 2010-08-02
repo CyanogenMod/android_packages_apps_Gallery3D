@@ -125,6 +125,18 @@ public class GLListView extends GLView {
     }
 
     public void setDataModel(Model model) {
+        if (mModel == model) return;
+
+        // remove views from the old model.
+        if (mModel != null) {
+            removeAllComponents();
+        }
+
+        // add views from the new model.
+        for (int i = 0, n = model.size(); i < n; ++i) {
+            addComponent(model.getView(i));
+        }
+
         mModel = model;
         mScrollY = 0;
         requestLayout();
@@ -151,7 +163,7 @@ public class GLListView extends GLView {
         canvas.save(GLCanvas.SAVE_FLAG_CLIP);
         canvas.clipRect(0, 0, getWidth(), getHeight());
         if (mHighlightIndex != INDEX_NONE) {
-            GLView view = mModel.getView(mHighlightIndex);
+            GLView view = getComponent(mHighlightIndex);
             Rect bounds = view.bounds();
             if (mHighLight != null) {
                 int width = bounds.width();
@@ -161,7 +173,12 @@ public class GLListView extends GLView {
                         width, height);
             }
         }
-        super.render(canvas);
+
+        // render visible components only
+        for (int i = mVisibleStart; i < mVisibleEnd; ++i) {
+            renderChild(canvas, getComponent(i));
+        }
+
         canvas.restore();
 
         if (mScrollBarAnimation != null || mScrollBarVisible) {
@@ -189,8 +206,8 @@ public class GLListView extends GLView {
         // first get the total height
         int height = 0;
         int maxWidth = 0;
-        for (int i = 0, n = mModel.size(); i < n; ++i) {
-            GLView view = mModel.getView(i);
+        for (int i = 0, n = getComponentCount(); i < n; ++i) {
+            GLView view = getComponent(i);
             view.measure(widthSpec, MeasureSpec.UNSPECIFIED);
             height += view.getMeasuredHeight();
             maxWidth = Math.max(maxWidth, view.getMeasuredWidth());
@@ -200,19 +217,6 @@ public class GLListView extends GLView {
         MeasureHelper.getInstance(this)
                 .setPreferredContentSize(maxWidth, height)
                 .measure(widthSpec, heightSpec);
-    }
-
-    @Override
-    public int getComponentCount() {
-        return mVisibleEnd - mVisibleStart;
-    }
-
-    @Override
-    public GLView getComponent(int index) {
-        if (index < 0 || index >= mVisibleEnd - mVisibleStart) {
-            throw new ArrayIndexOutOfBoundsException(index);
-        }
-        return mModel.getView(mVisibleStart + index);
     }
 
     @Override
@@ -234,9 +238,8 @@ public class GLListView extends GLView {
         int width = right - left;
         int yoffset = 0;
 
-        for (int i = 0, n = mModel.size(); i < n; ++i) {
-            GLView item = mModel.getView(i);
-            item.onAddToParent(this);
+        for (int i = 0, n = getComponentCount(); i < n; ++i) {
+            GLView item = getComponent(i);
             int nextOffset = yoffset + item.getMeasuredHeight();
             item.layout(0, yoffset, width, nextOffset);
             yoffset = nextOffset;
@@ -257,12 +260,12 @@ public class GLListView extends GLView {
         int start = 0;
         int end = 0;
         for (start = 0; start < n; ++start) {
-            if (position < mModel.getView(start).mBounds.bottom) break;
+            if (position < getComponent(start).mBounds.bottom) break;
         }
 
         int bottom = position + height;
         for (end = start; end < n; ++ end) {
-            if (bottom <= mModel.getView(end).mBounds.top) break;
+            if (bottom <= getComponent(end).mBounds.top) break;
         }
         setVisibleRange(start , end);
         invalidate();
@@ -318,7 +321,7 @@ public class GLListView extends GLView {
     private void findAndSetHighlightItem(int y) {
         int position = y + mScrollY;
         for (int i = mVisibleStart, n = mVisibleEnd; i < n; ++i) {
-            GLView child = mModel.getView(i);
+            GLView child = getComponent(i);
             if (child.mBounds.bottom > position) {
                 if (mModel.isSelectable(i)) {
                     setHighlightItem(child, i);
