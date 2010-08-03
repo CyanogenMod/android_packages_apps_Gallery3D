@@ -25,7 +25,6 @@ import com.android.gallery3d.anim.CanvasAnimation;
 import java.util.ArrayList;
 
 public class GLView {
-    @SuppressWarnings("unused")
     private static final String TAG = "GLView";
 
     public static final int VISIBLE = 0;
@@ -90,23 +89,16 @@ public class GLView {
         return sizeChanged;
     }
 
-    protected void onAddToParent(GLView parent) {
-        if (mParent != null) throw new IllegalStateException();
-        mParent = parent;
-        if (parent != null && parent.mRoot != null) {
-            onAttachToRoot(parent.mRoot);
-        }
+    // This should be called on the content pane (the topmost GLView).
+    public void attachToRoot(GLRoot root) {
+        Util.Assert(mParent == null && mRoot == null);
+        onAttachToRoot(root);
     }
 
-    protected void onRemoveFromParent(GLView parent) {
-        if (parent != null && parent.mMotionTarget == this) {
-            long now = SystemClock.uptimeMillis();
-            dispatchTouchEvent(MotionEvent.obtain(
-                    now, now, MotionEvent.ACTION_CANCEL, 0, 0, 0));
-            parent.mMotionTarget = null;
-        }
+    // This should be called on the content pane (the topmost GLView).
+    public void detachFromRoot() {
+        Util.Assert(mParent == null && mRoot != null);
         onDetachFromRoot();
-        mParent = null;
     }
 
     public int getComponentCount() {
@@ -121,17 +113,26 @@ public class GLView {
     }
 
     public void addComponent(GLView component) {
+        // Make sure the component doesn't have a parent currently.
+        if (component.mParent != null) throw new IllegalStateException();
+
+        // Build parent-child links
         if (mComponents == null) {
             mComponents = new ArrayList<GLView>();
         }
         mComponents.add(component);
-        component.onAddToParent(this);
+        component.mParent = this;
+
+        // If this is added after we have a root, tell the component.
+        if (mRoot != null) {
+            component.onAttachToRoot(mRoot);
+        }
     }
 
     public boolean removeComponent(GLView component) {
         if (mComponents == null) return false;
         if (mComponents.remove(component)) {
-            component.onRemoveFromParent(this);
+            removeOneComponent(component);
             return true;
         }
         return false;
@@ -139,9 +140,20 @@ public class GLView {
 
     public void removeAllComponents() {
         for (int i = 0, n = mComponents.size(); i < n; ++i) {
-            mComponents.get(i).onRemoveFromParent(this);
+            removeOneComponent(mComponents.get(i));
         }
         mComponents.clear();
+    }
+
+    private void removeOneComponent(GLView component) {
+        if (mMotionTarget == component) {
+            long now = SystemClock.uptimeMillis();
+            dispatchTouchEvent(MotionEvent.obtain(
+                    now, now, MotionEvent.ACTION_CANCEL, 0, 0, 0));
+            mMotionTarget = null;
+        }
+        component.onDetachFromRoot();
+        component.mParent = null;
     }
 
     public Rect bounds() {
@@ -374,6 +386,15 @@ public class GLView {
     protected void unlockRendering() {
         if (mRoot != null) {
             mRoot.unlockRenderThread();
+        }
+    }
+
+    // This is for debugging only.
+    // Dump the view hierarchy into log.
+    void dumpTree(String prefix) {
+        Log.v(TAG, prefix + getClass().getSimpleName());
+        for (int i = 0, n = getComponentCount(); i < n; ++i) {
+            getComponent(i).dumpTree(prefix + "....");
         }
     }
 }

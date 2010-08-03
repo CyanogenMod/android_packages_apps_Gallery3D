@@ -17,12 +17,14 @@
 package com.android.gallery3d.ui;
 
 import java.lang.ref.WeakReference;
+import java.util.WeakHashMap;
 
 // BasicTexture is a Texture corresponds to a real GL texture.
 // The state of a BasicTexture indicates whether its data is loaded to GL memory.
 // If a BasicTexture is loaded into GL memory, it has a GL texture id.
 abstract class BasicTexture implements Texture {
 
+    private static final String TAG = "BasicTexture";
     protected static final int UNSPECIFIED = -1;
 
     protected static final int STATE_UNLOADED = 0;
@@ -39,11 +41,16 @@ abstract class BasicTexture implements Texture {
     private int mTextureHeight;
 
     protected WeakReference<GLCanvas> mCanvasRef = null;
+    private static WeakHashMap<BasicTexture, Object> sAllTextures
+            = new WeakHashMap<BasicTexture, Object>();
 
     protected BasicTexture(GLCanvas canvas, int id, int state) {
         setAssociatedCanvas(canvas);
         mId = id;
         mState = state;
+        synchronized (sAllTextures) {
+            sAllTextures.put(this, null);
+        }
     }
 
     protected BasicTexture() {
@@ -105,12 +112,40 @@ abstract class BasicTexture implements Texture {
         return mState == STATE_LOADED && mCanvasRef.get() == canvas;
     }
 
+    // recycle() is called when the texture will never be used again,
+    // so it can free all resources.
     public void recycle() {
+        freeResource();
+    }
+
+    // yield() is called when the texture will not be used temporarily,
+    // so it can free some resources.
+    // The default implementation unloads the texture from GL memory, so
+    // the subclass should make sure it can reload the texture to GL memory
+    // later, or it will have to override this method.
+    public void yield() {
+        freeResource();
+    }
+
+    private void freeResource() {
         GLCanvas canvas = mCanvasRef == null ? null : mCanvasRef.get();
-        if (canvas != null) {
+        if (canvas != null && isLoaded(canvas)) {
             canvas.unloadTexture(this);
-            setAssociatedCanvas(null);
-            mState = BasicTexture.STATE_UNLOADED;
+        }
+        mState = BasicTexture.STATE_UNLOADED;
+        setAssociatedCanvas(null);
+    }
+
+    @Override
+    protected void finalize() {
+        recycle();
+    }
+
+    public static void yieldAllTextures() {
+        synchronized (sAllTextures) {
+            for (BasicTexture t : sAllTextures.keySet()) {
+                t.yield();
+            }
         }
     }
 }
