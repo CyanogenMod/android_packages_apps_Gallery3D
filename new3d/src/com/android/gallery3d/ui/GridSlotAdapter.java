@@ -145,7 +145,7 @@ public class GridSlotAdapter implements SlotView.Model {
             updateContent(content);
         }
 
-        public void updateContent(Texture content) {
+        public synchronized void updateContent(Texture content) {
             mContent = content;
             Rect p = mDrawer.getFramePadding();
 
@@ -172,7 +172,7 @@ public class GridSlotAdapter implements SlotView.Model {
         }
 
         @Override
-        public void render(GLCanvas canvas) {
+        public synchronized void render(GLCanvas canvas) {
             mDrawer.draw(canvas, mContent, mWidth, mHeight, mChecked);
         }
     }

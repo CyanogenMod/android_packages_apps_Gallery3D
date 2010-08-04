@@ -46,7 +46,7 @@ public class GalleryView extends TapListenerView {
     public void onStart(Bundle data) {
         initializeViews();
         intializeData();
-        mHandler = new SynchronizedHandler(mContext.getUiMonitor()) {
+        mHandler = new SynchronizedHandler(getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {

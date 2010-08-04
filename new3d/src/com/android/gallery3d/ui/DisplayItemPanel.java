@@ -49,6 +49,16 @@ public class DisplayItemPanel extends GLView {
      */
     public void putDisplayItem(
             DisplayItem item, float x, float y, float theata) {
+        lockRendering();
+        try {
+            putDisplayItemLocked(item, x, y, theata);
+        } finally {
+            unlockRendering();
+        }
+    }
+
+    private void putDisplayItemLocked(
+            DisplayItem item, float x, float y, float theata) {
         if (item.mPanel != this && item.mPanel != null) {
             throw new IllegalArgumentException();
         }
@@ -71,34 +81,54 @@ public class DisplayItemPanel extends GLView {
     }
 
     public void removeDisplayItem(DisplayItem item) {
-        if (item.mPanel != this) throw new IllegalArgumentException();
-        mItems.remove(item);
-        item.mPanel = null;
+        lockRendering();
+        try {
+            if (item.mPanel != this) throw new IllegalArgumentException();
+            mItems.remove(item);
+            item.mPanel = null;
+        } finally {
+            unlockRendering();
+        }
     }
 
     public void prepareTransition() {
-        mPrepareTransition = true;
-        for (DisplayItem item : mItems) {
-            item.mState = STATE_REMOVED;
+        lockRendering();
+        try {
+            mPrepareTransition = true;
+            for (DisplayItem item : mItems) {
+                item.mState = STATE_REMOVED;
+            }
+        } finally {
+            unlockRendering();
         }
     }
 
     public void startTransition() {
-        mPrepareTransition = false;
-        mAnimationStartTime = START_ANIMATION;
-        invalidate();
+        lockRendering();
+        try {
+            mPrepareTransition = false;
+            mAnimationStartTime = START_ANIMATION;
+            invalidate();
+        } finally {
+            unlockRendering();
+        }
     }
 
     private void onTransitionComplete() {
-        ArrayList<DisplayItem> list = new ArrayList<DisplayItem>();
-        for (DisplayItem item: mItems) {
-            if (item.mState == STATE_REMOVED) {
-                item.mPanel = null;
-            } else {
-                list.add(item);
+        lockRendering();
+        try {
+            ArrayList<DisplayItem> list = new ArrayList<DisplayItem>();
+            for (DisplayItem item: mItems) {
+                if (item.mState == STATE_REMOVED) {
+                    item.mPanel = null;
+                } else {
+                    list.add(item);
+                }
             }
+            mItems = list;
+        } finally {
+            unlockRendering();
         }
-        mItems = list;
     }
 
     @Override
