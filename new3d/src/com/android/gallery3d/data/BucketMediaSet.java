@@ -105,12 +105,9 @@ public class BucketMediaSet extends DatabaseMediaSet {
     @Override
     protected void onUpdateContent() {
         Util.Assert(mLoadBuffer != null);
-
         mMediaItems.clear();
         mMediaItems.addAll(mLoadBuffer);
         mLoadBuffer = null;
-
-        if (mListener != null) mListener.onContentChanged();
     }
 
     private static class MyComparator implements Comparator<BucketMediaSet> {
