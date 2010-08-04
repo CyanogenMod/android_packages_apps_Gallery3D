@@ -37,7 +37,6 @@ class RawTexture extends BasicTexture {
 
     @Override
     protected void onBind(GLCanvas canvas) {
-        GL11 gl = canvas.getGLInstance();
         if (mCanvasRef.get() != canvas) {
             throw new RuntimeException("cannot bind to different canvas");
         }
@@ -45,5 +44,10 @@ class RawTexture extends BasicTexture {
 
     public boolean isOpaque() {
         return true;
+    }
+
+    @Override
+    public void yield() {
+        // we cannot free the texture because we have no backup.
     }
 }

@@ -72,6 +72,7 @@ public class StateManager {
         stateView.onPause();
         stateView.onDestroy();
         if (mStateStack.isEmpty()) {
+            mRootView.setContentPane(null);
             ((Gallery) mContext).finish();
         } else {
             // Restore the immediately previous stateview

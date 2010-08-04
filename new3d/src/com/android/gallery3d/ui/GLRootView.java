@@ -128,12 +128,15 @@ public class GLRootView extends GLSurfaceView
     }
 
     public void setContentPane(GLView content) {
-        mContentView = content;
-        content.onAttachToRoot(this);
-
-        // no parent for the content pane
-        content.onAddToParent(null);
-        requestLayoutContentPane();
+        if (mContentView != null) {
+            mContentView.detachFromRoot();
+            BasicTexture.yieldAllTextures();
+        }
+        if (content != null) {
+            mContentView = content;
+            content.attachToRoot(this);
+            requestLayoutContentPane();
+        }
     }
 
     public GLView getContentPane() {
@@ -176,6 +179,8 @@ public class GLRootView extends GLSurfaceView
         if (mContentView != null && width != 0 && height != 0) {
             mContentView.layout(0, 0, width, height);
         }
+        // Uncomment this to dump the view hierarchy.
+        //mContentView.dumpTree("");
     }
 
     @Override
