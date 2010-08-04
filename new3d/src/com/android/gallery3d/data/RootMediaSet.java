@@ -9,7 +9,6 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.Video.VideoColumns;
-import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
 
@@ -95,7 +94,6 @@ public class RootMediaSet extends DatabaseMediaSet {
         if (cursor == null) throw new NullPointerException();
         try {
             while (cursor.moveToNext()) {
-                Log.v("Image", cursor.getString(BUCKET_NAME_INDEX));
                 map.put(cursor.getInt(BUCKET_ID_INDEX),
                         cursor.getString(BUCKET_NAME_INDEX));
             }
@@ -110,8 +108,6 @@ public class RootMediaSet extends DatabaseMediaSet {
         if (cursor == null) throw new NullPointerException();
         try {
             while (cursor.moveToNext()) {
-                Log.v("Video", cursor.getString(BUCKET_ID_INDEX));
-                Log.v("Video", cursor.getString(BUCKET_NAME_INDEX));
                 map.put(cursor.getInt(BUCKET_ID_INDEX),
                         cursor.getString(BUCKET_NAME_INDEX));
             }
@@ -137,6 +133,5 @@ public class RootMediaSet extends DatabaseMediaSet {
         for (BucketMediaSet mediaset : mSubsets) {
             mediaset.invalidate();
         }
-        if (mListener != null) mListener.onContentChanged();
     }
 }
