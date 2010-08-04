@@ -54,7 +54,7 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
 
     @Override
     public void onStart(Bundle data) {
-        mHandler = new SynchronizedHandler(getGLRootView()) {
+        mHandler = new SynchronizedHandler(getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -85,8 +85,11 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
 
     @Override
     public void onPause() {
-        synchronized (getGLRootView()) {
+        lockRendering();
+        try {
             mImageViewer.close();
+        } finally {
+            unlockRendering();
         }
     }
 

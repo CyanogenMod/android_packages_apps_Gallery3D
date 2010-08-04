@@ -16,25 +16,20 @@
 
 package com.android.gallery3d.ui;
 
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
+import com.android.gallery3d.anim.CanvasAnimation;
 
-public class SynchronizedHandler extends Handler {
+public interface GLRoot {
 
-    private final GLRoot mRoot;
-
-    public SynchronizedHandler(GLRoot root) {
-        mRoot = Util.checkNotNull(root);
+    public static interface OnGLIdleListener {
+        public boolean onGLIdle(GLRoot root, GLCanvas canvas);
     }
 
-    @Override
-    public void dispatchMessage(Message message) {
-        mRoot.lockRenderThread();
-        try {
-            super.dispatchMessage(message);
-        } finally {
-            mRoot.unlockRenderThread();
-        }
-    }
+    public void addOnGLIdleListener(OnGLIdleListener listener);
+    public void registerLaunchedAnimation(CanvasAnimation animation);
+    public void requestRender();
+    public void requestLayoutContentPane();
+    public boolean hasStencil();
+
+    public void lockRenderThread();
+    public void unlockRenderThread();
 }

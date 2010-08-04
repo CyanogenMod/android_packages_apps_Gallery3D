@@ -31,22 +31,21 @@ public class GLView {
     public static final int VISIBLE = 0;
     public static final int INVISIBLE = 1;
 
-    public static final int FLAG_INVISIBLE = 1;
-    public static final int FLAG_SET_MEASURED_SIZE = 2;
-    public static final int FLAG_LAYOUT_REQUESTED = 4;
+    private static final int FLAG_INVISIBLE = 1;
+    private static final int FLAG_SET_MEASURED_SIZE = 2;
+    private static final int FLAG_LAYOUT_REQUESTED = 4;
 
     protected final Rect mBounds = new Rect();
     protected final Rect mPaddings = new Rect();
 
-    private GLRootView mRootView;
+    private GLRoot mRoot;
     protected GLView mParent;
     private ArrayList<GLView> mComponents;
     private GLView mMotionTarget;
 
-    private OnTouchListener mOnTouchListener;
     private CanvasAnimation mAnimation;
 
-    protected int mViewFlags = 0;
+    private int mViewFlags = 0;
 
     protected int mMeasuredWidth = 0;
     protected int mMeasuredHeight = 0;
@@ -60,7 +59,7 @@ public class GLView {
     protected int mScrollWidth = 0;
 
     public void startAnimation(CanvasAnimation animation) {
-        GLRootView root = getGLRootView();
+        GLRoot root = getGLRoot();
         if (root == null) throw new IllegalStateException();
 
         mAnimation = animation;
@@ -84,10 +83,6 @@ public class GLView {
         return (mViewFlags & FLAG_INVISIBLE) == 0 ? VISIBLE : INVISIBLE;
     }
 
-    public static interface OnTouchListener {
-        public boolean onTouch(GLView view, MotionEvent event);
-    }
-
     private boolean setBounds(int left, int top, int right, int bottom) {
         boolean sizeChanged = (right - left) != (mBounds.right - mBounds.left)
                 || (bottom - top) != (mBounds.bottom - mBounds.top);
@@ -98,8 +93,8 @@ public class GLView {
     protected void onAddToParent(GLView parent) {
         if (mParent != null) throw new IllegalStateException();
         mParent = parent;
-        if (parent != null && parent.mRootView != null) {
-            onAttachToRoot(parent.mRootView);
+        if (parent != null && parent.mRoot != null) {
+            onAttachToRoot(parent.mRoot);
         }
     }
 
@@ -161,16 +156,12 @@ public class GLView {
         return mBounds.bottom - mBounds.top;
     }
 
-    public GLRootView getGLRootView() {
-        return mRootView;
-    }
-
-    public void setOnTouchListener(OnTouchListener listener) {
-        mOnTouchListener = listener;
+    public GLRoot getGLRoot() {
+        return mRoot;
     }
 
     public void invalidate() {
-        GLRootView root = getGLRootView();
+        GLRoot root = getGLRoot();
         if (root != null) root.requestRender();
     }
 
@@ -180,7 +171,7 @@ public class GLView {
             mParent.requestLayout();
         } else {
             // Is this a content pane ?
-            GLRootView root = getGLRootView();
+            GLRoot root = getGLRoot();
             if (root != null) root.requestLayoutContentPane();
         }
     }
@@ -220,9 +211,6 @@ public class GLView {
     }
 
     protected boolean onTouch(MotionEvent event) {
-        if (mOnTouchListener != null) {
-            return mOnTouchListener.onTouch(this, event);
-        }
         return false;
     }
 
@@ -363,8 +351,8 @@ public class GLView {
         }
     }
 
-    protected void onAttachToRoot(GLRootView root) {
-        mRootView = root;
+    protected void onAttachToRoot(GLRoot root) {
+        mRoot = root;
         for (int i = 0, n = getComponentCount(); i < n; ++i) {
             getComponent(i).onAttachToRoot(root);
         }
@@ -374,6 +362,18 @@ public class GLView {
         for (int i = 0, n = getComponentCount(); i < n; ++i) {
             getComponent(i).onDetachFromRoot();
         }
-        mRootView = null;
+        mRoot = null;
+    }
+
+    protected void lockRendering() {
+        if (mRoot != null) {
+            mRoot.lockRenderThread();
+        }
+    }
+
+    protected void unlockRendering() {
+        if (mRoot != null) {
+            mRoot.unlockRenderThread();
+        }
     }
 }

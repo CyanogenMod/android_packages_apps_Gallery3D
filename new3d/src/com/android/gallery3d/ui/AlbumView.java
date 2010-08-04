@@ -47,7 +47,7 @@ public class AlbumView extends TapListenerView {
         initializeViews();
         intializeData(data);
 
-        mHandler = new SynchronizedHandler(getGLRootView()) {
+        mHandler = new SynchronizedHandler(getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
