@@ -25,6 +25,21 @@ import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 
+// GLView is a UI component. It can render to a GLCanvas and accept touch
+// events. A GLView may have zero or more child GLView and they form a tree
+// structure. The rendering and event handling will pass through the tree
+// structure.
+//
+// A GLView tree should be attached to a GLRoot before event dispatching and
+// rendering happens. GLView asks GLRoot to re-render or re-layout the
+// GLView hierarchy using requestRender() and requestLayoutContentPane().
+//
+// The render() method is called in a separate thread. Before calling
+// dispatchTouchEvent() and layout(), GLRoot acquires a lock to avoid the
+// rendering thread running at the same time. If there are other entry points
+// from main thread (like a Handler) in your GLView, you need to call
+// lockRendering() if the rendering thread should not run at the same time.
+//
 public class GLView {
     private static final String TAG = "GLView";
 
@@ -68,6 +83,8 @@ public class GLView {
         invalidate();
     }
 
+    // Sets the visiblity of this GLView (either GLView.VISIBLE or
+    // GLView.INVISIBLE).
     public void setVisibility(int visibility) {
         if (visibility == getVisibility()) return;
         if (visibility == VISIBLE) {
@@ -79,33 +96,29 @@ public class GLView {
         invalidate();
     }
 
+    // Returns GLView.VISIBLE or GLView.INVISIBLE
     public int getVisibility() {
         return (mViewFlags & FLAG_INVISIBLE) == 0 ? VISIBLE : INVISIBLE;
     }
 
-    private boolean setBounds(int left, int top, int right, int bottom) {
-        boolean sizeChanged = (right - left) != (mBounds.right - mBounds.left)
-                || (bottom - top) != (mBounds.bottom - mBounds.top);
-        mBounds.set(left, top, right, bottom);
-        return sizeChanged;
-    }
-
-    // This should be called on the content pane (the topmost GLView).
+    // This should only be called on the content pane (the topmost GLView).
     public void attachToRoot(GLRoot root) {
         Utils.Assert(mParent == null && mRoot == null);
         onAttachToRoot(root);
     }
 
-    // This should be called on the content pane (the topmost GLView).
+    // This should only be called on the content pane (the topmost GLView).
     public void detachFromRoot() {
         Utils.Assert(mParent == null && mRoot != null);
         onDetachFromRoot();
     }
 
+    // Returns the number of children of the GLView.
     public int getComponentCount() {
         return mComponents == null ? 0 : mComponents.size();
     }
 
+    // Returns the children for the given index.
     public GLView getComponent(int index) {
         if (mComponents == null) {
             throw new ArrayIndexOutOfBoundsException(index);
@@ -113,6 +126,7 @@ public class GLView {
         return mComponents.get(index);
     }
 
+    // Adds a child to this GLView.
     public void addComponent(GLView component) {
         // Make sure the component doesn't have a parent currently.
         if (component.mParent != null) throw new IllegalStateException();
@@ -130,6 +144,7 @@ public class GLView {
         }
     }
 
+    // Removes a child from this GLView.
     public boolean removeComponent(GLView component) {
         if (mComponents == null) return false;
         if (mComponents.remove(component)) {
@@ -139,6 +154,7 @@ public class GLView {
         return false;
     }
 
+    // Removes all children of this GLView.
     public void removeAllComponents() {
         for (int i = 0, n = mComponents.size(); i < n; ++i) {
             removeOneComponent(mComponents.get(i));
@@ -151,7 +167,6 @@ public class GLView {
             long now = SystemClock.uptimeMillis();
             dispatchTouchEvent(MotionEvent.obtain(
                     now, now, MotionEvent.ACTION_CANCEL, 0, 0, 0));
-            mMotionTarget = null;
         }
         component.onDetachFromRoot();
         component.mParent = null;
@@ -173,11 +188,14 @@ public class GLView {
         return mRoot;
     }
 
+    // Request re-rendering of the view hierarchy.
+    // This is used for animation or when the contents changed.
     public void invalidate() {
         GLRoot root = getGLRoot();
         if (root != null) root.requestRender();
     }
 
+    // Request re-layout of the view hierarchy.
     public void requestLayout() {
         mViewFlags |= FLAG_LAYOUT_REQUESTED;
         if (mParent != null) {
@@ -251,6 +269,7 @@ public class GLView {
             if (action == MotionEvent.ACTION_DOWN) {
                 MotionEvent cancel = MotionEvent.obtain(event);
                 cancel.setAction(MotionEvent.ACTION_CANCEL);
+                dispatchTouchEvent(cancel, x, y, mMotionTarget, false);
                 mMotionTarget = null;
             } else {
                 dispatchTouchEvent(event, x, y, mMotionTarget, false);
@@ -296,6 +315,13 @@ public class GLView {
             mViewFlags &= ~FLAG_LAYOUT_REQUESTED;
             onLayout(false, left, top, right, bottom);
         }
+    }
+
+    private boolean setBounds(int left, int top, int right, int bottom) {
+        boolean sizeChanged = (right - left) != (mBounds.right - mBounds.left)
+                || (bottom - top) != (mBounds.bottom - mBounds.top);
+        mBounds.set(left, top, right, bottom);
+        return sizeChanged;
     }
 
     public void measure(int widthSpec, int heightSpec) {
