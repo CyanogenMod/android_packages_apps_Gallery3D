@@ -2,6 +2,9 @@
 
 package com.android.gallery3d.data;
 
+import com.android.gallery3d.util.FutureListener;
+import com.android.gallery3d.util.FutureTask;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -12,7 +15,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +40,7 @@ public class DownloadService {
 
     public FutureTask<Void> requestDownload(
             URL url, File file, FutureListener<Void> listener) {
-        FutureTask<Void> task = new ListenableFutureTask<Void>(
+        FutureTask<Void> task = new FutureTask<Void>(
                 new DownloadToFile(url, file), listener);
         mExecutor.execute(task);
         return task;
@@ -46,7 +48,7 @@ public class DownloadService {
 
     public FutureTask<byte[]> requestDownload(
             URL url, FutureListener<? super byte[]> listener) {
-        FutureTask<byte[]> task = new ListenableFutureTask<byte[]>(
+        FutureTask<byte[]> task = new FutureTask<byte[]>(
                 new DownloadToByteArray(url), listener);
         mExecutor.execute(task);
         return task;

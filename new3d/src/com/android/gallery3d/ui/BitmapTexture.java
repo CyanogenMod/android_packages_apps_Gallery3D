@@ -18,6 +18,8 @@ package com.android.gallery3d.ui;
 
 import android.graphics.Bitmap;
 
+import com.android.gallery3d.util.Utils;
+
 // BitmapTexture is a texture whose content is specified by a fixed Bitmap.
 //
 // The texture does not own the Bitmap. The user should make sure the Bitmap
@@ -27,7 +29,7 @@ public class BitmapTexture extends UploadedTexture {
     protected Bitmap mContentBitmap;
 
     public BitmapTexture(Bitmap bitmap) {
-        Util.Assert(bitmap != null && !bitmap.isRecycled());
+        Utils.Assert(bitmap != null && !bitmap.isRecycled());
         mContentBitmap = bitmap;
     }
 

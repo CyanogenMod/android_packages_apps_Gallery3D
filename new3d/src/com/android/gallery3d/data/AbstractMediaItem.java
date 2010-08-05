@@ -5,7 +5,9 @@ package com.android.gallery3d.data;
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 
-import java.util.concurrent.Future;
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureHelper;
+import com.android.gallery3d.util.FutureListener;
 
 //
 //AbstractMediaItem is an abstract class captures those common fields
@@ -29,10 +31,8 @@ public abstract class AbstractMediaItem implements MediaItem {
     public synchronized Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener) {
         if (mFutureBitmaps[type] != null) {
-            // Replace the listener. This is not right, we should consider
-            // what we should do here.
-            mFutureBitmaps[type].setListener(listener);
-            return mFutureBitmaps[type];
+            // TODO: we should not allow overlapped requests
+            return null;
         } else {
             mFutureBitmaps[type] = new MyFuture(type, listener);
             mRequestId[type] = mImageService.requestImage(this, type);
@@ -40,10 +40,8 @@ public abstract class AbstractMediaItem implements MediaItem {
         }
     }
 
-    private synchronized void cancelImageRequest(int type, boolean mayInterrupt) {
-        if (mayInterrupt) {
-            mImageService.cancelRequest(mRequestId[type]);
-        }
+    private synchronized void cancelImageRequest(int type) {
+        mImageService.cancelRequest(mRequestId[type]);
         mFutureBitmaps[type] = null;
     }
 
@@ -79,11 +77,8 @@ public abstract class AbstractMediaItem implements MediaItem {
         }
 
         @Override
-        public boolean cancel(boolean mayInterrupt) {
-            if (super.cancel(mayInterrupt)) {
-                cancelImageRequest(mSizeType, mayInterrupt);
-            }
-            return false;
+        public void onCancel() {
+            cancelImageRequest(mSizeType);
         }
     }
 

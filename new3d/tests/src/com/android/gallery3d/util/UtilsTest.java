@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.gallery3d.data;
+package com.android.gallery3d.util;
 
 import android.graphics.BitmapFactory.Options;
 import android.test.AndroidTestCase;
@@ -113,6 +113,128 @@ public class UtilsTest extends AndroidTestCase {
                         + result);
             }
             assertTrue(sampleSize == result);
+        }
+    }
+
+    public void testAssert() {
+        // This should not throw an exception.
+        Utils.Assert(true);
+
+        // This should throw an exception.
+        try {
+            Utils.Assert(false);
+            fail();
+        } catch (AssertionError ex) {
+            // expected.
+        }
+    }
+
+    public void testCheckNotNull() {
+        // These should not throw an expection.
+        Utils.checkNotNull(new Object());
+        Utils.checkNotNull(0);
+        Utils.checkNotNull("");
+
+        // This should throw an expection.
+        try {
+            Utils.checkNotNull(null);
+            fail();
+        } catch (NullPointerException ex) {
+            // expected.
+        }
+    }
+
+    public void testEquals() {
+        Object a = new Object();
+        Object b = new Object();
+
+        assertTrue(Utils.equals(null, null));
+        assertTrue(Utils.equals(a, a));
+        assertFalse(Utils.equals(null, a));
+        assertFalse(Utils.equals(a, null));
+        assertFalse(Utils.equals(a, b));
+    }
+
+    public void testIsPowerOf2() {
+        for (int i = 0; i < 31; i++) {
+            int v = (1 << i);
+            assertTrue(Utils.isPowerOf2(v));
+        }
+
+        int[] f = new int[] {3, 5, 6, 7, 9, 10, 65535, Integer.MAX_VALUE - 1,
+                Integer.MAX_VALUE };
+        for (int v : f) {
+            assertFalse(Utils.isPowerOf2(v));
+        }
+
+        int[] e = new int[] {0, -1, -2, -4, -65536, Integer.MIN_VALUE + 1,
+                Integer.MIN_VALUE };
+        for (int v : e) {
+            try {
+                Utils.isPowerOf2(v);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                // expected.
+            }
+        }
+    }
+
+    public void testNextPowerOf2() {
+        int[] q = new int[] {1, 2, 3, 4, 5, 6, 10, 65535, (1 << 30) - 1, (1 << 30)};
+        int[] a = new int[] {1, 2, 4, 4, 8, 8, 16, 65536, (1 << 30)    , (1 << 30)};
+
+        for (int i = 0; i < q.length; i++) {
+            assertEquals(a[i], Utils.nextPowerOf2(q[i]));
+        }
+
+        int[] e = new int[] {0, -1, -2, -4, -65536, (1 << 30) + 1, Integer.MAX_VALUE};
+
+        for (int v : e) {
+            try {
+                Utils.nextPowerOf2(v);
+                fail();
+            } catch (IllegalArgumentException ex) {
+                // expected.
+            }
+        }
+    }
+
+    public void testDistance() {
+        assertFloatEq(0f, Utils.distance(0, 0, 0, 0));
+        assertFloatEq(1f, Utils.distance(0, 1, 0, 0));
+        assertFloatEq(1f, Utils.distance(0, 0, 0, 1));
+        assertFloatEq(2f, Utils.distance(1, 2, 3, 2));
+        assertFloatEq(5f, Utils.distance(1, 2, 1 + 3, 2 + 4));
+        assertFloatEq(5f, Utils.distance(1, 2, 1 + 3, 2 + 4));
+        assertFloatEq(Float.MAX_VALUE, Utils.distance(Float.MAX_VALUE, 0, 0, 0));
+    }
+
+    public void testClamp() {
+        assertEquals(1000, Utils.clamp(300, 1000, 2000));
+        assertEquals(1300, Utils.clamp(1300, 1000, 2000));
+        assertEquals(2000, Utils.clamp(2300, 1000, 2000));
+
+        assertEquals(0.125f, Utils.clamp(0.1f, 0.125f, 0.5f));
+        assertEquals(0.25f, Utils.clamp(0.25f, 0.125f, 0.5f));
+        assertEquals(0.5f, Utils.clamp(0.9f, 0.125f, 0.5f));
+    }
+
+    public void testIsOpaque() {
+        assertTrue(Utils.isOpaque(0xFF000000));
+        assertTrue(Utils.isOpaque(0xFFFFFFFF));
+        assertTrue(Utils.isOpaque(0xFF123456));
+
+        assertFalse(Utils.isOpaque(0xFEFFFFFF));
+        assertFalse(Utils.isOpaque(0x8FFFFFFF));
+        assertFalse(Utils.isOpaque(0x00FF0000));
+        assertFalse(Utils.isOpaque(0x5500FF00));
+        assertFalse(Utils.isOpaque(0xAA0000FF));
+    }
+
+    public static void assertFloatEq(float expected, float actual) {
+        if (Math.abs(actual - expected) > 1e-6) {
+            Log.v(TAG, "expected: " + expected + ", actual: " + actual);
+            fail();
         }
     }
 }

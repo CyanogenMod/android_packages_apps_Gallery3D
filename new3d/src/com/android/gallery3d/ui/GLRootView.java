@@ -27,6 +27,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 import com.android.gallery3d.anim.CanvasAnimation;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -217,7 +218,7 @@ public class GLRootView extends GLSurfaceView
         Log.v(TAG, "onSurfaceChanged: " + width + "x" + height
                 + ", gl10: " + gl1.toString());
         GL11 gl = (GL11) gl1;
-        Util.Assert(mGL == gl);
+        Utils.Assert(mGL == gl);
 
         mCanvas.setSize(width, height);
 

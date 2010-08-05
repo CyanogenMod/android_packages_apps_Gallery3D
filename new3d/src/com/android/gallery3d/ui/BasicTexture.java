@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.Utils;
+
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
@@ -70,8 +72,8 @@ abstract class BasicTexture implements Texture {
     protected void setSize(int width, int height) {
         mWidth = width;
         mHeight = height;
-        mTextureWidth = Util.nextPowerOf2(width);
-        mTextureHeight = Util.nextPowerOf2(height);
+        mTextureWidth = Utils.nextPowerOf2(width);
+        mTextureHeight = Utils.nextPowerOf2(height);
     }
 
     public int getId() {

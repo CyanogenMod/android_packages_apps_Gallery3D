@@ -2,7 +2,8 @@ package com.android.gallery3d.data;
 
 import android.graphics.Bitmap;
 
-import java.util.concurrent.Future;
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
 
 public interface MediaItem {
     public static final int TYPE_COUNT = 3;

@@ -16,7 +16,6 @@
 
 package com.android.gallery3d.ui;
 
-import static com.android.gallery3d.ui.Util.dpToPixel;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -27,6 +26,7 @@ import android.view.MotionEvent;
 import android.view.View.MeasureSpec;
 
 import com.android.gallery3d.R;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,8 +61,8 @@ public class HeadUpDisplay extends GLView {
     private static void initializeStaticVariables(Context context) {
         if (sPopupWindowOverlap >= 0) return;
 
-        sPopupWindowOverlap = dpToPixel(context, POPUP_WINDOW_OVERLAP);
-        sPopupTriangleOffset = dpToPixel(context, POPUP_TRIANGLE_OFFSET);
+        sPopupWindowOverlap = Utils.dpToPixel(context, POPUP_WINDOW_OVERLAP);
+        sPopupTriangleOffset = Utils.dpToPixel(context, POPUP_TRIANGLE_OFFSET);
     }
 
     public HeadUpDisplay(Context context) {
@@ -201,7 +201,7 @@ public class HeadUpDisplay extends GLView {
         int anchorX = (rect.left + rect.right) / 2;
         int anchorY = rect.top + sPopupWindowOverlap;
 
-        int xoffset = Util.clamp(anchorX - width / 2, 0, getWidth() - width);
+        int xoffset = Utils.clamp(anchorX - width / 2, 0, getWidth() - width);
         int yoffset = Math.max(0, anchorY - height);
 
         mPopupWindow.setAnchorPosition(anchorX - xoffset);

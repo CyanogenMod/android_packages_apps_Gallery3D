@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.Utils;
+
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 
@@ -143,7 +145,7 @@ public class DisplayItemPanel extends GLView {
             if (mAnimationStartTime == START_ANIMATION) {
                 mAnimationStartTime = now;
             }
-            float timeRatio = Util.clamp((float)
+            float timeRatio = Utils.clamp((float)
                     (now - mAnimationStartTime) / TRANSITION_DURATION,  0, 1);
             float interpolate = mInterpolator.getInterpolation(timeRatio);
             for (DisplayItem item: mItems) {

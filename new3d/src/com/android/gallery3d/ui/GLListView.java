@@ -28,6 +28,7 @@ import android.widget.Scroller;
 
 import com.android.gallery3d.anim.AlphaAnimation;
 import com.android.gallery3d.anim.CanvasAnimation;
+import com.android.gallery3d.util.Utils;
 
 public class GLListView extends GLView {
     @SuppressWarnings("unused")
@@ -248,7 +249,7 @@ public class GLListView extends GLView {
     private void setScrollPosition(int position, boolean force) {
         int height = getHeight();
 
-        position = Util.clamp(position, 0, mScrollHeight - height);
+        position = Utils.clamp(position, 0, mScrollHeight - height);
 
         if (!force && position == mScrollY) return;
         mScrollY = position;

@@ -7,7 +7,7 @@ import android.os.Message;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.SynchronizedHandler;
-import com.android.gallery3d.ui.Util;
+import com.android.gallery3d.util.Utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +32,7 @@ public abstract class DatabaseMediaSet implements MediaSet {
         mMainHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
-                Util.Assert(message.what == MSG_UPDATE_CONTENT);
+                Utils.Assert(message.what == MSG_UPDATE_CONTENT);
                 onUpdateContent();
                 if (mListener != null) mListener.onContentChanged();
 
@@ -59,7 +59,7 @@ public abstract class DatabaseMediaSet implements MediaSet {
         mDbHandler = new Handler(context.getDataManager().getDataLooper()) {
             @Override
             public void handleMessage(Message message) {
-                Util.Assert(message.what == MSG_LOAD_DATABASE);
+                Utils.Assert(message.what == MSG_LOAD_DATABASE);
                 onLoadFromDatabase();
                 mMainHandler.sendEmptyMessage(MSG_UPDATE_CONTENT);
             }

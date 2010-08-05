@@ -1,5 +1,7 @@
 package com.android.gallery3d.data;
 
+import com.android.gallery3d.util.Utils;
+
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;

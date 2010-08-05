@@ -17,15 +17,16 @@
 package com.android.gallery3d.ui;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
+
+import com.android.gallery3d.util.Utils;
 
 public class SynchronizedHandler extends Handler {
 
     private final GLRoot mRoot;
 
     public SynchronizedHandler(GLRoot root) {
-        mRoot = Util.checkNotNull(root);
+        mRoot = Utils.checkNotNull(root);
     }
 
     @Override

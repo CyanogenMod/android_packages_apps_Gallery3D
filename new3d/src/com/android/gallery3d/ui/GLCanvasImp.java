@@ -16,6 +16,9 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.IntArray;
+import com.android.gallery3d.util.Utils;
+
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLU;
@@ -82,7 +85,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void setSize(int width, int height) {
-        Util.Assert(width >= 0 && height >= 0);
+        Utils.Assert(width >= 0 && height >= 0);
 
         GL11 gl = mGL;
         gl.glViewport(0, 0, width, height);
@@ -110,12 +113,12 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void setAlpha(float alpha) {
-        Util.Assert(alpha >= 0 && alpha <= 1);
+        Utils.Assert(alpha >= 0 && alpha <= 1);
         mAlpha = alpha;
     }
 
     public void multiplyAlpha(float alpha) {
-        Util.Assert(alpha >= 0 && alpha <= 1);
+        Utils.Assert(alpha >= 0 && alpha <= 1);
         mAlpha *= alpha;
     }
 
@@ -268,7 +271,7 @@ public class GLCanvasImp implements GLCanvas {
      */
     private int stretch(
             int x[], float u[], int div[], int source, int target) {
-        int textureSize = Util.nextPowerOf2(source);
+        int textureSize = Utils.nextPowerOf2(source);
         float textureBound = (source - 0.5f) / textureSize;
 
         int stretch = 0;
@@ -550,7 +553,7 @@ public class GLCanvasImp implements GLCanvas {
 
         // In the current implementation the two textures must have the
         // same size.
-        Util.Assert(from.getWidth() == to.getWidth()
+        Utils.Assert(from.getWidth() == to.getWidth()
                 && from.getHeight() == to.getHeight());
 
         mGLState.setBlendEnabled(!from.isOpaque()
@@ -712,7 +715,7 @@ public class GLCanvasImp implements GLCanvas {
         }
 
         public void setColorMode(int color, float alpha) {
-            setBlendEnabled(!Util.isOpaque(color) || alpha < OPAQUE_ALPHA);
+            setBlendEnabled(!Utils.isOpaque(color) || alpha < OPAQUE_ALPHA);
 
             // Set mTextureAlpha to an invalid value, so that it will reset
             // again in setTextureAlpha(float) later.
@@ -754,7 +757,7 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     public void setCurrentAnimationTimeMillis(long time) {
-        Util.Assert(time >= 0);
+        Utils.Assert(time >= 0);
         mAnimationTime = time;
     }
 

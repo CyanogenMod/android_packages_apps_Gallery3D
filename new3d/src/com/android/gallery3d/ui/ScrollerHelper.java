@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.Utils;
+
 import android.content.Context;
 import android.hardware.SensorManager;
 import android.view.ViewConfiguration;
@@ -43,7 +45,7 @@ public class ScrollerHelper {
         mInterpolator = interpolator;
         mDeceleration = SensorManager.GRAVITY_EARTH   // g (m/s^2)
                 * 39.37f                              // inch/meter
-                * Util.dpToPixel(context, 160)        // pixels per inch
+                * Utils.dpToPixel(context, 160)        // pixels per inch
                 * ViewConfiguration.getScrollFriction();
     }
 
@@ -65,7 +67,7 @@ public class ScrollerHelper {
             float t = timePassed / 1000.0f;
             int distance = (int) ((
                     mVelocity * t) - (mDeceleration * t * t / 2.0f) + 0.5f);
-            mPosition = Util.clamp(mStart + mDirection * distance, mMin, mMax);
+            mPosition = Utils.clamp(mStart + mDirection * distance, mMin, mMax);
         } else {
             mPosition = mFinal;
             mFinished = true;
@@ -92,6 +94,6 @@ public class ScrollerHelper {
         mMax = max;
         double totalDistance = (double) mDirection
                 * (velocity * velocity) / (2 * mDeceleration);
-        mFinal = Util.clamp(start + (int) (totalDistance + 0.5), min, max);
+        mFinal = Utils.clamp(start + (int) (totalDistance + 0.5), min, max);
     }
 }

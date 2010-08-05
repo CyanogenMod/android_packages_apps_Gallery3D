@@ -1,11 +1,13 @@
-package com.android.gallery3d.data;
+package com.android.gallery3d.util;
 
+import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
+import android.util.DisplayMetrics;
 
-import com.android.gallery3d.ui.Util;
 
 public class Utils {
     public static final int UNCONSTRAINED = -1;
@@ -36,7 +38,7 @@ public class Utils {
                 options, minSideLength, maxNumOfPixels);
 
         return initialSize <= 8
-                ? Util.nextPowerOf2(initialSize)
+                ? Utils.nextPowerOf2(initialSize)
                 : (initialSize + 7) / 8 * 8;
     }
 
@@ -76,6 +78,94 @@ public class Utils {
         canvas.drawBitmap(original, 0, 0, null);
         original.recycle();
         return bitmap;
+    }
+
+    // Throws AssertionError if the input is false.
+    public static void Assert(boolean cond) {
+        if (!cond) {
+            throw new AssertionError();
+        }
+    }
+
+    // Throws NullPointerException if the input is null.
+    public static <T> T checkNotNull(T object) {
+        if (object == null) throw new NullPointerException();
+        return object;
+    }
+
+    // Returns true if two input Object are both null or equal
+    // to each other.
+    public static boolean equals(Object a, Object b) {
+        return (a == b) || (a == null ? false : a.equals(b));
+    }
+
+    // Returns true if the input is power of 2.
+    // Throws IllegalArgumentException if the input is <= 0.
+    public static boolean isPowerOf2(int n) {
+        if (n <= 0) throw new IllegalArgumentException();
+        return (n & -n) == n;
+    }
+
+    // Returns the next power of two.
+    // Returns the input if it is already power of 2.
+    // Throws IllegalArgumentException if the input is <= 0 or
+    // the answer overflows.
+    public static int nextPowerOf2(int n) {
+        if (n <= 0 || n > (1 << 30)) throw new IllegalArgumentException();
+        n -= 1;
+        n |= n >> 16;
+        n |= n >> 8;
+        n |= n >> 4;
+        n |= n >> 2;
+        n |= n >> 1;
+        return n + 1;
+    }
+
+    // Returns the euclidean distance between (x, y) and (sx, sy).
+    public static float distance(float x, float y, float sx, float sy) {
+        float dx = x - sx;
+        float dy = y - sy;
+        return (float) Math.hypot(dx, dy);
+    }
+
+    // Returns the input value x clamped to the range [min, max].
+    public static int clamp(int x, int min, int max) {
+        if (x > max) return max;
+        if (x < min) return min;
+        return x;
+    }
+
+    // Returns the input value x clamped to the range [min, max].
+    public static float clamp(float x, float min, float max) {
+        if (x > max) return max;
+        if (x < min) return min;
+        return x;
+    }
+
+    public synchronized static float dpToPixel(Context context, float dp) {
+        if (Utils.sPixelDensity < 0) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            ((Activity) context).getWindowManager()
+                    .getDefaultDisplay().getMetrics(metrics);
+            Utils.sPixelDensity = metrics.density;
+        }
+        return Utils.sPixelDensity * dp;
+    }
+
+    static float sPixelDensity = -1f;
+
+    public static int dpToPixel(Context context, int dp) {
+        return Math.round(dpToPixel(context, (float) dp));
+    }
+
+    public static boolean isOpaque(int color) {
+        return color >>> 24 == 0xFF;
+    }
+
+    public static <T> void swap(T[] array, int i, int j) {
+        T temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
     }
 
 }

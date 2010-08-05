@@ -23,13 +23,13 @@ import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.gallery3d.data.FutureListener;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.ImageViewer.ImageData;
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
 
 import java.util.ArrayList;
-import java.util.concurrent.Future;
 
 public class PhotoView extends StateView implements SlotView.SlotTapListener {
     private static final String TAG = PhotoView.class.getSimpleName();

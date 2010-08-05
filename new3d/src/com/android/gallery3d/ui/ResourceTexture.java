@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.Utils;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -28,7 +30,7 @@ class ResourceTexture extends UploadedTexture {
     protected final int mResId;
 
     public ResourceTexture(Context context, int resId) {
-        mContext = Util.checkNotNull(context);
+        mContext = Utils.checkNotNull(context);
         mResId = resId;
         setOpaque(false);
     }

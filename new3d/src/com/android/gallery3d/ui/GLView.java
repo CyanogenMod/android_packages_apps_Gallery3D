@@ -21,6 +21,7 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 
 import com.android.gallery3d.anim.CanvasAnimation;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 
@@ -91,13 +92,13 @@ public class GLView {
 
     // This should be called on the content pane (the topmost GLView).
     public void attachToRoot(GLRoot root) {
-        Util.Assert(mParent == null && mRoot == null);
+        Utils.Assert(mParent == null && mRoot == null);
         onAttachToRoot(root);
     }
 
     // This should be called on the content pane (the topmost GLView).
     public void detachFromRoot() {
-        Util.Assert(mParent == null && mRoot != null);
+        Utils.Assert(mParent == null && mRoot != null);
         onDetachFromRoot();
     }
 

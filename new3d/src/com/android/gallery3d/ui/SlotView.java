@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.ui;
 
+import com.android.gallery3d.util.Utils;
+
 import android.content.Context;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -106,7 +108,7 @@ public class SlotView extends GLView implements SelectionManager.SelectionChange
     }
 
     private void setScrollPosition(int position, boolean force) {
-        position = Util.clamp(position, 0, mScrollLimit);
+        position = Utils.clamp(position, 0, mScrollLimit);
         if (!force && position == mPanel.mScrollX) return;
         mPanel.mScrollX = position;
 
@@ -240,7 +242,7 @@ public class SlotView extends GLView implements SelectionManager.SelectionChange
         public boolean onFling(MotionEvent e1,
                 MotionEvent e2, float velocityX, float velocityY) {
             if (mScrollLimit == 0) return false;
-            velocityX = Util.clamp(velocityX, -MAX_VELOCITY, MAX_VELOCITY);
+            velocityX = Utils.clamp(velocityX, -MAX_VELOCITY, MAX_VELOCITY);
             mScroller.fling(mPanel.mScrollX, -(int) velocityX, 0, mScrollLimit);
             invalidate();
             return true;
