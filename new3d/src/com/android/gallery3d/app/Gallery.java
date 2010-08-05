@@ -23,6 +23,8 @@ import android.util.Log;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.DataManager;
+import com.android.gallery3d.data.DecodeService;
+import com.android.gallery3d.data.DownloadService;
 import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.PositionRepository;
@@ -37,10 +39,13 @@ public final class Gallery extends Activity implements GalleryContext {
     private ImageService mImageService;
     private DataManager mDataManager;
     private PositionRepository mPositionRepository = new PositionRepository();
+    private DownloadService mDownloadService;
+    private DecodeService mDecodeService;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.e(TAG, "Picasa Cache Path: " + this.getExternalCacheDir());
         setContentView(R.layout.main);
         mGLRootView = (GLRootView) findViewById(R.id.gl_root_view);
 
@@ -122,5 +127,19 @@ public final class Gallery extends Activity implements GalleryContext {
 
     public PositionRepository getPositionRepository() {
         return mPositionRepository;
+    }
+
+    public synchronized DownloadService getDownloadService() {
+        if (mDownloadService == null) {
+            mDownloadService = new DownloadService();
+        }
+        return mDownloadService;
+    }
+
+    public synchronized DecodeService getDecodeService() {
+        if (mDecodeService == null) {
+            mDecodeService = new DecodeService();
+        }
+        return mDecodeService;
     }
 }

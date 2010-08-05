@@ -16,19 +16,55 @@
 
 package com.android.gallery3d.data;
 
+import android.os.Environment;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
+import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
 
+import java.io.File;
+import java.io.IOException;
+
 public class DataManager {
+    private static final String TAG = "DataManager";
+    private static int PICASA_CACHE_MAX_ENTRIES = 5000;
+    private static int PICASA_CACHE_MAX_BYTES = 200 * 1024 * 1024;
+    private static String PICASA_CACHE_FILE = "/picasaweb";
     private GalleryContext mContext;
     private MediaSet mRootSet;
     private HandlerThread mDataThread;
+    private BlobCache mPicasaCache = null;
 
     public DataManager(GalleryContext context) {
         mContext = context;
+    }
+
+    // Return null when we cannot instantiate a BlobCache, e.g.:
+    // there is no SD card found.
+    public BlobCache getPicasaCache() {
+        if (mPicasaCache == null) {
+            String path = getPicasaCachePath();
+            if (path == null) {
+                return null;
+            } else {
+                try {
+                    mPicasaCache = new BlobCache(path, PICASA_CACHE_MAX_ENTRIES,
+                            PICASA_CACHE_MAX_BYTES, true);
+                } catch (IOException e) {
+                    Log.e(TAG, "Cannot instantiate Picasaweb Cache!", e);
+                }
+            }
+        }
+        return mPicasaCache;
+    }
+
+    private String getPicasaCachePath() {
+        File cacheDir = mContext.getAndroidContext().getExternalCacheDir();
+        return cacheDir == null
+                ? null
+                : cacheDir.getAbsolutePath() + PICASA_CACHE_FILE;
     }
 
     public MediaSet getRootSet() {
