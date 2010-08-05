@@ -1,4 +1,18 @@
-// Copyright 2010 Google Inc. All Rights Reserved.
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.android.gallery3d.data;
 
@@ -10,22 +24,38 @@ import com.android.gallery3d.util.FutureHelper;
 import com.android.gallery3d.util.FutureListener;
 
 //
-//AbstractMediaItem is an abstract class captures those common fields
-//in ImageMediaItem and VideoMediaItem.
+// LocalMediaItem is an abstract class captures those common fields
+// in LocalImage and LocalVideo.
 //
-public abstract class AbstractMediaItem implements MediaItem {
+public abstract class LocalMediaItem extends MediaItem {
 
-    private static final String TAG = AbstractMediaItem.class.getSimpleName();
+    private static final String TAG = LocalMediaItem.class.getSimpleName();
+
+    // database fields
+    protected int mId;
+    protected String mCaption;
+    protected String mMimeType;
+    protected double mLatitude;
+    protected double mLongitude;
+    protected long mDateTakenInMs;
+    protected long mDateAddedInSec;
+    protected long mDateModifiedInSec;
+    protected String mFilePath;
+
     protected int mRequestId[];
     private MyFuture mFutureBitmaps[];
 
     protected final ImageService mImageService;
 
     @SuppressWarnings("unchecked")
-    protected AbstractMediaItem(ImageService imageService) {
+    protected LocalMediaItem(ImageService imageService) {
         mImageService = imageService;
         mFutureBitmaps = new MyFuture[TYPE_COUNT];
         mRequestId = new int[TYPE_COUNT];
+    }
+
+    public String getTitle() {
+        return mCaption;
     }
 
     public synchronized Future<Bitmap>

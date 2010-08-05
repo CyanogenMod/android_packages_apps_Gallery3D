@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.android.gallery3d.data;
 
 import com.android.gallery3d.util.Utils;
@@ -10,7 +26,7 @@ import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.Video.VideoColumns;
 
-public class VideoMediaItem extends DatabaseMediaItem {
+public class LocalVideo extends LocalMediaItem {
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
 
@@ -41,7 +57,7 @@ public class VideoMediaItem extends DatabaseMediaItem {
 
     public int mDurationInSec;
 
-    protected VideoMediaItem(ImageService imageService) {
+    protected LocalVideo(ImageService imageService) {
         super(imageService);
     }
 
@@ -70,8 +86,8 @@ public class VideoMediaItem extends DatabaseMediaItem {
         }
     }
 
-    public static VideoMediaItem load(ImageService imageService, Cursor cursor) {
-        VideoMediaItem item = new VideoMediaItem(imageService);
+    public static LocalVideo load(ImageService imageService, Cursor cursor) {
+        LocalVideo item = new LocalVideo(imageService);
 
         item.mId = cursor.getInt(INDEX_ID);
         item.mCaption = cursor.getString(INDEX_CAPTION);
