@@ -14,31 +14,38 @@
  * limitations under the License.
  */
 
-package com.android.gallery3d.ui;
+package com.android.gallery3d.app;
 
 import android.os.Bundle;
 
-import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.ui.GLView;
 
-abstract public class StateView extends GLView {
+abstract public class ActivityState {
     protected GalleryContext mContext;
 
-    public StateView() {
+    protected ActivityState() {
+    }
+
+    protected void setContentPane(GLView content) {
+        mContext.getGLRootView().setContentPane(content);
     }
 
     void setContext(GalleryContext context) {
         mContext = context;
     }
 
-    abstract public void onStart(Bundle data);
-
-    public void onBackPressed() {
-        mContext.getStateManager().finish(this);
+    protected void onBackPressed() {
+        mContext.getStateManager().finishState(this);
     }
 
-    public void onPause() {}
+    protected void onSaveState(Bundle outState) {
+    }
 
-    public void onResume() {}
+    protected void onCreate(Bundle data, Bundle storedState){}
 
-    public void onDestroy() {}
+    protected void onPause() {}
+
+    protected void onResume() {}
+
+    protected void onDestroy() {}
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.gallery3d.ui;
+package com.android.gallery3d.app;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -24,10 +24,17 @@ import android.os.Message;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaSet;
+import com.android.gallery3d.ui.AdaptiveBackground;
+import com.android.gallery3d.ui.GLView;
+import com.android.gallery3d.ui.HeadUpDisplay;
+import com.android.gallery3d.ui.MediaSetSlotAdapter;
+import com.android.gallery3d.ui.SelectionManager;
+import com.android.gallery3d.ui.SlotView;
+import com.android.gallery3d.ui.SynchronizedHandler;
 
-public class AlbumView extends TapListenerView {
-    public static final String KEY_BUCKET_INDEX = "keyBucketIndex";
+public class GalleryPage extends ActivityState implements SlotView.SlotTapListener {
     private static final int CHANGE_BACKGROUND = 1;
+
     private static final int MARGIN_HUD_SLOTVIEW = 5;
     private static final int HORIZONTAL_GAP_SLOTS = 5;
     private static final int VERTICAL_GAP_SLOTS = 5;
@@ -36,18 +43,57 @@ public class AlbumView extends TapListenerView {
     private SlotView mSlotView;
     private HeadUpDisplay mHud;
     private SynchronizedHandler mHandler;
+
     private Bitmap mBgImages[];
     private int mBgIndex = 0;
-    private int mBucketIndex;
 
-    public AlbumView() {}
+    protected SelectionManager mSelectionManager;
+
+    private GLView mRootPane = new GLView() {
+        @Override
+        protected void onLayout(
+                boolean changed, int left, int top, int right, int bottom) {
+            mBackground.layout(0, 0, right - left, bottom - top);
+            mHud.layout(0, 0, right - left, bottom - top);
+
+            int slotViewTop = mHud.getTopBarBottomPosition() + MARGIN_HUD_SLOTVIEW;
+            int slotViewBottom = mHud.getBottomBarTopPosition()
+                    - MARGIN_HUD_SLOTVIEW;
+
+            mSlotView.layout(0, slotViewTop, right - left, slotViewBottom);
+        }
+    };
 
     @Override
-    public void onStart(Bundle data) {
-        initializeViews();
-        intializeData(data);
+    public void onBackPressed() {
+        if (mSelectionManager.isSelectionMode()) {
+            mSelectionManager.leaveSelectionMode();
+        } else {
+            super.onBackPressed();
+        }
+    }
 
-        mHandler = new SynchronizedHandler(getGLRoot()) {
+    public void onSingleTapUp(int slotIndex) {
+        if (!mSelectionManager.isSelectionMode()) {
+            Bundle data = new Bundle();
+            data.putInt(AlbumPage.KEY_BUCKET_INDEX, slotIndex);
+            mContext.getStateManager().startState(AlbumPage.class, data);
+        } else {
+            mSelectionManager.selectSlot(slotIndex);
+        }
+    }
+
+    public void onLongTap(int slotIndex) {
+        mSelectionManager.switchSelectionMode(slotIndex);
+    }
+
+    public GalleryPage() {}
+
+    @Override
+    public void onCreate(Bundle data, Bundle restoreState) {
+        initializeViews();
+        intializeData();
+        mHandler = new SynchronizedHandler(mContext.getGLRootView()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -59,7 +105,6 @@ public class AlbumView extends TapListenerView {
                 }
             }
         };
-        mHandler.sendEmptyMessageDelayed(CHANGE_BACKGROUND, 3000);
     }
 
     @Override
@@ -67,14 +112,26 @@ public class AlbumView extends TapListenerView {
         mHandler.removeMessages(CHANGE_BACKGROUND);
     }
 
+    @Override
+    public void onResume() {
+        setContentPane(mRootPane);
+        mHandler.sendEmptyMessage(CHANGE_BACKGROUND);
+    }
+
+    private void intializeData() {
+        MediaSet mediaSet = mContext.getDataManager().getRootSet();
+        mSlotView.setModel(new MediaSetSlotAdapter(
+                mContext.getAndroidContext(), mediaSet, mSlotView, mSelectionManager));
+    }
+
     private void initializeViews() {
         mBackground = new AdaptiveBackground();
-        addComponent(mBackground);
+        mRootPane.addComponent(mBackground);
         mSlotView = new SlotView(mContext.getAndroidContext());
         mSelectionManager = new SelectionManager(mContext.getAndroidContext(), mSlotView);
-        addComponent(mSlotView);
+        mRootPane.addComponent(mSlotView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
-        addComponent(mHud);
+        mRootPane.addComponent(mHud);
         mSlotView.setGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
         mSlotView.setSlotTapListener(this);
 
@@ -83,28 +140,8 @@ public class AlbumView extends TapListenerView {
         mBackground.setImage(mBgImages[mBgIndex]);
     }
 
-    private void intializeData(Bundle data) {
-        mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
-        MediaSet mediaSet = mContext.getDataManager().getSubMediaSet(mBucketIndex);
-        mSlotView.setModel(new GridSlotAdapter(mContext.getAndroidContext(), mediaSet,
-                mSlotView, mSelectionManager));
-    }
-
     public SlotView getSlotView() {
         return mSlotView;
-    }
-
-    @Override
-    protected void onLayout(
-            boolean changed, int left, int top, int right, int bottom) {
-        mBackground.layout(0, 0, right - left, bottom - top);
-        mHud.layout(0, 0, right - left, bottom - top);
-
-        int slotViewTop = mHud.getTopBarBottomPosition() + MARGIN_HUD_SLOTVIEW;
-        int slotViewBottom = mHud.getBottomBarTopPosition()
-                - MARGIN_HUD_SLOTVIEW;
-
-        mSlotView.layout(0, slotViewTop, right - left, slotViewBottom);
     }
 
     public void changeBackground() {
@@ -122,19 +159,5 @@ public class AlbumView extends TapListenerView {
             mBgImages[i] = mBackground.getAdaptiveBitmap(bitmap);
             bitmap.recycle();
         }
-    }
-
-    @Override
-    protected void startStateView(int slotIndex) {
-        Bundle data = new Bundle();
-        data.putInt(PhotoView.KEY_SET_INDEX, mBucketIndex);
-        data.putInt(PhotoView.KEY_PHOTO_INDEX, slotIndex);
-
-        mContext.getStateManager().startStateView(PhotoView.class, data);
-    }
-
-    @Override
-    public void onResume() {
-        mHandler.sendEmptyMessage(CHANGE_BACKGROUND);
     }
 }

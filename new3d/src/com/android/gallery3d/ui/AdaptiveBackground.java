@@ -120,8 +120,8 @@ public class AdaptiveBackground extends GLView {
             if (moreAnimation) {
                 invalidate();
             } else if (mPendingBitmap != null) {
-                mPendingBitmap = null;
                 startTransition(mPendingBitmap);
+                mPendingBitmap = null;
             }
         }
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.gallery3d.ui;
+package com.android.gallery3d.app;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -25,14 +25,19 @@ import android.util.Log;
 
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
+import com.android.gallery3d.ui.GLCanvas;
+import com.android.gallery3d.ui.GLRootView;
+import com.android.gallery3d.ui.GLView;
+import com.android.gallery3d.ui.ImageViewer;
+import com.android.gallery3d.ui.SynchronizedHandler;
 import com.android.gallery3d.ui.ImageViewer.ImageData;
 import com.android.gallery3d.util.Future;
 import com.android.gallery3d.util.FutureListener;
 
 import java.util.ArrayList;
 
-public class PhotoView extends StateView implements SlotView.SlotTapListener {
-    private static final String TAG = PhotoView.class.getSimpleName();
+public class PhotoPage extends ActivityState {
+    private static final String TAG = PhotoPage.class.getSimpleName();
 
     public static final String KEY_SET_INDEX = "keySetIndex";
     public static final String KEY_PHOTO_INDEX = "keyPhotoIndex";
@@ -52,9 +57,25 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
 
     private MediaSet mMediaSet;
 
+    private GLView mRootPane = new GLView() {
+
+        @Override
+        protected void renderBackground(GLCanvas view) {
+            view.clearBuffer();
+        }
+
+        @Override
+        protected void onLayout(
+                boolean changed, int left, int top, int right, int bottom) {
+            if (mImageViewer != null) {
+                mImageViewer.layout(0, 0, right - left, bottom - top);
+            }
+        }
+    };
+
     @Override
-    public void onStart(Bundle data) {
-        mHandler = new SynchronizedHandler(getGLRoot()) {
+    public void onCreate(Bundle data, Bundle restoreState) {
+        mHandler = new SynchronizedHandler(mContext.getGLRootView()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -78,30 +99,24 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
 
         mImageViewer = new ImageViewer(mContext);
         mImageViewer.setModel(mModel);
-        addComponent(mImageViewer);
+        mRootPane.addComponent(mImageViewer);
         mModel.requestNextImage();
     }
 
-
     @Override
     public void onPause() {
-        lockRendering();
+        GLRootView root = mContext.getGLRootView();
+        root.lockRenderThread();
         try {
             mImageViewer.close();
         } finally {
-            unlockRendering();
+            root.unlockRenderThread();
         }
     }
 
     @Override
-    protected void onLayout(
-            boolean changed, int left, int top, int right, int bottom) {
-        if (mImageViewer != null) {
-            mImageViewer.layout(0, 0, right - left, bottom - top);
-        }
-    }
-
-    public void onSingleTapUp(int slotIndex) {
+    protected void onResume() {
+        setContentPane(mRootPane);
     }
 
     private class MyImageViewerModel implements ImageViewer.Model {
@@ -248,23 +263,6 @@ public class PhotoView extends StateView implements SlotView.SlotTapListener {
                 return;
             }
         }
-    }
-
-    public void onLongTap(int slotIndex) {
-        // TODO
-    }
-
-    public void setImageViewer(ImageViewer imageViewer) {
-        // TODO modify ImageViewer to accepting a data model
-        removeComponent(mImageViewer);
-        mImageViewer = imageViewer;
-        addComponent(mImageViewer);
-        requestLayout();
-    }
-
-    @Override
-    protected void renderBackground(GLCanvas view) {
-        view.clearBuffer();
     }
 
     private static Bitmap[] getScaledBitmaps(Bitmap bitmap, int minLength) {
