@@ -27,15 +27,7 @@ public class SelectionManager {
     private Vibrator mVibrator;
     private final SelectionDrawer mDrawer;
 
-    public interface SelectionChangeListener {
-        public void onSelectionChange(int index);
-        public void onSelectionModeChange();
-    }
-
-    private final SelectionChangeListener mListener;
-
-    public SelectionManager(Context context, SelectionChangeListener listener) {
-        mListener = listener;
+    public SelectionManager(Context context) {
         mDrawer = new SelectionDrawer(context);
         mVibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
     }
@@ -59,7 +51,6 @@ public class SelectionManager {
             mVibrator.vibrate(100);
             mSelectedSet.add(slotIndex);
             mDrawer.setSelectionMode(true);
-            mListener.onSelectionModeChange();
             return;
         }
 
@@ -83,7 +74,6 @@ public class SelectionManager {
             } else {
                 mSelectedSet.add(slotIndex);
             }
-            mListener.onSelectionChange(slotIndex);
         }
     }
 }

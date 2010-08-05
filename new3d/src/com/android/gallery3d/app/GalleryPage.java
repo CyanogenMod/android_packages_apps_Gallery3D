@@ -36,8 +36,6 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
     private static final int CHANGE_BACKGROUND = 1;
 
     private static final int MARGIN_HUD_SLOTVIEW = 5;
-    private static final int HORIZONTAL_GAP_SLOTS = 5;
-    private static final int VERTICAL_GAP_SLOTS = 5;
 
     private AdaptiveBackground mBackground;
     private SlotView mSlotView;
@@ -80,11 +78,13 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
             mContext.getStateManager().startState(AlbumPage.class, data);
         } else {
             mSelectionManager.selectSlot(slotIndex);
+            mSlotView.invalidate();
         }
     }
 
     public void onLongTap(int slotIndex) {
         mSelectionManager.switchSelectionMode(slotIndex);
+        mSlotView.invalidate();
     }
 
     public GalleryPage() {}
@@ -120,28 +120,25 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
 
     private void intializeData() {
         MediaSet mediaSet = mContext.getDataManager().getRootSet();
-        mSlotView.setModel(new MediaSetSlotAdapter(
+        mSlotView.setListener(new MediaSetSlotAdapter(
                 mContext.getAndroidContext(), mediaSet, mSlotView, mSelectionManager));
     }
 
     private void initializeViews() {
+        mSelectionManager = new SelectionManager(mContext.getAndroidContext());
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);
-        mSlotView = new SlotView(mContext.getAndroidContext());
-        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), mSlotView);
+        mSlotView = new SlotView(mContext.getAndroidContext(),
+                mContext.getPositionRepository());
+        mSlotView.setSlotTapListener(this);
+
         mRootPane.addComponent(mSlotView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
         mRootPane.addComponent(mHud);
-        mSlotView.setGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
-        mSlotView.setSlotTapListener(this);
 
         loadBackgroundBitmap(R.drawable.square,
                 R.drawable.potrait, R.drawable.landscape);
         mBackground.setImage(mBgImages[mBgIndex]);
-    }
-
-    public SlotView getSlotView() {
-        return mSlotView;
     }
 
     public void changeBackground() {
