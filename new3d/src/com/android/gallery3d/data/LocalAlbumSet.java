@@ -1,4 +1,18 @@
-// Copyright 2010 Google Inc. All Rights Reserved.
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.android.gallery3d.data;
 
@@ -17,7 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RootMediaSet extends DatabaseMediaSet {
+public class LocalAlbumSet extends DatabaseMediaSet {
     private static final String TITLE = "RootSet";
 
     // Must preserve order between these indices and the order of the terms in
@@ -36,12 +50,12 @@ public class RootMediaSet extends DatabaseMediaSet {
 
     private int mTotalCountCached = -1;
 
-    private final ArrayList<BucketMediaSet>
-            mSubsets = new ArrayList<BucketMediaSet>();
+    private final ArrayList<LocalAlbum>
+            mSubsets = new ArrayList<LocalAlbum>();
 
     private HashMap<Integer, String> mLoadBuffer;
 
-    public RootMediaSet(GalleryContext context) {
+    public LocalAlbumSet(GalleryContext context) {
         super(context);
         invalidate();
     }
@@ -123,14 +137,14 @@ public class RootMediaSet extends DatabaseMediaSet {
 
         GalleryContext context = mContext;
         for (Map.Entry<Integer, String> entry : map.entrySet()) {
-            mSubsets.add(new BucketMediaSet(
+            mSubsets.add(new LocalAlbum(
                     context, entry.getKey(), entry.getValue()));
         }
         mLoadBuffer = null;
 
-        Collections.sort(mSubsets, BucketMediaSet.sNameComparator);
+        Collections.sort(mSubsets, LocalAlbum.sNameComparator);
 
-        for (BucketMediaSet mediaset : mSubsets) {
+        for (LocalAlbum mediaset : mSubsets) {
             mediaset.invalidate();
         }
     }

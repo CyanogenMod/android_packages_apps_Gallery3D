@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.android.gallery3d.data;
 
 import com.android.gallery3d.util.Utils;
@@ -14,14 +30,14 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class ImageMediaItem extends DatabaseMediaItem {
+public class LocalImage extends LocalMediaItem {
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
     private static final int JPEG_MARK_POSITION = 60 * 1024;
 
     private static final int FULLIMAGE_TARGET_SIZE = 2048;
     private static final int FULLIMAGE_MAX_NUM_PIXELS = 5 * 1024 * 1024;
-    private static final String TAG = "ImageMediaItem";
+    private static final String TAG = "LocalImage";
 
     // Must preserve order between these indices and the order of the terms in
     // PROJECTION_IMAGES.
@@ -52,7 +68,7 @@ public class ImageMediaItem extends DatabaseMediaItem {
 
     private int mRotation;
 
-    protected ImageMediaItem(ImageService imageService) {
+    protected LocalImage(ImageService imageService) {
         super(imageService);
     }
 
@@ -124,8 +140,8 @@ public class ImageMediaItem extends DatabaseMediaItem {
         }
     }
 
-    public static ImageMediaItem load(ImageService imageService, Cursor cursor) {
-        ImageMediaItem item = new ImageMediaItem(imageService);
+    public static LocalImage load(ImageService imageService, Cursor cursor) {
+        LocalImage item = new LocalImage(imageService);
 
         item.mId = cursor.getInt(INDEX_ID);
         item.mCaption = cursor.getString(INDEX_CAPTION);
