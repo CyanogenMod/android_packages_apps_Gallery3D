@@ -47,6 +47,8 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     private int mBgIndex = 0;
     private int mBucketIndex;
 
+    protected SelectionManager mSelectionManager;
+
     private GLView mRootPane = new GLView() {
         @Override
         protected void onLayout(
@@ -60,8 +62,6 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
             mSlotView.layout(0, slotViewTop, right - left, slotViewBottom);
         }
     };
-
-    protected SelectionManager mSelectionManager;
 
     @Override
     public void onBackPressed() {
@@ -81,11 +81,13 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
             mContext.getStateManager().startState(PhotoPage.class, data);
         } else {
             mSelectionManager.selectSlot(slotIndex);
+            mSlotView.invalidate();
         }
     }
 
     public void onLongTap(int slotIndex) {
         mSelectionManager.switchSelectionMode(slotIndex);
+        mSlotView.invalidate();
     }
 
     @Override
@@ -115,12 +117,13 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     private void initializeViews() {
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);
-        mSlotView = new SlotView(mContext.getAndroidContext());
-        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), mSlotView);
+        mSlotView = new SlotView(mContext.getAndroidContext(), mContext.getPositionRepository());
+
+        mSelectionManager = new SelectionManager(mContext.getAndroidContext());
         mRootPane.addComponent(mSlotView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
         mRootPane.addComponent(mHud);
-        mSlotView.setGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
+        mSlotView.setSlotGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
         mSlotView.setSlotTapListener(this);
 
         loadBackgroundBitmap(R.drawable.square,
@@ -131,7 +134,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     private void intializeData(Bundle data) {
         mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
         MediaSet mediaSet = mContext.getDataManager().getSubMediaSet(mBucketIndex);
-        mSlotView.setModel(new GridSlotAdapter(mContext.getAndroidContext(),
+        mSlotView.setListener(new GridSlotAdapter(mContext.getAndroidContext(),
                 mediaSet, mSlotView, mSelectionManager));
     }
 

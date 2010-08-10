@@ -25,6 +25,7 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.ui.GLRootView;
+import com.android.gallery3d.ui.PositionRepository;
 
 public final class Gallery extends Activity implements GalleryContext {
     public static final String REVIEW_ACTION = "com.android.gallery3d.app.REVIEW";
@@ -35,6 +36,7 @@ public final class Gallery extends Activity implements GalleryContext {
     private StateManager mStateManager;
     private ImageService mImageService;
     private DataManager mDataManager;
+    private PositionRepository mPositionRepository = new PositionRepository();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -116,5 +118,9 @@ public final class Gallery extends Activity implements GalleryContext {
 
     public GLRootView getGLRootView() {
         return mGLRootView;
+    }
+
+    public PositionRepository getPositionRepository() {
+        return mPositionRepository;
     }
 }

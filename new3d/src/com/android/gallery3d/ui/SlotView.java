@@ -16,49 +16,66 @@
 
 package com.android.gallery3d.ui;
 
-import com.android.gallery3d.util.Utils;
-
 import android.content.Context;
+import android.graphics.Rect;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.animation.DecelerateInterpolator;
 
-public class SlotView extends GLView implements SelectionManager.SelectionChangeListener {
-    private static final int MAX_VELOCITY = 2500;
-    private static final int NOT_AT_SLOTPOSITION = -1;
+import com.android.gallery3d.anim.Animation;
+import com.android.gallery3d.ui.PositionRepository.Position;
+import com.android.gallery3d.util.Utils;
 
-    public static interface Model {
-        public int size();
-        public int getSlotHeight();
-        public int getSlotWidth();
-        public void putSlot(int index, int x, int y, DisplayItemPanel panel);
-        public void freeSlot(int index, DisplayItemPanel panel);
+import java.util.LinkedHashMap;
+
+public class SlotView extends GLView {
+    private static final int MAX_VELOCITY = 2500;
+    private static final int INDEX_NONE = -1;
+
+    public static interface Listener {
+        public void onLayoutChanged(int width, int height);
+        public void onScrollPositionChanged(int position);
     }
 
-    private Model mModel;
-    private final DisplayItemPanel mPanel;
-
-    private int mSlotCount;
-    private int mVerticalGap;
-    private int mHorizontalGap;
-    private int mSlotWidth;
-    private int mSlotHeight;
-    private int mRowCount;
-    private int mScrollLimit;
-
-    private int mVisibleStart = 0;
-    private int mVisibleEnd = 0;
+    public interface SlotTapListener {
+        public void onSingleTapUp(int index);
+        public void onLongTap(int index);
+    }
 
     private final GestureDetector mGestureDetector;
     private final ScrollerHelper mScroller;
-    private SlotTapListener mSlotTapListener;
+    private final PositionRepository mPositions;
 
-    public SlotView(Context context) {
-        mPanel = new DisplayItemPanel();
-        super.addComponent(mPanel);
+    private SlotTapListener mSlotTapListener;
+    private Listener mListener;
+
+    private int mTransitionOffsetX;
+
+    // Use linked hash map to keep the rendering order
+    private LinkedHashMap<Long, ItemEntry> mItems =
+            new LinkedHashMap<Long, ItemEntry>();
+
+    private MyAnimation mAnimation = null;
+    private final Position mTempPosition = new Position();
+    private final Layout mLayout = new Layout();
+
+    public SlotView(Context context, PositionRepository repository) {
+        mPositions = repository;
         mGestureDetector =
                 new GestureDetector(context, new MyGestureListener());
         mScroller = new ScrollerHelper(context, new DecelerateInterpolator(1));
+    }
+
+    public void setSlotSize(int slotWidth, int slotHeight) {
+        mLayout.setSlotSize(slotWidth, slotHeight);
+    }
+
+    public void setSlotGaps(int horizontalGap, int verticalGap) {
+        mLayout.setSlotGaps(horizontalGap, verticalGap);
+    }
+
+    public void setListener(Listener listener) {
+        mListener = listener;
     }
 
     @Override
@@ -71,85 +88,56 @@ public class SlotView extends GLView implements SelectionManager.SelectionChange
         throw new UnsupportedOperationException();
     }
 
-    public void setModel(Model model) {
-        if (model == mModel) return;
-        if (mModel != null) {
-            // free all the slot in the old model
-            setVisibleRange(0, 0);
-        }
-        mModel = model;
-        notifyDataChanged();
-    }
-
-    private void initializeLayoutParams() {
-        mSlotCount = mModel.size();
-        mSlotWidth = mModel.getSlotWidth();
-        mSlotHeight = mModel.getSlotHeight();
-        int rowCount = (getHeight() - mVerticalGap)
-                / (mVerticalGap + mSlotHeight);
-        if (rowCount == 0) rowCount = 1;
-        mRowCount = rowCount;
-        mScrollLimit = ((mSlotCount + rowCount - 1) / rowCount)
-                * (mHorizontalGap + mSlotWidth)
-                + mHorizontalGap - getWidth();
-        if (mScrollLimit < 0) mScrollLimit = 0;
-    }
-
     @Override
     protected void onLayout(boolean changeSize, int l, int t, int r, int b) {
-        mPanel.layout(0, 0, r - l, b - t);
-        mVisibleStart = 0;
-        mVisibleEnd = 0;
-//        mPanel.prepareTransition();
-        initializeLayoutParams();
-        // The scroll limit could be changed
-        setScrollPosition(mPanel.mScrollX, true);
-//        mPanel.startTransition();
+        if (!changeSize) return;
+        mLayout.setSize(r - l, b - t);
+        if (mListener != null) mListener.onLayoutChanged(r - l, b - t);
+    }
+
+    public void startTransition() {
+        mAnimation = new MyAnimation();
+        mAnimation.start();
+        mTransitionOffsetX = mScrollX;
+        if (mItems.size() != 0) invalidate();
+    }
+
+    public void savePositions() {
+        mPositions.clear();
+        for (ItemEntry entry : mItems.values()) {
+            Position position = entry.target.clone();
+            position.x -= mScrollX;
+            mPositions.putPosition(entry.item.getIdentity(), position);
+        }
     }
 
     private void setScrollPosition(int position, boolean force) {
-        position = Utils.clamp(position, 0, mScrollLimit);
-        if (!force && position == mPanel.mScrollX) return;
-        mPanel.mScrollX = position;
-
-        int colWidth = mHorizontalGap + mSlotWidth;
-        int rowHeight = mVerticalGap + mSlotHeight;
-        int startColumn = position / colWidth;
-        int endColumn = (position + getWidth() + mSlotWidth - 1) / colWidth;
-        setVisibleRange(startColumn, endColumn);
-        invalidate();
+        position = Utils.clamp(position, 0, mLayout.mContentLength);
+        if (!force && position == mScrollX) return;
+        mScrollX = position;
+        mLayout.setScrollPosition(position);
+        if (mListener != null) mListener.onScrollPositionChanged(position);
     }
 
-    public void notifyDataChanged() {
-        // free all slots in previous data
-        setVisibleRange(0, 0);
-
-        if (mModel != null) initializeLayoutParams();
-        setScrollPosition(0, true);
-        notifyDataInvalidate();
-    }
-
-    public void notifyDataInvalidate() {
-        invalidate();
-    }
-
-    public void onSelectionChange(int index) {
-        notifySlotInvalidate(index);
-    }
-
-    public void onSelectionModeChange() {
-        for (int i = mVisibleStart; i < mVisibleEnd; i++) {
-            for (int j = 0; j < mRowCount; j++) {
-                notifySlotInvalidate(i * mRowCount + j);
-            }
+    public void putDisplayItem(Position target, DisplayItem item) {
+        Long identity = Long.valueOf(item.getIdentity());
+        Position source = mPositions.get(identity);
+        if (source == null) {
+            source = target.clone();
+            source.alpha = 0f;
+        } else {
+            source = source.clone();
+            source.x += mTransitionOffsetX;
         }
+        mItems.put(identity, new ItemEntry(item, source, target));
     }
 
-    @Override
-    protected boolean dispatchTouchEvent(MotionEvent event) {
-        // Don't pass the event to the child (MediaDisplayPanel).
-        // Handle it here
-        return onTouch(event);
+    public Rect getSlotRect(int slotIndex) {
+        return mLayout.getSlotRect(slotIndex);
+    }
+
+    public void removeDisplayItem(DisplayItem item) {
+        mItems.remove(item.getIdentity());
     }
 
     @Override
@@ -163,76 +151,181 @@ public class SlotView extends GLView implements SelectionManager.SelectionChange
         return true;
     }
 
+
+    public void setSlotTapListener(SlotTapListener listener) {
+        mSlotTapListener = listener;
+    }
+
     @Override
     protected void render(GLCanvas canvas) {
         super.render(canvas);
-        if (mScroller.computeScrollOffset(canvas.currentAnimationTimeMillis())) {
-            setScrollPosition(mScroller.getCurrentPosition(), false);
-            invalidate();
+        long currentTimeMillis = canvas.currentAnimationTimeMillis();
+        boolean more = mScroller.computeScrollOffset(currentTimeMillis);
+        setScrollPosition(mScroller.getCurrentPosition(), false);
+        float interpolate = 1f;
+        if (mAnimation != null) {
+            more |= mAnimation.calculate(currentTimeMillis);
+            interpolate = mAnimation.value;
+        }
+        canvas.translate(-mScrollX, 0, 0);
+        for (ItemEntry entry : mItems.values()) {
+            renderItem(canvas, entry, interpolate);
+        }
+        canvas.translate(mScrollX, 0, 0);
+
+        if (more) invalidate();
+    }
+
+    private void renderItem(
+            GLCanvas canvas, ItemEntry entry, float interpolate) {
+        canvas.save(GLCanvas.SAVE_FLAG_ALPHA | GLCanvas.SAVE_FLAG_MATRIX);
+        Position position = mTempPosition;
+        Position.interpolate(entry.source, entry.target, position, interpolate);
+        canvas.multiplyAlpha(position.alpha);
+        canvas.translate(position.x, position.y, position.z);
+        canvas.rotate(position.theta, 0, 0, 1);
+        entry.item.render(canvas);
+        canvas.restore();
+    }
+
+    public static class MyAnimation extends Animation {
+        public float value;
+
+        public MyAnimation() {
+            setInterpolator(new DecelerateInterpolator(4));
+        }
+
+        @Override
+        protected void onCalculate(float progress) {
+            value = progress;
         }
     }
 
-    private void freeSlotsInColumn(int columnIndex) {
-        int rowCount = mRowCount;
-        DisplayItemPanel panel = mPanel;
-        for (int i = columnIndex * rowCount,
-                n = Math.min(mSlotCount, i + rowCount); i < n; ++i) {
-            mModel.freeSlot(i, panel);
+    private static class ItemEntry {
+        public DisplayItem item;
+        public Position source;
+        public Position target;
+
+        public ItemEntry(DisplayItem item, Position source, Position target) {
+            this.item = item;
+            this.source = source;
+            this.target = target;
         }
     }
 
-    private void putSlotsInColumn(int columnIndex) {
-        int x = columnIndex * (mHorizontalGap + mSlotWidth) + mHorizontalGap;
-        int y = mVerticalGap;
-        int rowHeight = mVerticalGap + mSlotHeight;
-        int rowCount = mRowCount;
+    public static class Layout {
 
-        DisplayItemPanel panel = mPanel;
-        for (int i = columnIndex * rowCount,
-                n = Math.min(mSlotCount, i + rowCount); i < n; ++i) {
-            mModel.putSlot(i, x, y, panel);
-            y += rowHeight;
-        }
-    }
+        private int mVisibleStart;
+        private int mVisibleEnd;
 
-    public void notifySlotInvalidate(int slotIndex) {
-        int columnIndex = slotIndex / mRowCount;
-        if (columnIndex >= mVisibleStart && columnIndex < mVisibleEnd) {
-            mModel.freeSlot(slotIndex, mPanel);
-            int x = columnIndex * (mHorizontalGap + mSlotWidth) + mHorizontalGap;
-            int rowIndex = slotIndex - (columnIndex * mRowCount);
-            int y = mVerticalGap + (mVerticalGap + mSlotHeight) * rowIndex;
-            mModel.putSlot(slotIndex, x, y, mPanel);
-        }
-    }
+        private int mSlotCount;
+        private int mSlotWidth;
+        private int mSlotHeight;
 
-    // start: inclusive, end: exclusive
-    private void setVisibleRange(int start, int end) {
-        if (start == mVisibleStart && end == mVisibleEnd) return;
-        int rowCount = mRowCount;
-        if (start >= mVisibleEnd || end <= mVisibleStart) {
-            for (int i = mVisibleStart, n = mVisibleEnd; i < n; ++i) {
-                freeSlotsInColumn(i);
-            }
-            for (int i = start; i < end; ++i) {
-                putSlotsInColumn(i);
-            }
-        } else {
-            for (int i = mVisibleStart; i < start; ++i) {
-                freeSlotsInColumn(i);
-            }
-            for (int i = end, n = mVisibleEnd; i < n; ++i) {
-                freeSlotsInColumn(i);
-            }
-            for (int i = start, n = mVisibleStart; i < n; ++i) {
-                putSlotsInColumn(i);
-            }
-            for (int i = mVisibleEnd; i < end; ++i) {
-                putSlotsInColumn(i);
-            }
+        private int mWidth;
+        private int mHeight;
+
+        private int mVerticalGap;
+        private int mHorizontalGap;
+
+        private int mRowCount;
+        private int mContentLength;
+        private int mScrollPosition;
+
+        public void setSlotSize(int slotWidth, int slotHeight) {
+            mSlotWidth = slotWidth;
+            mSlotHeight = slotHeight;
         }
-        mVisibleStart = start;
-        mVisibleEnd = end;
+
+        public void setSlotCount(int slotCount) {
+            mSlotCount = slotCount;
+            initLayoutParameters();
+        }
+
+        public void setSlotGaps(int horizontalGap, int verticalGap) {
+            mHorizontalGap = horizontalGap;
+            mVerticalGap = verticalGap;
+            initLayoutParameters();
+        }
+
+        public Rect getSlotRect(int index) {
+            int col = index / mRowCount;
+            int row = index - col * mRowCount;
+
+            int x = col * (mHorizontalGap + mSlotWidth) + mHorizontalGap;
+            int y = row * (mVerticalGap + mSlotHeight) + mVerticalGap;
+            return new Rect(x, y, x + mSlotWidth, y + mSlotHeight);
+        }
+
+        public int getContentLength() {
+            return mContentLength;
+        }
+
+        private void initLayoutParameters() {
+            int rowCount = (mHeight - mVerticalGap) / (mVerticalGap + mSlotHeight);
+            if (rowCount == 0) rowCount = 1;
+            mRowCount = rowCount;
+            mContentLength = ((mSlotCount + rowCount - 1) / rowCount)
+                    * (mHorizontalGap + mSlotWidth) + mHorizontalGap - mWidth;
+            if (mContentLength < 0) mContentLength = 0;
+            updateVisibleSlotRange();
+        }
+
+        public void setSize(int width, int height) {
+            mWidth = width;
+            mHeight = height;
+            initLayoutParameters();
+        }
+
+        private void updateVisibleSlotRange() {
+            int position = mScrollPosition;
+            int colWidth = mHorizontalGap + mSlotWidth;
+            int rowHeight = mVerticalGap + mSlotHeight;
+            int startColumn = position / colWidth;
+            int endColumn = (position + mWidth + mSlotWidth - 1) / colWidth;
+
+            setVisibleRange(startColumn * mRowCount,
+                    Math.min(mSlotCount, endColumn * mRowCount));
+        }
+
+        public void setScrollPosition(int position) {
+            if (mScrollPosition == position) return;
+            mScrollPosition = position;
+            updateVisibleSlotRange();
+        }
+
+        private void setVisibleRange(int start, int end) {
+            if (start == mVisibleStart && end == mVisibleEnd) return;
+            mVisibleStart = start;
+            mVisibleEnd = end;
+        }
+
+        public int getVisibleStart() {
+            return mVisibleStart;
+        }
+
+        public int getVisibleEnd() {
+            return mVisibleEnd;
+        }
+
+        public int getSlotIndexByPosition(float x, float y) {
+            int columnWidth = mHorizontalGap + mSlotWidth;
+            float absoluteX = x + mScrollPosition;
+            int columnIdx = (int) (absoluteX + 0.5) / columnWidth;
+            if ((absoluteX - columnWidth * columnIdx) < mHorizontalGap) {
+                return INDEX_NONE;
+            }
+
+            int rowHeight = mVerticalGap + mSlotHeight;
+            float absoluteY = y;
+            int rowIdx = (int) (absoluteY + 0.5) / rowHeight;
+            if (((absoluteY - rowHeight * rowIdx) < mVerticalGap)
+                || rowIdx >= mRowCount) {
+                return INDEX_NONE;
+            }
+            int index = columnIdx * mRowCount + rowIdx;
+            return index >= mSlotCount ? INDEX_NONE : index;
+        }
     }
 
     private class MyGestureListener
@@ -241,9 +334,10 @@ public class SlotView extends GLView implements SelectionManager.SelectionChange
         @Override
         public boolean onFling(MotionEvent e1,
                 MotionEvent e2, float velocityX, float velocityY) {
-            if (mScrollLimit == 0) return false;
+            int contentLength = mLayout.mContentLength;
+            if (contentLength == 0) return false;
             velocityX = Utils.clamp(velocityX, -MAX_VELOCITY, MAX_VELOCITY);
-            mScroller.fling(mPanel.mScrollX, -(int) velocityX, 0, mScrollLimit);
+            mScroller.fling(mScrollX, -(int) velocityX, 0, contentLength);
             invalidate();
             return true;
         }
@@ -251,70 +345,35 @@ public class SlotView extends GLView implements SelectionManager.SelectionChange
         @Override
         public boolean onScroll(MotionEvent e1,
                 MotionEvent e2, float distanceX, float distanceY) {
-            if (mScrollLimit == 0) return false;
-            setScrollPosition(mPanel.mScrollX + (int) distanceX, false);
+            if (mLayout.mContentLength == 0) return false;
+            setScrollPosition(mScrollX + (int) distanceX, false);
             invalidate();
             return true;
         }
 
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
-            float x = e.getX();
-            float y = e.getY();
-            int index = getSlotIndexByPosition(x, y);
-            if (index != SlotView.NOT_AT_SLOTPOSITION) {
-                mSlotTapListener.onSingleTapUp(index);
-            }
+            int index = mLayout.getSlotIndexByPosition(e.getX(), e.getY());
+            if (index != INDEX_NONE) mSlotTapListener.onSingleTapUp(index);
             return true;
         }
 
         @Override
         public void onLongPress(MotionEvent e) {
-          float x = e.getX();
-          float y = e.getY();
-          int index = getSlotIndexByPosition(x, y);
-          if (index != SlotView.NOT_AT_SLOTPOSITION) {
-              mSlotTapListener.onLongTap(index);
-          }
+            int index = mLayout.getSlotIndexByPosition(e.getX(), e.getY());
+            if (index != INDEX_NONE) mSlotTapListener.onLongTap(index);
         }
+   }
+
+    public void setSlotCount(int slotCount) {
+        mLayout.setSlotCount(slotCount);
     }
 
-    public void setSlotTapListener(SlotTapListener listener) {
-        mSlotTapListener = listener;
+    public int getVisibleStart() {
+        return mLayout.getVisibleStart();
     }
 
-    private int getSlotIndexByPosition(float x, float y) {
-        int columnWidth = mHorizontalGap + mSlotWidth;
-        float absoluteX = x + mPanel.mScrollX;
-        int columnIdx = (int) (absoluteX + 0.5) / columnWidth;
-        if ((absoluteX - columnWidth * columnIdx) < mHorizontalGap) {
-            return NOT_AT_SLOTPOSITION;
-        }
-
-        int rowHeight = mVerticalGap + mSlotHeight;
-        float absoluteY = y + mPanel.mScrollY;
-        int rowIdx = (int) (absoluteY + 0.5) / rowHeight;
-        if (((absoluteY - rowHeight * rowIdx) < mVerticalGap)
-            || rowIdx >= mRowCount) {
-            return NOT_AT_SLOTPOSITION;
-        }
-        int index = columnIdx * mRowCount + rowIdx;
-        return index >= mSlotCount ? NOT_AT_SLOTPOSITION : index;
-    }
-
-    public interface SlotTapListener {
-        public void onSingleTapUp(int slotIndex);
-        public void onLongTap(int slotIndex);
-    }
-
-    public void setGaps(int horizontalGap, int verticalGap) {
-        if (mHorizontalGap != horizontalGap || mVerticalGap != verticalGap) {
-            mHorizontalGap = horizontalGap;
-            mVerticalGap = verticalGap;
-            if (mModel != null) {
-                initializeLayoutParams();
-                invalidate();
-            }
-        }
+    public int getVisibleEnd() {
+        return mLayout.getVisibleEnd();
     }
 }

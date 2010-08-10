@@ -29,6 +29,7 @@ public class SelectionDrawer {
     private final ResourceTexture mCheckedItem;
     private final ResourceTexture mUnCheckedItem;
     private boolean mSelectionMode;
+
     public SelectionDrawer(Context context) {
         mFrame = new NinePatchTexture(context, R.drawable.grid_frame);
         mCheckedItem = new ResourceTexture(context, R.drawable.grid_check_on);
