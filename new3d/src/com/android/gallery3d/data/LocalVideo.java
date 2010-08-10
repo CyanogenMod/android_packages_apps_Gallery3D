@@ -21,9 +21,7 @@ import com.android.gallery3d.util.Utils;
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
-import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.Video.VideoColumns;
 
 public class LocalVideo extends LocalMediaItem {
@@ -31,7 +29,7 @@ public class LocalVideo extends LocalMediaItem {
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
 
     // Must preserve order between these indices and the order of the terms in
-    // PROJECTION_VIDEOS.
+    // PROJECTION.
     private static final int INDEX_ID = 0;
     private static final int INDEX_CAPTION = 1;
     private static final int INDEX_MIME_TYPE = 2;
@@ -43,7 +41,7 @@ public class LocalVideo extends LocalMediaItem {
     private static final int INDEX_DATA = 8;
     private static final int INDEX_DURATION = 9;
 
-    private static final String[] PROJECTION_VIDEOS = new String[] {
+    static final String[] PROJECTION = new String[] {
             VideoColumns._ID,
             VideoColumns.TITLE,
             VideoColumns.MIME_TYPE,
@@ -55,10 +53,15 @@ public class LocalVideo extends LocalMediaItem {
             VideoColumns.DATA,
             VideoColumns.DURATION};
 
+    private long mUniqueId;
     public int mDurationInSec;
 
     protected LocalVideo(ImageService imageService) {
         super(imageService);
+    }
+
+    public long getUniqueId() {
+        return mUniqueId;
     }
 
     @Override
@@ -74,10 +77,10 @@ public class LocalVideo extends LocalMediaItem {
             case TYPE_FULL_IMAGE:
             case TYPE_THUMBNAIL:
                 return Video.Thumbnails.getThumbnail(
-                        resolver, mId, Images.Thumbnails.MINI_KIND, null);
+                        resolver, mId, Video.Thumbnails.MINI_KIND, null);
             case TYPE_MICROTHUMBNAIL:
                 Bitmap bitmap = Video.Thumbnails.getThumbnail(
-                        resolver, mId, Images.Thumbnails.MINI_KIND, null);
+                        resolver, mId, Video.Thumbnails.MINI_KIND, null);
                 return bitmap == null
                         ? null
                         : Utils.resize(bitmap, MICRO_TARGET_PIXELS);
@@ -86,8 +89,15 @@ public class LocalVideo extends LocalMediaItem {
         }
     }
 
-    public static LocalVideo load(ImageService imageService, Cursor cursor) {
-        LocalVideo item = new LocalVideo(imageService);
+    public static LocalVideo load(ImageService imageService, Cursor cursor,
+            DataManager dataManager) {
+        int itemId = cursor.getInt(INDEX_ID);
+        long uniqueId = DataManager.makeId(DataManager.ID_LOCAL_VIDEO, itemId);
+        LocalVideo item = (LocalVideo) dataManager.getFromCache(uniqueId);
+        if (item != null) return item;
+
+        item = new LocalVideo(imageService);
+        dataManager.putToCache(uniqueId, item);
 
         item.mId = cursor.getInt(INDEX_ID);
         item.mCaption = cursor.getString(INDEX_CAPTION);
@@ -99,22 +109,8 @@ public class LocalVideo extends LocalMediaItem {
         item.mDateModifiedInSec = cursor.getLong(INDEX_DATE_MODIFIED);
         item.mFilePath = cursor.getString(INDEX_DATA);
         item.mDurationInSec = cursor.getInt(INDEX_DURATION);
+        item.mUniqueId = uniqueId;
 
         return item;
     }
-
-    public static Cursor queryVideoInBucket(
-            ContentResolver resolver, int bucketId) {
-
-        // Build the where clause
-        StringBuilder builder = new StringBuilder(ImageColumns.BUCKET_ID);
-        builder.append(" = ").append(bucketId);
-        String whereClause = builder.toString();
-
-        return resolver.query(
-                Video.Media.EXTERNAL_CONTENT_URI,
-                PROJECTION_VIDEOS, whereClause, null, null);
-    }
-
-
 }

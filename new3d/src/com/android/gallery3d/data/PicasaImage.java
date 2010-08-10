@@ -40,15 +40,18 @@ public class PicasaImage extends MediaItem {
     private final GalleryContext mContext;
     private final PhotoEntry mData;
     private final BlobCache mPicasaCache;
+    private final long mUniqueId;
 
     public PicasaImage(GalleryContext context, PhotoEntry entry) {
         mContext = context;
         mData = entry;
         mPicasaCache = mContext.getDataManager().getPicasaCache();
+        mUniqueId = DataManager.makeId(
+                DataManager.ID_PICASA_IMAGE, (int) entry.id);
     }
 
-    public String getTitle() {
-        return null;
+    public long getUniqueId() {
+        return mUniqueId;
     }
 
     public synchronized Future<Bitmap>

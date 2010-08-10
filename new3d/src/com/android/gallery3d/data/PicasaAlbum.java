@@ -16,85 +16,94 @@
 
 package com.android.gallery3d.data;
 
+import android.content.ContentResolver;
 import android.database.Cursor;
+import android.net.Uri;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.picasa.AlbumEntry;
 import com.android.gallery3d.picasa.EntrySchema;
 import com.android.gallery3d.picasa.PhotoEntry;
 import com.android.gallery3d.picasa.PicasaContentProvider;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 
-public class PicasaAlbum extends DatabaseMediaSet {
-    private static final int MAX_COVER_COUNT = 4;
+public class PicasaAlbum extends MediaSet {
+    private static final String TAG = "PicasaAlbum";
     private static final EntrySchema SCHEMA = PhotoEntry.SCHEMA;
-    private static final String WHERECLAUSE = PhotoEntry.Columns.ALBUM_ID
+    private static final String WHERE_CLAUSE = PhotoEntry.Columns.ALBUM_ID
             + " = ?";
+    private static final String[] COUNT_PROJECTION = { "count(*)" };
 
     private final AlbumEntry mData;
-    private final ArrayList<PicasaImage> mPhotos = new ArrayList<PicasaImage>();
-    private final ArrayList<PicasaImage> mLoadBuffer = new ArrayList<PicasaImage>();
+    private final ContentResolver mResolver;
+    private long mUniqueId;
+    private GalleryContext mContext;
 
     public PicasaAlbum(GalleryContext context, AlbumEntry entry) {
-        super(context);
+        mContext = context;
+        mResolver = context.getContentResolver();
         mData = entry;
+        mUniqueId = DataManager.makeId(
+                DataManager.ID_PICASA_ALBUM, (int) entry.id);
     }
 
-    public MediaItem[] getCoverMediaItems() {
-        int size = Math.min(MAX_COVER_COUNT, mPhotos.size());
-        MediaItem items[] = new MediaItem[size];
-        for (int i = 0; i < size; ++i) {
-            items[i] = mPhotos.get(i);
-        }
-        return items;
+    public long getId() {
+        return mUniqueId;
     }
 
-    public MediaItem getMediaItem(int index) {
-        return mPhotos.get(index);
-    }
+    public ArrayList<MediaItem> getMediaItem(int start, int count) {
+        Uri uri = PicasaContentProvider.PHOTOS_URI.buildUpon()
+                .appendQueryParameter("limit", start + "," + count).build();
 
-    public int getMediaItemCount() {
-        return mPhotos.size();
-    }
-
-    public MediaSet getSubMediaSet(int index) {
-        throw new IndexOutOfBoundsException();
-    }
-
-    public int getSubMediaSetCount() {
-        return 0;
-    }
-
-    public String getTitle() {
-        return null;
-    }
-
-    public int getTotalMediaItemCount() {
-        return mPhotos.size();
-    }
-
-    @Override
-    protected void onLoadFromDatabase() {
-        Cursor cursor = mContext.getContentResolver().query(
-                PicasaContentProvider.PHOTOS_URI,
-                SCHEMA.getProjection(), WHERECLAUSE,
-                new String[] {String.valueOf(mData.id)},
+        ArrayList<MediaItem> list = new ArrayList<MediaItem>();
+        Cursor cursor = mResolver.query(uri,
+                SCHEMA.getProjection(), WHERE_CLAUSE,
+                new String[]{String.valueOf(mData.id)},
                 PhotoEntry.Columns.DISPLAY_INDEX);
+
         try {
             while (cursor.moveToNext()) {
                 PhotoEntry entry = SCHEMA.cursorToObject(cursor, new PhotoEntry());
-                mLoadBuffer.add(new PicasaImage(mContext, entry));
+                DataManager dataManager = mContext.getDataManager();
+                long uniqueId = DataManager.makeId(
+                        DataManager.ID_PICASA_IMAGE, (int) entry.id);
+                MediaItem item = dataManager.getFromCache(uniqueId);
+                if (item == null) {
+                    item = new PicasaImage(mContext, entry);
+                    dataManager.putToCache(uniqueId, item);
+                }
+                list.add(item);
             }
+        } finally {
+            cursor.close();
+        }
+        return list;
+    }
+
+    public int getMediaItemCount() {
+        Cursor cursor = mResolver.query(
+                PicasaContentProvider.PHOTOS_URI,
+                COUNT_PROJECTION, WHERE_CLAUSE,
+                new String[]{String.valueOf(mData.id)}, null);
+        try {
+            Utils.Assert(cursor.moveToNext());
+            return cursor.getInt(0);
         } finally {
             cursor.close();
         }
     }
 
-    @Override
-    protected void onUpdateContent() {
-        mPhotos.clear();
-        mPhotos.addAll(mLoadBuffer);
-        mLoadBuffer.clear();
+    public String getName() {
+        return TAG;
+    }
+
+    public int getTotalMediaItemCount() {
+        return getMediaItemCount();
+    }
+
+    public void reload() {
+        // do nothing
     }
 }

@@ -26,4 +26,5 @@ public class GLRootStub implements GLRoot {
     public boolean hasStencil() { return true; }
     public void lockRenderThread() {}
     public void unlockRenderThread() {}
+    public void setContentPane(GLView content) {}
 }

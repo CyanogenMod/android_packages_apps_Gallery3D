@@ -16,7 +16,6 @@
 
 package com.android.gallery3d.data;
 
-import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore.Images;
@@ -32,11 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LocalAlbumSet extends DatabaseMediaSet {
-    private static final String TITLE = "RootSet";
+    private static final String TAG = "LocalAlbumSet";
 
-    // Must preserve order between these indices and the order of the terms in
-    // BUCKET_PROJECTION_IMAGES, BUCKET_PROJECTION_VIDEOS.
-    // Not using SortedHashMap for efficiency reasons.
     private static final int BUCKET_ID_INDEX = 0;
     private static final int BUCKET_NAME_INDEX = 1;
 
@@ -48,77 +44,61 @@ public class LocalAlbumSet extends DatabaseMediaSet {
             VideoColumns.BUCKET_ID,
             VideoColumns.BUCKET_DISPLAY_NAME };
 
-    private int mTotalCountCached = -1;
+    private final String[] mProjection;
+    private final Uri mBaseUri;
 
-    private final ArrayList<LocalAlbum>
-            mSubsets = new ArrayList<LocalAlbum>();
-
+    private boolean mIsImage;
+    private long mUniqueId;
+    private final ArrayList<LocalAlbum> mAlbums = new ArrayList<LocalAlbum>();
     private HashMap<Integer, String> mLoadBuffer;
 
-    public LocalAlbumSet(GalleryContext context) {
+    public LocalAlbumSet(GalleryContext context, boolean isImage) {
         super(context);
-        invalidate();
+        mIsImage = isImage;
+        if (isImage) {
+            mProjection = PROJECTION_IMAGE_BUCKETS;
+            mBaseUri = Images.Media.EXTERNAL_CONTENT_URI;
+            mUniqueId = DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM_SET, 0);
+        } else {
+            mProjection = PROJECTION_VIDEO_BUCKETS;
+            mBaseUri = Video.Media.EXTERNAL_CONTENT_URI;
+            mUniqueId = DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM_SET, 0);
+        }
     }
 
-    public MediaItem[] getCoverMediaItems() {
-        return new MediaItem[0];
-    }
-
-    public MediaItem getMediaItem(int index) {
-        throw new IndexOutOfBoundsException();
-    }
-
-    public synchronized int getMediaItemCount() {
-        return 0;
+    public long getId() {
+        return mUniqueId;
     }
 
     public synchronized MediaSet getSubMediaSet(int index) {
-        return mSubsets.get(index);
+        return mAlbums.get(index);
     }
 
     public synchronized int getSubMediaSetCount() {
-        return mSubsets.size();
+        return mAlbums.size();
     }
 
-    public String getTitle() {
-        return TITLE;
+    public String getName() {
+        return TAG;
     }
 
     public int getTotalMediaItemCount() {
-        if (mTotalCountCached >= 0) return mTotalCountCached;
         int total = 0;
-        for (MediaSet subset : mSubsets) {
-            total += subset.getTotalMediaItemCount();
+        for (MediaSet album : mAlbums) {
+            total += album.getTotalMediaItemCount();
         }
-        mTotalCountCached = total;
         return total;
     }
 
     @Override
     protected void onLoadFromDatabase() {
-
-        ContentResolver resolver = mContext.getContentResolver();
         HashMap<Integer, String> map = new HashMap<Integer, String>();
         mLoadBuffer = map;
 
-        Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI.buildUpon().
+        Uri uri = mBaseUri.buildUpon().
                 appendQueryParameter("distinct", "true").build();
-        Cursor cursor = resolver.query(
-                uriImages, PROJECTION_IMAGE_BUCKETS, null, null, null);
-        if (cursor == null) throw new NullPointerException();
-        try {
-            while (cursor.moveToNext()) {
-                map.put(cursor.getInt(BUCKET_ID_INDEX),
-                        cursor.getString(BUCKET_NAME_INDEX));
-            }
-        } finally {
-            cursor.close();
-        }
-
-        Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI.buildUpon().
-                appendQueryParameter("distinct", "true").build();
-        cursor = resolver.query(
-                uriVideos, PROJECTION_VIDEO_BUCKETS, null, null, null);
+        Cursor cursor = mResolver.query(
+                uri, mProjection, null, null, null);
         if (cursor == null) throw new NullPointerException();
         try {
             while (cursor.moveToNext()) {
@@ -135,17 +115,12 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         HashMap<Integer, String> map = mLoadBuffer;
         if (map == null) throw new IllegalStateException();
 
-        GalleryContext context = mContext;
         for (Map.Entry<Integer, String> entry : map.entrySet()) {
-            mSubsets.add(new LocalAlbum(
-                    context, entry.getKey(), entry.getValue()));
+            mAlbums.add(new LocalAlbum(
+                    mContext, entry.getKey(), entry.getValue(), mIsImage));
         }
         mLoadBuffer = null;
 
-        Collections.sort(mSubsets, LocalAlbum.sNameComparator);
-
-        for (LocalAlbum mediaset : mSubsets) {
-            mediaset.invalidate();
-        }
+        Collections.sort(mAlbums, LocalAlbum.sBucketNameComparator);
     }
 }

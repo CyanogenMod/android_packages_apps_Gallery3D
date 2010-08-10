@@ -29,7 +29,7 @@ import com.android.gallery3d.util.FutureListener;
 //
 public abstract class LocalMediaItem extends MediaItem {
 
-    private static final String TAG = LocalMediaItem.class.getSimpleName();
+    private static final String TAG = "LocalMediaItem";
 
     // database fields
     protected int mId;
@@ -47,15 +47,10 @@ public abstract class LocalMediaItem extends MediaItem {
 
     protected final ImageService mImageService;
 
-    @SuppressWarnings("unchecked")
     protected LocalMediaItem(ImageService imageService) {
         mImageService = imageService;
         mFutureBitmaps = new MyFuture[TYPE_COUNT];
         mRequestId = new int[TYPE_COUNT];
-    }
-
-    public String getTitle() {
-        return mCaption;
     }
 
     public synchronized Future<Bitmap>
@@ -111,5 +106,4 @@ public abstract class LocalMediaItem extends MediaItem {
             cancelImageRequest(mSizeType);
         }
     }
-
 }

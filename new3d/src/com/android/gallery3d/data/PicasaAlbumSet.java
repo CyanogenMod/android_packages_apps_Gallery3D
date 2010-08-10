@@ -26,26 +26,14 @@ import com.android.gallery3d.picasa.PicasaContentProvider;
 import java.util.ArrayList;
 
 public class PicasaAlbumSet extends DatabaseMediaSet {
+    private static final String TAG = "PicasaAlbumSet";
     private final EntrySchema SCHEMA = AlbumEntry.SCHEMA;
 
     private final ArrayList<PicasaAlbum> mAlbums = new ArrayList<PicasaAlbum>();
-    private int mCachedTotalCount = -1;
     private final ArrayList<PicasaAlbum> mLoadBuffer = new ArrayList<PicasaAlbum>();
 
     public PicasaAlbumSet(GalleryContext context) {
         super(context);
-    }
-
-    public MediaItem[] getCoverMediaItems() {
-        throw new UnsupportedOperationException();
-    }
-
-    public MediaItem getMediaItem(int index) {
-        throw new IndexOutOfBoundsException();
-    }
-
-    public int getMediaItemCount() {
-        return 0;
     }
 
     public MediaSet getSubMediaSet(int index) {
@@ -56,24 +44,26 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return mAlbums.size();
     }
 
-    public String getTitle() {
-        return null;
+    public String getName() {
+        return TAG;
+    }
+
+    public long getId() {
+        return DataManager.makeId(DataManager.ID_PICASA_ALBUM_SET, 0);
     }
 
     public int getTotalMediaItemCount() {
-        if (mCachedTotalCount >= 0) return mCachedTotalCount;
         int totalCount = 0;
         for (PicasaAlbum album : mAlbums) {
             totalCount += album.getTotalMediaItemCount();
         }
-        mCachedTotalCount = totalCount;
         return totalCount;
     }
 
     @Override
     protected void onLoadFromDatabase() {
         mLoadBuffer.clear();
-        Cursor cursor = mContext.getContentResolver().query(
+        Cursor cursor = mResolver.query(
                 PicasaContentProvider.ALBUMS_URI,
                 SCHEMA.getProjection(), null, null, null);
         try {
@@ -91,9 +81,5 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         mAlbums.clear();
         mAlbums.addAll(mLoadBuffer);
         mLoadBuffer.clear();
-
-        for (PicasaAlbum album : mAlbums) {
-            album.invalidate();
-        }
     }
 }
