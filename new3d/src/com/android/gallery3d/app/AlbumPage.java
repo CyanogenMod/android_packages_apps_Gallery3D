@@ -25,8 +25,9 @@ import android.os.Message;
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.AdaptiveBackground;
+import com.android.gallery3d.ui.AlbumDataAdapter;
+import com.android.gallery3d.ui.AlbumView;
 import com.android.gallery3d.ui.GLView;
-import com.android.gallery3d.ui.GridSlotAdapter;
 import com.android.gallery3d.ui.HeadUpDisplay;
 import com.android.gallery3d.ui.SelectionManager;
 import com.android.gallery3d.ui.SlotView;
@@ -34,10 +35,12 @@ import com.android.gallery3d.ui.SynchronizedHandler;
 
 public class AlbumPage extends ActivityState implements SlotView.SlotTapListener {
     public static final String KEY_BUCKET_INDEX = "keyBucketIndex";
+
     private static final int CHANGE_BACKGROUND = 1;
     private static final int MARGIN_HUD_SLOTVIEW = 5;
     private static final int HORIZONTAL_GAP_SLOTS = 5;
     private static final int VERTICAL_GAP_SLOTS = 5;
+    private static final int CACHE_SIZE = 64;
 
     private AdaptiveBackground mBackground;
     private SlotView mSlotView;
@@ -134,8 +137,10 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     private void intializeData(Bundle data) {
         mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
         MediaSet mediaSet = mContext.getDataManager().getSubMediaSet(mBucketIndex);
-        mSlotView.setListener(new GridSlotAdapter(mContext.getAndroidContext(),
-                mediaSet, mSlotView, mSelectionManager));
+        AlbumDataAdapter model = new AlbumDataAdapter(
+                mContext, mSelectionManager, mediaSet, CACHE_SIZE);
+        mSlotView.setListener(new AlbumView(
+                mContext.getAndroidContext(), model, mSlotView));
     }
 
     private void changeBackground() {

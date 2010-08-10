@@ -26,8 +26,9 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.AdaptiveBackground;
 import com.android.gallery3d.ui.GLView;
+import com.android.gallery3d.ui.GalleryAdapter;
+import com.android.gallery3d.ui.GalleryView;
 import com.android.gallery3d.ui.HeadUpDisplay;
-import com.android.gallery3d.ui.MediaSetSlotAdapter;
 import com.android.gallery3d.ui.SelectionManager;
 import com.android.gallery3d.ui.SlotView;
 import com.android.gallery3d.ui.SynchronizedHandler;
@@ -36,6 +37,7 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
     private static final int CHANGE_BACKGROUND = 1;
 
     private static final int MARGIN_HUD_SLOTVIEW = 5;
+    private static final int CACHE_SIZE = 32;
 
     private AdaptiveBackground mBackground;
     private SlotView mSlotView;
@@ -120,8 +122,9 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
 
     private void intializeData() {
         MediaSet mediaSet = mContext.getDataManager().getRootSet();
-        mSlotView.setListener(new MediaSetSlotAdapter(
-                mContext.getAndroidContext(), mediaSet, mSlotView, mSelectionManager));
+        GalleryAdapter adapter = new GalleryAdapter(
+                mContext, mSelectionManager, mediaSet, CACHE_SIZE);
+        mSlotView.setListener(new GalleryView(mContext, adapter, mSlotView));
     }
 
     private void initializeViews() {
