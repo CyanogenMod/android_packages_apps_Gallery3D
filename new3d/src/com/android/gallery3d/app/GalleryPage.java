@@ -93,7 +93,7 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
     public void onCreate(Bundle data, Bundle restoreState) {
         initializeViews();
         intializeData();
-        mHandler = new SynchronizedHandler(mContext.getGLRootView()) {
+        mHandler = new SynchronizedHandler(mContext.getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {

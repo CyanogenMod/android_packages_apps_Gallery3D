@@ -26,6 +26,7 @@ import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.DecodeService;
 import com.android.gallery3d.data.DownloadService;
 import com.android.gallery3d.data.ImageService;
+import com.android.gallery3d.ui.GLRoot;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.PositionRepository;
 
@@ -121,7 +122,7 @@ public final class Gallery extends Activity implements GalleryContext {
         return mStateManager;
     }
 
-    public GLRootView getGLRootView() {
+    public GLRoot getGLRoot() {
         return mGLRootView;
     }
 

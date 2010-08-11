@@ -29,16 +29,16 @@ import javax.microedition.khronos.opengles.GL11;
 public interface GLCanvas {
     // Tells GLCanvas the size of the underlying GL surface. This should be
     // called before first drawing and when the size of GL surface is changed.
-    // This is called by GLRootView and should not be called by the clients
+    // This is called by GLRoot and should not be called by the clients
     // who only want to draw on the GLCanvas. Both width and height must be
     // nonnegative.
     public void setSize(int width, int height);
 
-    // Clear the drawing buffers. This should only be used by GLRootView.
+    // Clear the drawing buffers. This should only be used by GLRoot.
     public void clearBuffer();
 
     // This is the time value used to calculate the animation in the current
-    // frame. The "set" function should only called by GLRootView, and the
+    // frame. The "set" function should only called by GLRoot, and the
     // "time" parameter must be nonnegative.
     public void setCurrentAnimationTimeMillis(long time);
     public long currentAnimationTimeMillis();

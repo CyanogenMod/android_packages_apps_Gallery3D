@@ -32,4 +32,6 @@ public interface GLRoot {
 
     public void lockRenderThread();
     public void unlockRenderThread();
+
+    public void setContentPane(GLView content);
 }

@@ -42,7 +42,7 @@ public abstract class DatabaseMediaSet extends MediaSet {
         mContext = context;
         mResolver = mContext.getContentResolver();
 
-        mMainHandler = new SynchronizedHandler(context.getGLRootView()) {
+        mMainHandler = new SynchronizedHandler(context.getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 Utils.Assert(message.what == MSG_UPDATE_CONTENT);
