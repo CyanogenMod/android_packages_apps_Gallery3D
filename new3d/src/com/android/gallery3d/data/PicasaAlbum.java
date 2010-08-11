@@ -29,6 +29,8 @@ import java.util.ArrayList;
 public class PicasaAlbum extends DatabaseMediaSet {
     private static final int MAX_COVER_COUNT = 4;
     private static final EntrySchema SCHEMA = PhotoEntry.SCHEMA;
+    private static final String WHERECLAUSE = PhotoEntry.Columns.ALBUM_ID
+            + " = ?";
 
     private final AlbumEntry mData;
     private final ArrayList<PicasaImage> mPhotos = new ArrayList<PicasaImage>();
@@ -74,12 +76,11 @@ public class PicasaAlbum extends DatabaseMediaSet {
 
     @Override
     protected void onLoadFromDatabase() {
-        StringBuilder whereClause = new StringBuilder(PhotoEntry.Columns.ALBUM_ID);
-        whereClause.append(" = ").append(mData.id);
-
         Cursor cursor = mContext.getContentResolver().query(
                 PicasaContentProvider.PHOTOS_URI,
-                SCHEMA.getProjection(), whereClause.toString(), null, null);
+                SCHEMA.getProjection(), WHERECLAUSE,
+                new String[] {String.valueOf(mData.id)},
+                PhotoEntry.Columns.DISPLAY_INDEX);
         try {
             while (cursor.moveToNext()) {
                 PhotoEntry entry = SCHEMA.cursorToObject(cursor, new PhotoEntry());
