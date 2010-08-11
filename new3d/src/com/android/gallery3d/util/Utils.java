@@ -1,5 +1,9 @@
 package com.android.gallery3d.util;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -7,11 +11,19 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 
 public class Utils {
     public static final int UNCONSTRAINED = -1;
     private static final String TAG = "Utils";
+
+    private static final long POLY64REV = 0x95AC9329AC4BC9B5L;
+    private static final long INITIALCRC = 0xFFFFFFFFFFFFFFFFL;
+
+    private static boolean sInit = false;
+    private static long[] sCrcTable = new long[256];
+    private static Charset sUtf8Codec = Charset.forName("utf-8");
 
     /*
      * Compute the sample size as a function of minSideLength
@@ -168,4 +180,41 @@ public class Utils {
         array[j] = temp;
     }
 
+    /**
+     * A function thats returns a 64-bit crc for string
+     *
+     * @param in: input string
+     * @return 64-bit crc value
+     */
+    public static final long crc64Long(String in) {
+        if (in == null || in.length() == 0) {
+            return 0;
+        }
+        // http://bioinf.cs.ucl.ac.uk/downloads/crc64/crc64.c
+        long crc = INITIALCRC, part;
+        if (!sInit) {
+            for (int i = 0; i < 256; i++) {
+                part = i;
+                for (int j = 0; j < 8; j++) {
+                    int value = ((int) part & 1);
+                    if (value != 0)
+                        part = (part >> 1) ^ POLY64REV;
+                    else
+                        part >>= 1;
+                }
+                sCrcTable[i] = part;
+            }
+            sInit = true;
+        }
+
+        byte[] buffer = getBytesInUtf8(in);
+        for (int k = 0, n = buffer.length; k < n; ++k) {
+            crc = sCrcTable[(((int) crc) ^ buffer[k]) & 0xff] ^ (crc >> 8);
+        }
+        return crc;
+    }
+
+    public static byte[] getBytesInUtf8(String in) {
+        return sUtf8Codec.encode(in).array();
+    }
 }

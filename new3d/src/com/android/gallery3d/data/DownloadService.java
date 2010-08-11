@@ -44,11 +44,6 @@ public class DownloadService {
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME,
             TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
-    public static synchronized DownloadService getInstance() {
-        if (sInstance == null) sInstance = new DownloadService();
-        return sInstance;
-    }
-
     public DownloadService() {
     }
 

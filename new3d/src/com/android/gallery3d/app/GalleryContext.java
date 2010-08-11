@@ -8,6 +8,8 @@ import android.content.res.Resources;
 import android.os.Looper;
 
 import com.android.gallery3d.data.DataManager;
+import com.android.gallery3d.data.DecodeService;
+import com.android.gallery3d.data.DownloadService;
 import com.android.gallery3d.data.ImageService;
 import com.android.gallery3d.ui.GLRootView;
 import com.android.gallery3d.ui.PositionRepository;
@@ -16,6 +18,9 @@ public interface GalleryContext {
     public ImageService getImageService();
     public StateManager getStateManager();
     public DataManager getDataManager();
+    public DownloadService getDownloadService();
+    public DecodeService getDecodeService();
+
     public GLRootView getGLRootView();
     public PositionRepository getPositionRepository();
 

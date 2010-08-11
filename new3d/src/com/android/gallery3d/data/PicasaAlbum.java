@@ -83,7 +83,7 @@ public class PicasaAlbum extends DatabaseMediaSet {
         try {
             while (cursor.moveToNext()) {
                 PhotoEntry entry = SCHEMA.cursorToObject(cursor, new PhotoEntry());
-                mLoadBuffer.add(new PicasaImage(entry));
+                mLoadBuffer.add(new PicasaImage(mContext, entry));
             }
         } finally {
             cursor.close();
