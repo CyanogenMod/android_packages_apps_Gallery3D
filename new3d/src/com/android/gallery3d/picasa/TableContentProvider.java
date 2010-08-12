@@ -95,8 +95,10 @@ public class TableContentProvider extends ContentProvider {
 
         // Run the query.
         String tableName = mapping.table.getTableName();
+        String limit = uri.getQueryParameter("limit");
         Cursor cursor = mDatabase.getReadableDatabase().query(
-                tableName, projection, selection, selectionArgs, null, null, sortOrder);
+                tableName, projection, selection, selectionArgs, null, null,
+                sortOrder, limit);
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
