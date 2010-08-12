@@ -31,8 +31,7 @@ public abstract class MediaItem {
     public static final int IMAGE_WAIT = 1;
     public static final int IMAGE_ERROR = -1;
 
-    public abstract String getTitle();
-
+    public abstract long getUniqueId();
     public abstract Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener);
 }

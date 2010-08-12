@@ -16,6 +16,7 @@
 
 package com.android.gallery3d.data;
 
+import android.content.ContentResolver;
 import android.os.Handler;
 import android.os.Message;
 
@@ -23,48 +24,35 @@ import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.SynchronizedHandler;
 import com.android.gallery3d.util.Utils;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public abstract class DatabaseMediaSet extends MediaSet {
 
     private static final int MSG_LOAD_DATABASE = 0;
     private static final int MSG_UPDATE_CONTENT = 1;
 
-    private static final int BIT_INVALIDATING = 1;
-    private static final int BIT_PENDING = 2;
-
     protected final Handler mMainHandler;
     protected final Handler mDbHandler;
     protected final GalleryContext mContext;
+    protected final ContentResolver mResolver;
 
-    protected MediaSetListener mListener;
-    private AtomicInteger mState = new AtomicInteger();
+    // How many times do we need to reload: 1 means we are reloading,
+    // 2 means after current reloading, we need to do another one.
+    private int mReloadCount;
 
     protected DatabaseMediaSet(GalleryContext context) {
         mContext = context;
+        mResolver = mContext.getContentResolver();
 
-        mMainHandler = new Handler() {
+        mMainHandler = new SynchronizedHandler(context.getGLRootView()) {
             @Override
             public void handleMessage(Message message) {
                 Utils.Assert(message.what == MSG_UPDATE_CONTENT);
                 onUpdateContent();
                 if (mListener != null) mListener.onContentChanged();
 
-                while (true) {
-                    int s = mState.get();
-
-                    // Either (1) resets the the pending bit and sets the
-                    //            invalidating bit, or
-                    //        (2) resets the state to 0 if the pending bit was
-                    //            originally cleared.
-                    int t = (s & BIT_PENDING) == 0 ? 0 : BIT_INVALIDATING;
-                    if (mState.compareAndSet(s, t)) {
-                        if (t == BIT_INVALIDATING) {
-                            // Case 1: clear the pending bit by loading data
-                            //         from database.
-                            mDbHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
-                        }
-                        break;
+                synchronized (DatabaseMediaSet.this) {
+                    // If we still have pending reload, do it now.
+                    if (--mReloadCount > 0) {
+                        mDbHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
                     }
                 }
             }
@@ -80,26 +68,13 @@ public abstract class DatabaseMediaSet extends MediaSet {
         };
     }
 
-    public void invalidate() {
-        while (true) {
-            int s = mState.get();
-
-            // State is moved either to (1) invalidating, or (2) invalidating and pending.
-            int t = (s & BIT_INVALIDATING) == 0
-                    ? BIT_INVALIDATING
-                    : BIT_INVALIDATING | BIT_PENDING;
-            if (mState.compareAndSet(s, t)) {
-                if (t == BIT_INVALIDATING) {
-                    // Case 1: loading data from database.
-                    mDbHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
-                }
-                break;
-            }
+    public synchronized void reload() {
+        // If we already have reload pending, just return.
+        if (mReloadCount >= 2) return;
+        // If this is the first reload, start it.
+        if (++mReloadCount == 1) {
+            mDbHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
         }
-    }
-
-    public void setContentListener(MediaSetListener listener) {
-        mListener = listener;
     }
 
     abstract protected void onLoadFromDatabase();

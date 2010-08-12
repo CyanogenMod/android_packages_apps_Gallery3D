@@ -16,52 +16,68 @@
 
 package com.android.gallery3d.data;
 
-// This is currently implemented MediaSet and MediaItem:
-//
-//           | Local | Picasa
-// ----------+----------------
-//  AlbumSet |   1   |    2
-//  Album    |   3   |    4
-//  Image    |   5   |    6
-//  Video    |   7   | (unimplemented)
-//
-//  Inheritance relation:
-//
-//  MediaSet -- DatabaseMediaSet -- {1,2,3,4}
-//  MediaItem -- LocalMediaItem -- {5, 7}
-//            -- {6}
-//
-//  root = ComboMediaSet (LocalAlbumSet, PicasaAlbumSet);
-
+import java.util.ArrayList;
 
 // MediaSet is a directory-like data structure.
 // It contains MediaItems and sub-MediaSets.
 //
 // getTotalMediaItemCount() returns the number of all MediaItems, including
 // those in sub-MediaSets.
-//
-// getCoverMediaItems() return a few representative MediaItems for this
-// MediaSet.
-//
 public abstract class MediaSet {
 
     public interface MediaSetListener {
         public void onContentChanged();
     }
 
-    public abstract int getMediaItemCount();
+    public int getMediaItemCount() {
+        return 0;
+    }
 
-    public abstract MediaItem getMediaItem(int index);
+    public ArrayList<MediaItem> getMediaItem(int start, int count) {
+        throw new IndexOutOfBoundsException();
+    }
 
-    public abstract int getSubMediaSetCount();
+    // This is for compatibility only.
+    public MediaItem getMediaItem(int index) {
+        ArrayList<MediaItem> items = getMediaItem(index, 1);
+        if (items.size() > 0) {
+            return items.get(0);
+        } else {
+            return null;
+        }
+    }
 
-    public abstract MediaSet getSubMediaSet(int index);
+    // This is for compatibility only.
+    public MediaItem[] getCoverMediaItems() {
+        if (getMediaItemCount() > 0) {
+            ArrayList<MediaItem> items = getMediaItem(0, 4);
+            MediaItem result[] = new MediaItem[items.size()];
+            return items.toArray(result);
+        } else if (getSubMediaSetCount() > 0) {
+            return getSubMediaSet(0).getCoverMediaItems();
+        } else {
+            return new MediaItem[0];
+        }
+    }
+
+    public int getSubMediaSetCount() {
+        return 0;
+    }
+
+    public MediaSet getSubMediaSet(int index) {
+        throw new IndexOutOfBoundsException();
+    }
 
     public abstract int getTotalMediaItemCount();
 
-    public abstract String getTitle();
+    public abstract long getId();
+    public abstract String getName();
 
-    public abstract MediaItem[] getCoverMediaItems();
+    protected MediaSetListener mListener;
 
-    public abstract void setContentListener(MediaSetListener listener);
+    public void setContentListener(MediaSetListener listener) {
+        mListener = listener;
+    }
+
+    public abstract void reload();
 }

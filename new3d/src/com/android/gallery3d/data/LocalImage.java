@@ -52,7 +52,7 @@ public class LocalImage extends LocalMediaItem {
     private static final int INDEX_DATA = 8;
     private static final int INDEX_ORIENTATION = 9;
 
-    private static final String[] PROJECTION_IMAGES =  {
+    static final String[] PROJECTION =  {
             ImageColumns._ID,           // 0
             ImageColumns.TITLE,         // 1
             ImageColumns.MIME_TYPE,     // 2
@@ -66,10 +66,15 @@ public class LocalImage extends LocalMediaItem {
 
     private final BitmapFactory.Options mOptions = new BitmapFactory.Options();
 
+    private long mUniqueId;
     private int mRotation;
 
     protected LocalImage(ImageService imageService) {
         super(imageService);
+    }
+
+    public long getUniqueId() {
+        return mUniqueId;
     }
 
     protected Bitmap decodeImage(String path) throws IOException {
@@ -140,10 +145,17 @@ public class LocalImage extends LocalMediaItem {
         }
     }
 
-    public static LocalImage load(ImageService imageService, Cursor cursor) {
-        LocalImage item = new LocalImage(imageService);
+    public static LocalImage load(ImageService imageService, Cursor cursor,
+            DataManager dataManager) {
+        int itemId = cursor.getInt(INDEX_ID);
+        long uniqueId = DataManager.makeId(DataManager.ID_LOCAL_IMAGE, itemId);
+        LocalImage item = (LocalImage) dataManager.getFromCache(uniqueId);
+        if (item != null) return item;
 
-        item.mId = cursor.getInt(INDEX_ID);
+        item = new LocalImage(imageService);
+        dataManager.putToCache(uniqueId, item);
+
+        item.mId = itemId;
         item.mCaption = cursor.getString(INDEX_CAPTION);
         item.mMimeType = cursor.getString(INDEX_MIME_TYPE);
         item.mLatitude = cursor.getDouble(INDEX_LATITUDE);
@@ -153,20 +165,8 @@ public class LocalImage extends LocalMediaItem {
         item.mDateModifiedInSec = cursor.getLong(INDEX_DATE_MODIFIED);
         item.mFilePath = cursor.getString(INDEX_DATA);
         item.mRotation = cursor.getInt(INDEX_ORIENTATION);
+        item.mUniqueId = uniqueId;
 
         return item;
     }
-
-    public static Cursor queryImageInBucket(
-            ContentResolver resolver, int bucketId) {
-        // Build the where clause
-        StringBuilder builder = new StringBuilder(ImageColumns.BUCKET_ID);
-        builder.append(" = ").append(bucketId);
-        String whereClause = builder.toString();
-
-        return resolver.query(
-                Images.Media.EXTERNAL_CONTENT_URI,
-                PROJECTION_IMAGES, whereClause, null, null);
-    }
-
 }

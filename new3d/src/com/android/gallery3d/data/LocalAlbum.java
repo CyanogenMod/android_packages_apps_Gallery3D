@@ -18,117 +18,142 @@ package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore.Images;
+import android.provider.MediaStore.Video;
+import android.provider.MediaStore.Images.ImageColumns;
+import android.provider.MediaStore.Video.VideoColumns;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 
-public class LocalAlbum extends DatabaseMediaSet {
-    private static final int MAX_NUM_COVER_ITEMS = 4;
+public class LocalAlbum extends MediaSet {
+    private static final String TAG = "LocalAlbum";
+    private static final String[] COUNT_PROJECTION = { "count(*)" };
+    private final String mWhereClause;
+    private final String mOrderClause;
+    private final Uri mBaseUri;
+    private final String[] mProjection;
+    public static final Comparator<LocalAlbum> sBucketNameComparator =
+            new BucketNameComparator();
+    public static final Comparator<MediaItem> sDateTakenComparator =
+            new DateTakenComparator();
 
-    public static final Comparator<LocalAlbum> sNameComparator = new MyComparator();
-
+    private final GalleryContext mContext;
+    private final ContentResolver mResolver;
     private final int mBucketId;
-    private final String mBucketTitle;
+    private final String mBucketName;
+    private boolean mIsImage;
+    private long mUniqueId;
 
-    private final ArrayList<LocalMediaItem> mMediaItems =
-            new ArrayList<LocalMediaItem>();
-    private ArrayList<LocalMediaItem> mLoadBuffer =
-            new ArrayList<LocalMediaItem>();
+    public LocalAlbum(GalleryContext context, int bucketId, String name, boolean isImage) {
+        mContext = context;
+        mResolver = context.getContentResolver();
+        mBucketId = bucketId;
+        mBucketName = name;
+        mIsImage = isImage;
 
-    public LocalAlbum(GalleryContext context, int id, String title) {
-        super(context);
-        mBucketId = id;
-        mBucketTitle= title;
-    }
-
-    public MediaItem[] getCoverMediaItems() {
-        int size = Math.min(MAX_NUM_COVER_ITEMS, mMediaItems.size());
-        MediaItem items[] = new MediaItem[size];
-        for (int i = 0; i < size; ++i) {
-            items[i] = mMediaItems.get(i);
+        if (isImage) {
+            mWhereClause = ImageColumns.BUCKET_ID + "=?";
+            mOrderClause = ImageColumns.DATE_TAKEN + " DESC, "
+                    + ImageColumns._ID + " ASC";
+            mBaseUri = Images.Media.EXTERNAL_CONTENT_URI;
+            mProjection = LocalImage.PROJECTION;
+            mUniqueId = DataManager.makeId(
+                    DataManager.ID_LOCAL_IMAGE_ALBUM, bucketId);
+        } else {
+            mWhereClause = VideoColumns.BUCKET_ID + "=?";
+            mOrderClause = VideoColumns.DATE_TAKEN + " DESC, "
+                    + VideoColumns._ID + " ASC";
+            mBaseUri = Video.Media.EXTERNAL_CONTENT_URI;
+            mProjection = LocalVideo.PROJECTION;
+            mUniqueId = DataManager.makeId(
+                    DataManager.ID_LOCAL_VIDEO_ALBUM, bucketId);
         }
-        return items;
     }
 
-    public MediaItem getMediaItem(int index) {
-        return mMediaItems.get(index);
+    public long getId() {
+        return mUniqueId;
+    }
+
+    public ArrayList<MediaItem> getMediaItem(int start, int count) {
+        ImageService imageService = mContext.getImageService();
+        DataManager dataManager = mContext.getDataManager();
+
+        Uri uri = mBaseUri.buildUpon()
+                .appendQueryParameter("limit", start + "," + count).build();
+        ArrayList<MediaItem> list = new ArrayList<MediaItem>();
+        Cursor cursor = mResolver.query(
+                uri, mProjection, mWhereClause,
+                new String[]{String.valueOf(mBucketId)},
+                mOrderClause);
+
+        try {
+            while (cursor.moveToNext()) {
+                if (mIsImage) {
+                    list.add(LocalImage.load(imageService, cursor, dataManager));
+                } else {
+                    list.add(LocalVideo.load(imageService, cursor, dataManager));
+                }
+            }
+        } finally {
+            cursor.close();
+        }
+        return list;
     }
 
     public int getMediaItemCount() {
-        return mMediaItems.size();
+        Cursor cursor = mResolver.query(
+                mBaseUri, COUNT_PROJECTION, mWhereClause,
+                new String[]{String.valueOf(mBucketId)}, null);
+        try {
+            Utils.Assert(cursor.moveToNext());
+            return cursor.getInt(0);
+        } finally {
+            cursor.close();
+        }
     }
 
-    public MediaSet getSubMediaSet(int index) {
-        throw new IndexOutOfBoundsException();
-    }
-
-    public int getSubMediaSetCount() {
-        return 0;
-    }
-
-    public String getTitle() {
-        return mBucketTitle;
+    public String getName() {
+        return mBucketName;
     }
 
     public int getTotalMediaItemCount() {
-        return mMediaItems.size();
+        return getMediaItemCount();
     }
 
-    @Override
-    protected void onLoadFromDatabase() {
-        ArrayList<LocalMediaItem> items = new ArrayList<LocalMediaItem>();
-        mLoadBuffer = items;
-
-        ContentResolver resolver = mContext.getContentResolver();
-        ImageService imageService = mContext.getImageService();
-
-        Cursor cursor = LocalImage.queryImageInBucket(resolver, mBucketId);
-        try {
-            while (cursor.moveToNext()) {
-                items.add(LocalImage.load(imageService, cursor));
-            }
-        } finally {
-            cursor.close();
-        }
-
-        cursor = LocalVideo.queryVideoInBucket(resolver, mBucketId);
-        try {
-            while (cursor.moveToNext()) {
-                items.add(LocalVideo.load(imageService, cursor));
-            }
-        } finally {
-            cursor.close();
-        }
-
-        Collections.sort(items, new Comparator<LocalMediaItem>() {
-
-            public int compare(LocalMediaItem o1, LocalMediaItem o2) {
-                // sort items in descending order based on their taken time.
-                long result = -(o1.mDateTakenInMs - o2.mDateTakenInMs);
-                return result == 0
-                        ? o1.mId - o2.mId
-                        : result > 0 ? 1 : -1;
-            }
-        });
-    }
-
-    @Override
-    protected void onUpdateContent() {
-        Utils.Assert(mLoadBuffer != null);
-        mMediaItems.clear();
-        mMediaItems.addAll(mLoadBuffer);
-        mLoadBuffer = null;
-    }
-
-    private static class MyComparator implements Comparator<LocalAlbum> {
-
+    private static class BucketNameComparator implements Comparator<LocalAlbum> {
         public int compare(LocalAlbum s1, LocalAlbum s2) {
-            int result = s1.mBucketTitle.compareTo(s2.mBucketTitle);
-            return result != 0 ? result : s1.mBucketId - s2.mBucketId;
+            int result = s1.mBucketName.compareTo(s2.mBucketName);
+            if (result != 0) return result;
+            if (s1.mBucketId > s2.mBucketId) {
+                return 1;
+            } else if (s1.mBucketId < s2.mBucketId) {
+                return -1;
+            } else {
+                return 0;
+            }
         }
+    }
+
+    private static class DateTakenComparator implements Comparator<MediaItem> {
+        public int compare(MediaItem item1, MediaItem item2) {
+            LocalMediaItem s1 = (LocalMediaItem) item1;
+            LocalMediaItem s2 = (LocalMediaItem) item2;
+            if (s1.mDateTakenInMs > s2.mDateTakenInMs) {
+                return -1;
+            } else if (s1.mDateTakenInMs < s2.mDateTakenInMs) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    public void reload() {
+        // do nothing
     }
 }

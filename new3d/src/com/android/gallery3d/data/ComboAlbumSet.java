@@ -16,36 +16,23 @@
 
 package com.android.gallery3d.data;
 
-// Merge multiple media sets into one.
-public class ComboMediaSet extends MediaSet {
-
+// Concatenate multiple media sets into one.
+// This only handles SubMediaSets, not MediaItems. (That's all we need now)
+public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener {
+    private static final String TAG = "ComboAlbumSet";
     private final MediaSet[] mSets;
+    private long mUniqueId;
 
-    public ComboMediaSet(MediaSet ... mediaSets) {
+    public ComboAlbumSet(long uniqueId, MediaSet ... mediaSets) {
+        mUniqueId = uniqueId;
         mSets = mediaSets;
-    }
-
-    public MediaItem[] getCoverMediaItems() {
-        throw new UnsupportedOperationException();
-    }
-
-    public MediaItem getMediaItem(int index) {
         for (MediaSet set : mSets) {
-            int size = set.getMediaItemCount();
-            if (index < size) {
-                return set.getMediaItem(index);
-            }
-            index -= size;
+            set.setContentListener(this);
         }
-        throw new IndexOutOfBoundsException();
     }
 
-    public int getMediaItemCount() {
-        int count = 0;
-        for (MediaSet set : mSets) {
-            count += set.getMediaItemCount();
-        }
-        return count;
+    public long getId() {
+        return mUniqueId;
     }
 
     public MediaSet getSubMediaSet(int index) {
@@ -67,8 +54,8 @@ public class ComboMediaSet extends MediaSet {
         return count;
     }
 
-    public String getTitle() {
-        return null;
+    public String getName() {
+        return TAG;
     }
 
     public int getTotalMediaItemCount() {
@@ -79,9 +66,15 @@ public class ComboMediaSet extends MediaSet {
         return count;
     }
 
-    public void setContentListener(MediaSetListener listener) {
+    public void reload() {
         for (MediaSet set : mSets) {
-            set.setContentListener(listener);
+            set.reload();
+        }
+    }
+
+    public void onContentChanged() {
+        if (mListener != null) {
+            mListener.onContentChanged();
         }
     }
 }

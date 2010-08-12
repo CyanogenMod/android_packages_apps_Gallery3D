@@ -23,6 +23,7 @@ import android.os.Process;
 import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.util.IdentityCache;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,13 +33,42 @@ public class DataManager {
     private static int PICASA_CACHE_MAX_ENTRIES = 5000;
     private static int PICASA_CACHE_MAX_BYTES = 200 * 1024 * 1024;
     private static String PICASA_CACHE_FILE = "/picasaweb";
+
+    // Below are constants for categories.
+    public static final int ID_LOCAL_IMAGE = 1;
+    public static final int ID_LOCAL_VIDEO = 2;
+    public static final int ID_PICASA_IMAGE = 3;
+
+    public static final int ID_LOCAL_IMAGE_ALBUM = 4;
+    public static final int ID_LOCAL_VIDEO_ALBUM = 5;
+    public static final int ID_PICASA_ALBUM = 6;
+
+    public static final int ID_LOCAL_IMAGE_ALBUM_SET = 7;
+    public static final int ID_LOCAL_VIDEO_ALBUM_SET = 8;
+    public static final int ID_PICASA_ALBUM_SET = 9;
+
+    public static final int ID_COMBO_ALBUM_SET = 10;
+    public static final int ID_MERGE_LOCAL_ALBUM_SET = 11;
+    public static final int ID_MERGE_LOCAL_ALBUM = 12;
+
     private GalleryContext mContext;
     private MediaSet mRootSet;
     private HandlerThread mDataThread;
+    private IdentityCache<Long, MediaItem> mMediaItemCache;
     private BlobCache mPicasaCache = null;
 
     public DataManager(GalleryContext context) {
         mContext = context;
+        mMediaItemCache = new IdentityCache<Long, MediaItem>();
+    }
+
+    public static long makeId(int category, int item) {
+        long result = category;
+        return (result << 32) | item;
+    }
+
+    public static int extractItemId(long id) {
+        return (int) id;
     }
 
     // Return null when we cannot instantiate a BlobCache, e.g.:
@@ -70,16 +100,31 @@ public class DataManager {
     public MediaSet getRootSet() {
         if (mRootSet == null) {
             PicasaAlbumSet picasaSet = new PicasaAlbumSet(mContext);
-            LocalAlbumSet localSet = new LocalAlbumSet(mContext);
-            picasaSet.invalidate();
+            LocalAlbumSet localImageSet = new LocalAlbumSet(mContext, true);
+            LocalAlbumSet localVideoSet = new LocalAlbumSet(mContext, false);
+            MediaSet localSet = new MergeAlbumSet(
+                    makeId(ID_MERGE_LOCAL_ALBUM_SET, 0),
+                    LocalAlbum.sDateTakenComparator,
+                    localImageSet, localVideoSet);
 
-            mRootSet = new ComboMediaSet(localSet, picasaSet);
+            mRootSet = new ComboAlbumSet(
+                    makeId(ID_COMBO_ALBUM_SET, 0),
+                    localSet, picasaSet);
+            mRootSet.reload();
         }
         return mRootSet;
     }
 
     public MediaSet getSubMediaSet(int subSetIndex) {
         return getRootSet().getSubMediaSet(subSetIndex);
+    }
+
+    public MediaItem getFromCache(Long key) {
+        return mMediaItemCache.get(key);
+    }
+
+    public MediaItem putToCache(long key, MediaItem item) {
+        return mMediaItemCache.put(Long.valueOf(key), item);
     }
 
     public synchronized Looper getDataLooper() {
