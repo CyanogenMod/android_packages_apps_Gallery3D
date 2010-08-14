@@ -19,6 +19,7 @@ package com.android.gallery3d.data;
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -49,7 +50,7 @@ public class ImageService {
     public ImageService(ContentResolver contentResolver) {
         mContentResolver = contentResolver;
 
-        mHandler = new Handler() {
+        mHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message m) {
                 if (m.what != DECODE_TIMEOUT) return;

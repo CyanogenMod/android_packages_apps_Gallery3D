@@ -43,7 +43,7 @@ public class SlotView extends GLView {
     }
 
     private final GestureDetector mGestureDetector;
-    private final ScrollerHelper mScroller;
+    private final ScrollerHelper mScroller = new ScrollerHelper();
     private final PositionRepository mPositions;
 
     private SlotTapListener mSlotTapListener;
@@ -63,7 +63,6 @@ public class SlotView extends GLView {
         mPositions = repository;
         mGestureDetector =
                 new GestureDetector(context, new MyGestureListener());
-        mScroller = new ScrollerHelper(context, new DecelerateInterpolator(1));
     }
 
     public void setSlotSize(int slotWidth, int slotHeight) {
@@ -160,8 +159,8 @@ public class SlotView extends GLView {
     protected void render(GLCanvas canvas) {
         super.render(canvas);
         long currentTimeMillis = canvas.currentAnimationTimeMillis();
-        boolean more = mScroller.computeScrollOffset(currentTimeMillis);
-        setScrollPosition(mScroller.getCurrentPosition(), false);
+        boolean more = mScroller.advanceAnimation(currentTimeMillis);
+        setScrollPosition(mScroller.getPosition(), false);
         float interpolate = 1f;
         if (mAnimation != null) {
             more |= mAnimation.calculate(currentTimeMillis);
@@ -337,7 +336,7 @@ public class SlotView extends GLView {
             int contentLength = mLayout.mContentLength;
             if (contentLength == 0) return false;
             velocityX = Utils.clamp(velocityX, -MAX_VELOCITY, MAX_VELOCITY);
-            mScroller.fling(mScrollX, -(int) velocityX, 0, contentLength);
+            mScroller.fling(-velocityX, 0, contentLength);
             invalidate();
             return true;
         }
@@ -346,7 +345,8 @@ public class SlotView extends GLView {
         public boolean onScroll(MotionEvent e1,
                 MotionEvent e2, float distanceX, float distanceY) {
             if (mLayout.mContentLength == 0) return false;
-            setScrollPosition(mScrollX + (int) distanceX, false);
+            mScroller.startScroll(
+                    Math.round(distanceX), 0, mLayout.mContentLength);
             invalidate();
             return true;
         }
