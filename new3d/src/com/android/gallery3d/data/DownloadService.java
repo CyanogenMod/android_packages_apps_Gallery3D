@@ -38,14 +38,9 @@ public class DownloadService {
     private static final int MAX_POOL_SIZE = 4;
     private static final int KEEP_ALIVE_TIME = 10000;
 
-    private static DownloadService sInstance;
-
     private final ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME,
             TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-
-    public DownloadService() {
-    }
 
     public FutureTask<Void> requestDownload(
             URL url, File file, FutureListener<Void> listener) {

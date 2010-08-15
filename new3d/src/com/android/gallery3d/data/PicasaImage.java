@@ -31,13 +31,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 // PicasaImage is an image in the Picasa account.
 public class PicasaImage extends MediaItem {
     private static final String TAG = "PicasaImage";
 
-    private final PicasaTask[] mTasks = new PicasaTask[MediaItem.TYPE_COUNT];
     private final GalleryContext mContext;
     private final PhotoEntry mData;
     private final BlobCache mPicasaCache;
@@ -51,46 +49,42 @@ public class PicasaImage extends MediaItem {
                 DataManager.ID_PICASA_IMAGE, (int) entry.id);
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
+    @Override
     public synchronized Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener) {
-        if (mTasks[type] != null) {
-            // TODO: enable the check when cancelling is done
-            // throw new IllegalStateException();
-        } else {
-            URL photoUrl = getPhotoUrl(type);
-            if (mPicasaCache != null) {
+        URL photoUrl = getPhotoUrl(type);
+        if (mPicasaCache != null) {
 
-                // Try to get the image from cache.
-                LookupRequest request = new LookupRequest();
-                request.key = Utils.crc64Long(photoUrl.toString());
-                boolean isCached = false;
-                try {
-                    isCached = mPicasaCache.lookup(request);
-                } catch (IOException e) {
-                    Log.w(TAG, "IOException in getting an image from " +
-                            "PicasaCache", e);
-                }
-
-                if (isCached) {
-                    byte[] uri = Utils.getBytesInUtf8(photoUrl.toString());
-                    if (isSameUri(uri, request.buffer)) {
-                        Log.i(TAG, "Get Image from Cache (type, url): " + type +
-                                " " + photoUrl.toString());
-                        DecodeService service = mContext.getDecodeService();
-                        return service.requestDecode(request.buffer, uri.length,
-                                request.length - uri.length, null, listener);
-                    }
-                }
+            // Try to get the image from cache.
+            LookupRequest request = new LookupRequest();
+            request.key = Utils.crc64Long(photoUrl.toString());
+            boolean isCached = false;
+            try {
+                isCached = mPicasaCache.lookup(request);
+            } catch (IOException e) {
+                Log.w(TAG, "IOException in getting an image from " +
+                        "PicasaCache", e);
             }
 
-            // Get the image from Picasaweb instead.
-            mTasks[type] = new PicasaTask(type, photoUrl, listener);
+            if (isCached) {
+                byte[] uri = Utils.getBytesInUtf8(photoUrl.toString());
+                if (isSameUri(uri, request.buffer)) {
+                    Log.i(TAG, "Get Image from Cache (type, url): " + type +
+                            " " + photoUrl.toString());
+                    DecodeService service = mContext.getDecodeService();
+                    return service.requestDecode(request.buffer, uri.length,
+                            request.length - uri.length, null, listener);
+                }
+            }
         }
-        return mTasks[type];
+
+        // Get the image from Picasaweb instead.
+        return new PicasaTask(type, photoUrl, listener);
     }
 
     private boolean isSameUri(byte[] uri, byte[] buffer) {
@@ -167,12 +161,6 @@ public class PicasaImage extends MediaItem {
                     // Decode the downloaded image.
                     DecodeService service = mContext.getDecodeService();
                     return service.requestDecode(downloadedImage, null, this);
-                }
-                case 2: {
-                    synchronized (PicasaImage.this) {
-                        mTasks[mType] = null;
-                    }
-                    break;
                 }
             }
             return null;

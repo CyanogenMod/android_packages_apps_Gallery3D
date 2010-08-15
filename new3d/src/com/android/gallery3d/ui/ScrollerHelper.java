@@ -24,6 +24,7 @@ public class ScrollerHelper {
 
     private static final int ANIM_KIND_FLING = 1;
     private static final int ANIM_KIND_SCROLL = 2;
+
     private static final int DECELERATED_FACTOR = 4;
 
     private long mStartTime = NO_ANIMATION;
@@ -55,10 +56,11 @@ public class ScrollerHelper {
             if (mAnimationKind == ANIM_KIND_SCROLL) {
                 f = 1 - f;  // linear
             } else if (mAnimationKind == ANIM_KIND_FLING) {
-                f = 1 - f * f * f * f;  // x ^ DECELERATED_FACTOR
+                f = 1 - (float) Math.pow(f, DECELERATED_FACTOR);
             }
             mPosition = Math.round(mStart + (mFinal - mStart) * f);
-            Log.v("Fling", String.format("mStart = %s, mFinal = %s, mPosition = %s, f = %s, progress = %s",
+            Log.v("Fling", String.format(
+                    "mStart = %s, mFinal = %s, mPosition = %s, f = %s, progress = %s",
                     mStart, mFinal, mPosition, f, progress));
             if (mPosition == mFinal) {
                 mStartTime = NO_ANIMATION;
@@ -87,16 +89,18 @@ public class ScrollerHelper {
 
     public void fling(float velocity, int min, int max) {
         /*
-         * The position formula: x = s + (e - s) * (1 - (1 - t / T) ^ d)
-         *     velocity formula: v = d * (e - s) * (1 - t / T) ^ (d - 1) / T
+         * The position formula: x(t) = s + (e - s) * (1 - (1 - t / T) ^ d)
+         *     velocity formula: v(t) = d * (e - s) * (1 - t / T) ^ (d - 1) / T
          * Thus,
          *     v0 = (e - s) / T * d => (e - s) = v0 * T / d
          */
         mStartTime = START_ANIMATION;
         mAnimationKind = ANIM_KIND_FLING;
         mStart = mPosition;
-        double x = Math.pow(Math.abs(velocity), 1.0 / (DECELERATED_FACTOR - 1));
-        mDuration = (int) Math.round(FLING_DURATION_PARAM * x);
+
+        // Ta = T_ref * (Va / V_ref) ^ (1 / (d - 1)); V_ref = 1 pixel/second;
+        mDuration = (int) Math.round(FLING_DURATION_PARAM
+                    * Math.pow(Math.abs(velocity), 1.0 / (DECELERATED_FACTOR - 1)));
         int distance = Math.round(
                 velocity * mDuration / DECELERATED_FACTOR / 1000);
         mFinal = Utils.clamp(mStart + distance, min, max);
