@@ -795,7 +795,7 @@ public class ImageViewer extends GLView {
         }
     }
 
-    private class Uploader implements GLRootView.OnGLIdleListener {
+    private class Uploader implements GLRoot.OnGLIdleListener {
 
         protected boolean mActive;
 

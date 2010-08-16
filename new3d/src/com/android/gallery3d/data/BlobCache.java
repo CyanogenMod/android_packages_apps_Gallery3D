@@ -263,6 +263,7 @@ public class BlobCache {
     private void resetCache(int maxEntries, int maxBytes) throws IOException {
         mIndexFile.setLength(0);  // truncate to zero the index
         mIndexFile.setLength(INDEX_HEADER_SIZE + maxEntries * 12 * 2);
+        mIndexFile.seek(0);
         byte[] buf = mIndexHeader;
         writeInt(buf, IH_MAGIC, MAGIC_INDEX_FILE);
         writeInt(buf, IH_MAX_ENTRIES, maxEntries);
@@ -275,6 +276,8 @@ public class BlobCache {
 
         mDataFile0.setLength(0);
         mDataFile1.setLength(0);
+        mDataFile0.seek(0);
+        mDataFile1.seek(0);
         writeInt(buf, 0, MAGIC_DATA_FILE);
         mDataFile0.write(buf, 0, 4);
         mDataFile1.write(buf, 0, 4);

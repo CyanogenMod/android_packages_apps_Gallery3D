@@ -95,7 +95,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         initializeViews();
         intializeData(data);
 
-        mHandler = new SynchronizedHandler(mContext.getGLRootView()) {
+        mHandler = new SynchronizedHandler(mContext.getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {

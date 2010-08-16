@@ -26,7 +26,7 @@ import android.util.Log;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.GLCanvas;
-import com.android.gallery3d.ui.GLRootView;
+import com.android.gallery3d.ui.GLRoot;
 import com.android.gallery3d.ui.GLView;
 import com.android.gallery3d.ui.ImageViewer;
 import com.android.gallery3d.ui.SynchronizedHandler;
@@ -75,7 +75,7 @@ public class PhotoPage extends ActivityState {
 
     @Override
     public void onCreate(Bundle data, Bundle restoreState) {
-        mHandler = new SynchronizedHandler(mContext.getGLRootView()) {
+        mHandler = new SynchronizedHandler(mContext.getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
                 switch (message.what) {
@@ -105,7 +105,7 @@ public class PhotoPage extends ActivityState {
 
     @Override
     public void onPause() {
-        GLRootView root = mContext.getGLRootView();
+        GLRoot root = mContext.getGLRoot();
         root.lockRenderThread();
         try {
             mImageViewer.close();

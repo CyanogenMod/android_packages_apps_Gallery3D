@@ -32,9 +32,9 @@ import java.util.ArrayList;
 public class PicasaAlbum extends MediaSet {
     private static final String TAG = "PicasaAlbum";
     private static final EntrySchema SCHEMA = PhotoEntry.SCHEMA;
-    private static final String WHERE_CLAUSE = PhotoEntry.Columns.ALBUM_ID
-            + " = ?";
     private static final String[] COUNT_PROJECTION = { "count(*)" };
+    private static final String WHERE_CLAUSE = PhotoEntry.Columns.ALBUM_ID
+            + "=?";
 
     private final AlbumEntry mData;
     private final ContentResolver mResolver;

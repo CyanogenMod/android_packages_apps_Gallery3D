@@ -27,7 +27,7 @@ abstract public class ActivityState {
     }
 
     protected void setContentPane(GLView content) {
-        mContext.getGLRootView().setContentPane(content);
+        mContext.getGLRoot().setContentPane(content);
     }
 
     void setContext(GalleryContext context) {
