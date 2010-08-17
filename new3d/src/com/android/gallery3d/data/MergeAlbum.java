@@ -109,7 +109,6 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
             subPos[k]++;
             if (i >= start) {
                 result.add(slot[k]);
-                Log.v(TAG, "added " + ((LocalMediaItem)slot[k]).mDateTakenInMs + " for " + i);
             }
             slot[k] = mFetcher[k].getItem(subPos[k]);
 
