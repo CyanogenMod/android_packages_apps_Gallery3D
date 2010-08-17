@@ -56,6 +56,8 @@ public class GLRootView extends GLSurfaceView
     private final boolean DEBUG_INVALIDATE = false;
     private int mInvalidateColor = 0;
 
+    private final boolean DEBUG_DRAWING_STAT = false;
+
     private static final int FLAG_INITIALIZED = 1;
     private static final int FLAG_NEED_LAYOUT = 2;
 
@@ -289,6 +291,10 @@ public class GLRootView extends GLSurfaceView
         if (DEBUG_INVALIDATE) {
             mCanvas.fillRect(10, 10, 5, 5, mInvalidateColor);
             mInvalidateColor = ~mInvalidateColor;
+        }
+
+        if (DEBUG_DRAWING_STAT) {
+            mCanvas.dumpStatisticsAndClear();
         }
     }
 
