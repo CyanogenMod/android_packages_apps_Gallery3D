@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.android.gallery3d.ui;
 
@@ -8,16 +23,14 @@ import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.data.MediaItem;
-import com.android.gallery3d.data.MediaSet;
-import com.android.gallery3d.data.MediaSet.MediaSetListener;
+import com.android.gallery3d.ui.GalleryView.GalleryItem;
 import com.android.gallery3d.util.Future;
 import com.android.gallery3d.util.FutureListener;
 import com.android.gallery3d.util.Utils;
 
-public class AlbumDataAdapter implements MediaSetListener {
-    private static final String TAG = "GalleryAdapter";
-
-    private static final int UPDATE_LIMIT = 10;
+public class GallerySlidingWindow implements GalleryView.ModelListener {
+    private static final String TAG = "GallerySlidingWindow";
+    private static final int UPDATE_LIMIT = 8;
 
     private static final int STATE_INVALID = 0;
     private static final int STATE_VALID = 1;
@@ -31,10 +44,10 @@ public class AlbumDataAdapter implements MediaSetListener {
         public void onSizeChanged(int size);
         public void onContentInvalidated();
         public void onWindowContentChanged(
-                int slot, DisplayItem old, DisplayItem update);
+                int slot, GalleryItem old, GalleryItem update);
     }
 
-    private final MediaSet mSource;
+    private final GalleryView.Model mSource;
     private int mSize;
 
     private int mContentStart = 0;
@@ -45,7 +58,7 @@ public class AlbumDataAdapter implements MediaSetListener {
 
     private Listener mListener;
 
-    private final CoverDisplayItem mData[];
+    private final GalleryItem mData[];
     private final SelectionManager mSelectionManager;
     private final ColorTexture mWaitLoadingTexture;
 
@@ -53,13 +66,13 @@ public class AlbumDataAdapter implements MediaSetListener {
 
     private int mActiveRequestCount = 0;
 
-    public AlbumDataAdapter(GalleryContext context,
-            SelectionManager manager, MediaSet source, int cacheSize) {
-        source.setContentListener(this);
+    public GallerySlidingWindow(GalleryContext context,
+            SelectionManager manager, GalleryView.Model source, int cacheSize) {
+        source.setListener(this);
         mSource = source;
         mSelectionManager = manager;
-        mData = new CoverDisplayItem[cacheSize];
-        mSize = source.getMediaItemCount();
+        mData = new GalleryItem[cacheSize];
+        mSize = source.size();
 
         mWaitLoadingTexture = new ColorTexture(Color.GRAY);
         mWaitLoadingTexture.setSize(1, 1);
@@ -71,19 +84,19 @@ public class AlbumDataAdapter implements MediaSetListener {
                 ((CoverDisplayItem) message.obj).updateImage();
             }
         };
+
     }
 
     public void setListener(Listener listener) {
         mListener = listener;
     }
 
-    public DisplayItem get(int slotIndex) {
+    public GalleryItem get(int slotIndex) {
         if (!isActiveSlot(slotIndex)) {
             throw new IllegalArgumentException(
                     String.format("invalid slot: %s outsides (%s, %s)",
                     slotIndex, mActiveStart, mActiveEnd));
         }
-        Utils.Assert(isActiveSlot(slotIndex));
         return mData[slotIndex % mData.length];
     }
 
@@ -96,14 +109,13 @@ public class AlbumDataAdapter implements MediaSetListener {
     }
 
     private void setContentWindow(int contentStart, int contentEnd) {
-
         if (contentStart == mContentStart && contentEnd == mContentEnd) return;
 
-        Log.v(TAG, String.format("content range: %s, %s", contentStart, contentEnd));
         if (contentStart >= mContentEnd || mContentStart >= contentEnd) {
             for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
                 freeSlotContent(i);
             }
+            mSource.setActiveWindow(contentStart, contentEnd);
             for (int i = contentStart; i < contentEnd; ++i) {
                 prepareSlotContent(i);
             }
@@ -114,6 +126,7 @@ public class AlbumDataAdapter implements MediaSetListener {
             for (int i = contentEnd, n = mContentEnd; i < n; ++i) {
                 freeSlotContent(i);
             }
+            mSource.setActiveWindow(contentStart, contentEnd);
             for (int i = contentStart, n = mContentStart; i < n; ++i) {
                 prepareSlotContent(i);
             }
@@ -127,10 +140,9 @@ public class AlbumDataAdapter implements MediaSetListener {
     }
 
     public void setActiveWindow(int start, int end) {
-
         Utils.Assert(start <= end
                 && end - start <= mData.length && end <= mSize);
-        DisplayItem data[] = mData;
+        GalleryItem data[] = mData;
 
         mActiveStart = start;
         mActiveEnd = end;
@@ -145,6 +157,7 @@ public class AlbumDataAdapter implements MediaSetListener {
                 || Math.abs(contentStart - mContentStart) > UPDATE_LIMIT) {
             setContentWindow(contentStart, contentEnd);
         }
+
         updateAllImageRequests();
     }
 
@@ -154,75 +167,97 @@ public class AlbumDataAdapter implements MediaSetListener {
     //                   |<-  active  ->|
     //         |<-------- cached range ----------->|
     private void requestNonactiveImages() {
-        Log.v(TAG, "request non active images");
         int range = Math.max(
-                (mContentEnd - mActiveEnd), (mActiveStart - mContentStart));
+                mContentEnd - mActiveEnd, mActiveStart - mContentStart);
         for (int i = 0 ;i < range; ++i) {
-            requestSlotImage(mActiveEnd + i, false);
-            requestSlotImage(mActiveStart - 1 - i, false);
+            requestImagesInSlot(mActiveEnd + i, false);
+            requestImagesInSlot(mActiveStart - 1 - i, false);
         }
     }
 
-    private void requestSlotImage(int slotIndex, boolean isActive) {
+    private void requestImagesInSlot(int slotIndex, boolean isActive) {
         if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
-        CoverDisplayItem item = mData[slotIndex % mData.length];
-        item.requestImageIfNeed();
+        GalleryItem items = mData[slotIndex % mData.length];
+        for (DisplayItem item : items.covers) {
+            ((CoverDisplayItem) item).requestImageIfNeed();
+        }
     }
 
     private void freeSlotContent(int slotIndex) {
-        CoverDisplayItem data[] = mData;
+        GalleryItem data[] = mData;
         int index = slotIndex % data.length;
-        CoverDisplayItem original = data[index];
+        GalleryItem original = data[index];
         if (original != null) {
-            original.recycle();
             data[index] = null;
+            for (DisplayItem item : original.covers) {
+                ((CoverDisplayItem) item).recycle();
+            }
         }
     }
 
     private void prepareSlotContent(final int slotIndex) {
-        mData[slotIndex % mData.length] = new CoverDisplayItem(
-                slotIndex, mSource.getMediaItem(slotIndex));
+        GalleryItem item = new GalleryItem();
+        MediaItem[] coverItems = mSource.get(slotIndex);
+        item.covers = new CoverDisplayItem[coverItems.length];
+        for (int i = 0; i < coverItems.length; ++i) {
+            item.covers[i] = new CoverDisplayItem(slotIndex, i, coverItems[i]);
+        }
+        mData[slotIndex % mData.length] = item;
     }
 
     private void updateSlotContent(final int slotIndex) {
+        GalleryItem data[] = mData;
 
-        MediaItem item = mSource.getMediaItem(slotIndex);
-        CoverDisplayItem data[] = mData;
         int index = slotIndex % data.length;
-        CoverDisplayItem original = data[index];
-        CoverDisplayItem update = new CoverDisplayItem(slotIndex, item);
+        GalleryItem original = data[index];
+        GalleryItem update = new GalleryItem();
         data[index] = update;
+
+        MediaItem[] coverItems = mSource.get(slotIndex);
+        update.covers = new CoverDisplayItem[coverItems.length];
+        for (int i = 0; i < coverItems.length; ++i) {
+            CoverDisplayItem cover =
+                    new CoverDisplayItem(slotIndex, i, coverItems[i]);
+            update.covers[i] = cover;
+        }
         if (mListener != null && isActiveSlot(slotIndex)) {
             mListener.onWindowContentChanged(slotIndex, original, update);
         }
-        if (original != null) original.recycle();
-        updateAllImageRequests();
+        if (original != null) {
+            for (DisplayItem item : original.covers) {
+                ((CoverDisplayItem) item).recycle();
+            }
+        }
     }
 
-    public void onContentChanged() {
-        int oldSize = mSize;
-        mSize = mSource.getMediaItemCount();
-        for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
-            updateSlotContent(i);
+    private void notifySlotChanged(int slotIndex) {
+        // If the updated content is not cached, ignore it
+        if (slotIndex < mContentStart || slotIndex >= mContentEnd) {
+            Log.w(TAG, String.format(
+                    "invalid update: %s is outside (%s, %s)",
+                    slotIndex, mContentStart, mContentEnd) );
+            return;
         }
-        if (mSize != oldSize && mListener != null) {
-            mListener.onSizeChanged(mSize);
+        updateSlotContent(slotIndex);
+        boolean isActive = isActiveSlot(slotIndex);
+        if (mActiveRequestCount == 0 || isActive) {
+            for (DisplayItem item : mData[slotIndex % mData.length].covers) {
+                if (((CoverDisplayItem) item).requestImageIfNeed()) {
+                    if (isActive) ++mActiveRequestCount;
+                }
+            }
         }
-        updateAllImageRequests();
-    }
-
-    public void onContentDirty() {
     }
 
     private void updateAllImageRequests() {
         mActiveRequestCount = 0;
-        CoverDisplayItem data[] = mData;
         for (int i = mActiveStart, n = mActiveEnd; i < n; ++i) {
-            CoverDisplayItem item = data[i % data.length];
-            if (item.requestImageIfNeed()) {
-                ++mActiveRequestCount;
-            } else if (item.mState == STATE_UPDATING) {
-                ++mActiveRequestCount;
+            for (DisplayItem item : mData[i % mData.length].covers) {
+                CoverDisplayItem coverItem = (CoverDisplayItem) item;
+                if (coverItem.requestImageIfNeed()
+                        || coverItem.mState == STATE_UPDATING) {
+                    ++mActiveRequestCount;
+                }
             }
         }
         if (mActiveRequestCount == 0) requestNonactiveImages();
@@ -232,6 +267,7 @@ public class AlbumDataAdapter implements MediaSetListener {
             extends DisplayItem implements FutureListener<Bitmap> {
 
         private final int mSlotIndex;
+        private final int mCoverIndex;
         private final MediaItem mMediaItem;
 
         private int mState = STATE_INVALID;
@@ -239,9 +275,9 @@ public class AlbumDataAdapter implements MediaSetListener {
         private Texture mContent;
         private Bitmap mBitmap;
 
-        public CoverDisplayItem(int slotIndex, MediaItem item) {
-            Log.v(TAG, "create slot: " + slotIndex);
+        public CoverDisplayItem(int slotIndex, int coverIndex, MediaItem item) {
             mSlotIndex = slotIndex;
+            mCoverIndex = coverIndex;
             mMediaItem = item;
             updateContent(mWaitLoadingTexture);
         }
@@ -249,10 +285,13 @@ public class AlbumDataAdapter implements MediaSetListener {
         public void updateImage() {
             if (mState != STATE_UPDATING) {
                 Log.v(TAG, String.format(
-                        "invalid state %s for slot %s: update image fail", mState, mSlotIndex));
+                        "invalid update for image: (%s, %s) state: %s",
+                        mSlotIndex, mCoverIndex, mState));
                 mFuture = null;
                 return; /* RECYCLED*/
             }
+            Log.v(TAG, String.format(
+                    "update for image: (%s, %s)", mSlotIndex, mCoverIndex));
 
             Utils.Assert(mBitmap == null);
 
@@ -280,8 +319,8 @@ public class AlbumDataAdapter implements MediaSetListener {
             int width = mContent.getWidth();
             int height = mContent.getHeight();
 
-            float scalex = AlbumView.SLOT_WIDTH / (float) width;
-            float scaley = AlbumView.SLOT_HEIGHT / (float) height;
+            float scalex = GalleryView.SLOT_WIDTH / (float) width;
+            float scaley = GalleryView.SLOT_HEIGHT / (float) height;
             float scale = Math.min(scalex, scaley);
 
             width = (int) Math.floor(width * scale);
@@ -293,10 +332,10 @@ public class AlbumDataAdapter implements MediaSetListener {
         @Override
         public void render(GLCanvas canvas) {
             SelectionManager manager = mSelectionManager;
-            boolean checked = manager.isSlotSelected(mSlotIndex);
-
+            boolean topItem = mCoverIndex == 0;
+            boolean checked = topItem && manager.isSlotSelected(mSlotIndex);
             manager.getSelectionDrawer().draw(
-                    canvas, mContent, mWidth, mHeight, checked);
+                    canvas, mContent, mWidth, mHeight, checked, topItem);
         }
 
         @Override
@@ -320,9 +359,20 @@ public class AlbumDataAdapter implements MediaSetListener {
         public boolean requestImageIfNeed() {
             if (mState != STATE_INVALID) return false;
             mState = STATE_UPDATING;
+            Log.v(TAG, String.format("Request image %s %s", mSlotIndex, mCoverIndex));
             mFuture = mMediaItem.requestImage(MediaItem.TYPE_MICROTHUMBNAIL, this);
             return true;
         }
     }
 
+    public void onSizeChanged(int size) {
+        if (mSize != size) {
+            mSize = size;
+            if (mListener != null) mListener.onSizeChanged(mSize);
+        }
+    }
+
+    public void onWindowContentChanged(int index, MediaItem[] old, MediaItem[] update) {
+        notifySlotChanged(index);
+    }
 }

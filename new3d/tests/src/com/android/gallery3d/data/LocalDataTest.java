@@ -133,7 +133,7 @@ public class LocalDataTest extends AndroidTestCase {
             MediaSet sub = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, sub.getMediaItemCount());
             assertEquals(0, sub.getSubMediaSetCount());
-            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0);
+            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0, 1).get(0);
             assertEquals(1, item.mId);
             assertEquals("IMG_0072", item.mCaption);
             assertEquals("image/jpeg", item.mMimeType);
@@ -170,16 +170,16 @@ public class LocalDataTest extends AndroidTestCase {
 
             MediaSet first = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, first.getMediaItemCount());
-            LocalMediaItem item = (LocalMediaItem) first.getMediaItem(0);
+            LocalMediaItem item = (LocalMediaItem) first.getMediaItem(0, 1).get(0);
             assertEquals(3, item.mId);
             assertEquals(3000L, item.mDateTakenInMs);
 
             MediaSet second = mAlbumSet.getSubMediaSet(1);
             assertEquals(2, second.getMediaItemCount());
-            item = (LocalMediaItem) second.getMediaItem(0);
+            item = (LocalMediaItem) second.getMediaItem(0, 1).get(0);
             assertEquals(2, item.mId);
             assertEquals(2000L, item.mDateTakenInMs);
-            item = (LocalMediaItem) second.getMediaItem(1);
+            item = (LocalMediaItem) second.getMediaItem(1, 1).get(0);
             assertEquals(1, item.mId);
             assertEquals(1000L, item.mDateTakenInMs);
 
@@ -213,6 +213,7 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         int mReloadCount;
+        @Override
         public void onContentChanged() {
             ++mReloadCount;
             if (mReloadCount == 1) {
@@ -234,7 +235,7 @@ public class LocalDataTest extends AndroidTestCase {
         @Override
         public void verifyResult() {
             MediaSet sub = mAlbumSet.getSubMediaSet(0);
-            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0);
+            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0, 1).get(0);
             assertEquals(1, sub.getMediaItemCount());
             long uid = item.getUniqueId();
             assertTrue((sub.getSupportedOperations(uid) & MediaSet.SUPPORT_DELETE) != 0);
@@ -313,7 +314,7 @@ public class LocalDataTest extends AndroidTestCase {
             MediaSet sub = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, sub.getMediaItemCount());
             assertEquals(0, sub.getSubMediaSetCount());
-            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0);
+            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0, 1).get(0);
             assertEquals(1, item.mId);
             assertEquals("VID_20100811_051413", item.mCaption);
             assertEquals("video/mp4", item.mMimeType);
@@ -351,16 +352,16 @@ public class LocalDataTest extends AndroidTestCase {
 
             MediaSet first = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, first.getMediaItemCount());
-            LocalMediaItem item = (LocalMediaItem) first.getMediaItem(0);
+            LocalMediaItem item = (LocalMediaItem) first.getMediaItem(0, 1).get(0);
             assertEquals(3, item.mId);
             assertEquals(3000L, item.mDateTakenInMs);
 
             MediaSet second = mAlbumSet.getSubMediaSet(1);
             assertEquals(2, second.getMediaItemCount());
-            item = (LocalMediaItem) second.getMediaItem(0);
+            item = (LocalMediaItem) second.getMediaItem(0, 1).get(0);
             assertEquals(2, item.mId);
             assertEquals(2000L, item.mDateTakenInMs);
-            item = (LocalMediaItem) second.getMediaItem(1);
+            item = (LocalMediaItem) second.getMediaItem(1, 1).get(0);
             assertEquals(1, item.mId);
             assertEquals(1000L, item.mDateTakenInMs);
 

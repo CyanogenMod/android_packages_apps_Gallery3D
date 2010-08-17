@@ -33,11 +33,6 @@ public class SlotView extends GLView {
     private static final int MAX_VELOCITY = 2500;
     private static final int INDEX_NONE = -1;
 
-    public static interface Listener {
-        public void onLayoutChanged(int width, int height);
-        public void onScrollPositionChanged(int position);
-    }
-
     public interface SlotTapListener {
         public void onSingleTapUp(int index);
         public void onLongTap(int index);
@@ -48,7 +43,6 @@ public class SlotView extends GLView {
     private final PositionRepository mPositions;
 
     private SlotTapListener mSlotTapListener;
-    private Listener mListener;
 
     private int mTransitionOffsetX;
 
@@ -74,10 +68,6 @@ public class SlotView extends GLView {
         mLayout.setSlotGaps(horizontalGap, verticalGap, center);
     }
 
-    public void setListener(Listener listener) {
-        mListener = listener;
-    }
-
     @Override
     public void addComponent(GLView view) {
         throw new UnsupportedOperationException();
@@ -92,7 +82,10 @@ public class SlotView extends GLView {
     protected void onLayout(boolean changeSize, int l, int t, int r, int b) {
         if (!changeSize) return;
         mLayout.setSize(r - l, b - t);
-        if (mListener != null) mListener.onLayoutChanged(r - l, b - t);
+        onLayoutChanged(r - l, b - t);
+    }
+
+    protected void onLayoutChanged(int width, int height) {
     }
 
     public void startTransition() {
@@ -116,7 +109,10 @@ public class SlotView extends GLView {
         if (!force && position == mScrollX) return;
         mScrollX = position;
         mLayout.setScrollPosition(position);
-        if (mListener != null) mListener.onScrollPositionChanged(position);
+        onScrollPositionChanged(position);
+    }
+
+    protected void onScrollPositionChanged(int position) {
     }
 
     public void putDisplayItem(Position target, DisplayItem item) {
