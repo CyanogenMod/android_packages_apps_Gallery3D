@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+// PicasaImage is an image in the Picasa account.
 public class PicasaImage extends MediaItem {
     private static final String TAG = "PicasaImage";
 

@@ -30,9 +30,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+// LocalAlbumSet lists all image or video albums in the local storage.
 public class LocalAlbumSet extends DatabaseMediaSet {
     private static final String TAG = "LocalAlbumSet";
 
+    // The indices should match the following projections.
     private static final int BUCKET_ID_INDEX = 0;
     private static final int BUCKET_NAME_INDEX = 1;
 
@@ -66,7 +68,7 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         }
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return mUniqueId;
     }
 

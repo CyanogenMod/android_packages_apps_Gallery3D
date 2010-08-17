@@ -24,12 +24,13 @@ import android.graphics.Bitmap;
 import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Video.VideoColumns;
 
+// LocalVideo represents a video in the local storage.
 public class LocalVideo extends LocalMediaItem {
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
 
     // Must preserve order between these indices and the order of the terms in
-    // PROJECTION.
+    // the following PROJECTION array.
     private static final int INDEX_ID = 0;
     private static final int INDEX_CAPTION = 1;
     private static final int INDEX_MIME_TYPE = 2;

@@ -24,6 +24,15 @@ import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.SynchronizedHandler;
 import com.android.gallery3d.util.Utils;
 
+// DatabaseMediaSet is used as a base class for media sets loaded from a
+// database. Subclasses need to implement the following two methods:
+//
+// onLoadFromDatabase(): Runs in the database thread. It can do blocking
+// operations like reading from databases.
+//
+// onUpdateContent(): Runs in the main thread. It should not do blocking
+// operations. It can update the media set using the data read in
+// onLoadFromDatabase().
 public abstract class DatabaseMediaSet extends MediaSet {
 
     private static final int MSG_LOAD_DATABASE = 0;

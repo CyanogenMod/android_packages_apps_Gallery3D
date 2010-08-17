@@ -23,9 +23,9 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
 
-// Merge two media sets into one.
-// If the two media sets have sub media sets with the same name,
-// they will be merged.
+// MergeAlbumSet merges two or more media sets into one.
+// If the the input media sets have sub media sets with the item id,
+// they are merged into one media set.
 public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener {
     private static final String TAG = "MergeAlbumSet";
     private static final int PAGE_SIZE = 100;
@@ -45,7 +45,7 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         }
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return mUniqueId;
     }
 
@@ -58,7 +58,7 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         for (MediaSet set : mSets) {
             for (int i = 0, n = set.getSubMediaSetCount(); i < n; i++) {
                 MediaSet subset = set.getSubMediaSet(i);
-                int itemId = DataManager.extractItemId(subset.getId());
+                int itemId = DataManager.extractItemId(subset.getUniqueId());
                 ArrayList<MediaSet> list = map.get(itemId);
                 if (list == null) {
                     list = new ArrayList<MediaSet>();

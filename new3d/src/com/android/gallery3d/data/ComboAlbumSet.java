@@ -16,7 +16,8 @@
 
 package com.android.gallery3d.data;
 
-// Concatenate multiple media sets into one.
+// ComboAlbumSet combines multiple media sets into one. It lists all sub
+// media sets from the input album sets.
 // This only handles SubMediaSets, not MediaItems. (That's all we need now)
 public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener {
     private static final String TAG = "ComboAlbumSet";
@@ -31,7 +32,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         }
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return mUniqueId;
     }
 

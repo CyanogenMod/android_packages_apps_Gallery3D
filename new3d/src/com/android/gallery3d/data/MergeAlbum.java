@@ -23,7 +23,10 @@ import java.util.TreeMap;
 import java.util.ArrayList;
 import java.util.SortedMap;
 
-// Merge two MediaSets.
+// MergeAlbum merges items from two or more MediaSets. It uses a Comparator to
+// determine the order of items. The items are assumed to be sorted in the input
+// media sets (with the same order that the Comparator uses).
+//
 // This only handles MediaItems, not SubMediaSets.
 public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
     private static final String TAG = "MergeAlbum";
@@ -62,7 +65,7 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
         mIndex.put(0, new int[mSize]);
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return mUniqueId;
     }
 
