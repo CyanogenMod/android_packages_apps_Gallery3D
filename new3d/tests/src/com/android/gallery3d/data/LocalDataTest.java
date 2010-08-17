@@ -107,7 +107,7 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(0, albumSet.getSubMediaSetCount());
             assertEquals(0, albumSet.getTotalMediaItemCount());
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM_SET, 0),
-                    albumSet.getId());
+                    albumSet.getUniqueId());
         }
     }
 
@@ -135,7 +135,7 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1275934796L, item.mDateModifiedInSec);
             assertEquals("/mnt/sdcard/DCIM/100CANON/IMG_0072.JPG", item.mFilePath);
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM, 0xB000),
-                    sub.getId());
+                    sub.getUniqueId());
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE, 1),
                     item.getUniqueId());
         }
@@ -174,9 +174,9 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1000L, item.mDateTakenInMs);
 
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM, 0xB001),
-                    first.getId());
+                    first.getUniqueId());
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM, 0xB000),
-                    second.getId());
+                    second.getUniqueId());
         }
     }
 
@@ -229,7 +229,7 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(0, albumSet.getSubMediaSetCount());
             assertEquals(0, albumSet.getTotalMediaItemCount());
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM_SET, 0),
-                    albumSet.getId());
+                    albumSet.getUniqueId());
         }
     }
 
@@ -258,7 +258,7 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals("/mnt/sdcard/DCIM/Camera/VID_20100811_051413.3gp",
                     item.mFilePath);
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM, 0xB000),
-                    sub.getId());
+                    sub.getUniqueId());
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO, 1),
                     item.getUniqueId());
         }
@@ -297,9 +297,9 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1000L, item.mDateTakenInMs);
 
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM, 0xB001),
-                    first.getId());
+                    first.getUniqueId());
             assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM, 0xB000),
-                    second.getId());
+                    second.getUniqueId());
         }
     }
 
@@ -351,7 +351,7 @@ public class LocalDataTest extends AndroidTestCase {
         ContentProvider cp = new DbContentProvider(db);
         MockContentResolver cr = new MockContentResolver();
         cr.addProvider("media", cp);
-        return new GalleryContextMock(cr);
+        return new GalleryContextMock(null, cr);
     }
 
     static class MyListener implements MediaSet.MediaSetListener {

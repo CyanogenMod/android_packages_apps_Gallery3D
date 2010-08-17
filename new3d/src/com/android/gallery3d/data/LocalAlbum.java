@@ -30,6 +30,8 @@ import com.android.gallery3d.util.Utils;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+// LocalAlbumSet lists all media items in one bucket on local storage.
+// The media items need to be all images or all videos, but not both.
 public class LocalAlbum extends MediaSet {
     private static final String TAG = "LocalAlbum";
     private static final String[] COUNT_PROJECTION = { "count(*)" };
@@ -75,7 +77,7 @@ public class LocalAlbum extends MediaSet {
         }
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return mUniqueId;
     }
 

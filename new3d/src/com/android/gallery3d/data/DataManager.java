@@ -28,6 +28,18 @@ import com.android.gallery3d.util.IdentityCache;
 import java.io.File;
 import java.io.IOException;
 
+// DataManager manages all media sets and media items in the system.
+//
+// Current organization:
+// ComboMediaSet
+//   -- MergeAlbumSet
+//       -- LocalAlbumSet(isImage=true) .. LocalAlbum(isImage=true) .. LocalImage
+//       -- LocalAlbumSet(isImage=false) .. LocalAlbum(isImage=false) .. LocalVideo
+//   -- PicasaAlbumSet .. PicasaAlbum .. PicasaImage
+//
+// Each MediaSet and MediaItem has a unique 64 bits id. The most significant
+// 32 bits represents its category, and the least significant 32 bits
+// represents the item id inside that category.
 public class DataManager {
     private static final String TAG = "DataManager";
     private static int PICASA_CACHE_MAX_ENTRIES = 5000;

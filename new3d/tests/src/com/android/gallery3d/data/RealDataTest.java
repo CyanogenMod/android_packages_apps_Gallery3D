@@ -16,6 +16,7 @@
 
 package com.android.gallery3d.data;
 
+import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.ui.GLRoot;
 import com.android.gallery3d.ui.GLRootStub;
 
@@ -28,14 +29,22 @@ import android.test.suitebuilder.annotation.LargeTest;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 // This test reads real data directly and dump information out in the log.
 public class RealDataTest extends AndroidTestCase {
     private static final String TAG = "RealDataTest";
+    private HashSet<Long> mUsedId = new HashSet<Long>();
 
     @LargeTest
-    public void testLocalImage() {
-        Thread t = new TestLocalImageThread();
+    public void testRealData() {
+        mUsedId.clear();
+        run(new TestLocalImageThread());
+        run(new TestLocalVideoThread());
+        run(new TestPicasaThread());
+    }
+
+    static void run(Thread t) {
         t.start();
         try {
             t.join();
@@ -47,7 +56,8 @@ public class RealDataTest extends AndroidTestCase {
     class TestLocalImageThread extends Thread {
         public void run() {
             Looper.prepare();
-            GalleryContextStub context = new GalleryContextMock(
+            GalleryContext context = new GalleryContextMock(
+                    mContext,
                     mContext.getContentResolver());
 
             LocalAlbumSet albumSet = new LocalAlbumSet(context, true);
@@ -62,24 +72,14 @@ public class RealDataTest extends AndroidTestCase {
         }
     }
 
-    @LargeTest
-    public void testLocalVideo() {
-        Thread t = new TestLocalVideoThread();
-        t.start();
-        try {
-            t.join();
-        } catch (InterruptedException ex) {
-            fail();
-        }
-    }
-
     class TestLocalVideoThread extends Thread {
         public void run() {
             Looper.prepare();
-            GalleryContextStub context = new GalleryContextMock(
+            GalleryContext context = new GalleryContextMock(
+                    mContext,
                     mContext.getContentResolver());
 
-            LocalAlbumSet albumSet = new LocalAlbumSet(context, true);
+            LocalAlbumSet albumSet = new LocalAlbumSet(context, false);
             MyListener listener = new MyListener();
             albumSet.setContentListener(listener);
             albumSet.reload();
@@ -91,21 +91,11 @@ public class RealDataTest extends AndroidTestCase {
         }
     }
 
-    @LargeTest
-    public void testPicasa() {
-        Thread t = new TestPicasaThread();
-        t.start();
-        try {
-            t.join();
-        } catch (InterruptedException ex) {
-            fail();
-        }
-    }
-
     class TestPicasaThread extends Thread {
         public void run() {
             Looper.prepare();
-            GalleryContextStub context = new GalleryContextMock(
+            GalleryContext context = new GalleryContextMock(
+                    mContext,
                     mContext.getContentResolver());
 
             PicasaAlbumSet albumSet = new PicasaAlbumSet(context);
@@ -122,10 +112,11 @@ public class RealDataTest extends AndroidTestCase {
 
     void dumpMediaSet(MediaSet set, String prefix) {
         Log.v(TAG, "getName() = " + set.getName());
-        Log.v(TAG, "getId() = " + Long.toHexString(set.getId()));
+        Log.v(TAG, "getUniqueId() = " + Long.toHexString(set.getUniqueId()));
         Log.v(TAG, "getMediaItemCount() = " + set.getMediaItemCount());
         Log.v(TAG, "getSubMediaSetCount() = " + set.getSubMediaSetCount());
         Log.v(TAG, "getTotalMediaItemCount() = " + set.getTotalMediaItemCount());
+        assertNewId(set.getUniqueId());
         for (int i = 0, n = set.getSubMediaSetCount(); i < n; i++) {
             MediaSet sub = set.getSubMediaSet(i);
             Log.v(TAG, prefix + "got set " + i);
@@ -141,8 +132,14 @@ public class RealDataTest extends AndroidTestCase {
     }
 
     void dumpMediaItem(MediaItem item, String prefix) {
+        assertNewId(item.getUniqueId());
         Log.v(TAG, prefix + "getUniqueId() = "
                 + Long.toHexString(item.getUniqueId()));
+    }
+
+    void assertNewId(Long key) {
+        assertFalse(mUsedId.contains(key));
+        mUsedId.add(key);
     }
 
     static class MyListener implements MediaSet.MediaSetListener {
