@@ -10,7 +10,8 @@ LOCAL_CERTIFICATE := media
 
 LOCAL_OVERRIDES_PACKAGES := Gallery
 
-LOCAL_SDK_VERSION := current
+# We mark this out until LargeBitmap is unhidden.
+#LOCAL_SDK_VERSION := current
 
 include $(BUILD_PACKAGE)
 

@@ -18,6 +18,7 @@ package com.android.gallery3d.data;
 
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.LargeBitmap;
 import android.provider.MediaStore.Video.VideoColumns;
 
 import com.android.gallery3d.util.Future;
@@ -89,5 +90,11 @@ public class LocalVideo extends LocalMediaItem {
         item.mUniqueId = DataManager.makeId(parentId, itemId);
 
         return item;
+    }
+
+    public Future<LargeBitmap> requestLargeImage(
+            int type, FutureListener<LargeBitmap> listener) {
+        throw new UnsupportedOperationException("Cannot regquest a large image"
+                + " to a local video!");
     }
 }

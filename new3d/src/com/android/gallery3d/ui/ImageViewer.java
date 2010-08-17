@@ -17,7 +17,9 @@
 package com.android.gallery3d.ui;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.LargeBitmap;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Bitmap.Config;
@@ -35,7 +37,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class ImageViewer extends GLView {
-
     public static final int SIZE_UNKNOWN = -1;
 
     private static final String TAG = "ImageViewer";
@@ -53,12 +54,15 @@ public class ImageViewer extends GLView {
     private static final int IMAGE_GAP = 64;
     private static final int SWITCH_THRESHOLD = 96;
 
+    private static final int THRESHOLD_TO_DOWNSCALE = 480;
+
     // the previous/current/next image entries
     private final ScreenNailEntry mScreenNails[] = new ScreenNailEntry[3];
 
-    private Bitmap mScaledBitmaps[];
+    private LargeBitmap mLargeBitmap;
     private BitmapTexture mBackupTexture;
     private int mLevelCount;  // cache the value of mScaledBitmaps.length
+
 
     // The mLevel variable indicates which level of bitmap we should use.
     // Level 0 means the original full-sized bitmap, and a larger value means
@@ -127,20 +131,26 @@ public class ImageViewer extends GLView {
         notifyScreenNailInvalidated(ENTRY_CURRENT);
         notifyScreenNailInvalidated(ENTRY_PREVIOUS);
         notifyScreenNailInvalidated(ENTRY_NEXT);
-        notifyMipmapsInvalidated();
+        notifyLargeBitmapInvalidated();
 
         resetCurrentImagePosition();
     }
 
-    public void notifyMipmapsInvalidated() {
-        mScaledBitmaps = mModel.getMipmaps();
-        if (mScaledBitmaps != null) {
-            mLevelCount = mScaledBitmaps.length;
+    public void notifyLargeBitmapInvalidated() {
+        mLargeBitmap = mModel.getLargeBitmap();
+        if (mLargeBitmap != null) {
+            mLevelCount = calcuateLevelCount(mLargeBitmap.getWidth(),
+                    mLargeBitmap.getHeight(), THRESHOLD_TO_DOWNSCALE);
             layoutTiles(mCenterX, mCenterY, mScale);
             invalidate();
         } else {
             mLevelCount = 0;
         }
+    }
+
+    public int calcuateLevelCount(int width, int height, int minLength) {
+        int side = width < height ? width : height;
+        return Math.max(0, ceilLog2((float) side / minLength));
     }
 
     public void notifyScreenNailInvalidated(int which) {
@@ -839,15 +849,46 @@ public class ImageViewer extends GLView {
 
         @Override
         protected Bitmap onGetBitmap() {
+            // Get a tile from the original image.
+            // The tile is down-scaled by (1 << mTilelevel) from a region in the original image.
             int level = mTileLevel;
-            Bitmap source = mScaledBitmaps[level];
-            Bitmap bitmap = Bitmap.createBitmap(TILE_SIZE + 2 * TILE_BORDER,
-                    TILE_SIZE + 2 * TILE_BORDER,
-                    source.hasAlpha() ? Config.ARGB_8888 : Config.RGB_565);
-            Canvas canvas = new Canvas(bitmap);
-            canvas.drawBitmap(source, -(mX >> level) + TILE_BORDER,
-                    -(mY >> level) + TILE_BORDER, null);
-            return bitmap;
+            int regionLength = (TILE_SIZE + 2 * TILE_BORDER) << level;
+            int borderLength = TILE_BORDER << level;
+            Rect rect = new Rect(0, 0, mLargeBitmap.getWidth(),
+                    mLargeBitmap.getHeight());
+
+            // Get the intersected rect of the requested region and the image.
+            boolean intersected = rect.intersect(mX - borderLength,
+                    mY - borderLength, mX + regionLength, mY + regionLength);
+
+            Bitmap region = null;
+            if (intersected) {
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inSampleSize =  1 << level;
+                region = mLargeBitmap.decodeRegion(rect, options);
+
+                int targetLength = TILE_SIZE + 2 * TILE_BORDER;
+                int left = rect.left == 0 ? TILE_BORDER : 0;
+                int top = rect.top == 0 ? TILE_BORDER : 0;
+
+                // The returned region may not match with the targetLength.
+                // If so, we fill black pixels on it.
+                if ((region.getWidth() != targetLength)
+                        ||  (region.getHeight() != targetLength) || left != 0
+                        || top != 0) {
+                    Bitmap tile = Bitmap.createBitmap(targetLength,
+                            targetLength, region.hasAlpha()
+                            ? Config.ARGB_8888
+                            : Config.RGB_565);
+                    Canvas canvas = new Canvas(tile);
+                    canvas.drawBitmap(region, left, top, null);
+                    region.recycle();
+                    return tile;
+                }
+            } else {
+                throw new AssertionError("The requested tile is not within the image!");
+            }
+            return region;
         }
 
         public void update(int x, int y, int level) {
@@ -857,6 +898,8 @@ public class ImageViewer extends GLView {
             invalidateContent();
         }
 
+        // Draw the tile to a square at canvas that locates at (x, y) and
+        // has a side length of length.
         public void drawTile(GLCanvas canvas, float x, float y, float length) {
             RectF source = mSourceRect;
             RectF target = mTargetRect;
@@ -873,6 +916,7 @@ public class ImageViewer extends GLView {
             return getTile(x, y, mTileLevel + 1);
         }
 
+        // Draw the tile to target at canvas.
         public void drawTile(GLCanvas canvas, RectF source, RectF target) {
             if (!isContentValid(canvas)) {
                 if (mUploadQuota > 0) {
@@ -996,7 +1040,7 @@ public class ImageViewer extends GLView {
         Utils.swap(screenNails, ENTRY_PREVIOUS, ENTRY_NEXT);
 
         notifyScreenNailInvalidated(mSwitchIndex);
-        notifyMipmapsInvalidated();
+        notifyLargeBitmapInvalidated();
 
         resetCurrentImagePosition();
     }
@@ -1015,7 +1059,7 @@ public class ImageViewer extends GLView {
 
         // Return null if the specified image is unavailable.
         public ImageData getImageData(int which);
-        public Bitmap[] getMipmaps();
+        public LargeBitmap getLargeBitmap();
     }
 
     public static class ImageData {

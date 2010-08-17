@@ -17,6 +17,7 @@
 package com.android.gallery3d.data;
 
 import android.graphics.Bitmap;
+import android.graphics.LargeBitmap;
 
 import com.android.gallery3d.util.Future;
 import com.android.gallery3d.util.FutureListener;
@@ -35,4 +36,7 @@ public abstract class MediaItem {
     public abstract long getUniqueId();
     public abstract Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener);
+
+    public abstract Future<LargeBitmap> requestLargeImage(int type,
+            FutureListener<LargeBitmap> listener);
 }

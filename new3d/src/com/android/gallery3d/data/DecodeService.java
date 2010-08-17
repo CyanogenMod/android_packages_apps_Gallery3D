@@ -18,6 +18,7 @@ package com.android.gallery3d.data;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.LargeBitmap;
 import android.graphics.BitmapFactory.Options;
 import android.util.Log;
 
@@ -89,6 +90,29 @@ public class DecodeService {
         return task;
     }
 
+    public FutureTask<LargeBitmap> requestCreateLargeBitmap(
+            byte[] bytes, int offset, int length,
+            FutureListener<? super LargeBitmap> listener) {
+        if (offset < 0 || length <= 0 || offset + length > bytes.length) {
+            throw new IllegalArgumentException(String.format(
+                    "offset = %s, length = %s, bytes = %s",
+                    offset, length, bytes.length));
+        }
+        FutureTask<LargeBitmap> task = new FutureTask<LargeBitmap>(
+                new CreateLargeBitampFromByteArray(
+                        bytes, offset, length, false), listener);
+        mExecutor.execute(task);
+        return task;
+    }
+
+    public FutureTask<LargeBitmap> requestCreateLargeBitmap(
+            String filePath, FutureListener<? super LargeBitmap> listener) {
+        FutureTask<LargeBitmap> task = new FutureTask<LargeBitmap>(
+                new CreateLargeBitampFromFilePath(filePath, false), listener);
+        mExecutor.execute(task);
+        return task;
+    }
+
     private static class DecodeFutureTask extends FutureTask<Bitmap> {
 
         private final Options mOptions;
@@ -136,6 +160,43 @@ public class DecodeService {
 
         public Bitmap call() throws Exception {
             return BitmapFactory.decodeByteArray(mBytes, mOffset, mLength, mOptions);
+        }
+    }
+
+    private static class CreateLargeBitampFromByteArray implements
+            Callable<LargeBitmap> {
+        private final byte[] mBytes;
+        private final int mOffset;
+        private final int mLength;
+        private final boolean mIsShareable;
+
+        public CreateLargeBitampFromByteArray(
+                byte bytes[], int offset, int length, boolean isShareable) {
+            mBytes = bytes;
+            mOffset = offset;
+            mLength = length;
+            mIsShareable = isShareable;
+        }
+
+        public LargeBitmap call() throws Exception {
+            return BitmapFactory.createLargeBitmap(mBytes, mOffset, mLength,
+                    mIsShareable);
+        }
+    }
+
+    private static class CreateLargeBitampFromFilePath implements
+            Callable<LargeBitmap> {
+        private final String mFilePath;
+        private final boolean mIsShareable;
+
+        public CreateLargeBitampFromFilePath(
+                String filePath, boolean isShareable) {
+            mFilePath = filePath;
+            mIsShareable = isShareable;
+        }
+
+        public LargeBitmap call() throws Exception {
+            return BitmapFactory.createLargeBitmap(mFilePath, mIsShareable);
         }
     }
 
