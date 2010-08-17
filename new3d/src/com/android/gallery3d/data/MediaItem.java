@@ -21,6 +21,7 @@ import android.graphics.Bitmap;
 import com.android.gallery3d.util.Future;
 import com.android.gallery3d.util.FutureListener;
 
+// MediaItem represents an image or a video item.
 public abstract class MediaItem {
     public static final int TYPE_COUNT = 3;
     public static final int TYPE_FULL_IMAGE = 0;

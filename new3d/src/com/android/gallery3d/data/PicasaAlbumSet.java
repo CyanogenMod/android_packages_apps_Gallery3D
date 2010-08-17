@@ -25,6 +25,7 @@ import com.android.gallery3d.picasa.PicasaContentProvider;
 
 import java.util.ArrayList;
 
+// PicasaAlbumSet lists all albums in a Picasa account.
 public class PicasaAlbumSet extends DatabaseMediaSet {
     private static final String TAG = "PicasaAlbumSet";
     private final EntrySchema SCHEMA = AlbumEntry.SCHEMA;
@@ -48,7 +49,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return TAG;
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return DataManager.makeId(DataManager.ID_PICASA_ALBUM_SET, 0);
     }
 

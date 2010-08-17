@@ -29,6 +29,7 @@ import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 
+// PicasaAlbum lists all images in a Picasa album.
 public class PicasaAlbum extends MediaSet {
     private static final String TAG = "PicasaAlbum";
     private static final EntrySchema SCHEMA = PhotoEntry.SCHEMA;
@@ -49,7 +50,7 @@ public class PicasaAlbum extends MediaSet {
                 DataManager.ID_PICASA_ALBUM, (int) entry.id);
     }
 
-    public long getId() {
+    public long getUniqueId() {
         return mUniqueId;
     }
 

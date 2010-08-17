@@ -231,6 +231,14 @@ public class UtilsTest extends AndroidTestCase {
         assertFalse(Utils.isOpaque(0xAA0000FF));
     }
 
+    public static void testSwap() {
+        Integer[] a = {1, 2, 3};
+        Utils.swap(a, 0, 2);
+        assertEquals(a[0].intValue(), 3);
+        assertEquals(a[1].intValue(), 2);
+        assertEquals(a[2].intValue(), 1);
+    }
+
     public static void assertFloatEq(float expected, float actual) {
         if (Math.abs(actual - expected) > 1e-6) {
             Log.v(TAG, "expected: " + expected + ", actual: " + actual);

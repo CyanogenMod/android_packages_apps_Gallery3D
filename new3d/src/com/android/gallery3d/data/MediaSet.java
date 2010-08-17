@@ -21,6 +21,10 @@ import java.util.ArrayList;
 // MediaSet is a directory-like data structure.
 // It contains MediaItems and sub-MediaSets.
 //
+// The primary interface are:
+// getMediaItemCount(), getMediaItem() and
+// getSubMediaSetCount(), getSubMediaSet().
+//
 // getTotalMediaItemCount() returns the number of all MediaItems, including
 // those in sub-MediaSets.
 public abstract class MediaSet {
@@ -33,6 +37,13 @@ public abstract class MediaSet {
         return 0;
     }
 
+    // Returns the media items in the range [start, start + count).
+    //
+    // The number of media items returned may be less than the specified count
+    // if there are not enough media items available. The number of
+    // media items available may not be consistent with the return value of
+    // getMediaItemCount() because the contents of database may have already
+    // changed.
     public ArrayList<MediaItem> getMediaItem(int start, int count) {
         throw new IndexOutOfBoundsException();
     }
@@ -70,7 +81,7 @@ public abstract class MediaSet {
 
     public abstract int getTotalMediaItemCount();
 
-    public abstract long getId();
+    public abstract long getUniqueId();
     public abstract String getName();
 
     protected MediaSetListener mListener;

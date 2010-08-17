@@ -30,6 +30,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+// LocalImage represents an image in the local storage.
 public class LocalImage extends LocalMediaItem {
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
@@ -40,7 +41,7 @@ public class LocalImage extends LocalMediaItem {
     private static final String TAG = "LocalImage";
 
     // Must preserve order between these indices and the order of the terms in
-    // PROJECTION_IMAGES.
+    // the following PROJECTION array.
     private static final int INDEX_ID = 0;
     private static final int INDEX_CAPTION = 1;
     private static final int INDEX_MIME_TYPE = 2;
