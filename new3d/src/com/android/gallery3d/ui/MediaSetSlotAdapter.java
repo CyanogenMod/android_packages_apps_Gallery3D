@@ -331,6 +331,8 @@ public class MediaSetSlotAdapter implements SlotView.Listener {
                 putSlot(i);
             }
         }
+        mVisibleEnd = end;
+        mVisibleStart = start;
     }
 
     public void onLayoutChanged(int width, int height) {

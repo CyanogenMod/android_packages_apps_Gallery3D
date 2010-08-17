@@ -18,82 +18,101 @@ package com.android.gallery3d.ui;
 
 import com.android.gallery3d.util.Utils;
 
-import android.content.Context;
-import android.hardware.SensorManager;
-import android.view.ViewConfiguration;
-import android.view.animation.Interpolator;
-
 public class ScrollerHelper {
     private static final long START_ANIMATION = -1;
+    private static final long NO_ANIMATION = -2;
 
-    private final float mDeceleration;
+    private static final int ANIM_KIND_FLING = 1;
+    private static final int ANIM_KIND_SCROLL = 2;
+    private static final int DECELERATED_FACTOR = 4;
 
-    private boolean mFinished;
-    private int mVelocity;
-    private int mDirection;
+    private long mStartTime = NO_ANIMATION;
+
     private int mDuration; // in millisecond
-    private long mStartTime;
 
-    private int mMin;
-    private int mMax;
     private int mStart;
     private int mFinal;
     private int mPosition;
-    private final Interpolator mInterpolator;
 
-    public ScrollerHelper(Context context, Interpolator interpolator) {
-        mInterpolator = interpolator;
-        mDeceleration = SensorManager.GRAVITY_EARTH   // g (m/s^2)
-                * 39.37f                              // inch/meter
-                * Utils.dpToPixel(context, 160)        // pixels per inch
-                * ViewConfiguration.getScrollFriction();
-    }
+    private int mAnimationKind;
+
+    // The fling duration when velocity is 1 pixel / second
+    private float FLING_DURATION_PARAM = 200f; // 200ms
 
     /**
      * Call this when you want to know the new location.  If it returns true,
      * the animation is not yet finished.  loc will be altered to provide the
      * new location.
      */
-    public boolean computeScrollOffset(long currentTimeMillis) {
-        if (mFinished) return false;
+    public boolean advanceAnimation(long currentTimeMillis) {
+        if (mStartTime == NO_ANIMATION) return false;
         if (mStartTime == START_ANIMATION) mStartTime = currentTimeMillis;
 
         int timePassed = (int)(currentTimeMillis - mStartTime);
         if (timePassed < mDuration) {
-            if (mInterpolator != null) {
-                timePassed = (int) (mDuration * mInterpolator.getInterpolation(
-                        (float) timePassed / mDuration) + 0.5f);
+            float progress = (float) timePassed / mDuration;
+            float f = 1 - progress;
+            if (mAnimationKind == ANIM_KIND_SCROLL) {
+                f = 1 - f;  // linear
+            } else if (mAnimationKind == ANIM_KIND_FLING) {
+                f = 1 - f * f * f * f;  // x ^ DECELERATED_FACTOR
             }
-            float t = timePassed / 1000.0f;
-            int distance = (int) ((
-                    mVelocity * t) - (mDeceleration * t * t / 2.0f) + 0.5f);
-            mPosition = Utils.clamp(mStart + mDirection * distance, mMin, mMax);
+            mPosition = Math.round(mStart + (mFinal - mStart) * f);
+            Log.v("Fling", String.format("mStart = %s, mFinal = %s, mPosition = %s, f = %s, progress = %s",
+                    mStart, mFinal, mPosition, f, progress));
+            if (mPosition == mFinal) {
+                mStartTime = NO_ANIMATION;
+                return false;
+            }
+            return true;
         } else {
             mPosition = mFinal;
-            mFinished = true;
+            mStartTime = NO_ANIMATION;
+            return false;
         }
-        return true;
     }
 
     public void forceFinished() {
-        mFinished = true;
+        mStartTime = NO_ANIMATION;
+        mFinal = mPosition;
     }
 
-    public int getCurrentPosition() {
+    public int getPosition() {
         return mPosition;
     }
 
-    public void fling(int start, int velocity, int min, int max) {
-        mFinished = false;
-        mVelocity = Math.abs(velocity);
-        mDirection = velocity >= 0 ? 1 : -1;
-        mDuration = (int) (1000 * mVelocity / mDeceleration);
+    public void setPosition(int position) {
+        mPosition = position;
+    }
+
+    public void fling(float velocity, int min, int max) {
+        /*
+         * The position formula: x = s + (e - s) * (1 - (1 - t / T) ^ d)
+         *     velocity formula: v = d * (e - s) * (1 - t / T) ^ (d - 1) / T
+         * Thus,
+         *     v0 = (e - s) / T * d => (e - s) = v0 * T / d
+         */
         mStartTime = START_ANIMATION;
-        mStart = start;
-        mMin = min;
-        mMax = max;
-        double totalDistance = (double) mDirection
-                * (velocity * velocity) / (2 * mDeceleration);
-        mFinal = Utils.clamp(start + (int) (totalDistance + 0.5), min, max);
+        mAnimationKind = ANIM_KIND_FLING;
+        mStart = mPosition;
+        double x = Math.pow(Math.abs(velocity), 1.0 / (DECELERATED_FACTOR - 1));
+        mDuration = (int) Math.round(FLING_DURATION_PARAM * x);
+        int distance = Math.round(
+                velocity * mDuration / DECELERATED_FACTOR / 1000);
+        mFinal = Utils.clamp(mStart + distance, min, max);
+
+        // If the left space is not enough, get duration base on the left space
+        if (mFinal - mStart != distance && distance != 0) {
+            mDuration *= Math.pow(
+                    (double) (mFinal - mStart) / distance, 1.0 / (DECELERATED_FACTOR));
+        }
+    }
+
+    public void startScroll(int distance, int min, int max) {
+        mStartTime = START_ANIMATION;
+        mAnimationKind = ANIM_KIND_SCROLL;
+        mStart = mPosition;
+        mFinal = Utils.clamp(mFinal + distance, min, max);
+        mDuration = 0;
     }
 }
