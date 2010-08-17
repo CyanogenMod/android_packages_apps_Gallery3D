@@ -33,23 +33,57 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
     private final long mUniqueId;
     private final int mPageSize;
     private final Comparator<MediaItem> mComparator;
-    private final MediaSet[] mSets;
-    private final int mSize;  // caches mSets.length
+    private final MediaSet[] mSources;
+    private final int mItemId;
+
+    private ArrayList<MediaSet> mSets;
+    private int mSize;  // caches mSets.size()
     private FetchCache[] mFetcher;
 
     // mIndex maps global position to the position of each underlying media sets.
     private TreeMap<Integer, int[]> mIndex;
 
     public MergeAlbum(long uniqueId, int pageSize, Comparator<MediaItem> comparator,
-            MediaSet[] mediaSets) {
+            MediaSet[] sources, int itemId) {
         mUniqueId = uniqueId;
         mPageSize = pageSize;
         mComparator = comparator;
-        mSets = mediaSets;
-        mSize = mSets.length;
+        mSources = sources;
+        mItemId = itemId;
+        updateData();
+    }
+
+    public void updateData() {
+        ArrayList<MediaSet> matches = new ArrayList<MediaSet>();
+
+        // Find sources that have a sub media set with specified mItemId.
+        for (MediaSet set : mSources) {
+            for (int i = 0, n = set.getSubMediaSetCount(); i < n; i++) {
+                MediaSet subset = set.getSubMediaSet(i);
+                int itemId = DataManager.extractItemId(subset.getUniqueId());
+                if (itemId == mItemId) {
+                    matches.add(subset);
+                }
+            }
+        }
+
+        // If the matches doesn't change, we don't need to update.
+        if (mSets != null) {
+            int n = matches.size();
+            if (n == mSize) {
+                int i;
+                for (i = 0; i < n; i++) {
+                    if (matches.get(i) != mSets.get(i)) break;
+                }
+                if (i == n) return;
+            }
+        }
+
+        mSets = matches;
+        mSize = matches.size();
         mFetcher = new FetchCache[mSize];
         for (int i = 0; i < mSize; i++) {
-            MediaSet s = mSets[i];
+            MediaSet s = mSets.get(i);
             s.setContentListener(this);
             mFetcher[i] = new FetchCache(s, mPageSize);
         }
@@ -137,6 +171,7 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
 
     public void onContentChanged() {
         invalidateCache();
+        updateData();
         if (mListener != null) {
             mListener.onContentChanged();
         }

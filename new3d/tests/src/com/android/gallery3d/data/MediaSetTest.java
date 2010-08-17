@@ -91,10 +91,12 @@ public class MediaSetTest extends AndroidTestCase {
         MediaSet s0 = merge.getSubMediaSet(0);
         MediaSet s1 = merge.getSubMediaSet(1);
         MediaSet s2 = merge.getSubMediaSet(2);
-        assertEquals(DataManager.makeId(0, 0), s0.getUniqueId());
+        assertEquals(DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM, 0),
+                s0.getUniqueId());
         assertEquals(DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM, 1),
                 s1.getUniqueId());
-        assertEquals(DataManager.makeId(1, 2), s2.getUniqueId());
+        assertEquals(DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM, 2),
+                s2.getUniqueId());
 
         assertEquals(3, s0.getMediaItemCount());
         assertEquals(10, s1.getMediaItemCount());

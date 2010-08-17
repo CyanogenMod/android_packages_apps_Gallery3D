@@ -21,7 +21,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.TreeSet;
 
 // MergeAlbumSet merges two or more media sets into one.
 // If the the input media sets have sub media sets with the item id,
@@ -32,14 +32,15 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
     private final long mUniqueId;
     private Comparator<MediaItem> mComparator;
     private final MediaSet[] mSets;
-    private MediaSet[] mAlbums;
+    private ArrayList<MergeAlbum> mAlbums = new ArrayList<MergeAlbum>();
+    private TreeSet<Integer> mIds = new TreeSet<Integer>();
 
     public MergeAlbumSet(long uniqueId, Comparator<MediaItem> comparator,
             MediaSet ... mediaSets) {
         mUniqueId = uniqueId;
         mComparator = comparator;
         mSets = mediaSets;
-        updateNames();
+        updateIds();
         for (MediaSet set : mediaSets) {
             set.setContentListener(this);
         }
@@ -49,51 +50,40 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         return mUniqueId;
     }
 
-    private void updateNames() {
+    private void updateIds() {
 
-        // This map maps from a the item id to a list of media sets.
-        // The list of media sets are the media set with that item id.
-        TreeMap<Integer, ArrayList<MediaSet>> map =
-                new TreeMap<Integer, ArrayList<MediaSet>>();
+        // allIds keeps all item id of the (sub) media sets in the album sets
+        // we want to merge.
+        TreeSet<Integer> allIds = new TreeSet<Integer>();
         for (MediaSet set : mSets) {
             for (int i = 0, n = set.getSubMediaSetCount(); i < n; i++) {
                 MediaSet subset = set.getSubMediaSet(i);
                 int itemId = DataManager.extractItemId(subset.getUniqueId());
-                ArrayList<MediaSet> list = map.get(itemId);
-                if (list == null) {
-                    list = new ArrayList<MediaSet>();
-                    map.put(itemId, list);
-                }
-                list.add(subset);
+                allIds.add(itemId);
             }
         }
 
-        int size = map.size();
-        mAlbums = new MediaSet[size];
+        // Update all existing albums.
+        for (MergeAlbum album : mAlbums) {
+            album.updateData();
+        }
 
-        int i = 0;
-        for (Map.Entry<Integer, ArrayList<MediaSet>> entry : map.entrySet()) {
-            ArrayList<MediaSet> list = entry.getValue();
-            if (list.size() == 1) {
-                mAlbums[i] = list.get(0);
-            } else {
-                int itemId = entry.getKey();
-                long id = DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM,
-                        itemId);
-                MediaSet[] sets = new MediaSet[list.size()];
-                mAlbums[i] = new MergeAlbum(id, PAGE_SIZE, mComparator,
-                        list.toArray(sets));
-            }
-            i = i + 1;
+        // If there are new ids, create new albums for them.
+        for (int itemId : allIds) {
+            if (mIds.contains(itemId)) continue;
+            mIds.add(itemId);
+            long newId = DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM,
+                    itemId);
+            mAlbums.add(new MergeAlbum(newId, PAGE_SIZE, mComparator, mSets, itemId));
         }
     }
 
     public MediaSet getSubMediaSet(int index) {
-        return mAlbums[index];
+        return mAlbums.get(index);
     }
 
     public int getSubMediaSetCount() {
-        return mAlbums.length;
+        return mAlbums.size();
     }
 
     public String getName() {
@@ -115,7 +105,7 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
     }
 
     public void onContentChanged() {
-        updateNames();
+        updateIds();
         if (mListener != null) {
             mListener.onContentChanged();
         }
