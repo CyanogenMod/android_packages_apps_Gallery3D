@@ -17,8 +17,10 @@
 package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Handler;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Images.ImageColumns;
@@ -50,6 +52,7 @@ public class LocalAlbum extends MediaSet {
     private final String mBucketName;
     private boolean mIsImage;
     private long mUniqueId;
+    private boolean mIsDirty = true;
 
     public LocalAlbum(GalleryContext context, int bucketId, String name, boolean isImage) {
         mContext = context;
@@ -75,12 +78,16 @@ public class LocalAlbum extends MediaSet {
             mUniqueId = DataManager.makeId(
                     DataManager.ID_LOCAL_VIDEO_ALBUM, bucketId);
         }
+
+        mResolver.registerContentObserver(mBaseUri, true, new MyContentObserver());
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
+    @Override
     public ArrayList<MediaItem> getMediaItem(int start, int count) {
         ImageService imageService = mContext.getImageService();
         DataManager dataManager = mContext.getDataManager();
@@ -107,6 +114,7 @@ public class LocalAlbum extends MediaSet {
         return list;
     }
 
+    @Override
     public int getMediaItemCount() {
         Cursor cursor = mResolver.query(
                 mBaseUri, COUNT_PROJECTION, mWhereClause,
@@ -119,10 +127,12 @@ public class LocalAlbum extends MediaSet {
         }
     }
 
+    @Override
     public String getName() {
         return mBucketName;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         return getMediaItemCount();
     }
@@ -155,7 +165,23 @@ public class LocalAlbum extends MediaSet {
         }
     }
 
+    @Override
     public void reload() {
-        // do nothing
+        if (mIsDirty) {
+            mIsDirty = false;
+            if (mListener != null) mListener.onContentChanged();
+        }
+    }
+
+    private class MyContentObserver extends ContentObserver {
+        public MyContentObserver() {
+            super(new Handler(mContext.getMainLooper()));
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            mIsDirty = true;
+            if (mListener != null) mListener.onContentDirty();
+        }
     }
 }

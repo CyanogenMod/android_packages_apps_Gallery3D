@@ -192,6 +192,10 @@ public class GridSlotAdapter implements SlotView.Listener {
         public void onContentChanged() {
             GridSlotAdapter.this.onContentChanged();
         }
+
+        public void onContentDirty() {
+            //TODO: reload the album
+        }
     }
 
     public void updateVisibleRange(int start, int end) {

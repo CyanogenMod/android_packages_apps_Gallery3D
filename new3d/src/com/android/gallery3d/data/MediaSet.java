@@ -30,6 +30,7 @@ import java.util.ArrayList;
 public abstract class MediaSet {
 
     public interface MediaSetListener {
+        public void onContentDirty();
         public void onContentChanged();
     }
 

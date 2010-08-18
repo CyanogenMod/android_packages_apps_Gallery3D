@@ -298,12 +298,20 @@ public class MediaSetSlotAdapter implements SlotView.Listener {
                 mSlotView.invalidate();
             }
         }
+
+        public void onContentDirty() {
+            // TODO Reload the album set
+        }
     }
 
     private class MyContentListener implements MediaSet.MediaSetListener {
 
         public void onContentChanged() {
             MediaSetSlotAdapter.this.onContentChanged();
+        }
+
+        public void onContentDirty() {
+            // TODO Reload the album set
         }
     }
 

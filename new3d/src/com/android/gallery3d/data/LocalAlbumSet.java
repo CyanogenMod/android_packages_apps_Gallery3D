@@ -16,8 +16,10 @@
 
 package com.android.gallery3d.data;
 
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Handler;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Images.ImageColumns;
@@ -66,8 +68,11 @@ public class LocalAlbumSet extends DatabaseMediaSet {
             mBaseUri = Video.Media.EXTERNAL_CONTENT_URI;
             mUniqueId = DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM_SET, 0);
         }
+        context.getContentResolver().registerContentObserver(
+                mBaseUri, true, new MyContentObserver());
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
@@ -80,6 +85,7 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         return mAlbums.size();
     }
 
+    @Override
     public String getName() {
         return TAG;
     }
@@ -124,5 +130,16 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         mLoadBuffer = null;
 
         Collections.sort(mAlbums, LocalAlbum.sBucketNameComparator);
+    }
+
+    private class MyContentObserver extends ContentObserver {
+        public MyContentObserver() {
+            super(new Handler(mContext.getMainLooper()));
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            notifyContentDirty();
+        }
     }
 }

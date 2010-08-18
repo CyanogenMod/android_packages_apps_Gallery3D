@@ -17,8 +17,10 @@
 package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Handler;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.picasa.AlbumEntry;
@@ -41,6 +43,7 @@ public class PicasaAlbum extends MediaSet {
     private final ContentResolver mResolver;
     private long mUniqueId;
     private GalleryContext mContext;
+    private boolean mIsDirty = true;
 
     public PicasaAlbum(GalleryContext context, AlbumEntry entry) {
         mContext = context;
@@ -48,12 +51,16 @@ public class PicasaAlbum extends MediaSet {
         mData = entry;
         mUniqueId = DataManager.makeId(
                 DataManager.ID_PICASA_ALBUM, (int) entry.id);
+        mResolver.registerContentObserver(
+                PicasaContentProvider.PHOTOS_URI, true, new MyContentObserver());
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
+    @Override
     public ArrayList<MediaItem> getMediaItem(int start, int count) {
         Uri uri = PicasaContentProvider.PHOTOS_URI.buildUpon()
                 .appendQueryParameter("limit", start + "," + count).build();
@@ -83,6 +90,7 @@ public class PicasaAlbum extends MediaSet {
         return list;
     }
 
+    @Override
     public int getMediaItemCount() {
         Cursor cursor = mResolver.query(
                 PicasaContentProvider.PHOTOS_URI,
@@ -96,15 +104,33 @@ public class PicasaAlbum extends MediaSet {
         }
     }
 
+    @Override
     public String getName() {
         return TAG;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         return getMediaItemCount();
     }
 
+    @Override
     public void reload() {
-        // do nothing
+        if (mIsDirty) {
+            mIsDirty = false;
+            if (mListener != null) mListener.onContentChanged();
+        }
+    }
+
+    private class MyContentObserver extends ContentObserver {
+        public MyContentObserver() {
+            super(new Handler(mContext.getMainLooper()));
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            mIsDirty = true;
+            if (mListener != null) mListener.onContentDirty();
+        }
     }
 }

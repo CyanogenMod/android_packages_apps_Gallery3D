@@ -16,8 +16,6 @@
 
 package com.android.gallery3d.data;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
@@ -46,6 +44,7 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         }
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
@@ -78,18 +77,22 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         }
     }
 
+    @Override
     public MediaSet getSubMediaSet(int index) {
         return mAlbums.get(index);
     }
 
+    @Override
     public int getSubMediaSetCount() {
         return mAlbums.size();
     }
 
+    @Override
     public String getName() {
         return TAG;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int count = 0;
         for (MediaSet set : mSets) {
@@ -98,6 +101,7 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         return count;
     }
 
+    @Override
     public void reload() {
         for (MediaSet set : mSets) {
             set.reload();
@@ -109,5 +113,9 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         if (mListener != null) {
             mListener.onContentChanged();
         }
+    }
+
+    public void onContentDirty() {
+        if (mListener != null) mListener.onContentDirty();
     }
 }
