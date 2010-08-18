@@ -19,13 +19,17 @@ package com.android.gallery3d.ui;
 import android.content.Context;
 import android.os.Vibrator;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.android.gallery3d.data.MediaOperation;
+
 public class SelectionManager {
     private Set<Integer> mSelectedSet;
-    private Vibrator mVibrator;
+    private final Vibrator mVibrator;
     private final SelectionDrawer mDrawer;
+    private ArrayList<MediaOperation> mSelectedMedia;
 
     public SelectionManager(Context context) {
         mDrawer = new SelectionDrawer(context);
@@ -75,5 +79,9 @@ public class SelectionManager {
                 mSelectedSet.add(slotIndex);
             }
         }
+    }
+
+    public Set<Integer> getSelectedSet() {
+        return mSelectedSet;
     }
 }

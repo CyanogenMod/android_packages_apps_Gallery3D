@@ -91,4 +91,8 @@ public abstract class MediaSet {
     }
 
     public abstract void reload();
+
+    public abstract int getSupportedOperations();
+    public abstract boolean supportOpeation(int operation);
+    public abstract void delete();
 }

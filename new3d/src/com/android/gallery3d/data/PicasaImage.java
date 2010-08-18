@@ -36,6 +36,7 @@ import java.util.Arrays;
 // PicasaImage is an image in the Picasa account.
 public class PicasaImage extends MediaItem {
     private static final String TAG = "PicasaImage";
+    private static final int SUPPORTED_OPERATIONS = 0;
 
     private final PicasaTask[] mTasks = new PicasaTask[MediaItem.TYPE_COUNT];
     private final GalleryContext mContext;
@@ -176,6 +177,27 @@ public class PicasaImage extends MediaItem {
                 }
             }
             return null;
+        }
+    }
+
+    @Override
+    public int getSupportedOperations() {
+        return SUPPORTED_OPERATIONS;
+    }
+
+    @Override
+    public boolean supportOperation(int operation) {
+        return (operation & SUPPORTED_OPERATIONS) != 0;
+    }
+
+    @Override
+    public void delete() {
+        if (!supportOperation(MediaOperation.DELETE)) return;
+
+        Log.v(TAG, "Delete PicasaImage: ");
+        try {
+            Thread.currentThread().sleep(1000);
+        } catch (InterruptedException e) {
         }
     }
 }

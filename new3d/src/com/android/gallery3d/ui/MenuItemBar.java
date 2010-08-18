@@ -21,6 +21,10 @@ import android.view.MotionEvent;
 public class MenuItemBar extends MenuBar {
     public static final int INDEX_NONE = -1;
 
+    public interface OnSelectedListener {
+        public void onSelected(MenuItem source);
+    }
+
     private OnSelectedListener mOnSelectedListener;
     private MenuItem mSelectedItem;
     private boolean mSelectionChanged = false;

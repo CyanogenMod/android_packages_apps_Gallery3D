@@ -36,6 +36,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         return mUniqueId;
     }
 
+    @Override
     public MediaSet getSubMediaSet(int index) {
         for (MediaSet set : mSets) {
             int size = set.getSubMediaSetCount();
@@ -47,6 +48,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         throw new IndexOutOfBoundsException();
     }
 
+    @Override
     public int getSubMediaSetCount() {
         int count = 0;
         for (MediaSet set : mSets) {
@@ -59,6 +61,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         return TAG;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int count = 0;
         for (MediaSet set : mSets) {
@@ -77,5 +80,19 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         if (mListener != null) {
             mListener.onContentChanged();
         }
+    }
+
+    @Override
+    public int getSupportedOperations() {
+        return 0;
+    }
+
+    @Override
+    public boolean supportOpeation(int operation) {
+        return false;
+    }
+
+    @Override
+    public void delete() {
     }
 }

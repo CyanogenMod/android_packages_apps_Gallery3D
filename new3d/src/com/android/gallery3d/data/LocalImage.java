@@ -16,8 +16,6 @@
 
 package com.android.gallery3d.data;
 
-import com.android.gallery3d.util.Utils;
-
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -25,6 +23,8 @@ import android.graphics.BitmapFactory;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.util.Log;
+
+import com.android.gallery3d.util.Utils;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -39,6 +39,7 @@ public class LocalImage extends LocalMediaItem {
     private static final int FULLIMAGE_TARGET_SIZE = 2048;
     private static final int FULLIMAGE_MAX_NUM_PIXELS = 5 * 1024 * 1024;
     private static final String TAG = "LocalImage";
+    private static final int SUPPORTED_OPERATIONS = MediaOperation.DELETE;
 
     // Must preserve order between these indices and the order of the terms in
     // the following PROJECTION array.
@@ -169,5 +170,26 @@ public class LocalImage extends LocalMediaItem {
         item.mUniqueId = uniqueId;
 
         return item;
+    }
+
+    @Override
+    public int getSupportedOperations() {
+        return SUPPORTED_OPERATIONS;
+    }
+
+    @Override
+    public boolean supportOperation(int operation) {
+        return (operation & SUPPORTED_OPERATIONS) != 0;
+    }
+
+    @Override
+    public void delete() {
+        if (!supportOperation(MediaOperation.DELETE)) return;
+
+        Log.v(TAG, "Delete LocalImage: " + mCaption);
+        try {
+            Thread.currentThread().sleep(1000);
+        } catch (InterruptedException e) {
+        }
     }
 }

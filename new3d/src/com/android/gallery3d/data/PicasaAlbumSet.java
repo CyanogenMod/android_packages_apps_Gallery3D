@@ -41,6 +41,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return mAlbums.get(index);
     }
 
+    @Override
     public int getSubMediaSetCount() {
         return mAlbums.size();
     }
@@ -53,6 +54,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return DataManager.makeId(DataManager.ID_PICASA_ALBUM_SET, 0);
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int totalCount = 0;
         for (PicasaAlbum album : mAlbums) {
@@ -82,5 +84,23 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         mAlbums.clear();
         mAlbums.addAll(mLoadBuffer);
         mLoadBuffer.clear();
+    }
+
+    @Override
+    public int getSupportedOperations() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public boolean supportOpeation(int operation) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void delete() {
+        // TODO Auto-generated method stub
+
     }
 }

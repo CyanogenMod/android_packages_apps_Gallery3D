@@ -19,8 +19,8 @@ package com.android.gallery3d.data;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore.Images;
-import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Images.ImageColumns;
+import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Video.VideoColumns;
 
 import com.android.gallery3d.app.GalleryContext;
@@ -72,10 +72,12 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         return mUniqueId;
     }
 
+    @Override
     public synchronized MediaSet getSubMediaSet(int index) {
         return mAlbums.get(index);
     }
 
+    @Override
     public synchronized int getSubMediaSetCount() {
         return mAlbums.size();
     }
@@ -84,6 +86,7 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         return TAG;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int total = 0;
         for (MediaSet album : mAlbums) {
@@ -124,5 +127,23 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         mLoadBuffer = null;
 
         Collections.sort(mAlbums, LocalAlbum.sBucketNameComparator);
+    }
+
+    @Override
+    public int getSupportedOperations() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public boolean supportOpeation(int operation) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void delete() {
+        // TODO Auto-generated method stub
+
     }
 }
