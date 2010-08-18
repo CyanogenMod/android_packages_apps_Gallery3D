@@ -120,18 +120,4 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
             mListener.onContentChanged();
         }
     }
-
-    @Override
-    public void delete() {
-    }
-
-    @Override
-    public int getSupportedOperations() {
-        return 0;
-    }
-
-    @Override
-    public boolean supportOpeation(int operation) {
-        return false;
-    }
 }

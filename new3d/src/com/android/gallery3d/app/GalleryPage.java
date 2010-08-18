@@ -23,22 +23,16 @@ import android.os.Bundle;
 import android.os.Message;
 
 import com.android.gallery3d.R;
-import com.android.gallery3d.data.MediaOperation;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.AdaptiveBackground;
 import com.android.gallery3d.ui.GLView;
 import com.android.gallery3d.ui.HeadUpDisplay;
 import com.android.gallery3d.ui.MediaSetSlotAdapter;
-import com.android.gallery3d.ui.MenuHandler;
-import com.android.gallery3d.ui.MenuItem;
 import com.android.gallery3d.ui.SelectionManager;
 import com.android.gallery3d.ui.SlotView;
 import com.android.gallery3d.ui.SynchronizedHandler;
 
-import java.util.Set;
-
 public class GalleryPage extends ActivityState implements SlotView.SlotTapListener {
-    private static final String TAG = "GalleryPage";
     private static final int CHANGE_BACKGROUND = 1;
 
     private static final int MARGIN_HUD_SLOTVIEW = 5;
@@ -52,8 +46,6 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
     private int mBgIndex = 0;
 
     protected SelectionManager mSelectionManager;
-    private MediaSet mMediaSet;
-    private MenuHandler mMenuHandler;
 
     private GLView mRootPane = new GLView() {
         @Override
@@ -63,7 +55,8 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
             mHud.layout(0, 0, right - left, bottom - top);
 
             int slotViewTop = mHud.getTopBarBottomPosition() + MARGIN_HUD_SLOTVIEW;
-            int slotViewBottom = mHud.getBottomBarTopPosition() - MARGIN_HUD_SLOTVIEW;
+            int slotViewBottom = mHud.getBottomBarTopPosition()
+                    - MARGIN_HUD_SLOTVIEW;
 
             mSlotView.layout(0, slotViewTop, right - left, slotViewBottom);
         }
@@ -78,7 +71,6 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
         }
     }
 
-    @Override
     public void onSingleTapUp(int slotIndex) {
         if (!mSelectionManager.isSelectionMode()) {
             Bundle data = new Bundle();
@@ -90,7 +82,6 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
         }
     }
 
-    @Override
     public void onLongTap(int slotIndex) {
         mSelectionManager.switchSelectionMode(slotIndex);
         mSlotView.invalidate();
@@ -114,14 +105,11 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
                 }
             }
         };
-
-        mMenuHandler = new MenuHandler(mContext);
     }
 
     @Override
     public void onPause() {
         mHandler.removeMessages(CHANGE_BACKGROUND);
-        mMenuHandler.onPause();
     }
 
     @Override
@@ -131,9 +119,9 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
     }
 
     private void intializeData() {
-        mMediaSet = mContext.getDataManager().getRootSet();
+        MediaSet mediaSet = mContext.getDataManager().getRootSet();
         mSlotView.setListener(new MediaSetSlotAdapter(
-                mContext.getAndroidContext(), mMediaSet, mSlotView, mSelectionManager));
+                mContext.getAndroidContext(), mediaSet, mSlotView, mSelectionManager));
     }
 
     private void initializeViews() {
@@ -145,34 +133,7 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
         mSlotView.setSlotTapListener(this);
 
         mRootPane.addComponent(mSlotView);
-        mHud = new HeadUpDisplay(mContext.getAndroidContext()) {
-            @Override
-            protected void initializeMenu() {
-                MenuItem share = addBottomMenuItem(R.drawable.icon_share,
-                        R.string.share);
-                MenuItem delete = addBottomMenuItem(R.drawable.icon_delete,
-                        R.string.delete);
-                MenuItem more = addBottomMenuItem(R.drawable.icon_more, R.string.more);
-
-                buildShareMenu(share);
-                delete.addMenuItem(R.drawable.icon_delete, R.string.confirm_delete)
-                        .addClickListener(new MenuItem.MenuItemClickListener() {
-                            @Override
-                            public void onClick() {
-                                Set<Integer> set = mSelectionManager.getSelectedSet();
-                                if (set.size() == 0) return;
-
-                                mMenuHandler.handleMediaItemOperation(
-                                        MediaOperation.DELETE, R.string.delete, mMediaSet, 
-                                        set, true);
-                                mSelectionManager.leaveSelectionMode();
-                            }
-                        });
-
-                delete.addMenuItem(R.drawable.icon_cancel, R.string.cancel);
-                more.addMenuItem(R.drawable.icon_details, R.string.details);
-            }
-        };
+        mHud = new HeadUpDisplay(mContext.getAndroidContext());
         mRootPane.addComponent(mHud);
 
         loadBackgroundBitmap(R.drawable.square,
