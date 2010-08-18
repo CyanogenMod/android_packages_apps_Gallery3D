@@ -78,6 +78,13 @@ public class GLCanvasImp implements GLCanvas {
     private final float[] mTempMatrix = new float[32];
     private final IntArray mUnboundIds = new IntArray();
 
+    // Drawing statistics
+    int mCountDrawLine;
+    int mCountFillRect;
+    int mCountDrawMesh;
+    int mCountTextureRect;
+    int mCountTextureOES;
+
     GLCanvasImp(GL11 gl) {
         mGL = gl;
         mGLState = new GLState(gl);
@@ -174,6 +181,7 @@ public class GLCanvasImp implements GLCanvas {
         buffer[3] = y2;
         mXyPointer.put(buffer, 0, 4).position(0);
         gl.glDrawArrays(GL11.GL_LINE_STRIP, 0, 2);
+        mCountDrawLine++;
     }
 
     public void fillRect(float x, float y, float width, float height, int color) {
@@ -182,6 +190,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glLoadMatrixf(mMatrixValues, 0);
         putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
         gl.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
+        mCountFillRect++;
     }
 
     public void translate(float x, float y, float z) {
@@ -204,6 +213,7 @@ public class GLCanvasImp implements GLCanvas {
         gl.glLoadMatrixf(mMatrixValues, 0);
         putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
         gl.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
+        mCountTextureRect++;
     }
 
     public void drawNinePatch(
@@ -377,6 +387,7 @@ public class GLCanvasImp implements GLCanvas {
 
         mGL.glDrawElements(GL11.GL_TRIANGLE_STRIP,
                 idxCount, GL11.GL_UNSIGNED_BYTE, mIndexPointer);
+        mCountDrawMesh++;
     }
 
     private float[] mapPoints(float matrix[], int x1, int y1, int x2, int y2) {
@@ -450,6 +461,7 @@ public class GLCanvasImp implements GLCanvas {
             height = (int) points[3] - y;
             if (width > 0 && height > 0) {
                 ((GL11Ext) mGL).glDrawTexiOES(x, y, 0, width, height);
+                mCountTextureOES++;
             }
         }
     }
@@ -860,5 +872,18 @@ public class GLCanvasImp implements GLCanvas {
                 System.arraycopy(mMatrix, 0, canvas.mMatrixValues, 0, 16);
             }
         }
+    }
+
+    public void dumpStatisticsAndClear() {
+        String line = String.format(
+                "MESH:%d, TEX_OES:%d, TEX_RECT:%d, FILL_RECT:%d, LINE:%d",
+                mCountDrawMesh, mCountTextureRect, mCountTextureOES,
+                mCountFillRect, mCountDrawLine);
+        mCountDrawMesh = 0;
+        mCountTextureRect = 0;
+        mCountTextureOES = 0;
+        mCountFillRect = 0;
+        mCountDrawLine = 0;
+        Log.v(TAG, line);
     }
 }
