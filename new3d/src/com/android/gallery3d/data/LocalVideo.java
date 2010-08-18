@@ -16,21 +16,18 @@
 
 package com.android.gallery3d.data;
 
+import com.android.gallery3d.util.Utils;
+
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Video.VideoColumns;
-import android.util.Log;
-
-import com.android.gallery3d.util.Utils;
 
 // LocalVideo represents a video in the local storage.
 public class LocalVideo extends LocalMediaItem {
-    private static final String TAG = "LocalVideo";
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
-    private static final int SUPPORTED_OPERATIONS = MediaOperation.DELETE;
 
     // Must preserve order between these indices and the order of the terms in
     // the following PROJECTION array.
@@ -116,26 +113,5 @@ public class LocalVideo extends LocalMediaItem {
         item.mUniqueId = uniqueId;
 
         return item;
-    }
-
-    @Override
-    public int getSupportedOperations() {
-        return SUPPORTED_OPERATIONS;
-    }
-
-    @Override
-    public boolean supportOperation(int operation) {
-        return (operation & SUPPORTED_OPERATIONS) != 0;
-    }
-
-    @Override
-    public void delete() {
-        if (!supportOperation(MediaOperation.DELETE)) return;
-
-        Log.v(TAG, "Delete LocalVideo: " + mCaption);
-        try {
-            Thread.currentThread().sleep(1000);
-        } catch (InterruptedException e) {
-        }
     }
 }

@@ -158,18 +158,4 @@ public class LocalAlbum extends MediaSet {
     public void reload() {
         // do nothing
     }
-
-    @Override
-    public int getSupportedOperations() {
-        return 0;
-    }
-
-    @Override
-    public boolean supportOpeation(int operation) {
-        return false;
-    }
-
-    @Override
-    public void delete() {
-    }
 }
