@@ -29,6 +29,10 @@ import java.util.ArrayList;
 // those in sub-MediaSets.
 public abstract class MediaSet {
 
+    // Below are the bits returned from getSupportedOperations():
+    public static final int SUPPORT_DELETE = 1;
+    public static final int SUPPORT_ROTATE = 2;
+
     public interface MediaSetListener {
         public void onContentDirty();
         public void onContentChanged();
@@ -92,4 +96,24 @@ public abstract class MediaSet {
     }
 
     public abstract void reload();
+
+    public int getSupportedOperations(long uniqueId) {
+        return 0;
+    }
+
+    public void delete(long uniqueId) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void rotate(long uniqueId, int degrees) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getMergeId() {
+        return 0;
+    }
+
+    int getMyId() {
+        return DataManager.extractSelfId(getUniqueId());
+    }
 }

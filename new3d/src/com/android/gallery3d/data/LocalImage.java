@@ -89,16 +89,10 @@ public class LocalImage extends LocalMediaItem {
         }
     }
 
-    public static LocalImage load(GalleryContext context, Cursor cursor,
-            DataManager dataManager) {
+    public static LocalImage load(int parentId, GalleryContext context,
+            Cursor cursor, DataManager dataManager) {
         int itemId = cursor.getInt(INDEX_ID);
-        long uniqueId = DataManager.makeId(DataManager.ID_LOCAL_IMAGE, itemId);
-        LocalImage item = (LocalImage) dataManager.getFromCache(uniqueId);
-        if (item != null) return item;
-
-        item = new LocalImage(context);
-        dataManager.putToCache(uniqueId, item);
-
+        LocalImage item = new LocalImage(context);
         item.mId = itemId;
         item.mCaption = cursor.getString(INDEX_CAPTION);
         item.mMimeType = cursor.getString(INDEX_MIME_TYPE);
@@ -109,7 +103,7 @@ public class LocalImage extends LocalMediaItem {
         item.mDateModifiedInSec = cursor.getLong(INDEX_DATE_MODIFIED);
         item.mFilePath = cursor.getString(INDEX_DATA);
         item.mRotation = cursor.getInt(INDEX_ORIENTATION);
-        item.mUniqueId = uniqueId;
+        item.mUniqueId = DataManager.makeId(parentId, itemId);
 
         return item;
     }

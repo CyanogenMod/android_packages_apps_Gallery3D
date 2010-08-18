@@ -26,6 +26,7 @@ import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.Video.VideoColumns;
 
 import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,18 +57,19 @@ public class LocalAlbumSet extends DatabaseMediaSet {
     private final ArrayList<LocalAlbum> mAlbums = new ArrayList<LocalAlbum>();
     private HashMap<Integer, String> mLoadBuffer;
 
-    public LocalAlbumSet(GalleryContext context, boolean isImage) {
+    public LocalAlbumSet(int parentId, int childKey, GalleryContext context,
+            boolean isImage) {
         super(context);
         mIsImage = isImage;
         if (isImage) {
             mProjection = PROJECTION_IMAGE_BUCKETS;
             mBaseUri = Images.Media.EXTERNAL_CONTENT_URI;
-            mUniqueId = DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM_SET, 0);
         } else {
             mProjection = PROJECTION_VIDEO_BUCKETS;
             mBaseUri = Video.Media.EXTERNAL_CONTENT_URI;
-            mUniqueId = DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM_SET, 0);
         }
+
+        mUniqueId = context.getDataManager().obtainSetId(parentId, childKey, this);
         context.getContentResolver().registerContentObserver(
                 mBaseUri, true, new MyContentObserver());
     }
@@ -123,9 +125,10 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         HashMap<Integer, String> map = mLoadBuffer;
         if (map == null) throw new IllegalStateException();
 
+        mAlbums.clear();
         for (Map.Entry<Integer, String> entry : map.entrySet()) {
-            mAlbums.add(new LocalAlbum(
-                    mContext, entry.getKey(), entry.getValue(), mIsImage));
+            mAlbums.add(new LocalAlbum(getMyId(), mContext,
+                    entry.getKey(), entry.getValue(), mIsImage));
         }
         mLoadBuffer = null;
 
@@ -141,5 +144,17 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         public void onChange(boolean selfChange) {
             notifyContentDirty();
         }
+    }
+
+    public int getSupportedOperations(long uniqueId) {
+        return SUPPORT_DELETE;
+    }
+
+    public void delete(long uniqueId) {
+        Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
+
+        int childId = DataManager.extractSelfId(uniqueId);
+        LocalAlbum child = (LocalAlbum) mContext.getDataManager().getMediaSet(childId);
+        child.deleteSelf();
     }
 }

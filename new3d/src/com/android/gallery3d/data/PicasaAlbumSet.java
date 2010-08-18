@@ -34,9 +34,11 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
     private final ArrayList<PicasaAlbum> mAlbums = new ArrayList<PicasaAlbum>();
     private final ArrayList<PicasaAlbum> mLoadBuffer = new ArrayList<PicasaAlbum>();
+    private final long mUniqueId;
 
-    public PicasaAlbumSet(GalleryContext context) {
+    public PicasaAlbumSet(int parentId, int childKey, GalleryContext context) {
         super(context);
+        mUniqueId = context.getDataManager().obtainSetId(parentId, childKey, this);
         context.getContentResolver().registerContentObserver(
                 PicasaContentProvider.ALBUMS_URI, true, new MyContentObserver());
     }
@@ -57,7 +59,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
     @Override
     public long getUniqueId() {
-        return DataManager.makeId(DataManager.ID_PICASA_ALBUM_SET, 0);
+        return mUniqueId;
     }
 
     public int getTotalMediaItemCount() {
@@ -77,7 +79,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         try {
             while (cursor.moveToNext()) {
                 AlbumEntry entry = SCHEMA.cursorToObject(cursor, new AlbumEntry());
-                mLoadBuffer.add(new PicasaAlbum(mContext, entry));
+                mLoadBuffer.add(new PicasaAlbum(getMyId(), mContext, entry));
             }
         } finally {
             cursor.close();

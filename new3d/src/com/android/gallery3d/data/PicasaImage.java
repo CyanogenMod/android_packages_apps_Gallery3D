@@ -41,12 +41,11 @@ public class PicasaImage extends MediaItem {
     private final BlobCache mPicasaCache;
     private final long mUniqueId;
 
-    public PicasaImage(GalleryContext context, PhotoEntry entry) {
+    public PicasaImage(long uniqueId, GalleryContext context, PhotoEntry entry) {
         mContext = context;
         mData = entry;
         mPicasaCache = mContext.getDataManager().getPicasaCache();
-        mUniqueId = DataManager.makeId(
-                DataManager.ID_PICASA_IMAGE, (int) entry.id);
+        mUniqueId = uniqueId;
     }
 
     @Override

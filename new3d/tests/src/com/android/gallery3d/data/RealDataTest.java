@@ -29,11 +29,21 @@ import java.util.HashSet;
 // This test reads real data directly and dump information out in the log.
 public class RealDataTest extends AndroidTestCase {
     private static final String TAG = "RealDataTest";
+    private static final int DUMMY_PARENT_ID = 0x777;
+    private static final int KEY_LOCAL_IMAGE = 1;
+    private static final int KEY_LOCAL_VIDEO = 2;
+    private static final int KEY_PICASA = 3;
+
     private HashSet<Long> mUsedId = new HashSet<Long>();
+    private GalleryContext mGalleryContext;
 
     @LargeTest
     public void testRealData() {
         mUsedId.clear();
+        mGalleryContext = new GalleryContextMock(
+                mContext,
+                mContext.getContentResolver(),
+                Looper.myLooper());
         run(new TestLocalImageThread());
         run(new TestLocalVideoThread());
         run(new TestPicasaThread());
@@ -52,12 +62,8 @@ public class RealDataTest extends AndroidTestCase {
         @Override
         public void run() {
             Looper.prepare();
-            GalleryContext context = new GalleryContextMock(
-                    mContext,
-                    mContext.getContentResolver(),
-                    Looper.myLooper());
-
-            LocalAlbumSet albumSet = new LocalAlbumSet(context, true);
+            LocalAlbumSet albumSet = new LocalAlbumSet(
+                    DUMMY_PARENT_ID, KEY_LOCAL_IMAGE, mGalleryContext, true);
             MyListener listener = new MyListener();
             albumSet.setContentListener(listener);
             albumSet.reload();
@@ -73,13 +79,8 @@ public class RealDataTest extends AndroidTestCase {
         @Override
         public void run() {
             Looper.prepare();
-
-            GalleryContext context = new GalleryContextMock(
-                    mContext,
-                    mContext.getContentResolver(),
-                    Looper.myLooper());
-
-            LocalAlbumSet albumSet = new LocalAlbumSet(context, false);
+            LocalAlbumSet albumSet = new LocalAlbumSet(
+                    DUMMY_PARENT_ID, KEY_LOCAL_VIDEO, mGalleryContext, false);
             MyListener listener = new MyListener();
             albumSet.setContentListener(listener);
             albumSet.reload();
@@ -95,12 +96,8 @@ public class RealDataTest extends AndroidTestCase {
         @Override
         public void run() {
             Looper.prepare();
-            GalleryContext context = new GalleryContextMock(
-                    mContext,
-                    mContext.getContentResolver(),
-                    Looper.myLooper());
-
-            PicasaAlbumSet albumSet = new PicasaAlbumSet(context);
+            PicasaAlbumSet albumSet = new PicasaAlbumSet(
+                    DUMMY_PARENT_ID, KEY_PICASA, mGalleryContext);
             MyListener listener = new MyListener();
             albumSet.setContentListener(listener);
             albumSet.reload();
@@ -140,7 +137,8 @@ public class RealDataTest extends AndroidTestCase {
     }
 
     void assertNewId(Long key) {
-        assertFalse(mUsedId.contains(key));
+        assertFalse(Long.toHexString(key) + " has already appeared.",
+                mUsedId.contains(key));
         mUsedId.add(key);
     }
 

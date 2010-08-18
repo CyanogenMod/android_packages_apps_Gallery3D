@@ -27,56 +27,65 @@ import java.util.Comparator;
 
 public class MediaSetTest extends AndroidTestCase {
     private static final String TAG = "MediaSetTest";
+    private static final int DUMMY_PARENT_ID = 0x777;
+    private static final int KEY_COMBO = 1;
+    private static final int KEY_MERGE = 2;
 
     @SmallTest
     public void testComboAlbumSet() {
+        DataManager dataManager = new GalleryContextMock(null, null, null)
+                .getDataManager();
 
-        MediaSetMock set00 = new MediaSetMock(1000L, 0, 2000L);
-        MediaSetMock set01 = new MediaSetMock(1001L, 1, 3000L);
-        MediaSetMock set10 = new MediaSetMock(1002L, 2, 4000L);
-        MediaSetMock set11 = new MediaSetMock(1003L, 3, 5000L);
-        MediaSetMock set12 = new MediaSetMock(1004L, 4, 6000L);
+        MediaSetMock set00 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 0, 0, 2000);
+        MediaSetMock set01 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 1, 1, 3000);
+        MediaSetMock set10 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 2, 2, 4000);
+        MediaSetMock set11 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 3, 3, 5000);
+        MediaSetMock set12 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 4, 4, 6000);
 
-        MediaSetMock set0 = new MediaSetMock(1005L, 7, 7000L);
+        MediaSetMock set0 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 5, 7, 7000);
         set0.addMediaSet(set00);
         set0.addMediaSet(set01);
 
-        MediaSetMock set1 = new MediaSetMock(1006L, 8, 8000L);
+        MediaSetMock set1 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 6, 8, 8000);
         set1.addMediaSet(set10);
         set1.addMediaSet(set11);
         set1.addMediaSet(set12);
 
-        MediaSet combo = new ComboAlbumSet(1007L, set0, set1);
-        assertEquals(1007L, combo.getUniqueId());
+        MediaSet combo = new ComboAlbumSet(dataManager, DUMMY_PARENT_ID,
+                KEY_COMBO, set0, set1);
+        assertEquals(DUMMY_PARENT_ID, DataManager.extractParentId(combo.getUniqueId()));
         assertEquals(5, combo.getSubMediaSetCount());
         assertEquals(0, combo.getMediaItemCount());
-        assertEquals(1000L, combo.getSubMediaSet(0).getUniqueId());
-        assertEquals(1001L, combo.getSubMediaSet(1).getUniqueId());
-        assertEquals(1002L, combo.getSubMediaSet(2).getUniqueId());
-        assertEquals(1003L, combo.getSubMediaSet(3).getUniqueId());
-        assertEquals(1004L, combo.getSubMediaSet(4).getUniqueId());
+        assertEquals(0x77700000001L, combo.getSubMediaSet(0).getUniqueId());
+        assertEquals(0x77700000002L, combo.getSubMediaSet(1).getUniqueId());
+        assertEquals(0x77700000003L, combo.getSubMediaSet(2).getUniqueId());
+        assertEquals(0x77700000004L, combo.getSubMediaSet(3).getUniqueId());
+        assertEquals(0x77700000005L, combo.getSubMediaSet(4).getUniqueId());
 
         assertEquals(25, combo.getTotalMediaItemCount());
     }
 
     @SmallTest
     public void testMergeAlbumSet() {
-        MediaSetMock set00 = new MediaSetMock(DataManager.makeId(0, 0), 3, 4000L);
-        MediaSetMock set01 = new MediaSetMock(DataManager.makeId(0, 1), 4, 3000L);
-        MediaSetMock set11 = new MediaSetMock(DataManager.makeId(1, 1), 6, 2000L);
-        MediaSetMock set12 = new MediaSetMock(DataManager.makeId(1, 2), 1, 1000L);
+        DataManager dataManager = new GalleryContextMock(null, null, null)
+                .getDataManager();
 
-        MediaSetMock set0 = new MediaSetMock(DataManager.makeId(2,0));
+        MediaSetMock set00 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 0, 0, 3, 0x4000);
+        MediaSetMock set01 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 1, 1, 4, 0x3000);
+        MediaSetMock set11 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 2, 1, 6, 0x2000);
+        MediaSetMock set12 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 3, 2, 1, 0x1000);
+
+        MediaSetMock set0 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 4);
         set0.addMediaSet(set00);
         set0.addMediaSet(set01);
-        MediaSetMock set1 = new MediaSetMock(DataManager.makeId(2,1));
+        MediaSetMock set1 = new MediaSetMock(dataManager, DUMMY_PARENT_ID, 5);
         set1.addMediaSet(set11);
         set1.addMediaSet(set12);
 
         Comparator<MediaItem> comparator = new Comparator<MediaItem>() {
                 public int compare(MediaItem object1, MediaItem object2) {
-                    long id1 = object1.getUniqueId();
-                    long id2 = object2.getUniqueId();
+                    int id1 = DataManager.extractSelfId(object1.getUniqueId());
+                    int id2 = DataManager.extractSelfId(object2.getUniqueId());
                     if (id1 > id2) return 1;
                     else if (id1 < id2) return -1;
                     else return 0;
@@ -84,29 +93,23 @@ public class MediaSetTest extends AndroidTestCase {
         };
 
         // set01 and set11 will be merged, but not set00 or set12.
-        MediaSet merge = new MergeAlbumSet(DataManager.makeId(3, 0),
-                comparator, set0, set1);
+        MediaSet merge = new MergeAlbumSet(dataManager, DUMMY_PARENT_ID,
+                KEY_MERGE, comparator, set0, set1);
 
         assertEquals(3, merge.getSubMediaSetCount());
         MediaSet s0 = merge.getSubMediaSet(0);
         MediaSet s1 = merge.getSubMediaSet(1);
         MediaSet s2 = merge.getSubMediaSet(2);
-        assertEquals(DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM, 0),
-                s0.getUniqueId());
-        assertEquals(DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM, 1),
-                s1.getUniqueId());
-        assertEquals(DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM, 2),
-                s2.getUniqueId());
 
         assertEquals(3, s0.getMediaItemCount());
         assertEquals(10, s1.getMediaItemCount());
         assertEquals(1, s2.getMediaItemCount());
 
         ArrayList<MediaItem> items = s1.getMediaItem(0, 10);
-        assertEquals(2000L, items.get(0).getUniqueId());
-        assertEquals(2005L, items.get(5).getUniqueId());
-        assertEquals(3000L, items.get(6).getUniqueId());
-        assertEquals(3003L, items.get(9).getUniqueId());
+        assertEquals(0x300002000L, items.get(0).getUniqueId());
+        assertEquals(0x300002005L, items.get(5).getUniqueId());
+        assertEquals(0x200003000L, items.get(6).getUniqueId());
+        assertEquals(0x200003003L, items.get(9).getUniqueId());
 
         assertEquals(14, merge.getTotalMediaItemCount());
     }

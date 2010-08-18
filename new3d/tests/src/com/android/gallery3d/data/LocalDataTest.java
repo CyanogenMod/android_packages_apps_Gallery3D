@@ -17,6 +17,7 @@
 package com.android.gallery3d.data;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
@@ -30,6 +31,8 @@ import android.util.Log;
 
 public class LocalDataTest extends AndroidTestCase {
     private static final String TAG = "LocalDataTest";
+    private static final int DUMMY_PARENT_ID = 0x777;
+    private static final int KEY_LOCAL = 1;
 
     @MediumTest
     public void testLocalAlbum() {
@@ -39,6 +42,8 @@ public class LocalDataTest extends AndroidTestCase {
         run(new TestZeroVideo());
         run(new TestOneVideo());
         run(new TestMoreVideos());
+        run(new TestDeleteOneImage());
+        run(new TestDeleteOneAlbum());
     }
 
     static void run(Thread t) {
@@ -50,8 +55,10 @@ public class LocalDataTest extends AndroidTestCase {
         }
     }
 
-    abstract class TestLocalAlbumBase extends Thread {
+    abstract class TestLocalAlbumBase extends Thread implements MediaSet.MediaSetListener {
         private boolean mIsImage;
+        protected GalleryContextStub mContext;
+        protected LocalAlbumSet mAlbumSet;
 
         TestLocalAlbumBase(boolean isImage) {
             mIsImage = isImage;
@@ -64,19 +71,23 @@ public class LocalDataTest extends AndroidTestCase {
 
             prepareData(db);
 
-            GalleryContextStub context = newGalleryContext(db, Looper.myLooper());
-            LocalAlbumSet albumSet = new LocalAlbumSet(context, mIsImage);
-            MyListener listener = new MyListener();
-            albumSet.setContentListener(listener);
-            albumSet.reload();
+            mContext = newGalleryContext(db, Looper.myLooper());
+            mAlbumSet = new LocalAlbumSet(DUMMY_PARENT_ID, KEY_LOCAL, mContext, mIsImage);
+            mAlbumSet.setContentListener(this);
+            mAlbumSet.reload();
             Looper.loop();
-
-            assertEquals(1, listener.count);
-            verifyResult(albumSet);
         }
 
         abstract void prepareData(SQLiteDatabase db);
-        abstract void verifyResult(LocalAlbumSet albumSet);
+        abstract void verifyResult();
+
+        public void onContentChanged() {
+            verifyResult();
+            Looper.myLooper().quit();
+        }
+
+        public void onContentDirty() {
+        }
     }
 
     abstract class TestLocalImageAlbum extends TestLocalAlbumBase {
@@ -98,13 +109,13 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult(LocalAlbumSet albumSet) {
-            assertEquals(0, albumSet.getMediaItemCount());
-            assertEquals(0, albumSet.getSubMediaSetCount());
-            assertEquals(0, albumSet.getTotalMediaItemCount());
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM_SET, 0),
-                    albumSet.getUniqueId());
-        }
+        public void verifyResult() {
+            assertEquals(0, mAlbumSet.getMediaItemCount());
+            assertEquals(0, mAlbumSet.getSubMediaSetCount());
+            assertEquals(0, mAlbumSet.getTotalMediaItemCount());
+            assertEquals(DataManager.makeId(DUMMY_PARENT_ID, 1),
+                    mAlbumSet.getUniqueId());
+         }
     }
 
     class TestOneImage extends TestLocalImageAlbum {
@@ -115,11 +126,11 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult(LocalAlbumSet albumSet) {
-            assertEquals(0, albumSet.getMediaItemCount());
-            assertEquals(1, albumSet.getSubMediaSetCount());
-            assertEquals(1, albumSet.getTotalMediaItemCount());
-            MediaSet sub = albumSet.getSubMediaSet(0);
+        public void verifyResult() {
+            assertEquals(0, mAlbumSet.getMediaItemCount());
+            assertEquals(1, mAlbumSet.getSubMediaSetCount());
+            assertEquals(1, mAlbumSet.getTotalMediaItemCount());
+            MediaSet sub = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, sub.getMediaItemCount());
             assertEquals(0, sub.getSubMediaSetCount());
             LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0);
@@ -132,10 +143,9 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1280395646L, item.mDateAddedInSec);
             assertEquals(1275934796L, item.mDateModifiedInSec);
             assertEquals("/mnt/sdcard/DCIM/100CANON/IMG_0072.JPG", item.mFilePath);
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM, 0xB000),
-                    sub.getUniqueId());
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE, 1),
-                    item.getUniqueId());
+            assertEquals(sub.getMergeId(), 0xB000);
+            int subId = sub.getMyId();
+            assertEquals(DataManager.makeId(subId, 1), item.getUniqueId());
         }
     }
 
@@ -145,7 +155,7 @@ public class LocalDataTest extends AndroidTestCase {
             // Albums are sorted by names, and items are sorted by
             // dateTimeTaken (descending)
             createImageTable(db);
-            // bucket 0xB002
+            // bucket 0xB000
             insertImageData(db, 1000, 0xB000, "second");  // id 1
             insertImageData(db, 2000, 0xB000, "second");  // id 2
             // bucket 0xB001
@@ -153,18 +163,18 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult(LocalAlbumSet albumSet) {
-            assertEquals(0, albumSet.getMediaItemCount());
-            assertEquals(2, albumSet.getSubMediaSetCount());
-            assertEquals(3, albumSet.getTotalMediaItemCount());
+        public void verifyResult() {
+            assertEquals(0, mAlbumSet.getMediaItemCount());
+            assertEquals(2, mAlbumSet.getSubMediaSetCount());
+            assertEquals(3, mAlbumSet.getTotalMediaItemCount());
 
-            MediaSet first = albumSet.getSubMediaSet(0);
+            MediaSet first = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, first.getMediaItemCount());
             LocalMediaItem item = (LocalMediaItem) first.getMediaItem(0);
             assertEquals(3, item.mId);
             assertEquals(3000L, item.mDateTakenInMs);
 
-            MediaSet second = albumSet.getSubMediaSet(1);
+            MediaSet second = mAlbumSet.getSubMediaSet(1);
             assertEquals(2, second.getMediaItemCount());
             item = (LocalMediaItem) second.getMediaItem(0);
             assertEquals(2, item.mId);
@@ -173,10 +183,63 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1, item.mId);
             assertEquals(1000L, item.mDateTakenInMs);
 
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM, 0xB001),
-                    first.getUniqueId());
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_IMAGE_ALBUM, 0xB000),
-                    second.getUniqueId());
+            assertEquals(first.getMergeId(), 0xB001);
+            assertEquals(second.getMergeId(), 0xB000);
+        }
+    }
+
+    class TestDeleteOneAlbum extends TestLocalImageAlbum {
+        @Override
+        public void prepareData(SQLiteDatabase db) {
+            // Albums are sorted by names, and items are sorted by
+            // dateTimeTaken (descending)
+            createImageTable(db);
+            // bucket 0xB000
+            insertImageData(db, 1000, 0xB000, "second");  // id 1
+            insertImageData(db, 2000, 0xB000, "second");  // id 2
+            // bucket 0xB001
+            insertImageData(db, 3000, 0xB001, "first");   // id 3
+        }
+
+        @Override
+        public void verifyResult() {
+            MediaSet sub = mAlbumSet.getSubMediaSet(1);  // "second"
+            assertEquals(2, mAlbumSet.getSubMediaSetCount());
+            long uid = sub.getUniqueId();
+            assertTrue((sub.getSupportedOperations(uid) & MediaSet.SUPPORT_DELETE) != 0);
+            mContext.getDataManager().delete(uid);
+            mAlbumSet.notifyContentDirty();
+            mAlbumSet.reload();
+        }
+
+        int mReloadCount;
+        public void onContentChanged() {
+            ++mReloadCount;
+            if (mReloadCount == 1) {
+                verifyResult();
+            } else {
+                assertEquals(1, mAlbumSet.getSubMediaSetCount());
+                Looper.myLooper().quit();
+            }
+        }
+    }
+
+    class TestDeleteOneImage extends TestLocalImageAlbum {
+        @Override
+        public void prepareData(SQLiteDatabase db) {
+            createImageTable(db);
+            insertImageData(db);
+        }
+
+        @Override
+        public void verifyResult() {
+            MediaSet sub = mAlbumSet.getSubMediaSet(0);
+            LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0);
+            assertEquals(1, sub.getMediaItemCount());
+            long uid = item.getUniqueId();
+            assertTrue((sub.getSupportedOperations(uid) & MediaSet.SUPPORT_DELETE) != 0);
+            mContext.getDataManager().delete(uid);
+            assertEquals(0, sub.getMediaItemCount());
         }
     }
 
@@ -226,12 +289,12 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult(LocalAlbumSet albumSet) {
-            assertEquals(0, albumSet.getMediaItemCount());
-            assertEquals(0, albumSet.getSubMediaSetCount());
-            assertEquals(0, albumSet.getTotalMediaItemCount());
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM_SET, 0),
-                    albumSet.getUniqueId());
+        public void verifyResult() {
+            assertEquals(0, mAlbumSet.getMediaItemCount());
+            assertEquals(0, mAlbumSet.getSubMediaSetCount());
+            assertEquals(0, mAlbumSet.getTotalMediaItemCount());
+            assertEquals(DataManager.makeId(DUMMY_PARENT_ID, 1),
+                    mAlbumSet.getUniqueId());
         }
     }
 
@@ -243,11 +306,11 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult(LocalAlbumSet albumSet) {
-            assertEquals(0, albumSet.getMediaItemCount());
-            assertEquals(1, albumSet.getSubMediaSetCount());
-            assertEquals(1, albumSet.getTotalMediaItemCount());
-            MediaSet sub = albumSet.getSubMediaSet(0);
+        public void verifyResult() {
+            assertEquals(0, mAlbumSet.getMediaItemCount());
+            assertEquals(1, mAlbumSet.getSubMediaSetCount());
+            assertEquals(1, mAlbumSet.getTotalMediaItemCount());
+            MediaSet sub = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, sub.getMediaItemCount());
             assertEquals(0, sub.getSubMediaSetCount());
             LocalMediaItem item = (LocalMediaItem) sub.getMediaItem(0);
@@ -261,10 +324,9 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1281503662L, item.mDateModifiedInSec);
             assertEquals("/mnt/sdcard/DCIM/Camera/VID_20100811_051413.3gp",
                     item.mFilePath);
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM, 0xB000),
-                    sub.getUniqueId());
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO, 1),
-                    item.getUniqueId());
+            assertEquals(sub.getMergeId(), 0xB000);
+            int subId = sub.getMyId();
+            assertEquals(DataManager.makeId(subId, 1), item.getUniqueId());
         }
     }
 
@@ -282,18 +344,18 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult(LocalAlbumSet albumSet) {
-            assertEquals(0, albumSet.getMediaItemCount());
-            assertEquals(2, albumSet.getSubMediaSetCount());
-            assertEquals(3, albumSet.getTotalMediaItemCount());
+        public void verifyResult() {
+            assertEquals(0, mAlbumSet.getMediaItemCount());
+            assertEquals(2, mAlbumSet.getSubMediaSetCount());
+            assertEquals(3, mAlbumSet.getTotalMediaItemCount());
 
-            MediaSet first = albumSet.getSubMediaSet(0);
+            MediaSet first = mAlbumSet.getSubMediaSet(0);
             assertEquals(1, first.getMediaItemCount());
             LocalMediaItem item = (LocalMediaItem) first.getMediaItem(0);
             assertEquals(3, item.mId);
             assertEquals(3000L, item.mDateTakenInMs);
 
-            MediaSet second = albumSet.getSubMediaSet(1);
+            MediaSet second = mAlbumSet.getSubMediaSet(1);
             assertEquals(2, second.getMediaItemCount());
             item = (LocalMediaItem) second.getMediaItem(0);
             assertEquals(2, item.mId);
@@ -302,10 +364,8 @@ public class LocalDataTest extends AndroidTestCase {
             assertEquals(1, item.mId);
             assertEquals(1000L, item.mDateTakenInMs);
 
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM, 0xB001),
-                    first.getUniqueId());
-            assertEquals(DataManager.makeId(DataManager.ID_LOCAL_VIDEO_ALBUM, 0xB000),
-                    second.getUniqueId());
+            assertEquals(first.getMergeId(), 0xB001);
+            assertEquals(second.getMergeId(), 0xB000);
         }
     }
 
@@ -354,31 +414,21 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     static GalleryContextStub newGalleryContext(SQLiteDatabase db, Looper mainLooper) {
-        ContentProvider cp = new DbContentProvider(db);
         MockContentResolver cr = new MockContentResolver();
+        ContentProvider cp = new DbContentProvider(db, cr);
         cr.addProvider("media", cp);
         return new GalleryContextMock(null, cr, mainLooper);
-    }
-
-    static class MyListener implements MediaSet.MediaSetListener {
-        int count;
-
-        public void onContentChanged() {
-            count++;
-            Looper.myLooper().quit();
-        }
-
-        public void onContentDirty() {
-        }
     }
 }
 
 class DbContentProvider extends MockContentProvider {
     private static final String TAG = "DbContentProvider";
     private SQLiteDatabase mDatabase;
+    private ContentResolver mContentResolver;
 
-    DbContentProvider(SQLiteDatabase db) {
+    DbContentProvider(SQLiteDatabase db, ContentResolver cr) {
         mDatabase = db;
+        mContentResolver = cr;
     }
 
     @Override
@@ -386,16 +436,11 @@ class DbContentProvider extends MockContentProvider {
             String selection, String[] selectionArgs, String sortOrder) {
         // This is a simplified version extracted from MediaProvider.
 
-        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        String tableName = getTableName(uri);
+        if (tableName == null) return null;
 
-        String uriString = uri.toString();
-        if (uriString.startsWith("content://media/external/images/media")) {
-            qb.setTables("images");
-        } else if (uriString.startsWith("content://media/external/video/media")) {
-            qb.setTables("video");
-        } else {
-            return null;
-        }
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        qb.setTables(tableName);
 
         String groupBy = null;
         String limit = uri.getQueryParameter("limit");
@@ -417,5 +462,26 @@ class DbContentProvider extends MockContentProvider {
                 selectionArgs, groupBy, null, sortOrder, limit);
 
         return c;
+    }
+
+    @Override
+    public int delete(Uri uri, String whereClause, String[] whereArgs) {
+        Log.v(TAG, "delete " + uri + "," + whereClause + "," + whereArgs[0]);
+        String tableName = getTableName(uri);
+        if (tableName == null) return 0;
+        int count = mDatabase.delete(tableName, whereClause, whereArgs);
+        mContentResolver.notifyChange(uri, null);
+        return count;
+    }
+
+    private String getTableName(Uri uri) {
+        String uriString = uri.toString();
+        if (uriString.startsWith("content://media/external/images/media")) {
+            return "images";
+        } else if (uriString.startsWith("content://media/external/video/media")) {
+            return "video";
+        } else {
+            return null;
+        }
     }
 }

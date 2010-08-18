@@ -37,6 +37,7 @@ import java.util.Comparator;
 public class LocalAlbum extends MediaSet {
     private static final String TAG = "LocalAlbum";
     private static final String[] COUNT_PROJECTION = { "count(*)" };
+    private static final String DELETE_ITEM_WHERE_CLAUSE = "_id=?";
     private final String mWhereClause;
     private final String mOrderClause;
     private final Uri mBaseUri;
@@ -54,7 +55,8 @@ public class LocalAlbum extends MediaSet {
     private long mUniqueId;
     private boolean mIsDirty = true;
 
-    public LocalAlbum(GalleryContext context, int bucketId, String name, boolean isImage) {
+    public LocalAlbum(int parentId, GalleryContext context, int bucketId,
+            String name, boolean isImage) {
         mContext = context;
         mResolver = context.getContentResolver();
         mBucketId = bucketId;
@@ -67,18 +69,15 @@ public class LocalAlbum extends MediaSet {
                     + ImageColumns._ID + " ASC";
             mBaseUri = Images.Media.EXTERNAL_CONTENT_URI;
             mProjection = LocalImage.PROJECTION;
-            mUniqueId = DataManager.makeId(
-                    DataManager.ID_LOCAL_IMAGE_ALBUM, bucketId);
         } else {
             mWhereClause = VideoColumns.BUCKET_ID + "=?";
             mOrderClause = VideoColumns.DATE_TAKEN + " DESC, "
                     + VideoColumns._ID + " ASC";
             mBaseUri = Video.Media.EXTERNAL_CONTENT_URI;
             mProjection = LocalVideo.PROJECTION;
-            mUniqueId = DataManager.makeId(
-                    DataManager.ID_LOCAL_VIDEO_ALBUM, bucketId);
         }
 
+        mUniqueId = context.getDataManager().obtainSetId(parentId, bucketId, this);
         mResolver.registerContentObserver(mBaseUri, true, new MyContentObserver());
     }
 
@@ -102,10 +101,11 @@ public class LocalAlbum extends MediaSet {
 
         try {
             while (cursor.moveToNext()) {
+                int myId = getMyId();
                 if (mIsImage) {
-                    list.add(LocalImage.load(mContext, cursor, dataManager));
+                    list.add(LocalImage.load(myId, mContext, cursor, dataManager));
                 } else {
-                    list.add(LocalVideo.load(imageService, cursor, dataManager));
+                    list.add(LocalVideo.load(myId, imageService, cursor, dataManager));
                 }
             }
         } finally {
@@ -183,5 +183,29 @@ public class LocalAlbum extends MediaSet {
             mIsDirty = true;
             if (mListener != null) mListener.onContentDirty();
         }
+    }
+
+    public int getMergeId() {
+        return mBucketId;
+    }
+
+    public int getSupportedOperations(long uniqueId) {
+        return SUPPORT_DELETE | SUPPORT_ROTATE;
+    }
+
+    public void delete(long uniqueId) {
+        Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
+        int itemId = DataManager.extractSelfId(uniqueId);
+        mResolver.delete(mBaseUri, DELETE_ITEM_WHERE_CLAUSE,
+                new String[] {String.valueOf(itemId)});
+    }
+
+    public void rotate(long uniqueId, int degrees) {
+        // TODO
+    }
+
+    public void deleteSelf() {
+        mResolver.delete(mBaseUri, mWhereClause,
+                new String[]{String.valueOf(mBucketId)});
     }
 }

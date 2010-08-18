@@ -24,8 +24,8 @@ import com.android.gallery3d.util.FutureListener;
 public class MediaItemMock extends MediaItem {
     long mUniqueId;
 
-    public MediaItemMock(long uniqueId) {
-        mUniqueId = uniqueId;
+    public MediaItemMock(int parentId, int itemId) {
+        mUniqueId = DataManager.makeId(parentId, itemId);
     }
 
     public Future<Bitmap>

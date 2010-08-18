@@ -24,8 +24,9 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
     private final MediaSet[] mSets;
     private long mUniqueId;
 
-    public ComboAlbumSet(long uniqueId, MediaSet ... mediaSets) {
-        mUniqueId = uniqueId;
+    public ComboAlbumSet(DataManager dataManager, int parentId, int childKey,
+            MediaSet ... mediaSets) {
+        mUniqueId = dataManager.obtainSetId(parentId, childKey, this);
         mSets = mediaSets;
         for (MediaSet set : mSets) {
             set.setContentListener(this);

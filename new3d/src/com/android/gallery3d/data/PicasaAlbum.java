@@ -45,12 +45,11 @@ public class PicasaAlbum extends MediaSet {
     private GalleryContext mContext;
     private boolean mIsDirty = true;
 
-    public PicasaAlbum(GalleryContext context, AlbumEntry entry) {
+    public PicasaAlbum(int parentId, GalleryContext context, AlbumEntry entry) {
         mContext = context;
         mResolver = context.getContentResolver();
         mData = entry;
-        mUniqueId = DataManager.makeId(
-                DataManager.ID_PICASA_ALBUM, (int) entry.id);
+        mUniqueId = context.getDataManager().obtainSetId(parentId, (int) mData.id, this);
         mResolver.registerContentObserver(
                 PicasaContentProvider.PHOTOS_URI, true, new MyContentObserver());
     }
@@ -75,13 +74,8 @@ public class PicasaAlbum extends MediaSet {
             while (cursor.moveToNext()) {
                 PhotoEntry entry = SCHEMA.cursorToObject(cursor, new PhotoEntry());
                 DataManager dataManager = mContext.getDataManager();
-                long uniqueId = DataManager.makeId(
-                        DataManager.ID_PICASA_IMAGE, (int) entry.id);
-                MediaItem item = dataManager.getFromCache(uniqueId);
-                if (item == null) {
-                    item = new PicasaImage(mContext, entry);
-                    dataManager.putToCache(uniqueId, item);
-                }
+                long uniqueId = DataManager.makeId(getMyId(), (int) entry.id);
+                PicasaImage item = new PicasaImage(uniqueId, mContext, entry);
                 list.add(item);
             }
         } finally {

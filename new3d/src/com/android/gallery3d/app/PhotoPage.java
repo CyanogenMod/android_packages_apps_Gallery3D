@@ -95,7 +95,8 @@ public class PhotoPage extends ActivityState {
         mSetIndex = data.getInt(KEY_SET_INDEX);
         mPhotoIndex = data.getInt(KEY_PHOTO_INDEX);
 
-        mMediaSet = mContext.getDataManager().getSubMediaSet(mSetIndex);
+        mMediaSet = mContext.getDataManager()
+                .getRootSet().getSubMediaSet(mSetIndex);
 
         mImageViewer = new ImageViewer(mContext);
         mImageViewer.setModel(mModel);

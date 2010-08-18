@@ -16,8 +16,6 @@
 
 package com.android.gallery3d.data;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.SortedMap;
@@ -30,11 +28,12 @@ import java.util.TreeMap;
 // This only handles MediaItems, not SubMediaSets.
 public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
     private static final String TAG = "MergeAlbum";
+    private final DataManager mDataManager;
     private final long mUniqueId;
     private final int mPageSize;
     private final Comparator<MediaItem> mComparator;
     private final MediaSet[] mSources;
-    private final int mItemId;
+    private final int mMergeId;
 
     private ArrayList<MediaSet> mSets;
     private int mSize;  // caches mSets.size()
@@ -43,25 +42,26 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
     // mIndex maps global position to the position of each underlying media sets.
     private TreeMap<Integer, int[]> mIndex;
 
-    public MergeAlbum(long uniqueId, int pageSize, Comparator<MediaItem> comparator,
-            MediaSet[] sources, int itemId) {
-        mUniqueId = uniqueId;
+    public MergeAlbum(DataManager dataManager, int parentId, int pageSize,
+            Comparator<MediaItem> comparator, MediaSet[] sources, int mergeId) {
+        mUniqueId = dataManager.obtainSetId(parentId, mergeId, this);
+        mDataManager = dataManager;
         mPageSize = pageSize;
         mComparator = comparator;
         mSources = sources;
-        mItemId = itemId;
+        mMergeId = mergeId;
         updateData();
     }
 
     public void updateData() {
         ArrayList<MediaSet> matches = new ArrayList<MediaSet>();
 
-        // Find sources that have a sub media set with specified mItemId.
+        // Find sources that have a sub media set with specified merge id.
         for (MediaSet set : mSources) {
             for (int i = 0, n = set.getSubMediaSetCount(); i < n; i++) {
                 MediaSet subset = set.getSubMediaSet(i);
-                int itemId = DataManager.extractItemId(subset.getUniqueId());
-                if (itemId == mItemId) {
+                int mergeId = subset.getMergeId();
+                if (mergeId == mMergeId) {
                     matches.add(subset);
                 }
             }
@@ -185,6 +185,12 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
 
     public void onContentDirty() {
         if (mListener != null) mListener.onContentDirty();
+    }
+
+    public void deleteSelf() {
+        for (MediaSet set : mSets) {
+            mDataManager.delete(set.getUniqueId());
+        }
     }
 }
 

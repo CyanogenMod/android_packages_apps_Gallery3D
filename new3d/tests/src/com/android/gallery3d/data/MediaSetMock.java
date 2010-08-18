@@ -24,15 +24,28 @@ public class MediaSetMock extends MediaSet {
     ArrayList<MediaItem> mItems = new ArrayList<MediaItem>();
     ArrayList<MediaSet> mSets = new ArrayList<MediaSet>();
     long mUniqueId;
+    int mMergeId;
 
-    public MediaSetMock(long id) {
-        mUniqueId = id;
+    public MediaSetMock(DataManager dataManager, int childKey, int parentId) {
+        mUniqueId = dataManager.obtainSetId(parentId, childKey, this);
+        mMergeId = 0;
     }
 
-    public MediaSetMock(long id, int items, long item_id_start) {
-        mUniqueId = id;
+    public MediaSetMock(DataManager dataManager, int parentId, int childKey,
+            int mergeId, int items, int item_id_start) {
+        mUniqueId = dataManager.obtainSetId(parentId, childKey, this);
+        mMergeId = mergeId;
         for (int i = 0; i < items; i++) {
-            mItems.add(new MediaItemMock(item_id_start + i));
+            mItems.add(new MediaItemMock(getMyId(), item_id_start + i));
+        }
+    }
+
+    public MediaSetMock(DataManager dataManager, int parentId, int childKey,
+            int items, int item_id_start) {
+        mUniqueId = dataManager.obtainSetId(parentId, childKey, this);
+        mMergeId = 0;
+        for (int i = 0; i < items; i++) {
+            mItems.add(new MediaItemMock(getMyId(), item_id_start + i));
         }
     }
 
@@ -80,5 +93,9 @@ public class MediaSetMock extends MediaSet {
 
     public void reload() {
         mListener.onContentChanged();
+    }
+
+    public int getMergeId() {
+        return mMergeId;
     }
 }

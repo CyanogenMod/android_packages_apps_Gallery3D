@@ -136,7 +136,8 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
 
     private void intializeData(Bundle data) {
         mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
-        MediaSet mediaSet = mContext.getDataManager().getSubMediaSet(mBucketIndex);
+        MediaSet mediaSet = mContext.getDataManager()
+                .getRootSet().getSubMediaSet(mBucketIndex);
         AlbumDataAdapter model = new AlbumDataAdapter(
                 mContext, mSelectionManager, mediaSet, CACHE_SIZE);
         mSlotView.setListener(new AlbumView(
