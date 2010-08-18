@@ -33,6 +33,10 @@ public abstract class MediaItem {
     public static final int IMAGE_ERROR = -1;
 
     public abstract long getUniqueId();
+    public abstract int getSupportedOperations();
+    public abstract boolean supportOperation(int operation);
+    public abstract void delete();
+
     public abstract Future<Bitmap>
             requestImage(int type, FutureListener<? super Bitmap> listener);
 }

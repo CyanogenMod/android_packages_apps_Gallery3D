@@ -107,4 +107,22 @@ public class PicasaAlbum extends MediaSet {
     public void reload() {
         // do nothing
     }
+
+    @Override
+    public int getSupportedOperations() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public boolean supportOpeation(int operation) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void delete() {
+        // TODO Auto-generated method stub
+
+    }
 }

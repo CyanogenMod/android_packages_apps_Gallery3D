@@ -28,11 +28,8 @@ import android.view.View.MeasureSpec;
 import com.android.gallery3d.R;
 import com.android.gallery3d.util.Utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-public class HeadUpDisplay extends GLView {
-
+public abstract class HeadUpDisplay extends GLView {
+    private static final String TAG = "HeadUpDisplay";
     private static final int POPUP_WINDOW_OVERLAP = 20;
     private static final int POPUP_TRIANGLE_OFFSET = 15;
 
@@ -52,8 +49,6 @@ public class HeadUpDisplay extends GLView {
     private GLListView mListView;
 
     private GLView mAnchorView;
-    private final HashMap<MenuItem, MenuAdapter> mContentMap =
-            new HashMap<MenuItem, MenuAdapter>();
 
     private ResourceTexture mPathIcons[];
     private String mPathTitle[];
@@ -109,7 +104,7 @@ public class HeadUpDisplay extends GLView {
         }
     }
 
-    private MenuItem addBottomMenuItem(int iconId, int stringId) {
+    protected MenuItem addBottomMenuItem(int iconId, int stringId) {
         MenuItem item = new MenuItem(mContext, iconId, stringId);
         item.setHighlight(mHighlight);
         mBottomBar.addComponent(item);
@@ -122,6 +117,8 @@ public class HeadUpDisplay extends GLView {
         button.setHighlight(mHighlight);
         mTopBar.addComponent(button);
     }
+
+    abstract protected void initializeMenu();
 
     private void initialize() {
         Context context = mContext;
@@ -139,20 +136,7 @@ public class HeadUpDisplay extends GLView {
                 context, IconLabel.NULL_ID, R.string.items));
         addTopMenuButton(R.string.deselect_all);
 
-        MenuItem share = addBottomMenuItem(R.drawable.icon_share, R.string.share);
-        MenuItem delete = addBottomMenuItem(R.drawable.icon_delete, R.string.delete);
-        MenuItem more = addBottomMenuItem(R.drawable.icon_more, R.string.more);
-
-        MenuAdapter deleteMenu = new MenuAdapter(context);
-        deleteMenu.addMenu(R.drawable.icon_delete, R.string.confirm_delete);
-        deleteMenu.addMenu(R.drawable.icon_cancel, R.string.cancel);
-
-        MenuAdapter moreMenu = new MenuAdapter(context);
-        moreMenu.addMenu(R.drawable.icon_details, R.string.details);
-
-        mContentMap.put(share, buildShareMenu(context));
-        mContentMap.put(delete, deleteMenu);
-        mContentMap.put(more, moreMenu);
+        initializeMenu();
 
         mPathbar.push(mPathIcons[0], mPathTitle[0]);
         mPathbar.push(mPathIcons[1], mPathTitle[1]);
@@ -212,6 +196,7 @@ public class HeadUpDisplay extends GLView {
     private void initializePopupWindow() {
         Context context = mContext;
         mListView = new GLListView(context);
+        mListView.setOnItemSelectedListener(new MyMenuItemListener());
         mPopupWindow = new PopupWindow();
 
         mPopupWindow.setBackground(
@@ -226,29 +211,37 @@ public class HeadUpDisplay extends GLView {
         super.addComponent(mPopupWindow);
     }
 
-    private MenuAdapter buildShareMenu(Context context) {
+    protected void buildShareMenu(MenuItem menu) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         // TODO: the type should match to the selected items
         intent.setType("image/jpeg");
-        MenuAdapter menu = new MenuAdapter(context);
         PackageManager packageManager = mContext.getPackageManager();
         for(ResolveInfo info
                 : packageManager.queryIntentActivities(intent, 0)) {
             String label = info.loadLabel(packageManager).toString();
             Drawable icon = info.loadIcon(packageManager);
-            menu.addMenu(icon, label);
+            menu.addMenuItem(icon, label);
         }
-        return menu;
     }
 
-    private class MySelectedListener implements OnSelectedListener {
+    private class MyMenuItemListener implements GLListView.OnItemSelectedListener {
+        @Override
+        public void onItemSelected(GLView view, int position) {
+            MenuItem item = (MenuItem) view;
+            item.notifyClickListeners();
+            mPopupWindow.popoff();
+        }
+    }
 
-        public void onSelected(GLView source) {
+    private class MySelectedListener implements MenuItemBar.OnSelectedListener {
+
+        @Override
+        public void onSelected(MenuItem source) {
             if (source == null) {
                 mPopupWindow.popoff();
             } else {
                 if (mPopupWindow == null) initializePopupWindow();
-                mListView.setDataModel(mContentMap.get(source));
+                mListView.setDataModel(source.getSubMenu());
                 layoutPopupWindow(source);
                 if (mPopupWindow.getVisibility() != GLView.VISIBLE) {
                     mPopupWindow.popup();
@@ -259,6 +252,7 @@ public class HeadUpDisplay extends GLView {
 
     private class MyPathbarListener implements Pathbar.OnClickedListener {
 
+        @Override
         public void onClicked(Pathbar source, int index) {
             int size = mPathbar.size();
             if (index < size - 1) {
@@ -271,48 +265,6 @@ public class HeadUpDisplay extends GLView {
                     source.push(mPathIcons[index + 1], mPathTitle[index + 1]);
                 }
             }
-        }
-    }
-
-    private static class MenuAdapter implements GLListView.Model {
-
-        private final ArrayList<IconLabel> mContent = new ArrayList<IconLabel>();
-        private final Context mContext;
-
-        public MenuAdapter(Context context) {
-            mContext = context;
-        }
-
-        public void addMenu(int icon, int title) {
-            mContent.add(new IconLabel(mContext, icon, title));
-        }
-
-        public void addMenu(Drawable icon, String title) {
-
-            DrawableTexture iconTexture = null;
-            if (icon != null) {
-                iconTexture = new DrawableTexture(icon);
-                float target = 45;
-                int width = icon.getIntrinsicWidth();
-                int height = icon.getIntrinsicHeight();
-                float scale = target / Math.max(width, height);
-                iconTexture.setSize((int) (width * scale + .5f),
-                        (int) (height * scale + .5f));
-            }
-
-            mContent.add(new IconLabel(mContext, iconTexture, title));
-        }
-
-        public GLView getView(int index) {
-            return mContent.get(index);
-        }
-
-        public boolean isSelectable(int index) {
-            return true;
-        }
-
-        public int size() {
-            return mContent.size();
         }
     }
 
