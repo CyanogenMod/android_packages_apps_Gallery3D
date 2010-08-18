@@ -123,6 +123,10 @@ public class GLListView extends GLView {
         mHighLight = highLight;
     }
 
+    public Model getDataModel() {
+        return mModel;
+    }
+
     public void setDataModel(Model model) {
         if (mModel == model) return;
 

@@ -35,7 +35,7 @@ import javax.microedition.khronos.opengles.GL11;
 // getPaddings() returns paddings specified in the NinePatch.
 // getNinePatchChunk() returns the layout data specified in the NinePatch.
 //
-class NinePatchTexture extends ResourceTexture {
+public class NinePatchTexture extends ResourceTexture {
     private static final String TAG = "NinePatchTexture";
     private NinePatchChunk mChunk;
     private MyCacheMap<Long, NinePatchInstance> mInstanceCache =

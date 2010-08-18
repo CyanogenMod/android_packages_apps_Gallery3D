@@ -28,6 +28,7 @@ import com.android.gallery3d.ui.AdaptiveBackground;
 import com.android.gallery3d.ui.AlbumView;
 import com.android.gallery3d.ui.GLView;
 import com.android.gallery3d.ui.HeadUpDisplay;
+import com.android.gallery3d.ui.HudMenu;
 import com.android.gallery3d.ui.SelectionManager;
 import com.android.gallery3d.ui.SlotView;
 import com.android.gallery3d.ui.SynchronizedHandler;
@@ -122,6 +123,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         mAlbumView = new AlbumView(mContext, mSelectionManager);
         mRootPane.addComponent(mAlbumView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
+        mHud.setMenu(new HudMenu(mContext, mSelectionManager));
         mRootPane.addComponent(mHud);
         mAlbumView.setSlotTapListener(this);
 
