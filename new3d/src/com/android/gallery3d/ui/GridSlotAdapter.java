@@ -94,7 +94,6 @@ public class GridSlotAdapter implements SlotView.Listener {
                 mItemMap.remove(iter.next());
                 iter.remove();
             }
-            mItemMap.put(slotIndex, displayItem);
         }
 
         // Reclaim the slot
@@ -222,6 +221,8 @@ public class GridSlotAdapter implements SlotView.Listener {
                 putSlot(i);
             }
         }
+        mVisibleStart = start;
+        mVisibleEnd = end;
     }
 
     public void onLayoutChanged(int width, int height) {
