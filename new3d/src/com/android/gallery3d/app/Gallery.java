@@ -80,9 +80,6 @@ public final class Gallery extends Activity implements GalleryContext {
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
-        synchronized (this) {
-            if (mImageService != null) mImageService.close();
-        }
     }
 
     @Override

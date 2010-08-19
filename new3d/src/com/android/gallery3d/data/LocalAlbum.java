@@ -103,7 +103,7 @@ public class LocalAlbum extends MediaSet {
         try {
             while (cursor.moveToNext()) {
                 if (mIsImage) {
-                    list.add(LocalImage.load(imageService, cursor, dataManager));
+                    list.add(LocalImage.load(mContext, cursor, dataManager));
                 } else {
                     list.add(LocalVideo.load(imageService, cursor, dataManager));
                 }

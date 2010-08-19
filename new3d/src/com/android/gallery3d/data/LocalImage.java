@@ -16,25 +16,21 @@
 
 package com.android.gallery3d.data;
 
-import com.android.gallery3d.util.Utils;
-
-import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
-import android.util.Log;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
+import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
+
+import java.io.File;
 
 // LocalImage represents an image in the local storage.
 public class LocalImage extends LocalMediaItem {
 
     private static final int MICRO_TARGET_PIXELS = 128 * 128;
-    private static final int JPEG_MARK_POSITION = 60 * 1024;
 
     private static final int FULLIMAGE_TARGET_SIZE = 2048;
     private static final int FULLIMAGE_MAX_NUM_PIXELS = 5 * 1024 * 1024;
@@ -69,91 +65,38 @@ public class LocalImage extends LocalMediaItem {
 
     private long mUniqueId;
     private int mRotation;
+    private final GalleryContext mContext;
 
-    protected LocalImage(ImageService imageService) {
-        super(imageService);
+    protected LocalImage(GalleryContext context) {
+        mContext = context;
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
-    protected Bitmap decodeImage(String path) throws IOException {
-        // TODO: need to figure out why simply setting JPEG_MARK_POSITION doesn't work!
-        BufferedInputStream bis = new BufferedInputStream(
-                new FileInputStream(path), JPEG_MARK_POSITION);
-        try {
-            // Decode bufferedInput for calculating a sample size.
-            final BitmapFactory.Options options = mOptions;
-            options.inJustDecodeBounds = true;
-            bis.mark(JPEG_MARK_POSITION);
-            BitmapFactory.decodeStream(bis, null, options);
-            if (options.mCancel) return null;
-
-            try {
-                bis.reset();
-            } catch (IOException e) {
-                Log.w(TAG, "failed in resetting the buffer after reading the jpeg header", e);
-                bis.close();
-                bis = new BufferedInputStream(new FileInputStream(path));
-            }
-
-            options.inSampleSize =  Utils.computeSampleSize(options,
-                    FULLIMAGE_TARGET_SIZE, FULLIMAGE_MAX_NUM_PIXELS);
-            options.inJustDecodeBounds = false;
-            return BitmapFactory.decodeStream(bis, null, options);
-        } finally {
-            bis.close();
-        }
-    }
-
     @Override
-    protected void cancelImageGeneration(ContentResolver resolver, int type) {
-        switch (type) {
-            case TYPE_FULL_IMAGE:
-                mOptions.requestCancelDecode();
-                break;
-            case TYPE_THUMBNAIL:
-            case TYPE_MICROTHUMBNAIL:
-                Images.Thumbnails.cancelThumbnailRequest(resolver, mId);
-                break;
-            default:
-                throw new IllegalArgumentException();
+    public synchronized Future<Bitmap>
+            requestImage(int type, FutureListener<? super Bitmap> listener) {
+        if (type == TYPE_FULL_IMAGE) {
+            return mContext.getDecodeService().requestDecode(
+                    new File(mFilePath), null, FULLIMAGE_TARGET_SIZE,
+                    FULLIMAGE_MAX_NUM_PIXELS, listener);
+        } else {
+            return mContext.getImageService()
+                    .requestImageThumbnail(mId, type, listener);
         }
     }
 
-    @Override
-    protected Bitmap generateImage(ContentResolver resolver, int type)
-            throws Exception {
-
-        switch (type) {
-            case TYPE_FULL_IMAGE: {
-                mOptions.mCancel = false;
-                return decodeImage(mFilePath);
-            }
-            case TYPE_THUMBNAIL:
-                return Images.Thumbnails.getThumbnail(
-                        resolver, mId, Images.Thumbnails.MINI_KIND, null);
-            case TYPE_MICROTHUMBNAIL: {
-                Bitmap bitmap = Images.Thumbnails.getThumbnail(
-                        resolver, mId, Images.Thumbnails.MINI_KIND, null);
-                return bitmap == null
-                        ? null
-                        : Utils.resize(bitmap, MICRO_TARGET_PIXELS);
-            }
-            default:
-                throw new IllegalArgumentException();
-        }
-    }
-
-    public static LocalImage load(ImageService imageService, Cursor cursor,
+    public static LocalImage load(GalleryContext context, Cursor cursor,
             DataManager dataManager) {
         int itemId = cursor.getInt(INDEX_ID);
         long uniqueId = DataManager.makeId(DataManager.ID_LOCAL_IMAGE, itemId);
         LocalImage item = (LocalImage) dataManager.getFromCache(uniqueId);
         if (item != null) return item;
 
-        item = new LocalImage(imageService);
+        item = new LocalImage(context);
         dataManager.putToCache(uniqueId, item);
 
         item.mId = itemId;

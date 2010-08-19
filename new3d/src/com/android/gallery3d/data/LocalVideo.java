@@ -16,13 +16,12 @@
 
 package com.android.gallery3d.data;
 
-import com.android.gallery3d.util.Utils;
-
-import android.content.ContentResolver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.provider.MediaStore.Video;
 import android.provider.MediaStore.Video.VideoColumns;
+
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
 
 // LocalVideo represents a video in the local storage.
 public class LocalVideo extends LocalMediaItem {
@@ -56,38 +55,21 @@ public class LocalVideo extends LocalMediaItem {
 
     private long mUniqueId;
     public int mDurationInSec;
+    private final ImageService mImageService;
 
     protected LocalVideo(ImageService imageService) {
-        super(imageService);
+        mImageService = imageService;
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
     @Override
-    protected void cancelImageGeneration(ContentResolver resolver, int type) {
-        Video.Thumbnails.cancelThumbnailRequest(resolver, mId);
-    }
-
-    @Override
-    protected Bitmap generateImage(ContentResolver resolver, int type) {
-        switch (type) {
-            // Return a MINI_KIND bitmap in the cases of TYPE_FULL_IMAGE
-            // and TYPE_THUMBNAIL.
-            case TYPE_FULL_IMAGE:
-            case TYPE_THUMBNAIL:
-                return Video.Thumbnails.getThumbnail(
-                        resolver, mId, Video.Thumbnails.MINI_KIND, null);
-            case TYPE_MICROTHUMBNAIL:
-                Bitmap bitmap = Video.Thumbnails.getThumbnail(
-                        resolver, mId, Video.Thumbnails.MINI_KIND, null);
-                return bitmap == null
-                        ? null
-                        : Utils.resize(bitmap, MICRO_TARGET_PIXELS);
-            default:
-                throw new IllegalArgumentException();
-        }
+    public synchronized Future<Bitmap>
+            requestImage(int type, FutureListener<? super Bitmap> listener) {
+        return mImageService.requestVideoThumbnail(mId, type, listener);
     }
 
     public static LocalVideo load(ImageService imageService, Cursor cursor,
