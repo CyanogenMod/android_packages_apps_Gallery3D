@@ -27,6 +27,7 @@ import com.android.gallery3d.util.IdentityCache;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
 // DataManager manages all media sets and media items in the system.
 //
@@ -38,49 +39,77 @@ import java.io.IOException;
 //   -- PicasaAlbumSet .. PicasaAlbum .. PicasaImage
 //
 // Each MediaSet and MediaItem has a unique 64 bits id. The most significant
-// 32 bits represents its category, and the least significant 32 bits
-// represents the item id inside that category.
+// 32 bits represents its parent, and the least significant 32 bits represents
+// the self id. For MediaSet the self id is is globally unique, but for
+// MediaItem it's unique only relative to its parent.
+//
+// To make sure the id is the same when the MediaSet is re-created, a key
+// is provided to obtainSetId() to make sure the same self id will be used as
+// when the parent and key are the same.
+
 public class DataManager {
     private static final String TAG = "DataManager";
     private static int PICASA_CACHE_MAX_ENTRIES = 5000;
     private static int PICASA_CACHE_MAX_BYTES = 200 * 1024 * 1024;
     private static String PICASA_CACHE_FILE = "/picasaweb";
 
-    // Below are constants for categories.
-    public static final int ID_LOCAL_IMAGE = 1;
-    public static final int ID_LOCAL_VIDEO = 2;
-    public static final int ID_PICASA_IMAGE = 3;
+    // This is a predefined parent id for sets created directly by DataManager.
+    public static final int ID_ROOT = 0;
 
-    public static final int ID_LOCAL_IMAGE_ALBUM = 4;
-    public static final int ID_LOCAL_VIDEO_ALBUM = 5;
-    public static final int ID_PICASA_ALBUM = 6;
-
-    public static final int ID_LOCAL_IMAGE_ALBUM_SET = 7;
-    public static final int ID_LOCAL_VIDEO_ALBUM_SET = 8;
-    public static final int ID_PICASA_ALBUM_SET = 9;
-
-    public static final int ID_COMBO_ALBUM_SET = 10;
-    public static final int ID_MERGE_LOCAL_ALBUM_SET = 11;
-    public static final int ID_MERGE_LOCAL_ALBUM = 12;
+    // This is predefined child key for sets.
+    public static final int KEY_COMBO = 0;
+    public static final int KEY_MERGE = 1;
+    public static final int KEY_LOCAL_IMAGE = 2;
+    public static final int KEY_LOCAL_VIDEO = 3;
+    public static final int KEY_PICASA = 4;
 
     private GalleryContext mContext;
     private MediaSet mRootSet;
     private HandlerThread mDataThread;
-    private IdentityCache<Long, MediaItem> mMediaItemCache;
+    private IdentityCache<Integer, MediaSet> mMediaSetCache;
+    private HashMap<Long, Integer> mKeyToSelfId;
     private BlobCache mPicasaCache = null;
 
     public DataManager(GalleryContext context) {
         mContext = context;
-        mMediaItemCache = new IdentityCache<Long, MediaItem>();
+        mMediaSetCache = new IdentityCache<Integer, MediaSet>();
+        mKeyToSelfId = new HashMap<Long, Integer>();
     }
 
-    public static long makeId(int category, int item) {
-        long result = category;
-        return (result << 32) | item;
+    public static long makeId(int parent, int self) {
+        long result = parent;
+        return (result << 32) | (self & 0xffffffffL);
     }
 
-    public static int extractItemId(long id) {
+    public static int extractSelfId(long id) {
         return (int) id;
+    }
+
+    public static int extractParentId(long id) {
+        return (int) (id >> 32);
+    }
+
+    private int mNextSelfId = 1;
+    public synchronized long obtainSetId(int parentId, int childKey, MediaSet self) {
+        long key = parentId;
+        key = (key << 32) | (childKey & 0xffffffffL);
+
+        int selfId;
+        Integer value = mKeyToSelfId.get(key);
+
+        if (value != null) {
+            selfId = value;
+        } else {
+            while (mMediaSetCache.get(mNextSelfId) != null
+                    || mNextSelfId == ID_ROOT) {
+                ++mNextSelfId;
+            }
+            selfId = mNextSelfId++;
+            mKeyToSelfId.put(key, selfId);
+        }
+
+        mMediaSetCache.put(selfId, self);
+        return makeId(parentId, selfId);
     }
 
     // Return null when we cannot instantiate a BlobCache, e.g.:
@@ -111,32 +140,24 @@ public class DataManager {
 
     public MediaSet getRootSet() {
         if (mRootSet == null) {
-            PicasaAlbumSet picasaSet = new PicasaAlbumSet(mContext);
-            LocalAlbumSet localImageSet = new LocalAlbumSet(mContext, true);
-            LocalAlbumSet localVideoSet = new LocalAlbumSet(mContext, false);
+            PicasaAlbumSet picasaSet = new PicasaAlbumSet(
+                    ID_ROOT, KEY_PICASA, mContext);
+            LocalAlbumSet localImageSet = new LocalAlbumSet(
+                    ID_ROOT, KEY_LOCAL_IMAGE, mContext, true);
+            LocalAlbumSet localVideoSet = new LocalAlbumSet(
+                    ID_ROOT, KEY_LOCAL_VIDEO, mContext, false);
+
             MediaSet localSet = new MergeAlbumSet(
-                    makeId(ID_MERGE_LOCAL_ALBUM_SET, 0),
+                    this, ID_ROOT, KEY_MERGE,
                     LocalAlbum.sDateTakenComparator,
                     localImageSet, localVideoSet);
 
             mRootSet = new ComboAlbumSet(
-                    makeId(ID_COMBO_ALBUM_SET, 0),
+                    this, ID_ROOT, KEY_COMBO,
                     localSet, picasaSet);
             mRootSet.reload();
         }
         return mRootSet;
-    }
-
-    public MediaSet getSubMediaSet(int subSetIndex) {
-        return getRootSet().getSubMediaSet(subSetIndex);
-    }
-
-    public MediaItem getFromCache(Long key) {
-        return mMediaItemCache.get(key);
-    }
-
-    public MediaItem putToCache(long key, MediaItem item) {
-        return mMediaItemCache.put(Long.valueOf(key), item);
     }
 
     public synchronized Looper getDataLooper() {
@@ -146,5 +167,27 @@ public class DataManager {
             mDataThread.start();
         }
         return mDataThread.getLooper();
+    }
+
+    public MediaSet getMediaSet(int id) {
+        return mMediaSetCache.get(id);
+    }
+
+    public int getSupportedOperations(long uniqueId) {
+        int parentId = DataManager.extractParentId(uniqueId);
+        MediaSet parent = getMediaSet(parentId);
+        return parent.getSupportedOperations(uniqueId);
+    }
+
+    public void delete(long uniqueId) {
+        int parentId = DataManager.extractParentId(uniqueId);
+        MediaSet parent = getMediaSet(parentId);
+        parent.delete(uniqueId);
+    }
+
+    public void rotate(long uniqueId, int degrees) {
+        int parentId = DataManager.extractParentId(uniqueId);
+        MediaSet parent = getMediaSet(parentId);
+        parent.rotate(uniqueId, degrees);
     }
 }

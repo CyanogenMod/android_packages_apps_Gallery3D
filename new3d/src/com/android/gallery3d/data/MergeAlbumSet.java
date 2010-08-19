@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.data;
 
+import com.android.gallery3d.util.Utils;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
@@ -28,14 +30,16 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
     private static final String TAG = "MergeAlbumSet";
     private static final int PAGE_SIZE = 100;
     private final long mUniqueId;
+    private final DataManager mDataManager;
     private Comparator<MediaItem> mComparator;
     private final MediaSet[] mSets;
     private ArrayList<MergeAlbum> mAlbums = new ArrayList<MergeAlbum>();
     private TreeSet<Integer> mIds = new TreeSet<Integer>();
 
-    public MergeAlbumSet(long uniqueId, Comparator<MediaItem> comparator,
-            MediaSet ... mediaSets) {
-        mUniqueId = uniqueId;
+    public MergeAlbumSet(DataManager dataManager, int parentId, int childKey,
+            Comparator<MediaItem> comparator, MediaSet ... mediaSets) {
+        mUniqueId = dataManager.obtainSetId(parentId, childKey, this);
+        mDataManager = dataManager;
         mComparator = comparator;
         mSets = mediaSets;
         updateIds();
@@ -57,8 +61,8 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         for (MediaSet set : mSets) {
             for (int i = 0, n = set.getSubMediaSetCount(); i < n; i++) {
                 MediaSet subset = set.getSubMediaSet(i);
-                int itemId = DataManager.extractItemId(subset.getUniqueId());
-                allIds.add(itemId);
+                int subId = subset.getMergeId();
+                allIds.add(subId);
             }
         }
 
@@ -68,12 +72,11 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         }
 
         // If there are new ids, create new albums for them.
-        for (int itemId : allIds) {
-            if (mIds.contains(itemId)) continue;
-            mIds.add(itemId);
-            long newId = DataManager.makeId(DataManager.ID_MERGE_LOCAL_ALBUM,
-                    itemId);
-            mAlbums.add(new MergeAlbum(newId, PAGE_SIZE, mComparator, mSets, itemId));
+        for (int subId : allIds) {
+            if (mIds.contains(subId)) continue;
+            mIds.add(subId);
+            mAlbums.add(new MergeAlbum(mDataManager,
+                    getMyId(), PAGE_SIZE, mComparator, mSets, subId));
         }
     }
 
@@ -117,5 +120,17 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
 
     public void onContentDirty() {
         if (mListener != null) mListener.onContentDirty();
+    }
+
+    public int getSupportedOperations(long uniqueId) {
+        return SUPPORT_DELETE;
+    }
+
+    public void delete(long uniqueId) {
+        Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
+
+        int childId = DataManager.extractSelfId(uniqueId);
+        MergeAlbum child = (MergeAlbum) mDataManager.getMediaSet(childId);
+        child.deleteSelf();
     }
 }

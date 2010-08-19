@@ -72,17 +72,11 @@ public class LocalVideo extends LocalMediaItem {
         return mImageService.requestVideoThumbnail(mId, type, listener);
     }
 
-    public static LocalVideo load(ImageService imageService, Cursor cursor,
-            DataManager dataManager) {
+    public static LocalVideo load(int parentId, ImageService imageService,
+            Cursor cursor, DataManager dataManager) {
         int itemId = cursor.getInt(INDEX_ID);
-        long uniqueId = DataManager.makeId(DataManager.ID_LOCAL_VIDEO, itemId);
-        LocalVideo item = (LocalVideo) dataManager.getFromCache(uniqueId);
-        if (item != null) return item;
-
-        item = new LocalVideo(imageService);
-        dataManager.putToCache(uniqueId, item);
-
-        item.mId = cursor.getInt(INDEX_ID);
+        LocalVideo item = new LocalVideo(imageService);
+        item.mId = itemId;
         item.mCaption = cursor.getString(INDEX_CAPTION);
         item.mMimeType = cursor.getString(INDEX_MIME_TYPE);
         item.mLatitude = cursor.getDouble(INDEX_LATITUDE);
@@ -92,7 +86,7 @@ public class LocalVideo extends LocalMediaItem {
         item.mDateModifiedInSec = cursor.getLong(INDEX_DATE_MODIFIED);
         item.mFilePath = cursor.getString(INDEX_DATA);
         item.mDurationInSec = cursor.getInt(INDEX_DURATION);
-        item.mUniqueId = uniqueId;
+        item.mUniqueId = DataManager.makeId(parentId, itemId);
 
         return item;
     }
