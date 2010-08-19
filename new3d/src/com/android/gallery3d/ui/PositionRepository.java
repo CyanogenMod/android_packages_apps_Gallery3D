@@ -70,9 +70,26 @@ public class PositionRepository {
     }
 
     private HashMap<Long, Position> mData = new HashMap<Long, Position>();
+    private float mOffsetX;
+    private float mOffsetY;
+    private float mOffsetZ;
 
     public Position get(Long identity) {
         return mData.get(identity);
+    }
+
+    public void setPositionOffset(int offsetX, int offsetY, int offsetZ) {
+        float deltaX = offsetX - mOffsetX;
+        float deltaY = offsetY - mOffsetY;
+        float deltaZ = offsetZ - mOffsetZ;
+        mOffsetX = offsetX;
+        mOffsetY = offsetY;
+        mOffsetZ = offsetZ;
+        for (Position position : mData.values()) {
+            position.x += deltaX;
+            position.y += deltaY;
+            position.z += deltaZ;
+        }
     }
 
     public void putPosition(Long identity, Position position) {
