@@ -122,7 +122,7 @@ public class DataManager {
             } else {
                 try {
                     mPicasaCache = new BlobCache(path, PICASA_CACHE_MAX_ENTRIES,
-                            PICASA_CACHE_MAX_BYTES, true);
+                            PICASA_CACHE_MAX_BYTES, false);
                 } catch (IOException e) {
                     Log.e(TAG, "Cannot instantiate Picasaweb Cache!", e);
                 }

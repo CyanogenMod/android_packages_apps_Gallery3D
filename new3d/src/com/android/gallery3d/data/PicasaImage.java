@@ -73,13 +73,16 @@ public class PicasaImage extends MediaItem {
             if (isCached) {
                 byte[] uri = Utils.getBytesInUtf8(photoUrl.toString());
                 if (isSameUri(uri, request.buffer)) {
-                    Log.i(TAG, "Get Image from Cache (type, url): " + type +
-                            " " + photoUrl.toString());
                     DecodeService service = mContext.getDecodeService();
                     return service.requestDecode(request.buffer, uri.length,
                             request.length - uri.length, null, listener);
+                } else {
+                    Log.w(TAG, "The cached image has different URI?");
                 }
             }
+
+            Log.d(TAG, "Get uncached picasa image (type, url): " + type +
+                    " " + photoUrl.toString());
         }
 
         // Get the image from Picasaweb instead.
