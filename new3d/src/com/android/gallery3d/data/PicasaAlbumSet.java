@@ -16,7 +16,9 @@
 
 package com.android.gallery3d.data;
 
+import android.database.ContentObserver;
 import android.database.Cursor;
+import android.os.Handler;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.picasa.AlbumEntry;
@@ -35,8 +37,11 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
     public PicasaAlbumSet(GalleryContext context) {
         super(context);
+        context.getContentResolver().registerContentObserver(
+                PicasaContentProvider.ALBUMS_URI, true, new MyContentObserver());
     }
 
+    @Override
     public MediaSet getSubMediaSet(int index) {
         return mAlbums.get(index);
     }
@@ -45,10 +50,12 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return mAlbums.size();
     }
 
+    @Override
     public String getName() {
         return TAG;
     }
 
+    @Override
     public long getUniqueId() {
         return DataManager.makeId(DataManager.ID_PICASA_ALBUM_SET, 0);
     }
@@ -82,5 +89,16 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         mAlbums.clear();
         mAlbums.addAll(mLoadBuffer);
         mLoadBuffer.clear();
+    }
+
+    private class MyContentObserver extends ContentObserver {
+        public MyContentObserver() {
+            super(new Handler(mContext.getMainLooper()));
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            notifyContentDirty();
+        }
     }
 }

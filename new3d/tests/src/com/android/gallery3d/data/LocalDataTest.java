@@ -17,9 +17,6 @@
 package com.android.gallery3d.data;
 
 import android.content.ContentProvider;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.IContentProvider;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
@@ -28,12 +25,8 @@ import android.os.Looper;
 import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
-import android.test.suitebuilder.annotation.LargeTest;
 import android.test.suitebuilder.annotation.MediumTest;
-import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Log;
-
-import java.util.ArrayList;
 
 public class LocalDataTest extends AndroidTestCase {
     private static final String TAG = "LocalDataTest";
@@ -64,13 +57,14 @@ public class LocalDataTest extends AndroidTestCase {
             mIsImage = isImage;
         }
 
+        @Override
         public void run() {
             Looper.prepare();
             SQLiteDatabase db = SQLiteDatabase.create(null);
 
             prepareData(db);
 
-            GalleryContextStub context = newGalleryContext(db);
+            GalleryContextStub context = newGalleryContext(db, Looper.myLooper());
             LocalAlbumSet albumSet = new LocalAlbumSet(context, mIsImage);
             MyListener listener = new MyListener();
             albumSet.setContentListener(listener);
@@ -98,10 +92,12 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     class TestZeroImage extends TestLocalImageAlbum {
+        @Override
         public void prepareData(SQLiteDatabase db) {
             createImageTable(db);
         }
 
+        @Override
         public void verifyResult(LocalAlbumSet albumSet) {
             assertEquals(0, albumSet.getMediaItemCount());
             assertEquals(0, albumSet.getSubMediaSetCount());
@@ -112,11 +108,13 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     class TestOneImage extends TestLocalImageAlbum {
+        @Override
         public void prepareData(SQLiteDatabase db) {
             createImageTable(db);
             insertImageData(db);
         }
 
+        @Override
         public void verifyResult(LocalAlbumSet albumSet) {
             assertEquals(0, albumSet.getMediaItemCount());
             assertEquals(1, albumSet.getSubMediaSetCount());
@@ -142,6 +140,7 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     class TestMoreImages extends TestLocalImageAlbum {
+        @Override
         public void prepareData(SQLiteDatabase db) {
             // Albums are sorted by names, and items are sorted by
             // dateTimeTaken (descending)
@@ -153,6 +152,7 @@ public class LocalDataTest extends AndroidTestCase {
             insertImageData(db, 3000, 0xB001, "first");   // id 3
         }
 
+        @Override
         public void verifyResult(LocalAlbumSet albumSet) {
             assertEquals(0, albumSet.getMediaItemCount());
             assertEquals(2, albumSet.getSubMediaSetCount());
@@ -220,10 +220,12 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     class TestZeroVideo extends TestLocalVideoAlbum {
+        @Override
         public void prepareData(SQLiteDatabase db) {
             createVideoTable(db);
         }
 
+        @Override
         public void verifyResult(LocalAlbumSet albumSet) {
             assertEquals(0, albumSet.getMediaItemCount());
             assertEquals(0, albumSet.getSubMediaSetCount());
@@ -234,11 +236,13 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     class TestOneVideo extends TestLocalVideoAlbum {
+        @Override
         public void prepareData(SQLiteDatabase db) {
             createVideoTable(db);
             insertVideoData(db);
         }
 
+        @Override
         public void verifyResult(LocalAlbumSet albumSet) {
             assertEquals(0, albumSet.getMediaItemCount());
             assertEquals(1, albumSet.getSubMediaSetCount());
@@ -265,6 +269,7 @@ public class LocalDataTest extends AndroidTestCase {
     }
 
     class TestMoreVideos extends TestLocalVideoAlbum {
+        @Override
         public void prepareData(SQLiteDatabase db) {
             // Albums are sorted by names, and items are sorted by
             // dateTimeTaken (descending)
@@ -276,6 +281,7 @@ public class LocalDataTest extends AndroidTestCase {
             insertVideoData(db, 3000, 0xB001, "first");   // id 3
         }
 
+        @Override
         public void verifyResult(LocalAlbumSet albumSet) {
             assertEquals(0, albumSet.getMediaItemCount());
             assertEquals(2, albumSet.getSubMediaSetCount());
@@ -347,18 +353,22 @@ public class LocalDataTest extends AndroidTestCase {
                 + "'/mnt/sdcard/DCIM/Camera/VID_20100811_051413.3gp', 2964)");
     }
 
-    static GalleryContextStub newGalleryContext(SQLiteDatabase db) {
+    static GalleryContextStub newGalleryContext(SQLiteDatabase db, Looper mainLooper) {
         ContentProvider cp = new DbContentProvider(db);
         MockContentResolver cr = new MockContentResolver();
         cr.addProvider("media", cp);
-        return new GalleryContextMock(null, cr);
+        return new GalleryContextMock(null, cr, mainLooper);
     }
 
     static class MyListener implements MediaSet.MediaSetListener {
         int count;
+
         public void onContentChanged() {
             count++;
             Looper.myLooper().quit();
+        }
+
+        public void onContentDirty() {
         }
     }
 }

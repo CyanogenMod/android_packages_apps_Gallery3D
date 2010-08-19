@@ -18,10 +18,10 @@ package com.android.gallery3d.data;
 
 import android.util.Log;
 
-import java.util.Comparator;
-import java.util.TreeMap;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
 // MergeAlbum merges items from two or more MediaSets. It uses a Comparator to
 // determine the order of items. The items are assumed to be sorted in the input
@@ -99,24 +99,28 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
         mIndex.put(0, new int[mSize]);
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
+    @Override
     public String getName() {
         return TAG;
     }
 
+    @Override
     public int getMediaItemCount() {
         return getTotalMediaItemCount();
     }
 
+    @Override
     public ArrayList<MediaItem> getMediaItem(int start, int count) {
 
         // First find the nearest mark position <= start.
         SortedMap<Integer, int[]> head = mIndex.headMap(start + 1);
         int markPos = head.lastKey();
-        int[] subPos = (int []) head.get(markPos).clone();
+        int[] subPos = head.get(markPos).clone();
         MediaItem[] slot = new MediaItem[mSize];
 
         // fill all slots
@@ -148,13 +152,14 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
 
             // Periodically leave a mark in the index, so we can come back later.
             if ((i + 1) % mPageSize == 0) {
-                mIndex.put(i + 1, (int[]) subPos.clone());
+                mIndex.put(i + 1, subPos.clone());
             }
         }
 
         return result;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int count = 0;
         for (MediaSet set : mSets) {
@@ -163,6 +168,7 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
         return count;
     }
 
+    @Override
     public void reload() {
         for (MediaSet set : mSets) {
             set.reload();
@@ -175,6 +181,10 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
         if (mListener != null) {
             mListener.onContentChanged();
         }
+    }
+
+    public void onContentDirty() {
+        if (mListener != null) mListener.onContentDirty();
     }
 }
 

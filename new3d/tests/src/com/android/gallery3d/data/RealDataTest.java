@@ -16,17 +16,12 @@
 
 package com.android.gallery3d.data;
 
-import com.android.gallery3d.app.GalleryContext;
-import com.android.gallery3d.ui.GLRoot;
-import com.android.gallery3d.ui.GLRootStub;
-
-import android.content.ContentResolver;
 import android.os.Looper;
 import android.test.AndroidTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
-import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.LargeTest;
 import android.util.Log;
+
+import com.android.gallery3d.app.GalleryContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -54,11 +49,13 @@ public class RealDataTest extends AndroidTestCase {
     }
 
     class TestLocalImageThread extends Thread {
+        @Override
         public void run() {
             Looper.prepare();
             GalleryContext context = new GalleryContextMock(
                     mContext,
-                    mContext.getContentResolver());
+                    mContext.getContentResolver(),
+                    Looper.myLooper());
 
             LocalAlbumSet albumSet = new LocalAlbumSet(context, true);
             MyListener listener = new MyListener();
@@ -73,11 +70,14 @@ public class RealDataTest extends AndroidTestCase {
     }
 
     class TestLocalVideoThread extends Thread {
+        @Override
         public void run() {
             Looper.prepare();
+
             GalleryContext context = new GalleryContextMock(
                     mContext,
-                    mContext.getContentResolver());
+                    mContext.getContentResolver(),
+                    Looper.myLooper());
 
             LocalAlbumSet albumSet = new LocalAlbumSet(context, false);
             MyListener listener = new MyListener();
@@ -92,11 +92,13 @@ public class RealDataTest extends AndroidTestCase {
     }
 
     class TestPicasaThread extends Thread {
+        @Override
         public void run() {
             Looper.prepare();
             GalleryContext context = new GalleryContextMock(
                     mContext,
-                    mContext.getContentResolver());
+                    mContext.getContentResolver(),
+                    Looper.myLooper());
 
             PicasaAlbumSet albumSet = new PicasaAlbumSet(context);
             MyListener listener = new MyListener();
@@ -144,9 +146,13 @@ public class RealDataTest extends AndroidTestCase {
 
     static class MyListener implements MediaSet.MediaSetListener {
         int count;
+
         public void onContentChanged() {
             count++;
             Looper.myLooper().quit();
+        }
+
+        public void onContentDirty() {
         }
     }
 }

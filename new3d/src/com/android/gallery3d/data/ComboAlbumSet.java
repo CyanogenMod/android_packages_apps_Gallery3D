@@ -32,6 +32,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         }
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
@@ -55,6 +56,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         return count;
     }
 
+    @Override
     public String getName() {
         return TAG;
     }
@@ -67,6 +69,7 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
         return count;
     }
 
+    @Override
     public void reload() {
         for (MediaSet set : mSets) {
             set.reload();
@@ -76,6 +79,12 @@ public class ComboAlbumSet extends MediaSet implements MediaSet.MediaSetListener
     public void onContentChanged() {
         if (mListener != null) {
             mListener.onContentChanged();
+        }
+    }
+
+    public void onContentDirty() {
+        if (mListener != null) {
+            mListener.onContentDirty();
         }
     }
 }

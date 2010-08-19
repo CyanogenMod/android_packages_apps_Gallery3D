@@ -42,6 +42,7 @@ public abstract class DatabaseMediaSet extends MediaSet {
     protected final Handler mDbHandler;
     protected final GalleryContext mContext;
     protected final ContentResolver mResolver;
+    protected boolean mIsDirty = true;
 
     // How many times do we need to reload: 1 means we are reloading,
     // 2 means after current reloading, we need to do another one.
@@ -77,13 +78,21 @@ public abstract class DatabaseMediaSet extends MediaSet {
         };
     }
 
+    @Override
     public synchronized void reload() {
+        if (!mIsDirty) return;
+        mIsDirty = false;
         // If we already have reload pending, just return.
         if (mReloadCount >= 2) return;
         // If this is the first reload, start it.
         if (++mReloadCount == 1) {
             mDbHandler.sendEmptyMessage(MSG_LOAD_DATABASE);
         }
+    }
+
+    protected void notifyContentDirty() {
+        mIsDirty = true;
+        if (mListener != null) mListener.onContentDirty();
     }
 
     abstract protected void onLoadFromDatabase();
