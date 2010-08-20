@@ -27,10 +27,10 @@ import java.util.Random;
 public class GalleryView implements SlotView.Listener {
     private static final String TAG = GalleryView.class.getSimpleName();
 
-    static final int LENGTH_LIMIT = 180;
-    static final double EXPECTED_AREA = LENGTH_LIMIT * LENGTH_LIMIT / 2;
-    private static final int SLOT_WIDTH = 220;
-    private static final int SLOT_HEIGHT = 200;
+    static final int SLOT_WIDTH = 144;
+    static final int SLOT_HEIGHT = 144;
+    private static final int HORIZONTAL_GAP = 42;
+    private static final int VERTICAL_GAP = 42;
 
     final SlotView mSlotView;
 
@@ -51,6 +51,7 @@ public class GalleryView implements SlotView.Listener {
         mModel = Utils.checkNotNull(model);
         mSlotView = slotView;
         mSlotView.setSlotSize(SLOT_WIDTH, SLOT_HEIGHT);
+        mSlotView.setSlotGaps(HORIZONTAL_GAP, VERTICAL_GAP, false);
         mSlotView.setSlotCount(model.size());
         mModel.setListener(new MyCacheListener());
         updateVisibleRange(
@@ -72,14 +73,18 @@ public class GalleryView implements SlotView.Listener {
         // top of the rest.
         for (int i = items.length -1; i > 0; --i) {
             DisplayItem item = items[i];
-            int dx = mRandom.nextInt(11) - 5;
-            int itemX = (i & 0x01) == 0
-                    ? rect.left + dx + item.getWidth() / 2
-                    : rect.right - dx - item.getWidth() / 2;
-            int dy = mRandom.nextInt(11) - 10;
-            int theta = mRandom.nextInt(31) - 15;
+            int dx = 0;
+            int dy = 0;
+            int theta = 0;
+            if (i != 0) {
+                int seed = i;
+                int sign = (seed % 2 == 0) ? 1 : -1;
+                theta = (int) (30.0f * (0.5f - (float) Math.random()));
+                dx = (int) (sign * 12.0f * seed + (0.5f - mRandom.nextFloat()) * 4 * seed);
+                dy = (int) (sign * 4 + ((sign == 1) ? -8.0f : sign * (mRandom.nextFloat()) * 16.0f));
+            }
             Position position = new Position();
-            position.set(itemX, y + dy, 0, theta, 1f);
+            position.set(rect.left + item.getWidth() / 2 + dx, y + dy, 0, theta, 1f);
             mSlotView.putDisplayItem(position, item);
         }
         if (items.length > 0) {
