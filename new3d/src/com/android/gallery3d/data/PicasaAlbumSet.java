@@ -24,6 +24,7 @@ import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.picasa.AlbumEntry;
 import com.android.gallery3d.picasa.EntrySchema;
 import com.android.gallery3d.picasa.PicasaContentProvider;
+import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 
@@ -72,6 +73,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
     @Override
     protected void onLoadFromDatabase() {
+        Utils.assertNotInRenderThread();
         Cursor cursor = mResolver.query(
                 PicasaContentProvider.ALBUMS_URI,
                 SCHEMA.getProjection(), null, null, null);

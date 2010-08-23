@@ -291,7 +291,9 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
                 if (mActiveRequestCount == 0) requestNonactiveImages();
             }
             if (bitmap != null) {
-                updateContent(new BitmapTexture(bitmap));
+                BitmapTexture texture = new BitmapTexture(bitmap);
+                texture.setThrottled(true);
+                updateContent(texture);
                 if (mListener != null) mListener.onContentInvalidated();
             }
         }

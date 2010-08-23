@@ -44,11 +44,18 @@ abstract class UploadedTexture extends BasicTexture {
     private static final String TAG = "Texture";
     private boolean mContentValid = true;
     private boolean mOpaque = true;
+    private boolean mThrottled = false;
+    private static int sUploadedCount;
+    private static final int UPLOAD_LIMIT = 1;
 
     protected Bitmap mBitmap;
 
     protected UploadedTexture() {
         super(null, 0, STATE_UNLOADED);
+    }
+
+    protected void setThrottled(boolean throttled) {
+        mThrottled = throttled;
     }
 
     private Bitmap getBitmap() {
@@ -104,6 +111,9 @@ abstract class UploadedTexture extends BasicTexture {
      */
     public void updateContent(GLCanvas canvas) {
         if (!isLoaded(canvas)) {
+            if (mThrottled && ++sUploadedCount > UPLOAD_LIMIT) {
+                return;
+            }
             uploadToCanvas(canvas);
         } else if (!mContentValid) {
             Bitmap bitmap = getBitmap();
@@ -115,6 +125,14 @@ abstract class UploadedTexture extends BasicTexture {
             freeBitmap();
             mContentValid = true;
         }
+    }
+
+    public static void resetUploadLimit() {
+        sUploadedCount = 0;
+    }
+
+    public static boolean uploadLimitReached() {
+        return sUploadedCount > UPLOAD_LIMIT;
     }
 
     static int[] sTextureId = new int[1];
@@ -175,8 +193,9 @@ abstract class UploadedTexture extends BasicTexture {
     }
 
     @Override
-    protected void onBind(GLCanvas canvas) {
+    protected boolean onBind(GLCanvas canvas) {
         updateContent(canvas);
+        return isContentValid(canvas);
     }
 
     public void setOpaque(boolean isOpaque) {

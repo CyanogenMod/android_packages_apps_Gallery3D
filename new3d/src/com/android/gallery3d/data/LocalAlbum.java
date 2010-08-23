@@ -94,6 +94,7 @@ public class LocalAlbum extends MediaSet {
         Uri uri = mBaseUri.buildUpon()
                 .appendQueryParameter("limit", start + "," + count).build();
         ArrayList<MediaItem> list = new ArrayList<MediaItem>();
+        Utils.assertNotInRenderThread();
         Cursor cursor = mResolver.query(
                 uri, mProjection, mWhereClause,
                 new String[]{String.valueOf(mBucketId)},
@@ -116,6 +117,7 @@ public class LocalAlbum extends MediaSet {
 
     @Override
     public int getMediaItemCount() {
+        Utils.assertNotInRenderThread();
         Cursor cursor = mResolver.query(
                 mBaseUri, COUNT_PROJECTION, mWhereClause,
                 new String[]{String.valueOf(mBucketId)}, null);
@@ -196,6 +198,7 @@ public class LocalAlbum extends MediaSet {
     public void delete(long uniqueId) {
         Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
         int itemId = DataManager.extractSelfId(uniqueId);
+        Utils.assertNotInRenderThread();
         mResolver.delete(mBaseUri, DELETE_ITEM_WHERE_CLAUSE,
                 new String[] {String.valueOf(itemId)});
     }
@@ -205,6 +208,7 @@ public class LocalAlbum extends MediaSet {
     }
 
     public void deleteSelf() {
+        Utils.assertNotInRenderThread();
         mResolver.delete(mBaseUri, mWhereClause,
                 new String[]{String.valueOf(mBucketId)});
     }

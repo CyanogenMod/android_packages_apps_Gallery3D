@@ -498,8 +498,9 @@ public class GLCanvasTest extends TestCase {
         }
 
         @Override
-        protected void onBind(GLCanvas canvas) {
+        protected boolean onBind(GLCanvas canvas) {
             mBindCalled++;
+            return true;
         }
 
         public boolean isOpaque() {

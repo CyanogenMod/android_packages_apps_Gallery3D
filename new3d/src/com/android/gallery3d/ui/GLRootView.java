@@ -21,6 +21,7 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
+import android.os.Process;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -85,6 +86,9 @@ public class GLRootView extends GLSurfaceView
     private final IdleRunner mIdleRunner = new IdleRunner();
 
     private ReentrantLock mRenderLock = new ReentrantLock();
+
+    private static final int TARGET_FRAME_TIME = 33;
+    private long mLastDrawFinishTime;
 
     public GLRootView(Context context) {
         this(context, null);
@@ -219,6 +223,8 @@ public class GLRootView extends GLSurfaceView
     public void onSurfaceChanged(GL10 gl1, int width, int height) {
         Log.v(TAG, "onSurfaceChanged: " + width + "x" + height
                 + ", gl10: " + gl1.toString());
+        Process.setThreadPriority(Process.THREAD_PRIORITY_DISPLAY);
+        Utils.setRenderThread();
         GL11 gl = (GL11) gl1;
         Utils.Assert(mGL == gl);
 
@@ -242,12 +248,22 @@ public class GLRootView extends GLSurfaceView
     }
 
     public void onDrawFrame(GL10 gl) {
+        long begin = SystemClock.uptimeMillis();
         mRenderLock.lock();
         try {
             onDrawFrameLocked(gl);
         } finally {
             mRenderLock.unlock();
         }
+        long end = SystemClock.uptimeMillis();
+
+        if (mLastDrawFinishTime != 0) {
+            long wait = mLastDrawFinishTime + TARGET_FRAME_TIME - end;
+            if (wait > 0) {
+                SystemClock.sleep(wait);
+            }
+        }
+        mLastDrawFinishTime = SystemClock.uptimeMillis();
     }
 
     private void onDrawFrameLocked(GL10 gl) {
@@ -255,6 +271,9 @@ public class GLRootView extends GLSurfaceView
 
         // release the unbound textures
         mCanvas.deleteRecycledTextures();
+
+        // reset texture upload limit
+        UploadedTexture.resetUploadLimit();
 
         mRenderRequested = false;
 
@@ -280,6 +299,10 @@ public class GLRootView extends GLSurfaceView
                 mAnimations.get(i).setStartTime(now);
             }
             mAnimations.clear();
+        }
+
+        if (UploadedTexture.uploadLimitReached()) {
+            requestRender();
         }
 
         if (!mRenderRequested

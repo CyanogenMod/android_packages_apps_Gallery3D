@@ -6,7 +6,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
+import android.os.SystemClock;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import java.nio.charset.Charset;
 
@@ -220,5 +222,24 @@ public class Utils {
 
     public static byte[] getBytesInUtf8(String in) {
         return sUtf8Codec.encode(in).array();
+    }
+
+    // Below are used the detect using database in the render thread. It only
+    // works most of the time, but that's ok because it's for debugging only.
+
+    private static volatile Thread sCurrentThread;
+    private static volatile boolean sWarned;
+
+    public static void setRenderThread() {
+        sCurrentThread = Thread.currentThread();
+    }
+
+    public static void assertNotInRenderThread() {
+        if (!sWarned) {
+            if (Thread.currentThread() == sCurrentThread) {
+                sWarned = true;
+                Log.w(TAG, new Throwable("Should not do this in render thread"));
+            }
+        }
     }
 }

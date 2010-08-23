@@ -109,7 +109,7 @@ abstract class BasicTexture implements Texture {
 
     // onBind is called before GLCanvas binds this texture.
     // It should make sure the data is uploaded to GL memory.
-    abstract protected void onBind(GLCanvas canvas);
+    abstract protected boolean onBind(GLCanvas canvas);
 
     public boolean isLoaded(GLCanvas canvas) {
         return mState == STATE_LOADED && mCanvasRef.get() == canvas;

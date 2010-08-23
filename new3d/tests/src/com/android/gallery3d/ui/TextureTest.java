@@ -21,8 +21,9 @@ public class TextureTest extends TestCase {
         }
 
         @Override
-        protected void onBind(GLCanvas canvas) {
+        protected boolean onBind(GLCanvas canvas) {
             mOnBindCalled++;
+            return true;
         }
 
         public boolean isOpaque() {
@@ -167,7 +168,8 @@ public class TextureTest extends TestCase {
         }
 
         @Override
-        protected void onBind(GLCanvas canvas) {
+        protected boolean onBind(GLCanvas canvas) {
+            return true;
         }
 
         public boolean isOpaque() {
