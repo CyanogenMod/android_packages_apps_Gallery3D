@@ -43,7 +43,9 @@ abstract class CanvasTexture extends UploadedTexture {
 
     @Override
     protected void onFreeBitmap(Bitmap bitmap) {
-        bitmap.recycle();
+        if (!inFinalizer()) {
+            bitmap.recycle();
+        }
     }
 
     abstract protected void onDraw(Canvas canvas, Bitmap backing);
