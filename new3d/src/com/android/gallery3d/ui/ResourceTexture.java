@@ -45,6 +45,8 @@ class ResourceTexture extends UploadedTexture {
 
     @Override
     protected void onFreeBitmap(Bitmap bitmap) {
-        bitmap.recycle();
+        if (!inFinalizer()) {
+            bitmap.recycle();
+        }
     }
 }
