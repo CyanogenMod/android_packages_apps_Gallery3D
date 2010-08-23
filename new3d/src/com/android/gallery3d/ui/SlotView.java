@@ -29,6 +29,7 @@ import com.android.gallery3d.util.Utils;
 import java.util.LinkedHashMap;
 
 public class SlotView extends GLView {
+    private static final String TAG = "SlotView";
     private static final int MAX_VELOCITY = 2500;
     private static final int INDEX_NONE = -1;
 
@@ -69,8 +70,8 @@ public class SlotView extends GLView {
         mLayout.setSlotSize(slotWidth, slotHeight);
     }
 
-    public void setSlotGaps(int horizontalGap, int verticalGap) {
-        mLayout.setSlotGaps(horizontalGap, verticalGap);
+    public void setSlotGaps(int horizontalGap, int verticalGap, boolean center) {
+        mLayout.setSlotGaps(horizontalGap, verticalGap, center);
     }
 
     public void setListener(Listener listener) {
@@ -226,6 +227,8 @@ public class SlotView extends GLView {
 
         private int mVerticalGap;
         private int mHorizontalGap;
+        private boolean mCenter;
+        private int mTopMargin;
 
         private int mRowCount;
         private int mContentLength;
@@ -241,9 +244,10 @@ public class SlotView extends GLView {
             initLayoutParameters();
         }
 
-        public void setSlotGaps(int horizontalGap, int verticalGap) {
+        public void setSlotGaps(int horizontalGap, int verticalGap, boolean center) {
             mHorizontalGap = horizontalGap;
             mVerticalGap = verticalGap;
+            mCenter = center;
             initLayoutParameters();
         }
 
@@ -252,7 +256,7 @@ public class SlotView extends GLView {
             int row = index - col * mRowCount;
 
             int x = col * (mHorizontalGap + mSlotWidth) + mHorizontalGap;
-            int y = row * (mVerticalGap + mSlotHeight) + mVerticalGap;
+            int y = row * (mVerticalGap + mSlotHeight) + mVerticalGap + mTopMargin;
             return new Rect(x, y, x + mSlotWidth, y + mSlotHeight);
         }
 
@@ -264,6 +268,11 @@ public class SlotView extends GLView {
             int rowCount = (mHeight - mVerticalGap) / (mVerticalGap + mSlotHeight);
             if (rowCount == 0) rowCount = 1;
             mRowCount = rowCount;
+            if (mCenter) {
+                mTopMargin = (mHeight - rowCount * (mVerticalGap + mSlotHeight)) / 2;
+            } else {
+                mTopMargin = 0;
+            }
             mContentLength = ((mSlotCount + rowCount - 1) / rowCount)
                     * (mHorizontalGap + mSlotWidth) + mHorizontalGap - mWidth;
             if (mContentLength < 0) mContentLength = 0;
@@ -316,7 +325,7 @@ public class SlotView extends GLView {
             }
 
             int rowHeight = mVerticalGap + mSlotHeight;
-            float absoluteY = y;
+            float absoluteY = y - mTopMargin;
             int rowIdx = (int) (absoluteY + 0.5) / rowHeight;
             if (((absoluteY - rowHeight * rowIdx) < mVerticalGap)
                 || rowIdx >= mRowCount) {

@@ -38,8 +38,6 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
 
     private static final int CHANGE_BACKGROUND = 1;
     private static final int MARGIN_HUD_SLOTVIEW = 5;
-    private static final int HORIZONTAL_GAP_SLOTS = 5;
-    private static final int VERTICAL_GAP_SLOTS = 5;
     private static final int CACHE_SIZE = 64;
 
     private AdaptiveBackground mBackground;
@@ -126,7 +124,6 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         mRootPane.addComponent(mSlotView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
         mRootPane.addComponent(mHud);
-        mSlotView.setSlotGaps(HORIZONTAL_GAP_SLOTS, VERTICAL_GAP_SLOTS);
         mSlotView.setSlotTapListener(this);
 
         loadBackgroundBitmap(R.drawable.square,
