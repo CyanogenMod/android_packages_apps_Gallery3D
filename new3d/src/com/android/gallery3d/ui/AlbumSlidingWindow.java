@@ -4,25 +4,14 @@ package com.android.gallery3d.ui;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Message;
-import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.util.Future;
-import com.android.gallery3d.util.FutureListener;
 import com.android.gallery3d.util.Utils;
 
 public class AlbumSlidingWindow implements AlbumView.ModelListener {
     private static final String TAG = "AlbumSlidingWindow";
-
-    private static final int UPDATE_LIMIT = 10;
-
-    private static final int STATE_INVALID = 0;
-    private static final int STATE_VALID = 1;
-    private static final int STATE_UPDATING = 2;
-    private static final int STATE_RECYCLED = 3;
-    private static final int STATE_ERROR = -1;
-
     private static final int MSG_UPDATE_IMAGE = 0;
 
     public static interface Listener {
@@ -43,7 +32,7 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
 
     private Listener mListener;
 
-    private final CoverDisplayItem mData[];
+    private final AlbumDisplayItem mData[];
     private final SelectionManager mSelectionManager;
     private final ColorTexture mWaitLoadingTexture;
 
@@ -56,7 +45,7 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
         source.setListener(this);
         mSource = source;
         mSelectionManager = manager;
-        mData = new CoverDisplayItem[cacheSize];
+        mData = new AlbumDisplayItem[cacheSize];
         mSize = source.size();
 
         mWaitLoadingTexture = new ColorTexture(Color.GRAY);
@@ -66,7 +55,7 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
             @Override
             public void handleMessage(Message message) {
                 Utils.Assert(message.what == MSG_UPDATE_IMAGE);
-                ((CoverDisplayItem) message.obj).updateImage();
+                ((AlbumDisplayItem) message.obj).updateImage();
             }
         };
     }
@@ -94,10 +83,8 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
     }
 
     private void setContentWindow(int contentStart, int contentEnd) {
-
         if (contentStart == mContentStart && contentEnd == mContentEnd) return;
 
-        Log.v(TAG, String.format("content range: %s, %s", contentStart, contentEnd));
         if (contentStart >= mContentEnd || mContentStart >= contentEnd) {
             for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
                 freeSlotContent(i);
@@ -129,7 +116,8 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
     public void setActiveWindow(int start, int end) {
 
         Utils.Assert(start <= end
-                && end - start <= mData.length && end <= mSize);
+                && end - start <= mData.length && end <= mSize,
+                String.format("%s, %s, %s", start, end, mData.length));
         DisplayItem data[] = mData;
 
         mActiveStart = start;
@@ -141,10 +129,7 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
         int contentStart = Utils.clamp((start + end) / 2 - data.length / 2,
                 0, Math.max(0, mSize - data.length));
         int contentEnd = Math.min(contentStart + data.length, mSize);
-        if (mContentStart > start || mContentEnd < end
-                || Math.abs(contentStart - mContentStart) > UPDATE_LIMIT) {
-            setContentWindow(contentStart, contentEnd);
-        }
+        setContentWindow(contentStart, contentEnd);
         updateAllImageRequests();
     }
 
@@ -154,7 +139,6 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
     //                   |<-  active  ->|
     //         |<-------- cached range ----------->|
     private void requestNonactiveImages() {
-        Log.v(TAG, "request non active images");
         int range = Math.max(
                 (mContentEnd - mActiveEnd), (mActiveStart - mContentStart));
         for (int i = 0 ;i < range; ++i) {
@@ -165,14 +149,29 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
 
     private void requestSlotImage(int slotIndex, boolean isActive) {
         if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
-        CoverDisplayItem item = mData[slotIndex % mData.length];
-        item.requestImageIfNeed();
+        AlbumDisplayItem item = mData[slotIndex % mData.length];
+        item.requestImage();
+    }
+
+    private void cancelNonactiveImages() {
+        int range = Math.max(
+                (mContentEnd - mActiveEnd), (mActiveStart - mContentStart));
+        for (int i = 0 ;i < range; ++i) {
+            cancelSlotImage(mActiveEnd + i, false);
+            cancelSlotImage(mActiveStart - 1 - i, false);
+        }
+    }
+
+    private void cancelSlotImage(int slotIndex, boolean isActive) {
+        if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
+        AlbumDisplayItem item = mData[slotIndex % mData.length];
+        item.cancelImageRequest();
     }
 
     private void freeSlotContent(int slotIndex) {
-        CoverDisplayItem data[] = mData;
+        AlbumDisplayItem data[] = mData;
         int index = slotIndex % data.length;
-        CoverDisplayItem original = data[index];
+        AlbumDisplayItem original = data[index];
         if (original != null) {
             original.recycle();
             data[index] = null;
@@ -180,17 +179,17 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
     }
 
     private void prepareSlotContent(final int slotIndex) {
-        mData[slotIndex % mData.length] = new CoverDisplayItem(
+        mData[slotIndex % mData.length] = new AlbumDisplayItem(
                 slotIndex, mSource.get(slotIndex));
     }
 
     private void updateSlotContent(final int slotIndex) {
 
         MediaItem item = mSource.get(slotIndex);
-        CoverDisplayItem data[] = mData;
+        AlbumDisplayItem data[] = mData;
         int index = slotIndex % data.length;
-        CoverDisplayItem original = data[index];
-        CoverDisplayItem update = new CoverDisplayItem(slotIndex, item);
+        AlbumDisplayItem original = data[index];
+        AlbumDisplayItem update = new AlbumDisplayItem(slotIndex, item);
         data[index] = update;
         if (mListener != null && isActiveSlot(slotIndex)) {
             mListener.onWindowContentChanged(slotIndex, original, update);
@@ -201,63 +200,40 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
 
     private void updateAllImageRequests() {
         mActiveRequestCount = 0;
-        CoverDisplayItem data[] = mData;
+        AlbumDisplayItem data[] = mData;
         for (int i = mActiveStart, n = mActiveEnd; i < n; ++i) {
-            CoverDisplayItem item = data[i % data.length];
-            if (item.requestImageIfNeed()) {
-                ++mActiveRequestCount;
-            } else if (item.mState == STATE_UPDATING) {
-                ++mActiveRequestCount;
-            }
+            AlbumDisplayItem item = data[i % data.length];
+            item.requestImage();
+            if (item.isRequestInProgress()) ++mActiveRequestCount;
         }
-        if (mActiveRequestCount == 0) requestNonactiveImages();
+        if (mActiveRequestCount == 0) {
+            requestNonactiveImages();
+        } else {
+            cancelNonactiveImages();
+        }
     }
 
-    private class CoverDisplayItem
-            extends DisplayItem implements FutureListener<Bitmap> {
+    private class AlbumDisplayItem extends AbstractDisplayItem {
 
         private final int mSlotIndex;
-        private final MediaItem mMediaItem;
-
-        private int mState = STATE_INVALID;
-        private Future<Bitmap> mFuture;
         private Texture mContent;
-        private Bitmap mBitmap;
 
-        public CoverDisplayItem(int slotIndex, MediaItem item) {
-            Log.v(TAG, "create slot: " + slotIndex);
+        public AlbumDisplayItem(int slotIndex, MediaItem item) {
+            super(item);
             mSlotIndex = slotIndex;
-            mMediaItem = item;
-            if (mMediaItem == null) mState = STATE_ERROR;
             updateContent(mWaitLoadingTexture);
         }
 
-        public void updateImage() {
-            if (mState != STATE_UPDATING) {
-                Log.v(TAG, String.format(
-                        "invalid state %s for slot %s: update image fail", mState, mSlotIndex));
-                mFuture = null;
-                return; /* RECYCLED*/
-            }
-
-            Utils.Assert(mBitmap == null);
-
+        @Override
+        public void onBitmapAvailable(Bitmap bitmap) {
             if (isActiveSlot(mSlotIndex)) {
                 --mActiveRequestCount;
                 if (mActiveRequestCount == 0) requestNonactiveImages();
             }
-            try {
-                mBitmap = mFuture.get();
-                mState = STATE_VALID;
-            } catch (Exception e){
-                mState = STATE_ERROR;
-                Log.w(TAG, "cannot get image" , e);
-                return;
-            } finally {
-                mFuture = null;
+            if (bitmap != null) {
+                updateContent(new BitmapTexture(bitmap));
+                if (mListener != null) mListener.onContentInvalidated();
             }
-            updateContent(new BitmapTexture(mBitmap));
-            if (mListener != null) mListener.onContentInvalidated();
         }
 
         private void updateContent(Texture content) {
@@ -291,23 +267,14 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
             return System.identityHashCode(this);
         }
 
-        public void recycle() {
-            if (mBitmap != null) {
-                ((BasicTexture) mContent).recycle();
-                mBitmap.recycle();
-            }
-            mState = STATE_RECYCLED;
-        }
-
+        @Override
         public void onFutureDone(Future<? extends Bitmap> future) {
             mHandler.sendMessage(mHandler.obtainMessage(MSG_UPDATE_IMAGE, this));
         }
 
-        public boolean requestImageIfNeed() {
-            if (mState != STATE_INVALID) return false;
-            mState = STATE_UPDATING;
-            mFuture = mMediaItem.requestImage(MediaItem.TYPE_MICROTHUMBNAIL, this);
-            return true;
+        @Override
+        public String toString() {
+            return String.format("AlbumDisplayItem[%s]", mSlotIndex);
         }
     }
 
