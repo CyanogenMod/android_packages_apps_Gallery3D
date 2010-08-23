@@ -24,10 +24,10 @@ import com.android.gallery3d.ui.PositionRepository.Position;
 public class AlbumView implements SlotView.Listener {
     private static final String TAG = "AlbumView";
 
-    private static final int SLOT_WIDTH = 162;
-    private static final int SLOT_HEIGHT = 132;
-    private static final int HORIZONTAL_GAP = 5;
-    private static final int VERTICAL_GAP = 5;
+    static final int SLOT_WIDTH = 144;
+    static final int SLOT_HEIGHT = 144;
+    private static final int HORIZONTAL_GAP = 0;
+    private static final int VERTICAL_GAP = 0;
 
     private final SlotView mSlotView;
 
@@ -41,8 +41,8 @@ public class AlbumView implements SlotView.Listener {
         mModel = model;
         mModel.setListener(new MyDataModelListener());
         mSlotView.setSlotSize(SLOT_WIDTH, SLOT_HEIGHT);
+        mSlotView.setSlotGaps(HORIZONTAL_GAP, VERTICAL_GAP, true);
         mSlotView.setSlotCount(model.size());
-        mSlotView.setSlotGaps(HORIZONTAL_GAP, VERTICAL_GAP);
     }
 
     private void putSlotContent(int slotIndex, DisplayItem item) {

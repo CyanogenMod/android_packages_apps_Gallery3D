@@ -62,7 +62,7 @@ public class AlbumDataAdapter implements MediaSetListener {
         mSize = source.getMediaItemCount();
 
         mWaitLoadingTexture = new ColorTexture(Color.GRAY);
-        mWaitLoadingTexture.setSize(64, 48);
+        mWaitLoadingTexture.setSize(1, 1);
 
         mHandler = new SynchronizedHandler(context.getGLRoot()) {
             @Override
@@ -280,23 +280,13 @@ public class AlbumDataAdapter implements MediaSetListener {
             int width = mContent.getWidth();
             int height = mContent.getHeight();
 
-            float scale = (float) Math.sqrt(
-                    GalleryView.EXPECTED_AREA / (width * height));
-            width = (int) (width * scale + 0.5f);
-            height = (int) (height * scale + 0.5f);
+            float scalex = AlbumView.SLOT_WIDTH / (float) width;
+            float scaley = AlbumView.SLOT_HEIGHT / (float) height;
+            float scale = Math.min(scalex, scaley);
 
-            int widthLimit = GalleryView.LENGTH_LIMIT;
-            int heightLimit = GalleryView.LENGTH_LIMIT;
+            width = (int) Math.floor(width * scale);
+            height = (int) Math.floor(height * scale);
 
-            if (width > widthLimit || height > heightLimit) {
-                if (width * heightLimit > height * widthLimit) {
-                    height = height * widthLimit / width;
-                    width = widthLimit;
-                } else {
-                    width = width * heightLimit / height;
-                    height = heightLimit;
-                }
-            }
             setSize(width, height);
         }
 

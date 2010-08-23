@@ -130,29 +130,25 @@ public class ImageService {
 
         private Bitmap getThumbnail() {
             Bitmap result = null;
+            int kind;
 
             switch (mType) {
                 case MediaItem.TYPE_THUMBNAIL:
-                    if (mState.compareAndSet(STATE_READY, STATE_RUNNING)) {
-                        result =  Images.Thumbnails.getThumbnail(
-                                mResolver, mId, Images.Thumbnails.MINI_KIND, null);
-                        mState.compareAndSet(STATE_RUNNING, STATE_RAN);
-                    }
+                    kind = Images.Thumbnails.MINI_KIND;
                     break;
-                case MediaItem.TYPE_MICROTHUMBNAIL: {
-                    if (mState.compareAndSet(STATE_READY, STATE_RUNNING)) {
-                        result = Images.Thumbnails.getThumbnail(
-                            mResolver, mId, Images.Thumbnails.MINI_KIND, null);
-                        mState.compareAndSet(STATE_RUNNING, STATE_RAN);
-                        if (result != null) {
-                            result = Utils.resize(result, MICRO_TARGET_PIXELS);
-                        }
-                    }
+                case MediaItem.TYPE_MICROTHUMBNAIL:
+                    kind = Images.Thumbnails.MICRO_KIND;
                     break;
-                }
                 default:
                     throw new IllegalArgumentException();
             }
+
+            if (mState.compareAndSet(STATE_READY, STATE_RUNNING)) {
+                result = Images.Thumbnails.getThumbnail(
+                        mResolver, mId, kind, null);
+                mState.compareAndSet(STATE_RUNNING, STATE_RAN);
+            }
+
             return result;
         }
     }
@@ -201,29 +197,26 @@ public class ImageService {
 
         private Bitmap getThumbnail() {
             Bitmap result = null;
+            int kind;
+
             switch (mType) {
                 case MediaItem.TYPE_FULL_IMAGE:
                 case MediaItem.TYPE_THUMBNAIL:
-                    if (mState.compareAndSet(STATE_READY, STATE_RUNNING)) {
-                        result =  Images.Thumbnails.getThumbnail(
-                                mResolver, mId, Images.Thumbnails.MINI_KIND, null);
-                        mState.compareAndSet(STATE_RUNNING, STATE_RAN);
-                    }
+                    kind = Video.Thumbnails.MINI_KIND;
                     break;
-                case MediaItem.TYPE_MICROTHUMBNAIL: {
-                    if (mState.compareAndSet(STATE_READY, STATE_RUNNING)) {
-                        result = Video.Thumbnails.getThumbnail(
-                                mResolver, mId, Video.Thumbnails.MINI_KIND, null);
-                        mState.compareAndSet(STATE_RUNNING, STATE_RAN);
-                        if (result != null) {
-                            result = Utils.resize(result, MICRO_TARGET_PIXELS);
-                        }
-                    }
+                case MediaItem.TYPE_MICROTHUMBNAIL:
+                    kind = Video.Thumbnails.MICRO_KIND;
                     break;
-                }
                 default:
                     throw new IllegalArgumentException();
             }
+
+            if (mState.compareAndSet(STATE_READY, STATE_RUNNING)) {
+                result = Video.Thumbnails.getThumbnail(
+                        mResolver, mId, kind, null);
+                mState.compareAndSet(STATE_RUNNING, STATE_RAN);
+            }
+
             return result;
         }
     }
