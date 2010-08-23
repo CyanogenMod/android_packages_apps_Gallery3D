@@ -54,8 +54,8 @@ public class LocalAlbumSet extends DatabaseMediaSet {
 
     private boolean mIsImage;
     private long mUniqueId;
-    private final ArrayList<LocalAlbum> mAlbums = new ArrayList<LocalAlbum>();
-    private HashMap<Integer, String> mLoadBuffer;
+    private ArrayList<LocalAlbum> mAlbums = new ArrayList<LocalAlbum>();
+    private final HashMap<Integer, String> mLoadBuffer = new HashMap<Integer, String>();
 
     public LocalAlbumSet(int parentId, int childKey, GalleryContext context,
             boolean isImage) {
@@ -102,9 +102,6 @@ public class LocalAlbumSet extends DatabaseMediaSet {
 
     @Override
     protected void onLoadFromDatabase() {
-        HashMap<Integer, String> map = new HashMap<Integer, String>();
-        mLoadBuffer = map;
-
         Uri uri = mBaseUri.buildUpon().
                 appendQueryParameter("distinct", "true").build();
         Cursor cursor = mResolver.query(
@@ -112,7 +109,7 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         if (cursor == null) throw new NullPointerException();
         try {
             while (cursor.moveToNext()) {
-                map.put(cursor.getInt(BUCKET_ID_INDEX),
+                mLoadBuffer.put(cursor.getInt(BUCKET_ID_INDEX),
                         cursor.getString(BUCKET_NAME_INDEX));
             }
         } finally {
@@ -123,16 +120,28 @@ public class LocalAlbumSet extends DatabaseMediaSet {
     @Override
     protected void onUpdateContent() {
         HashMap<Integer, String> map = mLoadBuffer;
-        if (map == null) throw new IllegalStateException();
+        ArrayList<LocalAlbum> newAlbums = new ArrayList<LocalAlbum>();
+        DataManager dataManager = mContext.getDataManager();
 
-        mAlbums.clear();
+        int parentId = getMyId();
         for (Map.Entry<Integer, String> entry : map.entrySet()) {
-            mAlbums.add(new LocalAlbum(getMyId(), mContext,
-                    entry.getKey(), entry.getValue(), mIsImage));
+            int childKey = entry.getKey();
+            LocalAlbum album = (LocalAlbum) dataManager.getMediaSet(parentId, childKey);
+            if (album == null) {
+                album = new LocalAlbum(parentId, mContext,
+                        childKey, entry.getValue(), mIsImage);
+            }
+            newAlbums.add(album);
         }
-        mLoadBuffer = null;
+
+        mAlbums = newAlbums;
+        mLoadBuffer.clear();
 
         Collections.sort(mAlbums, LocalAlbum.sBucketNameComparator);
+
+        for (int i = 0, n = mAlbums.size(); i < n; i++) {
+            mAlbums.get(i).reload();
+        }
     }
 
     private class MyContentObserver extends ContentObserver {

@@ -32,8 +32,8 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
     private static final String TAG = "PicasaAlbumSet";
     private final EntrySchema SCHEMA = AlbumEntry.SCHEMA;
 
-    private final ArrayList<PicasaAlbum> mAlbums = new ArrayList<PicasaAlbum>();
-    private final ArrayList<PicasaAlbum> mLoadBuffer = new ArrayList<PicasaAlbum>();
+    private ArrayList<PicasaAlbum> mAlbums = new ArrayList<PicasaAlbum>();
+    private final ArrayList<AlbumEntry> mLoadBuffer = new ArrayList<AlbumEntry>();
     private final long mUniqueId;
 
     public PicasaAlbumSet(int parentId, int childKey, GalleryContext context) {
@@ -72,14 +72,13 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
     @Override
     protected void onLoadFromDatabase() {
-        mLoadBuffer.clear();
         Cursor cursor = mResolver.query(
                 PicasaContentProvider.ALBUMS_URI,
                 SCHEMA.getProjection(), null, null, null);
         try {
             while (cursor.moveToNext()) {
                 AlbumEntry entry = SCHEMA.cursorToObject(cursor, new AlbumEntry());
-                mLoadBuffer.add(new PicasaAlbum(getMyId(), mContext, entry));
+                mLoadBuffer.add(entry);
             }
         } finally {
             cursor.close();
@@ -88,9 +87,25 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
     @Override
     protected void onUpdateContent() {
-        mAlbums.clear();
-        mAlbums.addAll(mLoadBuffer);
+        ArrayList<PicasaAlbum> newAlbums = new ArrayList<PicasaAlbum>();
+        int parentId = getMyId();
+        DataManager dataManager = mContext.getDataManager();
+
+        for (int i = 0, n = mLoadBuffer.size(); i < n; i++) {
+            AlbumEntry entry = mLoadBuffer.get(i);
+            int childKey = (int) entry.id;
+            PicasaAlbum album = (PicasaAlbum) dataManager.getMediaSet(parentId, childKey);
+            if (album == null) {
+                album = new PicasaAlbum(parentId, mContext, entry);
+            }
+            newAlbums.add(album);
+        }
+        mAlbums = newAlbums;
         mLoadBuffer.clear();
+
+        for (int i = 0, n = mAlbums.size(); i < n; i++) {
+            mAlbums.get(i).reload();
+        }
     }
 
     private class MyContentObserver extends ContentObserver {
