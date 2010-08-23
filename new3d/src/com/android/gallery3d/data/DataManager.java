@@ -90,7 +90,7 @@ public class DataManager {
     }
 
     private int mNextSelfId = 1;
-    public synchronized long obtainSetId(int parentId, int childKey, MediaSet self) {
+    public long obtainSetId(int parentId, int childKey, MediaSet self) {
         long key = parentId;
         key = (key << 32) | (childKey & 0xffffffffL);
 
@@ -171,6 +171,16 @@ public class DataManager {
 
     public MediaSet getMediaSet(int id) {
         return mMediaSetCache.get(id);
+    }
+
+    public MediaSet getMediaSet(int parentId, int childKey) {
+        long key = parentId;
+        key = (key << 32) | (childKey & 0xffffffffL);
+
+        Integer selfId = mKeyToSelfId.get(key);
+        if (selfId == null) return null;
+
+        return getMediaSet(selfId);
     }
 
     public int getSupportedOperations(long uniqueId) {
