@@ -83,7 +83,7 @@ public class AlbumView extends SlotView {
 
     private void updateVisibleRange(int start, int end) {
         if (start == mVisibleStart && end == mVisibleEnd) return;
-        Log.v(TAG, String.format("visible range: %s - %s", start, end));
+
         if (start >= mVisibleEnd || mVisibleStart >= end) {
             for (int i = mVisibleStart, n = mVisibleEnd; i < n; ++i) {
                 removeDisplayItem(mDataWindow.get(i));

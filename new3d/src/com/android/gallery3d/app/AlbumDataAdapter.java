@@ -97,18 +97,19 @@ public class AlbumDataAdapter implements AlbumView.Model {
 
     private void setContentWindow(int contentStart, int contentEnd) {
         if (contentStart == mContentStart && contentEnd == mContentEnd) return;
-
+        MediaItem[] data = mData;
+        int length = data.length;
         if (contentStart >= mContentEnd || mContentStart >= contentEnd) {
             for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
-                mData[i] = null;
+                data[i % length] = null;
             }
             reloadData(contentStart, contentEnd, false);
         } else {
             for (int i = mContentStart; i < contentStart; ++i) {
-                mData[i] = null;
+                data[i % length] = null;
             }
             for (int i = contentEnd, n = mContentEnd; i < n; ++i) {
-                mData[i] = null;
+                data[i % length] = null;
             }
             reloadData(contentStart, mContentStart, false);
             reloadData(mContentEnd, contentEnd, false);

@@ -4,7 +4,6 @@ package com.android.gallery3d.app;
 
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
@@ -82,18 +81,19 @@ public class GalleryDataAdapter implements GalleryView.Model {
 
     private void setContentWindow(int contentStart, int contentEnd) {
         if (contentStart == mContentStart && contentEnd == mContentEnd) return;
-
+        MediaItem[][] data = mData;
+        int length = data.length;
         if (contentStart >= mContentEnd || mContentStart >= contentEnd) {
             for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
-                mData[i] = null;
+                mData[i % length] = null;
             }
             reloadData(contentStart, contentEnd);
         } else {
             for (int i = mContentStart; i < contentStart; ++i) {
-                mData[i] = null;
+                mData[i % length] = null;
             }
             for (int i = contentEnd, n = mContentEnd; i < n; ++i) {
-                mData[i] = null;
+                mData[i % length] = null;
             }
             reloadData(contentStart, mContentStart);
             reloadData(mContentEnd, contentEnd);
@@ -108,7 +108,6 @@ public class GalleryDataAdapter implements GalleryView.Model {
         MediaSet[] sourceSets = new MediaSet[end - start];
         for (int i = start; i < end; ++i) {
             sourceSets[i - start] = mSource.getSubMediaSet(i);
-            Log.v(TAG, "reload for set: " + sourceSets[i - start].getUniqueId());
         }
         new ReloadTask(sourceSets, start).execute();
     }
@@ -180,10 +179,6 @@ public class GalleryDataAdapter implements GalleryView.Model {
         public void loadFromDatabase() {
             for (MediaSet set : mSourceSets) {
                 ArrayList<MediaItem> items = set.getMediaItem(0, MAX_COVER_COUNT);
-                Log.v(TAG, "load from database:" + set.getUniqueId());
-                for (MediaItem item : items) {
-                    Log.v(TAG, "    item: " + item.getUniqueId());
-                }
                 mLoadData.add(items.toArray(new MediaItem[items.size()]));
             }
             mMainHandler.sendMessage(
@@ -197,10 +192,6 @@ public class GalleryDataAdapter implements GalleryView.Model {
             for (int i = start; i < end; ++i) {
                 MediaItem[] update = mLoadData.get(i - offset);
                 MediaItem[] original = mData[i];
-                Log.v(TAG, "update content:");
-                for (MediaItem item : update) {
-                    Log.v(TAG, "    item: " + item.getUniqueId());
-                }
                 if (!update.equals(original)) {
                     mData[i] = update;
                     if (mListener != null) {

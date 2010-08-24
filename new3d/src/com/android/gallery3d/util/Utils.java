@@ -1,9 +1,5 @@
 package com.android.gallery3d.util;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,7 +7,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
 import android.util.DisplayMetrics;
-import android.util.Log;
+
+import java.nio.charset.Charset;
 
 
 public class Utils {
@@ -96,6 +93,13 @@ public class Utils {
     public static void Assert(boolean cond) {
         if (!cond) {
             throw new AssertionError();
+        }
+    }
+
+    // Throws AssertionError if the input is false.
+    public static void Assert(boolean cond, String message) {
+        if (!cond) {
+            throw new AssertionError(message);
         }
     }
 

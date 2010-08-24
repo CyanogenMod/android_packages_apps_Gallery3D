@@ -59,9 +59,6 @@ public class ScrollerHelper {
                 f = 1 - (float) Math.pow(f, DECELERATED_FACTOR);
             }
             mPosition = Math.round(mStart + (mFinal - mStart) * f);
-            Log.v("Fling", String.format(
-                    "mStart = %s, mFinal = %s, mPosition = %s, f = %s, progress = %s",
-                    mStart, mFinal, mPosition, f, progress));
             if (mPosition == mFinal) {
                 mStartTime = NO_ANIMATION;
                 return false;

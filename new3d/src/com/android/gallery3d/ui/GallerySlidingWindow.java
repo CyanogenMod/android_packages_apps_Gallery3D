@@ -25,19 +25,10 @@ import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.ui.GalleryView.GalleryItem;
 import com.android.gallery3d.util.Future;
-import com.android.gallery3d.util.FutureListener;
 import com.android.gallery3d.util.Utils;
 
 public class GallerySlidingWindow implements GalleryView.ModelListener {
     private static final String TAG = "GallerySlidingWindow";
-    private static final int UPDATE_LIMIT = 8;
-
-    private static final int STATE_INVALID = 0;
-    private static final int STATE_VALID = 1;
-    private static final int STATE_UPDATING = 2;
-    private static final int STATE_RECYCLED = 3;
-    private static final int STATE_ERROR = -1;
-
     private static final int MSG_UPDATE_IMAGE = 0;
 
     public static interface Listener {
@@ -81,7 +72,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
             @Override
             public void handleMessage(Message message) {
                 Utils.Assert(message.what == MSG_UPDATE_IMAGE);
-                ((CoverDisplayItem) message.obj).updateImage();
+                ((GalleryDisplayItem) message.obj).updateImage();
             }
         };
 
@@ -153,11 +144,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         int contentStart = Utils.clamp((start + end) / 2 - data.length / 2,
                 0, Math.max(0, mSize - data.length));
         int contentEnd = Math.min(contentStart + data.length, mSize);
-        if (mContentStart > start || mContentEnd < end
-                || Math.abs(contentStart - mContentStart) > UPDATE_LIMIT) {
-            setContentWindow(contentStart, contentEnd);
-        }
-
+        setContentWindow(contentStart, contentEnd);
         updateAllImageRequests();
     }
 
@@ -170,16 +157,33 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         int range = Math.max(
                 mContentEnd - mActiveEnd, mActiveStart - mContentStart);
         for (int i = 0 ;i < range; ++i) {
-            requestImagesInSlot(mActiveEnd + i, false);
-            requestImagesInSlot(mActiveStart - 1 - i, false);
+            requestImagesInSlot(mActiveEnd + i);
+            requestImagesInSlot(mActiveStart - 1 - i);
         }
     }
 
-    private void requestImagesInSlot(int slotIndex, boolean isActive) {
+    private void cancelNonactiveImages() {
+        int range = Math.max(
+                mContentEnd - mActiveEnd, mActiveStart - mContentStart);
+        for (int i = 0 ;i < range; ++i) {
+            cancelImagesInSlot(mActiveEnd + i);
+            cancelImagesInSlot(mActiveStart - 1 - i);
+        }
+    }
+
+    private void requestImagesInSlot(int slotIndex) {
         if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
         GalleryItem items = mData[slotIndex % mData.length];
         for (DisplayItem item : items.covers) {
-            ((CoverDisplayItem) item).requestImageIfNeed();
+            ((GalleryDisplayItem) item).requestImage();
+        }
+    }
+
+    private void cancelImagesInSlot(int slotIndex) {
+        if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
+        GalleryItem items = mData[slotIndex % mData.length];
+        for (DisplayItem item : items.covers) {
+            ((GalleryDisplayItem) item).cancelImageRequest();
         }
     }
 
@@ -190,7 +194,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         if (original != null) {
             data[index] = null;
             for (DisplayItem item : original.covers) {
-                ((CoverDisplayItem) item).recycle();
+                ((GalleryDisplayItem) item).recycle();
             }
         }
     }
@@ -198,9 +202,9 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
     private void prepareSlotContent(final int slotIndex) {
         GalleryItem item = new GalleryItem();
         MediaItem[] coverItems = mSource.get(slotIndex);
-        item.covers = new CoverDisplayItem[coverItems.length];
+        item.covers = new GalleryDisplayItem[coverItems.length];
         for (int i = 0; i < coverItems.length; ++i) {
-            item.covers[i] = new CoverDisplayItem(slotIndex, i, coverItems[i]);
+            item.covers[i] = new GalleryDisplayItem(slotIndex, i, coverItems[i]);
         }
         mData[slotIndex % mData.length] = item;
     }
@@ -214,10 +218,10 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         data[index] = update;
 
         MediaItem[] coverItems = mSource.get(slotIndex);
-        update.covers = new CoverDisplayItem[coverItems.length];
+        update.covers = new GalleryDisplayItem[coverItems.length];
         for (int i = 0; i < coverItems.length; ++i) {
-            CoverDisplayItem cover =
-                    new CoverDisplayItem(slotIndex, i, coverItems[i]);
+            GalleryDisplayItem cover =
+                    new GalleryDisplayItem(slotIndex, i, coverItems[i]);
             update.covers[i] = cover;
         }
         if (mListener != null && isActiveSlot(slotIndex)) {
@@ -225,7 +229,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         }
         if (original != null) {
             for (DisplayItem item : original.covers) {
-                ((CoverDisplayItem) item).recycle();
+                ((GalleryDisplayItem) item).recycle();
             }
         }
     }
@@ -242,8 +246,10 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         boolean isActive = isActiveSlot(slotIndex);
         if (mActiveRequestCount == 0 || isActive) {
             for (DisplayItem item : mData[slotIndex % mData.length].covers) {
-                if (((CoverDisplayItem) item).requestImageIfNeed()) {
-                    if (isActive) ++mActiveRequestCount;
+                GalleryDisplayItem galleryItem = (GalleryDisplayItem) item;
+                galleryItem.requestImage();
+                if (isActive && galleryItem.isRequestInProgress()) {
+                    ++mActiveRequestCount;
                 }
             }
         }
@@ -253,64 +259,41 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         mActiveRequestCount = 0;
         for (int i = mActiveStart, n = mActiveEnd; i < n; ++i) {
             for (DisplayItem item : mData[i % mData.length].covers) {
-                CoverDisplayItem coverItem = (CoverDisplayItem) item;
-                if (coverItem.requestImageIfNeed()
-                        || coverItem.mState == STATE_UPDATING) {
-                    ++mActiveRequestCount;
-                }
+                GalleryDisplayItem coverItem = (GalleryDisplayItem) item;
+                coverItem.requestImage();
+                if (coverItem.isRequestInProgress()) ++mActiveRequestCount;
             }
         }
-        if (mActiveRequestCount == 0) requestNonactiveImages();
+        if (mActiveRequestCount == 0) {
+            requestNonactiveImages();
+        } else {
+            cancelNonactiveImages();
+        }
     }
 
-    private class CoverDisplayItem
-            extends DisplayItem implements FutureListener<Bitmap> {
+    private class GalleryDisplayItem extends AbstractDisplayItem {
 
         private final int mSlotIndex;
         private final int mCoverIndex;
-        private final MediaItem mMediaItem;
-
-        private int mState = STATE_INVALID;
-        private Future<Bitmap> mFuture;
         private Texture mContent;
-        private Bitmap mBitmap;
 
-        public CoverDisplayItem(int slotIndex, int coverIndex, MediaItem item) {
+        public GalleryDisplayItem(int slotIndex, int coverIndex, MediaItem item) {
+            super(item);
             mSlotIndex = slotIndex;
             mCoverIndex = coverIndex;
-            mMediaItem = item;
             updateContent(mWaitLoadingTexture);
         }
 
-        public void updateImage() {
-            if (mState != STATE_UPDATING) {
-                Log.v(TAG, String.format(
-                        "invalid update for image: (%s, %s) state: %s",
-                        mSlotIndex, mCoverIndex, mState));
-                mFuture = null;
-                return; /* RECYCLED*/
-            }
-            Log.v(TAG, String.format(
-                    "update for image: (%s, %s)", mSlotIndex, mCoverIndex));
-
-            Utils.Assert(mBitmap == null);
-
+        @Override
+        protected void onBitmapAvailable(Bitmap bitmap) {
             if (isActiveSlot(mSlotIndex)) {
                 --mActiveRequestCount;
                 if (mActiveRequestCount == 0) requestNonactiveImages();
             }
-            try {
-                mBitmap = mFuture.get();
-                mState = STATE_VALID;
-            } catch (Exception e){
-                mState = STATE_ERROR;
-                Log.w(TAG, "cannot get image" , e);
-                return;
-            } finally {
-                mFuture = null;
+            if (bitmap != null) {
+                updateContent(new BitmapTexture(bitmap));
+                if (mListener != null) mListener.onContentInvalidated();
             }
-            updateContent(new BitmapTexture(mBitmap));
-            if (mListener != null) mListener.onContentInvalidated();
         }
 
         private void updateContent(Texture content) {
@@ -344,24 +327,14 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
             return System.identityHashCode(this);
         }
 
-        public void recycle() {
-            if (mBitmap != null) {
-                ((BasicTexture) mContent).recycle();
-                mBitmap.recycle();
-            }
-            mState = STATE_RECYCLED;
-        }
-
+        @Override
         public void onFutureDone(Future<? extends Bitmap> future) {
             mHandler.sendMessage(mHandler.obtainMessage(MSG_UPDATE_IMAGE, this));
         }
 
-        public boolean requestImageIfNeed() {
-            if (mState != STATE_INVALID) return false;
-            mState = STATE_UPDATING;
-            Log.v(TAG, String.format("Request image %s %s", mSlotIndex, mCoverIndex));
-            mFuture = mMediaItem.requestImage(MediaItem.TYPE_MICROTHUMBNAIL, this);
-            return true;
+        @Override
+        public String toString() {
+            return String.format("GalleryDisplayItem(%s, %s)", mSlotIndex, mCoverIndex);
         }
     }
 

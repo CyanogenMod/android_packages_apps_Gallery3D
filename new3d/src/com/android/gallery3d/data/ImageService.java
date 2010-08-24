@@ -104,16 +104,20 @@ public class ImageService {
                 setException(throwable);
                 return;
             }
-            if (bitmap == null && isCancelled()) {
-                cancelled();
-            } else {
-                setResult(bitmap);
+            if (!isCancelled()) {
+                if (bitmap == null && isCancelling()) {
+                    cancelled();
+                } else {
+                    setResult(bitmap);
+                }
             }
         }
 
         @Override
         protected void onCancel() {
-            if (mState.compareAndSet(STATE_RUNNING, STATE_CANCELED)) {
+            if (mState.compareAndSet(STATE_READY, STATE_CANCELED)) {
+                cancelled();
+            } else if (mState.compareAndSet(STATE_RUNNING, STATE_CANCELED)) {
                 switch (mType) {
                     case MediaItem.TYPE_THUMBNAIL:
                     case MediaItem.TYPE_MICROTHUMBNAIL:
@@ -180,16 +184,20 @@ public class ImageService {
                 setException(throwable);
                 return;
             }
-            if (bitmap == null && isCancelled()) {
-                cancelled();
-            } else {
-                setResult(bitmap);
+            if (!isCancelled()) {
+                if (bitmap == null && isCancelling()) {
+                    cancelled();
+                } else {
+                    setResult(bitmap);
+                }
             }
         }
 
         @Override
         protected void onCancel() {
-            if (mState.compareAndSet(STATE_RUNNING, STATE_CANCELED)) {
+            if (mState.compareAndSet(STATE_READY, STATE_CANCELED)) {
+                cancelled();
+            } else if (mState.compareAndSet(STATE_RUNNING, STATE_CANCELED)) {
                 // TODO: fix the issue that we cannot cancel only one request
                 Video.Thumbnails.cancelThumbnailRequest(mResolver, mId);
             }
