@@ -19,20 +19,20 @@ package com.android.gallery3d.ui;
 import android.graphics.Rect;
 
 import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.ui.PositionRepository.Position;
 import com.android.gallery3d.util.Utils;
 
 import java.util.Random;
 
-public class GalleryView implements SlotView.Listener {
-    private static final String TAG = GalleryView.class.getSimpleName();
+public class GalleryView extends SlotView {
+    private static final String TAG = "GalleryView";
+    private static final int CACHE_SIZE = 32;
 
     static final int SLOT_WIDTH = 144;
     static final int SLOT_HEIGHT = 144;
     private static final int HORIZONTAL_GAP = 42;
     private static final int VERTICAL_GAP = 42;
-
-    final SlotView mSlotView;
 
     private int mVisibleStart;
     private int mVisibleEnd;
@@ -40,28 +40,55 @@ public class GalleryView implements SlotView.Listener {
     private Random mRandom = new Random();
     private long mSeed = mRandom.nextLong();
 
-    final GalleryAdapter mModel;
+    private GallerySlidingWindow mDataWindow;
+    private final GalleryContext mContext;
+    private final SelectionManager mSelectionManager;
+
+    public static interface Model {
+        public MediaItem[] get(int index);
+        public int size();
+        public void setActiveWindow(int start, int end);
+        public void setListener(ModelListener listener);
+    }
+
+    public static interface ModelListener {
+        public void onWindowContentChanged(
+                int index, MediaItem old[], MediaItem update[]);
+        public void onSizeChanged(int size);
+    }
 
     public static class GalleryItem {
         public DisplayItem[] covers;
     }
 
-    public GalleryView(GalleryContext context, GalleryAdapter model, SlotView slotView) {
+    public GalleryView(GalleryContext context, SelectionManager selectionManager) {
+        super(context.getAndroidContext(), context.getPositionRepository());
+        mContext = context;
+        mSelectionManager = selectionManager;
+        setSlotSize(SLOT_WIDTH, SLOT_HEIGHT);
+        setSlotGaps(HORIZONTAL_GAP, VERTICAL_GAP, false);
+    }
 
-        mModel = Utils.checkNotNull(model);
-        mSlotView = slotView;
-        mSlotView.setSlotSize(SLOT_WIDTH, SLOT_HEIGHT);
-        mSlotView.setSlotGaps(HORIZONTAL_GAP, VERTICAL_GAP, false);
-        mSlotView.setSlotCount(model.size());
-        mModel.setListener(new MyCacheListener());
-        updateVisibleRange(
-                slotView.getVisibleStart(), slotView.getVisibleEnd());
+    public void setModel(GalleryView.Model model) {
+
+        if (mDataWindow != null) {
+            mDataWindow.setListener(null);
+            setSlotCount(0);
+            mDataWindow = null;
+        }
+        if (model != null) {
+            mDataWindow = new GallerySlidingWindow(
+                        mContext, mSelectionManager, model, CACHE_SIZE);
+            mDataWindow.setListener(new MyCacheListener());
+            setSlotCount(mDataWindow.size());
+            updateVisibleRange(getVisibleStart(), getVisibleEnd());
+        }
     }
 
     private void putSlotContent(int slotIndex, GalleryItem entry) {
         // Get displayItems from mItemsetMap or create them from MediaSet.
         Utils.Assert(entry != null);
-        Rect rect = mSlotView.getSlotRect(slotIndex);
+        Rect rect = getSlotRect(slotIndex);
 
         DisplayItem[] items = entry.covers;
         mRandom.setSeed(slotIndex ^ mSeed);
@@ -85,82 +112,83 @@ public class GalleryView implements SlotView.Listener {
             }
             Position position = new Position();
             position.set(rect.left + item.getWidth() / 2 + dx, y + dy, 0, theta, 1f);
-            mSlotView.putDisplayItem(position, item);
+            putDisplayItem(position, item);
         }
         if (items.length > 0) {
             Position position = new Position();
             position.set(x, y, 0, 0, 1f);
-            mSlotView.putDisplayItem(position, items[0]);
+            putDisplayItem(position, items[0]);
         }
     }
 
     private void freeSlotContent(int index, GalleryItem entry) {
+        if (entry == null) return;
         for (DisplayItem item : entry.covers) {
-            mSlotView.removeDisplayItem(item);
+            removeDisplayItem(item);
         }
     }
 
     public int size() {
-        return mModel.size();
+        return mDataWindow.size();
     }
 
+    @Override
     public void onLayoutChanged(int width, int height) {
         updateVisibleRange(0, 0);
-        updateVisibleRange(mSlotView.getVisibleStart(), mSlotView.getVisibleEnd());
+        updateVisibleRange(getVisibleStart(), getVisibleEnd());
     }
 
+    @Override
     public void onScrollPositionChanged(int position) {
-        updateVisibleRange(mSlotView.getVisibleStart(), mSlotView.getVisibleEnd());
+        updateVisibleRange(getVisibleStart(), getVisibleEnd());
     }
 
     private void updateVisibleRange(int start, int end) {
         if (start == mVisibleStart && end == mVisibleEnd) return;
         if (start >= mVisibleEnd || mVisibleStart >= end) {
             for (int i = mVisibleStart, n = mVisibleEnd; i < n; ++i) {
-                freeSlotContent(i, mModel.get(i));
+                freeSlotContent(i, mDataWindow.get(i));
             }
-            mModel.setActiveWindow(start, end);
+            mDataWindow.setActiveWindow(start, end);
             for (int i = start; i < end; ++i) {
-                putSlotContent(i, mModel.get(i));
+                putSlotContent(i, mDataWindow.get(i));
             }
         } else {
             for (int i = mVisibleStart; i < start; ++i) {
-                freeSlotContent(i, mModel.get(i));
+                freeSlotContent(i, mDataWindow.get(i));
             }
             for (int i = end, n = mVisibleEnd; i < n; ++i) {
-                freeSlotContent(i, mModel.get(i));
+                freeSlotContent(i, mDataWindow.get(i));
             }
-            mModel.setActiveWindow(start, end);
+            mDataWindow.setActiveWindow(start, end);
             for (int i = start, n = mVisibleStart; i < n; ++i) {
-                putSlotContent(i, mModel.get(i));
+                putSlotContent(i, mDataWindow.get(i));
             }
             for (int i = mVisibleEnd; i < end; ++i) {
-                putSlotContent(i, mModel.get(i));
+                putSlotContent(i, mDataWindow.get(i));
             }
         }
         mVisibleStart = start;
         mVisibleEnd = end;
-        mSlotView.invalidate();
+
+        invalidate();
     }
 
-    private class MyCacheListener implements GalleryAdapter.Listener {
+    private class MyCacheListener implements GallerySlidingWindow.Listener {
 
         public void onSizeChanged(int size) {
-            SlotView slotView = mSlotView;
-            slotView.setSlotCount(size);
-            updateVisibleRange(
-                    slotView.getVisibleStart(), slotView.getVisibleEnd());
+            setSlotCount(size);
+            updateVisibleRange(getVisibleStart(), getVisibleEnd());
         }
 
         public void onWindowContentChanged(int slot, GalleryItem old, GalleryItem update) {
-            SlotView slotView = mSlotView;
             freeSlotContent(slot, old);
             putSlotContent(slot, update);
-            slotView.invalidate();
+            invalidate();
         }
 
         public void onContentInvalidated() {
-            mSlotView.invalidate();
+            invalidate();
         }
     }
 }

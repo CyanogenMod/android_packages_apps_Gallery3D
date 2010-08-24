@@ -53,29 +53,6 @@ public abstract class MediaSet {
         throw new IndexOutOfBoundsException();
     }
 
-    // This is for compatibility only.
-    public MediaItem getMediaItem(int index) {
-        ArrayList<MediaItem> items = getMediaItem(index, 1);
-        if (items.size() > 0) {
-            return items.get(0);
-        } else {
-            return null;
-        }
-    }
-
-    // This is for compatibility only.
-    public MediaItem[] getCoverMediaItems() {
-        if (getMediaItemCount() > 0) {
-            ArrayList<MediaItem> items = getMediaItem(0, 4);
-            MediaItem result[] = new MediaItem[items.size()];
-            return items.toArray(result);
-        } else if (getSubMediaSetCount() > 0) {
-            return getSubMediaSet(0).getCoverMediaItems();
-        } else {
-            return new MediaItem[0];
-        }
-    }
-
     public int getSubMediaSetCount() {
         return 0;
     }

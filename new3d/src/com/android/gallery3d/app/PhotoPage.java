@@ -212,13 +212,13 @@ public class PhotoPage extends ActivityState {
         public void updateFullImage(int index, Bitmap fullImage) {
             int offset = (index - mPhotoIndex) + 1;
             if (offset != INDEX_CURRENT) {
-                fullImage.recycle();
+                if (fullImage != null) fullImage.recycle();
                 return;
             }
-            Log.v(TAG, String.format("full image %d available: %s %s",
-                    index, fullImage.getWidth(), fullImage.getHeight()));
-
+            // full image could be null on error
             if (fullImage != null) {
+                Log.v(TAG, String.format("full image %d available: %s %s",
+                        index, fullImage.getWidth(), fullImage.getHeight()));
                 mScaledBitmaps = getScaledBitmaps(fullImage, MIPMAPS_MIN_LENGTH);
                 mImageViewer.notifyMipmapsInvalidated();
                 // We need to update the estimated width and height
@@ -227,41 +227,58 @@ public class PhotoPage extends ActivityState {
             requestNextImage();
         }
 
-        public void requestNextImage() {
-            int setSize = mMediaSet.getMediaItemCount();
+        private MediaItem getMediaItem(
+                ArrayList<MediaItem> items, int start, int index) {
+            index = index - start;
+            if (index < 0 || index >= items.size()) return null;
+            return items.get(index);
+        }
 
-            if (setSize == 0) return;
+        public void requestNextImage() {
+
+            int start = Math.max(0, mPhotoIndex - 1);
+
+            ArrayList<MediaItem> items = mMediaSet.getMediaItem(start, 3);
+            if (items.size() == 0) return;
 
             // First request the current screen nail
             if (mScreenNails[INDEX_CURRENT] == null) {
-                MediaItem current = mMediaSet.getMediaItem(mPhotoIndex);
-                current.requestImage(MediaItem.TYPE_THUMBNAIL,
-                        new ScreenNailListener(mPhotoIndex));
-                return;
+                MediaItem current = getMediaItem(items, start, mPhotoIndex);
+                if (current != null) {
+                    current.requestImage(MediaItem.TYPE_THUMBNAIL,
+                            new ScreenNailListener(mPhotoIndex));
+                    return;
+                }
             }
 
             // Next, the next screen nail
-            if (mScreenNails[INDEX_NEXT] == null && mPhotoIndex + 1 < setSize) {
-                MediaItem next = mMediaSet.getMediaItem(mPhotoIndex + 1);
-                next.requestImage(MediaItem.TYPE_THUMBNAIL,
-                        new ScreenNailListener(mPhotoIndex + 1));
-                return;
+            if (mScreenNails[INDEX_NEXT] == null) {
+                MediaItem next = getMediaItem(items, start, mPhotoIndex + 1);
+                if (next != null) {
+                    next.requestImage(MediaItem.TYPE_THUMBNAIL,
+                            new ScreenNailListener(mPhotoIndex + 1));
+                    return;
+                }
             }
 
             // Next, the previous screen nail
-            if (mScreenNails[INDEX_PREVIOUS] == null && mPhotoIndex > 0) {
-                MediaItem previous = mMediaSet.getMediaItem(mPhotoIndex - 1);
-                previous.requestImage(MediaItem.TYPE_THUMBNAIL,
-                        new ScreenNailListener(mPhotoIndex - 1));
-                return;
+            if (mScreenNails[INDEX_PREVIOUS] == null) {
+                MediaItem previous = getMediaItem(items, start, mPhotoIndex - 1);
+                if (previous != null) {
+                    previous.requestImage(MediaItem.TYPE_THUMBNAIL,
+                            new ScreenNailListener(mPhotoIndex - 1));
+                    return;
+                }
             }
 
             // Next, the full size image
             if (mScaledBitmaps == null) {
-                MediaItem current = mMediaSet.getMediaItem(mPhotoIndex);
-                current.requestImage(MediaItem.TYPE_FULL_IMAGE,
-                        new FullImageListener(mPhotoIndex));
-                return;
+                MediaItem current = getMediaItem(items, start, INDEX_CURRENT);
+                if (current != null) {
+                    current.requestImage(MediaItem.TYPE_FULL_IMAGE,
+                            new FullImageListener(mPhotoIndex));
+                    return;
+                }
             }
         }
     }
