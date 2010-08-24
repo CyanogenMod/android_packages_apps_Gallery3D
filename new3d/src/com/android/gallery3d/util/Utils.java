@@ -250,4 +250,8 @@ public class Utils {
             Log.w(TAG, "close fail", t);
         }
     }
+
+    public static int compare(long a, long b) {
+        return a < b ? -1 : a == b ? 0 : 1;
+    }
 }

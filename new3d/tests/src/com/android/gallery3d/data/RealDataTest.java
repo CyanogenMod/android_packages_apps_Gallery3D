@@ -44,68 +44,38 @@ public class RealDataTest extends AndroidTestCase {
                 mContext,
                 mContext.getContentResolver(),
                 Looper.myLooper());
-        run(new TestLocalImageThread());
-        run(new TestLocalVideoThread());
-        run(new TestPicasaThread());
+        new TestLocalImage().run();
+        new TestLocalVideo().run();
+        new TestPicasa().run();
     }
 
-    static void run(Thread t) {
-        t.start();
-        try {
-            t.join();
-        } catch (InterruptedException ex) {
-            fail();
-        }
-    }
-
-    class TestLocalImageThread extends Thread {
-        @Override
+    class TestLocalImage {
         public void run() {
-            Looper.prepare();
             LocalAlbumSet albumSet = new LocalAlbumSet(
                     DUMMY_PARENT_ID, KEY_LOCAL_IMAGE, mGalleryContext, true);
-            MyListener listener = new MyListener();
-            albumSet.setContentListener(listener);
             albumSet.reload();
-            Looper.loop();
-
             Log.v(TAG, "LocalAlbumSet (Image)");
             dumpMediaSet(albumSet, "");
-            assertEquals(1, listener.count);
         }
     }
 
-    class TestLocalVideoThread extends Thread {
-        @Override
+    class TestLocalVideo {
         public void run() {
-            Looper.prepare();
             LocalAlbumSet albumSet = new LocalAlbumSet(
                     DUMMY_PARENT_ID, KEY_LOCAL_VIDEO, mGalleryContext, false);
-            MyListener listener = new MyListener();
-            albumSet.setContentListener(listener);
             albumSet.reload();
-            Looper.loop();
-
             Log.v(TAG, "LocalAlbumSet (Video)");
             dumpMediaSet(albumSet, "");
-            assertEquals(1, listener.count);
         }
     }
 
-    class TestPicasaThread extends Thread {
-        @Override
+    class TestPicasa implements Runnable {
         public void run() {
-            Looper.prepare();
             PicasaAlbumSet albumSet = new PicasaAlbumSet(
                     DUMMY_PARENT_ID, KEY_PICASA, mGalleryContext);
-            MyListener listener = new MyListener();
-            albumSet.setContentListener(listener);
             albumSet.reload();
-            Looper.loop();
-
             Log.v(TAG, "PicasaAlbumSet");
             dumpMediaSet(albumSet, "");
-            assertEquals(1, listener.count);
         }
     }
 
@@ -140,17 +110,5 @@ public class RealDataTest extends AndroidTestCase {
         assertFalse(Long.toHexString(key) + " has already appeared.",
                 mUsedId.contains(key));
         mUsedId.add(key);
-    }
-
-    static class MyListener implements MediaSet.MediaSetListener {
-        int count;
-
-        public void onContentChanged() {
-            count++;
-            Looper.myLooper().quit();
-        }
-
-        public void onContentDirty() {
-        }
     }
 }

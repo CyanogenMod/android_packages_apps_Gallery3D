@@ -31,6 +31,7 @@ import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // LocalAlbumSet lists all media items in one bucket on local storage.
 // The media items need to be all images or all videos, but not both.
@@ -53,7 +54,7 @@ public class LocalAlbum extends MediaSet {
     private final String mBucketName;
     private boolean mIsImage;
     private long mUniqueId;
-    private boolean mIsDirty = true;
+    private AtomicBoolean mContentDirty = new AtomicBoolean(true);
 
     public LocalAlbum(int parentId, GalleryContext context, int bucketId,
             String name, boolean isImage) {
@@ -90,7 +91,6 @@ public class LocalAlbum extends MediaSet {
     public ArrayList<MediaItem> getMediaItem(int start, int count) {
         ImageService imageService = mContext.getImageService();
         DataManager dataManager = mContext.getDataManager();
-
         Uri uri = mBaseUri.buildUpon()
                 .appendQueryParameter("limit", start + "," + count).build();
         ArrayList<MediaItem> list = new ArrayList<MediaItem>();
@@ -143,13 +143,7 @@ public class LocalAlbum extends MediaSet {
         public int compare(LocalAlbum s1, LocalAlbum s2) {
             int result = s1.mBucketName.compareTo(s2.mBucketName);
             if (result != 0) return result;
-            if (s1.mBucketId > s2.mBucketId) {
-                return 1;
-            } else if (s1.mBucketId < s2.mBucketId) {
-                return -1;
-            } else {
-                return 0;
-            }
+            return Utils.compare(s1.mBucketId, s2.mBucketId);
         }
     }
 
@@ -157,22 +151,13 @@ public class LocalAlbum extends MediaSet {
         public int compare(MediaItem item1, MediaItem item2) {
             LocalMediaItem s1 = (LocalMediaItem) item1;
             LocalMediaItem s2 = (LocalMediaItem) item2;
-            if (s1.mDateTakenInMs > s2.mDateTakenInMs) {
-                return -1;
-            } else if (s1.mDateTakenInMs < s2.mDateTakenInMs) {
-                return 1;
-            } else {
-                return 0;
-            }
+            return -Utils.compare(s1.mDateTakenInMs, s2.mDateTakenInMs);
         }
     }
 
     @Override
-    public void reload() {
-        if (mIsDirty) {
-            mIsDirty = false;
-            if (mListener != null) mListener.onContentChanged();
-        }
+    public boolean reload() {
+        return mContentDirty.compareAndSet(true, false);
     }
 
     private class MyContentObserver extends ContentObserver {
@@ -182,19 +167,23 @@ public class LocalAlbum extends MediaSet {
 
         @Override
         public void onChange(boolean selfChange) {
-            mIsDirty = true;
-            if (mListener != null) mListener.onContentDirty();
+            if (mContentDirty.compareAndSet(false, true)) {
+                if (mListener != null) mListener.onContentDirty();
+            }
         }
     }
 
+    @Override
     public int getMergeId() {
         return mBucketId;
     }
 
+    @Override
     public int getSupportedOperations(long uniqueId) {
         return SUPPORT_DELETE | SUPPORT_ROTATE;
     }
 
+    @Override
     public void delete(long uniqueId) {
         Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
         int itemId = DataManager.extractSelfId(uniqueId);
@@ -203,6 +192,7 @@ public class LocalAlbum extends MediaSet {
                 new String[] {String.valueOf(itemId)});
     }
 
+    @Override
     public void rotate(long uniqueId, int degrees) {
         // TODO
     }

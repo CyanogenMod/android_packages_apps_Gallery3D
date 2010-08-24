@@ -16,8 +16,6 @@
 
 package com.android.gallery3d.data;
 
-import android.test.AndroidTestCase;
-
 import java.util.ArrayList;
 
 public class MediaSetMock extends MediaSet {
@@ -53,10 +51,12 @@ public class MediaSetMock extends MediaSet {
         mSets.add(sub);
     }
 
+    @Override
     public int getMediaItemCount() {
         return mItems.size();
     }
 
+    @Override
     public ArrayList<MediaItem> getMediaItem(int start, int count) {
         ArrayList<MediaItem> result = new ArrayList<MediaItem>();
         int end = Math.min(start + count, mItems.size());
@@ -67,14 +67,17 @@ public class MediaSetMock extends MediaSet {
         return result;
     }
 
+    @Override
     public int getSubMediaSetCount() {
         return mSets.size();
     }
 
+    @Override
     public MediaSet getSubMediaSet(int index) {
         return mSets.get(index);
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int result = mItems.size();
         for (MediaSet s : mSets) {
@@ -83,18 +86,22 @@ public class MediaSetMock extends MediaSet {
         return result;
     }
 
+    @Override
     public long getUniqueId() {
         return mUniqueId;
     }
 
+    @Override
     public String getName() {
         return "Set " + mUniqueId;
     }
 
-    public void reload() {
-        mListener.onContentChanged();
+    @Override
+    public boolean reload() {
+        return true;
     }
 
+    @Override
     public int getMergeId() {
         return mMergeId;
     }

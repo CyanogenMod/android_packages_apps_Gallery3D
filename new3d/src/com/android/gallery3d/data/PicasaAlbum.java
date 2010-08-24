@@ -30,20 +30,24 @@ import com.android.gallery3d.picasa.PicasaContentProvider;
 import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // PicasaAlbum lists all images in a Picasa album.
 public class PicasaAlbum extends MediaSet {
+    public static final Comparator<PicasaAlbum>
+            sEditDateComparator = new EditDateComparator();
+
     private static final String TAG = "PicasaAlbum";
     private static final EntrySchema SCHEMA = PhotoEntry.SCHEMA;
     private static final String[] COUNT_PROJECTION = { "count(*)" };
-    private static final String WHERE_CLAUSE = PhotoEntry.Columns.ALBUM_ID
-            + "=?";
+    private static final String WHERE_CLAUSE = PhotoEntry.Columns.ALBUM_ID + " = ?";
 
     private final AlbumEntry mData;
     private final ContentResolver mResolver;
     private long mUniqueId;
     private GalleryContext mContext;
-    private boolean mIsDirty = true;
+    private AtomicBoolean mContentDirty = new AtomicBoolean(true);
 
     public PicasaAlbum(int parentId, GalleryContext context, AlbumEntry entry) {
         mContext = context;
@@ -102,7 +106,7 @@ public class PicasaAlbum extends MediaSet {
 
     @Override
     public String getName() {
-        return TAG;
+        return mData.title;
     }
 
     @Override
@@ -111,11 +115,8 @@ public class PicasaAlbum extends MediaSet {
     }
 
     @Override
-    public void reload() {
-        if (mIsDirty) {
-            mIsDirty = false;
-            if (mListener != null) mListener.onContentChanged();
-        }
+    public boolean reload() {
+        return mContentDirty.compareAndSet(true, false);
     }
 
     private class MyContentObserver extends ContentObserver {
@@ -125,8 +126,17 @@ public class PicasaAlbum extends MediaSet {
 
         @Override
         public void onChange(boolean selfChange) {
-            mIsDirty = true;
-            if (mListener != null) mListener.onContentDirty();
+            if (mContentDirty.compareAndSet(false, true)) {
+                if (mListener != null) mListener.onContentDirty();
+            }
+        }
+    }
+
+    private static class EditDateComparator implements Comparator<PicasaAlbum> {
+        public int compare(PicasaAlbum a, PicasaAlbum b) {
+            int result = -Utils.compare(a.mData.dateEdited, b.mData.dateEdited);
+            if (result != 0) return result;
+            return Utils.compare(a.mData.id, b.mData.id);
         }
     }
 }

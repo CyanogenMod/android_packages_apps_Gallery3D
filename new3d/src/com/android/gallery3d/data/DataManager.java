@@ -16,7 +16,6 @@
 
 package com.android.gallery3d.data;
 
-import android.os.Environment;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
