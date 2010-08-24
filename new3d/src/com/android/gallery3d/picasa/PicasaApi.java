@@ -42,13 +42,20 @@ public final class PicasaApi {
     private static final String BASE_URL = "http://picasaweb.google.com/data/feed/api/";
     private static final String BASE_QUERY_STRING;
 
+    // The specs of query parameters are documented here:
+    // http://code.google.com/apis/picasaweb/docs/2.0/reference.html
+    public static final int THUMBNAIL_SIZE_THRESHOLD = 144;
+    private static final String THUMBNAIL_SIZE = "144c";
+    private static final String SCREENNAIL_SIZE = "512u";
+    private static final String FULL_SIZE = "d"; // Use the original size
+
+
     static {
         // Build the base query string using screen dimensions.
-        final StringBuilder query = new StringBuilder("?imgmax=1024&max-results=1000&thumbsize=");
-        final String thumbnailSize = "144u,";
-        final String screennailSize = "1024u";
-        query.append(thumbnailSize);
-        query.append(screennailSize);
+        final StringBuilder query = new StringBuilder("?max-results=1000");
+        query.append("&imgmax=").append(FULL_SIZE);
+        query.append("&thumbsize=").append(THUMBNAIL_SIZE).append(",")
+                .append(SCREENNAIL_SIZE);
         query.append("&visibility=visible");
         BASE_QUERY_STRING = query.toString();
     }
