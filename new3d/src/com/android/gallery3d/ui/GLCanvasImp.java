@@ -227,7 +227,7 @@ public class GLCanvasImp implements GLCanvas {
         if (chunk.mDivX.length != 2 || chunk.mDivY.length != 2) {
             throw new RuntimeException("unsupported nine patch");
         }
-        bindTexture(tex);
+        if (!bindTexture(tex)) return;
         if (width <= 0 || height <= 0) return;
 
         int divX[] = mNinePatchX;
@@ -476,7 +476,7 @@ public class GLCanvasImp implements GLCanvas {
         if (width <= 0 || height <= 0) return;
 
         mGLState.setBlendEnabled(!texture.isOpaque() || alpha < OPAQUE_ALPHA);
-        bindTexture(texture);
+        if (!bindTexture(texture)) return;
         mGLState.setTextureAlpha(alpha);
         drawBoundTexture(texture, x, y, width, height);
     }
@@ -491,7 +491,7 @@ public class GLCanvasImp implements GLCanvas {
         target = mDrawTextureTargetRect;
 
         mGLState.setBlendEnabled(!texture.isOpaque() || mAlpha < OPAQUE_ALPHA);
-        bindTexture(texture);
+        if (!bindTexture(texture)) return;
         convertCoordinate(source, target, texture);
         setTextureCoords(source);
         mGLState.setTextureAlpha(mAlpha);
@@ -538,10 +538,11 @@ public class GLCanvasImp implements GLCanvas {
         drawMixed(from, to, ratio, x, y, w, h, mAlpha);
     }
 
-    private void bindTexture(BasicTexture texture) {
-        texture.onBind(this);
+    private boolean bindTexture(BasicTexture texture) {
+        if (!texture.onBind(this)) return false;
         mGLState.setTexture2DEnabled(true);
         mGL.glBindTexture(GL11.GL_TEXTURE_2D, texture.getId());
+        return true;
     }
 
     private void setTextureColor(float r, float g, float b, float alpha) {
@@ -572,7 +573,7 @@ public class GLCanvasImp implements GLCanvas {
                 || !to.isOpaque() || alpha < OPAQUE_ALPHA);
 
         final GL11 gl = mGL;
-        bindTexture(from);
+        if (!bindTexture(from)) return;
 
         //
         // The formula we want:
@@ -593,7 +594,13 @@ public class GLCanvasImp implements GLCanvas {
         }
 
         gl.glActiveTexture(GL11.GL_TEXTURE1);
-        bindTexture(to);
+        if (!bindTexture(to)) {
+            // Disable TEXTURE1.
+            gl.glDisable(GL11.GL_TEXTURE_2D);
+            // Switch back to the default texture unit.
+            gl.glActiveTexture(GL11.GL_TEXTURE0);
+            return;
+        }
         gl.glEnable(GL11.GL_TEXTURE_2D);
 
         // Interpolate the RGB and alpha values between both textures.

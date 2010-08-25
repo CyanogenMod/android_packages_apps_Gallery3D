@@ -65,6 +65,7 @@ public class PicasaAlbum extends MediaSet {
                 .appendQueryParameter("limit", start + "," + count).build();
 
         ArrayList<MediaItem> list = new ArrayList<MediaItem>();
+        Utils.assertNotInRenderThread();
         Cursor cursor = mResolver.query(uri,
                 SCHEMA.getProjection(), WHERE_CLAUSE,
                 new String[]{String.valueOf(mData.id)},
@@ -86,6 +87,7 @@ public class PicasaAlbum extends MediaSet {
 
     @Override
     public int getMediaItemCount() {
+        Utils.assertNotInRenderThread();
         Cursor cursor = mResolver.query(
                 PicasaContentProvider.PHOTOS_URI,
                 COUNT_PROJECTION, WHERE_CLAUSE,

@@ -18,6 +18,7 @@ package com.android.gallery3d.data;
 
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
+import android.os.Process;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 
@@ -28,6 +29,7 @@ import com.android.gallery3d.util.Utils;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,7 +44,8 @@ public class ImageService {
 
     private final Executor mExecutor = new ThreadPoolExecutor(
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME,
-            TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+            TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+            new MyThreadFactory());
 
     private final ContentResolver mContentResolver;
 
@@ -229,4 +232,14 @@ public class ImageService {
         }
     }
 
+    class MyThreadFactory implements ThreadFactory {
+        public Thread newThread(final Runnable r) {
+            return new Thread() {
+                public void run() {
+                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                    r.run();
+                }
+            };
+        }
+    }
 }

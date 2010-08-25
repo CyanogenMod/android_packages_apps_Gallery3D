@@ -104,6 +104,7 @@ public class LocalAlbumSet extends DatabaseMediaSet {
     protected void onLoadFromDatabase() {
         Uri uri = mBaseUri.buildUpon().
                 appendQueryParameter("distinct", "true").build();
+        Utils.assertNotInRenderThread();
         Cursor cursor = mResolver.query(
                 uri, mProjection, null, null, null);
         if (cursor == null) throw new NullPointerException();
