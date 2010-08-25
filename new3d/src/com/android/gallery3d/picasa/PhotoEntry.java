@@ -321,7 +321,7 @@ public final class PhotoEntry extends Entry {
                     int height = Integer.parseInt(attrs.getValue("", "height"));
                     int dimension = Math.max(width, height);
                     String url = attrs.getValue("", "url");
-                    if (dimension <= 300) {
+                    if (dimension <= PicasaApi.THUMBNAIL_SIZE_THRESHOLD) {
                         thumbnailUrl = url;
                     } else {
                         screennailUrl = url;
