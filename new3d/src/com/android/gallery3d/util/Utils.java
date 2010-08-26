@@ -6,10 +6,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Bitmap.Config;
-import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
+import java.io.Closeable;
 import java.nio.charset.Charset;
 
 
@@ -240,6 +240,14 @@ public class Utils {
                 sWarned = true;
                 Log.w(TAG, new Throwable("Should not do this in render thread"));
             }
+        }
+    }
+
+    public static void closeSilently(Closeable closeable) {
+        try {
+            closeable.close();
+        } catch (Throwable t) {
+            Log.w(TAG, "close fail", t);
         }
     }
 }
