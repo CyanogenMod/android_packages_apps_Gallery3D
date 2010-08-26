@@ -37,31 +37,24 @@ public class GLCanvasImp implements GLCanvas {
     @SuppressWarnings("unused")
     private static final String TAG = "GLCanvasImp";
 
-    // We need 16 vertices for a normal nine-patch image (the 4x4 vertices)
-    private static final int VERTEX_BUFFER_SIZE = 16 * 2;
-
-    // We need 22 indices for a normal nine-patch image
-    private static final int INDEX_BUFFER_SIZE = 22;
-
     private static final float OPAQUE_ALPHA = 0.95f;
+
+    // The first four pairs of (x, y) are for drawing a rectangle, and the last
+    // two are for drawing a line.
+    private static final float[] BOX_COORDINATES = {
+            0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1 };
 
     private final GL11 mGL;
 
     private final float mMatrixValues[] = new float[16];
+    private final float mTextureMatrixValues[] = new float[16];
 
-    private final float mUvBuffer[] = new float[VERTEX_BUFFER_SIZE];
-    private final float mXyBuffer[] = new float[VERTEX_BUFFER_SIZE];
-    private final byte mIndexBuffer[] = new byte[INDEX_BUFFER_SIZE];
+    // mapPoints needs 10 input and output numbers.
+    private final float mMapPointsBuffer[] = new float[10];
 
-    private final int mNinePatchX[] = new int[4];
-    private final int mNinePatchY[] = new int[4];
-    private final float mNinePatchU[] = new float[4];
-    private final float mNinePatchV[] = new float[4];
     private final float mTextureColor[] = new float[4];
 
-    private FloatBuffer mXyPointer;
-    private FloatBuffer mUvPointer;
-    private ByteBuffer mIndexPointer;
+    private int mBoxCoords;
 
     private final GLState mGLState;
 
@@ -76,7 +69,8 @@ public class GLCanvasImp implements GLCanvas {
     private final RectF mDrawTextureSourceRect = new RectF();
     private final RectF mDrawTextureTargetRect = new RectF();
     private final float[] mTempMatrix = new float[32];
-    private final IntArray mUnboundIds = new IntArray();
+    private final IntArray mUnboundTextures = new IntArray();
+    private final IntArray mDeleteBuffers = new IntArray();
 
     // Drawing statistics
     int mCountDrawLine;
@@ -138,19 +132,29 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     private void initialize() {
-        int size = VERTEX_BUFFER_SIZE * Float.SIZE / Byte.SIZE;
-        mXyPointer = allocateDirectNativeOrderBuffer(size).asFloatBuffer();
-        mUvPointer = allocateDirectNativeOrderBuffer(size).asFloatBuffer();
-        mIndexPointer = allocateDirectNativeOrderBuffer(INDEX_BUFFER_SIZE);
-
         GL11 gl = mGL;
 
-        gl.glVertexPointer(2, GL11.GL_FLOAT, 0, mXyPointer);
-        gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, mUvPointer);
+        // First create an nio buffer, then create a VBO from it.
+        int size = BOX_COORDINATES.length * Float.SIZE / Byte.SIZE;
+        FloatBuffer xyBuffer = allocateDirectNativeOrderBuffer(size).asFloatBuffer();
+        xyBuffer.put(BOX_COORDINATES, 0, BOX_COORDINATES.length).position(0);
+
+        int[] name = new int[1];
+        gl.glGenBuffers(1, name, 0);
+        mBoxCoords = name[0];
+
+        gl.glBindBuffer(GL11.GL_ARRAY_BUFFER, mBoxCoords);
+        gl.glBufferData(GL11.GL_ARRAY_BUFFER,
+                xyBuffer.capacity() * (Float.SIZE / Byte.SIZE),
+                xyBuffer, GL11.GL_STATIC_DRAW);
+
+        gl.glVertexPointer(2, GL11.GL_FLOAT, 0, 0);
+        gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, 0);
 
         // Enable the texture coordinate array for Texture 1
         gl.glClientActiveTexture(GL11.GL_TEXTURE1);
-        gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, mUvPointer);
+        gl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, 0);
+        gl.glClientActiveTexture(GL11.GL_TEXTURE0);
         gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 
         // mMatrixValues will be initialized in setSize()
@@ -173,23 +177,30 @@ public class GLCanvasImp implements GLCanvas {
     public void drawLine(int x1, int y1, int x2, int y2, int color) {
         mGLState.setColorMode(color, mAlpha);
         GL11 gl = mGL;
+
+        saveTransform();
+        translate(x1, y1, 0);
+        scale(x2 - x1, y2 - y1, 1);
+
         gl.glLoadMatrixf(mMatrixValues, 0);
-        float buffer[] = mXyBuffer;
-        buffer[0] = x1;
-        buffer[1] = y1;
-        buffer[2] = x2;
-        buffer[3] = y2;
-        mXyPointer.put(buffer, 0, 4).position(0);
-        gl.glDrawArrays(GL11.GL_LINE_STRIP, 0, 2);
+        gl.glDrawArrays(GL11.GL_LINE_STRIP, 4, 2);
+
+        restoreTransform();
         mCountDrawLine++;
     }
 
     public void fillRect(float x, float y, float width, float height, int color) {
         mGLState.setColorMode(color, mAlpha);
         GL11 gl = mGL;
+
+        saveTransform();
+        translate(x, y, 0);
+        scale(width, height, 1);
+
         gl.glLoadMatrixf(mMatrixValues, 0);
-        putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
         gl.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
+
+        restoreTransform();
         mCountFillRect++;
     }
 
@@ -210,188 +221,55 @@ public class GLCanvasImp implements GLCanvas {
 
     private void textureRect(float x, float y, float width, float height) {
         GL11 gl = mGL;
+
+        saveTransform();
+        translate(x, y, 0);
+        scale(width, height, 1);
+
         gl.glLoadMatrixf(mMatrixValues, 0);
-        putRectangle(x, y, width, height, mXyBuffer, mXyPointer);
         gl.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
+
+        restoreTransform();
         mCountTextureRect++;
     }
 
-    public void drawNinePatch(
-            NinePatchTexture tex, int x, int y, int width, int height) {
+    public void drawMesh(BasicTexture tex, int x, int y, int xyBuffer,
+            int uvBuffer, int indexBuffer, int indexCount) {
         float alpha = mAlpha;
-        NinePatchChunk chunk = tex.getNinePatchChunk();
-
-        // The code should be easily extended to handle the general cases by
-        // allocating more space for buffers. But let's just handle the only
-        // use case.
-        if (chunk.mDivX.length != 2 || chunk.mDivY.length != 2) {
-            throw new RuntimeException("unsupported nine patch");
-        }
         if (!bindTexture(tex)) return;
-        if (width <= 0 || height <= 0) return;
-
-        int divX[] = mNinePatchX;
-        int divY[] = mNinePatchY;
-        float divU[] = mNinePatchU;
-        float divV[] = mNinePatchV;
-
-        int nx = stretch(divX, divU, chunk.mDivX, tex.getWidth(), width);
-        int ny = stretch(divY, divV, chunk.mDivY, tex.getHeight(), height);
 
         mGLState.setBlendEnabled(!tex.isOpaque() || alpha < OPAQUE_ALPHA);
         mGLState.setTextureAlpha(alpha);
 
-        GL11 gl = mGL;
-        gl.glLoadMatrixf(mMatrixValues, 0);
-        gl.glTranslatef(x, y, 0);
-        drawMesh(divX, divY, divU, divV, nx, ny);
-    }
+        // Reset the texture matrix. We will set our own texture coordinates
+        // below.
+        setTextureCoords(0, 0, 1, 1);
 
-    /**
-     * Stretches the texture according to the nine-patch rules. It will
-     * linearly distribute the strechy parts defined in the nine-patch chunk to
-     * the target area.
-     *
-     * <pre>
-     *                      source
-     *          /--------------^---------------\
-     *         u0    u1       u2  u3     u4   u5
-     * div ---> |fffff|ssssssss|fff|ssssss|ffff| ---> u
-     *          |    div0    div1 div2   div3  |
-     *          |     |       /   /      /    /
-     *          |     |      /   /     /    /
-     *          |     |     /   /    /    /
-     *          |fffff|ssss|fff|sss|ffff| ---> x
-     *         x0    x1   x2  x3  x4   x5
-     *          \----------v------------/
-     *                  target
-     *
-     * f: fixed segment
-     * s: stretchy segment
-     * </pre>
-     *
-     * @param div the stretch parts defined in nine-patch chunk
-     * @param source the length of the texture
-     * @param target the length on the drawing plan
-     * @param u output, the positions of these dividers in the texture
-     *        coordinate
-     * @param x output, the corresponding position of these dividers on the
-     *        drawing plan
-     * @return the number of these dividers.
-     */
-    private int stretch(
-            int x[], float u[], int div[], int source, int target) {
-        int textureSize = Utils.nextPowerOf2(source);
-        float textureBound = (source - 0.5f) / textureSize;
+        saveTransform();
+        translate(x, y, 0);
 
-        int stretch = 0;
-        for (int i = 0, n = div.length; i < n; i += 2) {
-            stretch += div[i + 1] - div[i];
-        }
+        mGL.glLoadMatrixf(mMatrixValues, 0);
 
-        float remaining = target - source + stretch;
+        mGL.glBindBuffer(GL11.GL_ARRAY_BUFFER, xyBuffer);
+        mGL.glVertexPointer(2, GL11.GL_FLOAT, 0, 0);
 
-        int lastX = 0;
-        int lastU = 0;
+        mGL.glBindBuffer(GL11.GL_ARRAY_BUFFER, uvBuffer);
+        mGL.glTexCoordPointer(2, GL11.GL_FLOAT, 0, 0);
 
-        x[0] = 0;
-        u[0] = 0;
-        for (int i = 0, n = div.length; i < n; i += 2) {
-            // fixed segment
-            x[i + 1] = lastX + (div[i] - lastU);
-            u[i + 1] = Math.min((float) div[i] / textureSize, textureBound);
-
-            // stretchy segment
-            float partU = div[i + 1] - div[i];
-            int partX = (int)(remaining * partU / stretch + 0.5f);
-            remaining -= partX;
-            stretch -= partU;
-
-            lastX = x[i + 1] + partX;
-            lastU = div[i + 1];
-            x[i + 2] = lastX;
-            u[i + 2] = Math.min((float) lastU / textureSize, textureBound);
-        }
-        // the last fixed segment
-        x[div.length + 1] = target;
-        u[div.length + 1] = textureBound;
-
-        // remove segments with length 0.
-        int last = 0;
-        for (int i = 1, n = div.length + 2; i < n; ++i) {
-            if (x[last] == x[i]) continue;
-            x[++last] = x[i];
-            u[last] = u[i];
-        }
-        return last + 1;
-    }
-
-    private void drawMesh(
-            int x[], int y[], float u[], float v[], int nx, int ny) {
-        /*
-         * Given a 3x3 nine-patch image, the vertex order is defined as the
-         * following graph:
-         *
-         * (0) (1) (2) (3)
-         *  |  /|  /|  /|
-         *  | / | / | / |
-         * (4) (5) (6) (7)
-         *  | \ | \ | \ |
-         *  |  \|  \|  \|
-         * (8) (9) (A) (B)
-         *  |  /|  /|  /|
-         *  | / | / | / |
-         * (C) (D) (E) (F)
-         *
-         * And we draw the triangle strip in the following index order:
-         *
-         * index: 04152637B6A5948C9DAEBF
-         */
-        int pntCount = 0;
-        float xy[] = mXyBuffer;
-        float uv[] = mUvBuffer;
-        for (int j = 0; j < ny; ++j) {
-            for (int i = 0; i < nx; ++i) {
-                int xIndex = (pntCount++) << 1;
-                int yIndex = xIndex + 1;
-                xy[xIndex] = x[i];
-                xy[yIndex] = y[j];
-                uv[xIndex] = u[i];
-                uv[yIndex] = v[j];
-            }
-        }
-        mUvPointer.put(uv, 0, pntCount << 1).position(0);
-        mXyPointer.put(xy, 0, pntCount << 1).position(0);
-
-        int idxCount = 1;
-        byte index[] = mIndexBuffer;
-        for (int i = 0, bound = nx * (ny - 1); true;) {
-            // normal direction
-            --idxCount;
-            for (int j = 0; j < nx; ++j, ++i) {
-                index[idxCount++] = (byte) i;
-                index[idxCount++] = (byte) (i + nx);
-            }
-            if (i >= bound) break;
-
-            // reverse direction
-            int sum = i + i + nx - 1;
-            --idxCount;
-            for (int j = 0; j < nx; ++j, ++i) {
-                index[idxCount++] = (byte) (sum - i);
-                index[idxCount++] = (byte) (sum - i + nx);
-            }
-            if (i >= bound) break;
-        }
-        mIndexPointer.put(index, 0, idxCount).position(0);
-
+        mGL.glBindBuffer(GL11.GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         mGL.glDrawElements(GL11.GL_TRIANGLE_STRIP,
-                idxCount, GL11.GL_UNSIGNED_BYTE, mIndexPointer);
+                indexCount, GL11.GL_UNSIGNED_BYTE, 0);
+
+        mGL.glBindBuffer(GL11.GL_ARRAY_BUFFER, mBoxCoords);
+        mGL.glVertexPointer(2, GL11.GL_FLOAT, 0, 0);
+        mGL.glTexCoordPointer(2, GL11.GL_FLOAT, 0, 0);
+
+        restoreTransform();
         mCountDrawMesh++;
     }
 
     private float[] mapPoints(float matrix[], int x1, int y1, int x2, int y2) {
-        float[] point = mXyBuffer;
+        float[] point = mMapPointsBuffer;
         int srcOffset = 6;
         point[srcOffset] = x1;
         point[srcOffset + 1] = y1;
@@ -446,10 +324,9 @@ public class GLCanvasImp implements GLCanvas {
         // Test whether it has been rotated or flipped, if so, glDrawTexiOES
         // won't work
         if (isMatrixRotatedOrFlipped(mMatrixValues)) {
-            putRectangle(0, 0,
+            setTextureCoords(0, 0,
                     (texture.getWidth() - 0.5f) / texture.getTextureWidth(),
-                    (texture.getHeight() - 0.5f) / texture.getTextureHeight(),
-                    mUvBuffer, mUvPointer);
+                    (texture.getHeight() - 0.5f) / texture.getTextureHeight());
             textureRect(x, y, width, height);
         } else {
             // draw the rect from bottom-left to top-right
@@ -785,29 +662,51 @@ public class GLCanvasImp implements GLCanvas {
     }
 
     private void setTextureCoords(RectF source) {
-        float buffer[] = mUvBuffer;
-        buffer[0] = source.left;
-        buffer[1] = source.top;
-        buffer[2] = source.right;
-        buffer[3] = source.top;
-        buffer[4] = source.left;
-        buffer[5] = source.bottom;
-        buffer[6] = source.right;
-        buffer[7] = source.bottom;
-        mUvPointer.put(buffer, 0, 8).position(0);
+        setTextureCoords(source.left, source.top, source.right, source.bottom);
     }
 
+    private void setTextureCoords(float left, float top,
+            float right, float bottom) {
+        mGL.glMatrixMode(GL11.GL_TEXTURE);
+        mTextureMatrixValues[0] = right - left;
+        mTextureMatrixValues[5] = bottom - top;
+        mTextureMatrixValues[10] = 1;
+        mTextureMatrixValues[12] = left;
+        mTextureMatrixValues[13] = top;
+        mTextureMatrixValues[15] = 1;
+        mGL.glLoadMatrixf(mTextureMatrixValues, 0);
+        mGL.glMatrixMode(GL11.GL_MODELVIEW);
+    }
+
+    // unloadTexture and deleteBuffer can be called from the finalizer thread,
+    // so we synchronized on the mUnboundTextures object.
     public boolean unloadTexture(BasicTexture t) {
-        if (!t.isLoaded(this)) return false;
-        mUnboundIds.add(t.mId);
-        return true;
+        synchronized (mUnboundTextures) {
+            if (!t.isLoaded(this)) return false;
+            mUnboundTextures.add(t.mId);
+            return true;
+        }
     }
 
-    public void deleteRecycledTextures() {
-        IntArray ids = mUnboundIds;
-        if (ids.size() > 0) {
-            mGL.glDeleteTextures(ids.size(), ids.getInternelArray(), 0);
-            ids.clear();
+    public void deleteBuffer(int bufferId) {
+        synchronized (mUnboundTextures) {
+            mDeleteBuffers.add(bufferId);
+        }
+    }
+
+    public void deleteRecycledResources() {
+        synchronized (mUnboundTextures) {
+            IntArray ids = mUnboundTextures;
+            if (ids.size() > 0) {
+                mGL.glDeleteTextures(ids.size(), ids.getInternalArray(), 0);
+                ids.clear();
+            }
+
+            ids = mDeleteBuffers;
+            if (ids.size() > 0) {
+                mGL.glDeleteBuffers(ids.size(), ids.getInternalArray(), 0);
+                ids.clear();
+            }
         }
     }
 
@@ -892,5 +791,13 @@ public class GLCanvasImp implements GLCanvas {
         mCountFillRect = 0;
         mCountDrawLine = 0;
         Log.v(TAG, line);
+    }
+
+    private void saveTransform() {
+        System.arraycopy(mMatrixValues, 0, mTempMatrix, 0, 16);
+    }
+
+    private void restoreTransform() {
+        System.arraycopy(mTempMatrix, 0, mMatrixValues, 0, 16);
     }
 }

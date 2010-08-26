@@ -43,7 +43,7 @@ public class IntArray {
         return result;
     }
 
-    public int[] getInternelArray() {
+    public int[] getInternalArray() {
         return mData;
     }
 
