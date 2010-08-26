@@ -17,6 +17,7 @@
 package com.android.gallery3d.data;
 
 import android.graphics.Bitmap;
+import android.graphics.LargeBitmap;
 import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
@@ -86,7 +87,7 @@ public class PicasaImage extends MediaItem {
         }
 
         // Get the image from Picasaweb instead.
-        return new PicasaTask(type, photoUrl, listener);
+        return new PicasaBitmapTask(type, photoUrl, listener);
     }
 
     private boolean isSameUri(byte[] uri, byte[] buffer) {
@@ -124,11 +125,11 @@ public class PicasaImage extends MediaItem {
         return url;
     }
 
-    private class PicasaTask extends ComboFuture<Bitmap> {
+    private class PicasaBitmapTask extends ComboFuture<Bitmap> {
         private final URL mUrl;
         private final int mType;
 
-        public PicasaTask(
+        public PicasaBitmapTask(
                 int type, URL url, FutureListener<? super Bitmap> listener) {
             super(listener);
             mType = type;
@@ -147,10 +148,10 @@ public class PicasaImage extends MediaItem {
                 case 1: {
                     byte[] downloadedImage = (byte[]) current.get();
 
-                    // Insert the downloaded image to the cache if the image is
-                    // not a full size one.
                     if ((mPicasaCache != null)
                             && (mType != MediaItem.TYPE_FULL_IMAGE)) {
+                        // Insert the downloaded image to the cache if we have a
+                        // cache and the image is not a full size one.
                         long cacheKey = Utils.crc64Long(mUrl.toString());
                         byte[] uri = Utils.getBytesInUtf8(mUrl.toString());
                         ByteBuffer buffer = ByteBuffer.allocate(
@@ -167,5 +168,44 @@ public class PicasaImage extends MediaItem {
             }
             return null;
         }
+    }
+
+    private class PicasaLargeBitmapTask extends ComboFuture<LargeBitmap> {
+        private final URL mUrl;
+        private final int mType;
+
+        public PicasaLargeBitmapTask(
+                int type, URL url, FutureListener<? super LargeBitmap> listener) {
+            super(listener);
+            mType = type;
+            mUrl = url;
+            execute();
+        }
+
+        @Override
+        protected Future<?> executeNextTask(int step, Future<?> current)
+                throws Exception {
+            switch (step) {
+                case 0: {
+                    DownloadService service = mContext.getDownloadService();
+                    return service.requestDownload(mUrl, this);
+                }
+                case 1: {
+                    byte[] downloadedImage = (byte[]) current.get();
+
+                    // Create the large bitmap.
+                    DecodeService service = mContext.getDecodeService();
+                    return service.requestCreateLargeBitmap(downloadedImage, 0,
+                            downloadedImage.length, this);
+                }
+            }
+            return null;
+        }
+    }
+
+    public Future<LargeBitmap> requestLargeImage(int type,
+            FutureListener<LargeBitmap> listener) {
+        URL photoUrl = getPhotoUrl(type);
+        return new PicasaLargeBitmapTask(type, photoUrl, listener);
     }
 }

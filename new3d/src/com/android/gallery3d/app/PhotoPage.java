@@ -18,6 +18,7 @@ package com.android.gallery3d.app;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.LargeBitmap;
 import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import android.os.Message;
@@ -46,7 +47,6 @@ public class PhotoPage extends ActivityState {
     private static final int MSG_UPDATE_FULLIMAGE = 2;
 
     private static final int TARGET_LENGTH = 1600;
-    private static final int MIPMAPS_MIN_LENGTH = 480;
 
     private SynchronizedHandler mHandler;
 
@@ -84,7 +84,7 @@ public class PhotoPage extends ActivityState {
                         break;
                     }
                     case MSG_UPDATE_FULLIMAGE: {
-                        mModel.updateFullImage(message.arg1, (Bitmap) message.obj);
+                        mModel.updateLargeImage(message.arg1, (LargeBitmap) message.obj);
                         break;
                     }
                     default: throw new AssertionError();
@@ -122,11 +122,12 @@ public class PhotoPage extends ActivityState {
 
     private class MyImageViewerModel implements ImageViewer.Model {
 
-        private Bitmap mScaledBitmaps[];
+        private LargeBitmap mLargeBitmap;
+
         private Bitmap mScreenNails[] = new Bitmap[3]; // prev, curr, next
 
-        public Bitmap[] getMipmaps() {
-            return mScaledBitmaps;
+        public LargeBitmap getLargeBitmap() {
+            return mLargeBitmap;
         }
 
         public ImageData getImageData(int which) {
@@ -136,9 +137,9 @@ public class PhotoPage extends ActivityState {
             int width = 0;
             int height = 0;
 
-            if (which == INDEX_CURRENT && mScaledBitmaps != null) {
-                width = mScaledBitmaps[0].getWidth();
-                height = mScaledBitmaps[0].getHeight();
+            if (which == INDEX_CURRENT && mLargeBitmap != null) {
+                width = mLargeBitmap.getWidth();
+                height = mLargeBitmap.getHeight();
             } else {
                 // We cannot get the size of image before getting the
                 // full-size image. In the future, we should add the data to
@@ -163,12 +164,9 @@ public class PhotoPage extends ActivityState {
             screenNails[INDEX_CURRENT] = screenNails[INDEX_NEXT];
             screenNails[INDEX_NEXT] = null;
 
-
-            if (mScaledBitmaps != null) {
-                for (Bitmap bitmap : mScaledBitmaps) {
-                    bitmap.recycle();
-                }
-                mScaledBitmaps = null;
+            if (mLargeBitmap != null) {
+                mLargeBitmap.recycle();
+                mLargeBitmap = null;
             }
 
             requestNextImage();
@@ -185,11 +183,9 @@ public class PhotoPage extends ActivityState {
             screenNails[INDEX_CURRENT] = screenNails[INDEX_PREVIOUS];
             screenNails[INDEX_PREVIOUS] = null;
 
-            if (mScaledBitmaps != null) {
-                for (Bitmap bitmap : mScaledBitmaps) {
-                    bitmap.recycle();
-                }
-                mScaledBitmaps = null;
+            if (mLargeBitmap != null) {
+                mLargeBitmap.recycle();
+                mLargeBitmap = null;
             }
 
             requestNextImage();
@@ -209,18 +205,16 @@ public class PhotoPage extends ActivityState {
             requestNextImage();
         }
 
-        public void updateFullImage(int index, Bitmap fullImage) {
+        public void updateLargeImage(int index, LargeBitmap largeBitmap) {
             int offset = (index - mPhotoIndex) + 1;
             if (offset != INDEX_CURRENT) {
-                if (fullImage != null) fullImage.recycle();
+                largeBitmap.recycle();
                 return;
             }
-            // full image could be null on error
-            if (fullImage != null) {
-                Log.v(TAG, String.format("full image %d available: %s %s",
-                        index, fullImage.getWidth(), fullImage.getHeight()));
-                mScaledBitmaps = getScaledBitmaps(fullImage, MIPMAPS_MIN_LENGTH);
-                mImageViewer.notifyMipmapsInvalidated();
+
+            if (largeBitmap != null) {
+                mLargeBitmap = largeBitmap;
+                mImageViewer.notifyLargeBitmapInvalidated();
                 // We need to update the estimated width and height
                 mImageViewer.notifyScreenNailInvalidated(INDEX_CURRENT);
             }
@@ -272,11 +266,11 @@ public class PhotoPage extends ActivityState {
             }
 
             // Next, the full size image
-            if (mScaledBitmaps == null) {
-                MediaItem current = getMediaItem(items, start, INDEX_CURRENT);
+            if (mLargeBitmap == null) {
+                MediaItem current = getMediaItem(items, start, mPhotoIndex);
                 if (current != null) {
-                    current.requestImage(MediaItem.TYPE_FULL_IMAGE,
-                            new FullImageListener(mPhotoIndex));
+                    current.requestLargeImage(MediaItem.TYPE_FULL_IMAGE,
+                            new LargeImageListener(mPhotoIndex));
                     return;
                 }
             }
@@ -325,23 +319,23 @@ public class PhotoPage extends ActivityState {
         }
     }
 
-    private class FullImageListener implements FutureListener<Bitmap> {
+    private class LargeImageListener implements FutureListener<LargeBitmap> {
 
         private final int mIndex;
 
-        public FullImageListener(int index) {
+        public LargeImageListener(int index) {
             mIndex = index;
         }
 
-        public void onFutureDone(Future<? extends Bitmap> future) {
-            Bitmap bitmap = null;
+        public void onFutureDone(Future<? extends LargeBitmap> future) {
+            LargeBitmap largeBitmap = null;
             try {
-                bitmap = future.get();
+                largeBitmap = future.get();
             } catch (Exception e) {
                 Log.v(TAG, "fail to get image", e);
             }
             mHandler.sendMessage(mHandler.obtainMessage(
-                    MSG_UPDATE_FULLIMAGE, mIndex, 0, bitmap));
+                    MSG_UPDATE_FULLIMAGE, mIndex, 0, largeBitmap));
         }
     }
 }

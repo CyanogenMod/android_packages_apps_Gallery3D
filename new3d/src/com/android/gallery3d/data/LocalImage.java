@@ -16,14 +16,17 @@
 
 package com.android.gallery3d.data;
 
+import com.android.gallery3d.util.Future;
+import com.android.gallery3d.util.FutureListener;
+
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.LargeBitmap;
 import android.provider.MediaStore.Images.ImageColumns;
+import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
-import com.android.gallery3d.util.Future;
-import com.android.gallery3d.util.FutureListener;
 
 import java.io.File;
 
@@ -107,4 +110,10 @@ public class LocalImage extends LocalMediaItem {
 
         return item;
     }
+
+   public Future<LargeBitmap> requestLargeImage(int type,
+            FutureListener<LargeBitmap> listener) {
+        DecodeService service = mContext.getDecodeService();
+        return service.requestCreateLargeBitmap(mFilePath, listener);
+   }
 }
