@@ -42,4 +42,8 @@ public class BitmapTexture extends UploadedTexture {
     protected Bitmap onGetBitmap() {
         return mContentBitmap;
     }
+
+    public Bitmap getBitmap() {
+        return mContentBitmap;
+    }
 }

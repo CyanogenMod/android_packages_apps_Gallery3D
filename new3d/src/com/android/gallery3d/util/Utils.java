@@ -91,6 +91,24 @@ public class Utils {
         return bitmap;
     }
 
+    public static final Bitmap resizeBitmap(Bitmap bitmap, int maxSize) {
+        int srcWidth = bitmap.getWidth();
+        int srcHeight = bitmap.getHeight();
+        float scale = Math.min(
+                (float) maxSize / srcWidth, (float) maxSize / srcHeight);
+        if (scale >= 1.0f) return bitmap;
+
+        int width = Math.round(srcWidth * scale);
+        int height = Math.round(srcHeight * scale);
+        Bitmap target = Bitmap.createBitmap(width, height,
+                bitmap.hasAlpha() ? Config.ARGB_8888 : Config.RGB_565);
+        Canvas canvas = new Canvas(target);
+        canvas.scale(scale, scale);
+        canvas.drawBitmap(bitmap, 0, 0, null);
+        bitmap.recycle();
+        return target;
+    }
+
     // Throws AssertionError if the input is false.
     public static void Assert(boolean cond) {
         if (!cond) {
