@@ -7,14 +7,14 @@ import android.os.Message;
 
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
-import com.android.gallery3d.ui.GalleryView;
+import com.android.gallery3d.ui.AlbumSetView;
 import com.android.gallery3d.ui.SynchronizedHandler;
 import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 
-public class GalleryDataAdapter implements GalleryView.Model {
-    private static final String TAG = "GalleryDataAdapter";
+public class AlbumSetDataAdapter implements AlbumSetView.Model {
+    private static final String TAG = "AlbumSetDataAdapter";
 
     private static final int UPDATE_LIMIT = 32;
     private static final int MAX_COVER_COUNT = 4;
@@ -35,12 +35,12 @@ public class GalleryDataAdapter implements GalleryView.Model {
     private final MediaSet mSource;
     private int mSize;
 
-    private GalleryView.ModelListener mListener;
+    private AlbumSetView.ModelListener mListener;
 
     private Handler mMainHandler;
     private Handler mDataHandler;
 
-    public GalleryDataAdapter(GalleryContext context, MediaSet albumSet, int cacheSize) {
+    public AlbumSetDataAdapter(GalleryContext context, MediaSet albumSet, int cacheSize) {
         albumSet.setContentListener(new MySourceListener());
 
         mSource = albumSet;
@@ -157,7 +157,7 @@ public class GalleryDataAdapter implements GalleryView.Model {
         }
     }
 
-    public void setListener(GalleryView.ModelListener listener) {
+    public void setListener(AlbumSetView.ModelListener listener) {
         mListener = listener;
     }
 

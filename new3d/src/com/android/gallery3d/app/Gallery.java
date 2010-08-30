@@ -53,7 +53,7 @@ public final class Gallery extends Activity implements GalleryContext {
         if (savedInstanceState != null) {
             getStateManager().restoreFromState(savedInstanceState);
         } else {
-            getStateManager().startState(GalleryPage.class, new Bundle());
+            getStateManager().startState(AlbumSetPage.class, new Bundle());
         }
     }
 

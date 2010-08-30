@@ -23,11 +23,11 @@ import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.data.MediaItem;
-import com.android.gallery3d.ui.GalleryView.GalleryItem;
+import com.android.gallery3d.ui.AlbumSetView.AlbumSetItem;
 import com.android.gallery3d.util.Future;
 import com.android.gallery3d.util.Utils;
 
-public class GallerySlidingWindow implements GalleryView.ModelListener {
+public class AlbumSetSlidingWindow implements AlbumSetView.ModelListener {
     private static final String TAG = "GallerySlidingWindow";
     private static final int MSG_UPDATE_IMAGE = 0;
 
@@ -35,10 +35,10 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         public void onSizeChanged(int size);
         public void onContentInvalidated();
         public void onWindowContentChanged(
-                int slot, GalleryItem old, GalleryItem update);
+                int slot, AlbumSetItem old, AlbumSetItem update);
     }
 
-    private final GalleryView.Model mSource;
+    private final AlbumSetView.Model mSource;
     private int mSize;
 
     private int mContentStart = 0;
@@ -49,7 +49,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
 
     private Listener mListener;
 
-    private final GalleryItem mData[];
+    private final AlbumSetItem mData[];
     private final SelectionManager mSelectionManager;
     private final ColorTexture mWaitLoadingTexture;
 
@@ -57,12 +57,12 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
 
     private int mActiveRequestCount = 0;
 
-    public GallerySlidingWindow(GalleryContext context,
-            SelectionManager manager, GalleryView.Model source, int cacheSize) {
+    public AlbumSetSlidingWindow(GalleryContext context,
+            SelectionManager manager, AlbumSetView.Model source, int cacheSize) {
         source.setListener(this);
         mSource = source;
         mSelectionManager = manager;
-        mData = new GalleryItem[cacheSize];
+        mData = new AlbumSetItem[cacheSize];
         mSize = source.size();
 
         mWaitLoadingTexture = new ColorTexture(Color.GRAY);
@@ -82,7 +82,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
         mListener = listener;
     }
 
-    public GalleryItem get(int slotIndex) {
+    public AlbumSetItem get(int slotIndex) {
         if (!isActiveSlot(slotIndex)) {
             throw new IllegalArgumentException(
                     String.format("invalid slot: %s outsides (%s, %s)",
@@ -133,7 +133,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
     public void setActiveWindow(int start, int end) {
         Utils.Assert(start <= end
                 && end - start <= mData.length && end <= mSize);
-        GalleryItem data[] = mData;
+        AlbumSetItem data[] = mData;
 
         mActiveStart = start;
         mActiveEnd = end;
@@ -173,7 +173,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
 
     private void requestImagesInSlot(int slotIndex) {
         if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
-        GalleryItem items = mData[slotIndex % mData.length];
+        AlbumSetItem items = mData[slotIndex % mData.length];
         for (DisplayItem item : items.covers) {
             ((GalleryDisplayItem) item).requestImage();
         }
@@ -181,16 +181,16 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
 
     private void cancelImagesInSlot(int slotIndex) {
         if (slotIndex < mContentStart || slotIndex >= mContentEnd) return;
-        GalleryItem items = mData[slotIndex % mData.length];
+        AlbumSetItem items = mData[slotIndex % mData.length];
         for (DisplayItem item : items.covers) {
             ((GalleryDisplayItem) item).cancelImageRequest();
         }
     }
 
     private void freeSlotContent(int slotIndex) {
-        GalleryItem data[] = mData;
+        AlbumSetItem data[] = mData;
         int index = slotIndex % data.length;
-        GalleryItem original = data[index];
+        AlbumSetItem original = data[index];
         if (original != null) {
             data[index] = null;
             for (DisplayItem item : original.covers) {
@@ -200,7 +200,7 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
     }
 
     private void prepareSlotContent(final int slotIndex) {
-        GalleryItem item = new GalleryItem();
+        AlbumSetItem item = new AlbumSetItem();
         MediaItem[] coverItems = mSource.get(slotIndex);
         item.covers = new GalleryDisplayItem[coverItems.length];
         for (int i = 0; i < coverItems.length; ++i) {
@@ -210,11 +210,11 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
     }
 
     private void updateSlotContent(final int slotIndex) {
-        GalleryItem data[] = mData;
+        AlbumSetItem data[] = mData;
 
         int index = slotIndex % data.length;
-        GalleryItem original = data[index];
-        GalleryItem update = new GalleryItem();
+        AlbumSetItem original = data[index];
+        AlbumSetItem update = new AlbumSetItem();
         data[index] = update;
 
         MediaItem[] coverItems = mSource.get(slotIndex);
@@ -304,8 +304,8 @@ public class GallerySlidingWindow implements GalleryView.ModelListener {
             int width = mContent.getWidth();
             int height = mContent.getHeight();
 
-            float scalex = GalleryView.SLOT_WIDTH / (float) width;
-            float scaley = GalleryView.SLOT_HEIGHT / (float) height;
+            float scalex = AlbumSetView.SLOT_WIDTH / (float) width;
+            float scaley = AlbumSetView.SLOT_HEIGHT / (float) height;
             float scale = Math.min(scalex, scaley);
 
             width = (int) Math.floor(width * scale);
