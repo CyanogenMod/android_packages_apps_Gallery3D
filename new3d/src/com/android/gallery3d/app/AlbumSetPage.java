@@ -26,20 +26,20 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.AdaptiveBackground;
 import com.android.gallery3d.ui.GLView;
-import com.android.gallery3d.ui.GalleryView;
+import com.android.gallery3d.ui.AlbumSetView;
 import com.android.gallery3d.ui.HeadUpDisplay;
 import com.android.gallery3d.ui.SelectionManager;
 import com.android.gallery3d.ui.SlotView;
 import com.android.gallery3d.ui.SynchronizedHandler;
 
-public class GalleryPage extends ActivityState implements SlotView.SlotTapListener {
+public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListener {
     private static final int CHANGE_BACKGROUND = 1;
 
     private static final int MARGIN_HUD_SLOTVIEW = 5;
     private static final int DATA_CACHE_SIZE = 256;
 
     private AdaptiveBackground mBackground;
-    private GalleryView mGalleryView;
+    private AlbumSetView mAlbumSetView;
     private HeadUpDisplay mHud;
     private SynchronizedHandler mHandler;
 
@@ -59,7 +59,7 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
             int slotViewBottom = mHud.getBottomBarTopPosition()
                     - MARGIN_HUD_SLOTVIEW;
 
-            mGalleryView.layout(0, slotViewTop, right - left, slotViewBottom);
+            mAlbumSetView.layout(0, slotViewTop, right - left, slotViewBottom);
         }
     };
 
@@ -79,16 +79,16 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
             mContext.getStateManager().startState(AlbumPage.class, data);
         } else {
             mSelectionManager.selectSlot(slotIndex);
-            mGalleryView.invalidate();
+            mAlbumSetView.invalidate();
         }
     }
 
     public void onLongTap(int slotIndex) {
         mSelectionManager.switchSelectionMode(slotIndex);
-        mGalleryView.invalidate();
+        mAlbumSetView.invalidate();
     }
 
-    public GalleryPage() {}
+    public AlbumSetPage() {}
 
     @Override
     public void onCreate(Bundle data, Bundle restoreState) {
@@ -121,8 +121,8 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
 
     private void intializeData() {
         MediaSet mediaSet = mContext.getDataManager().getRootSet();
-        mGalleryView.setModel(
-                new GalleryDataAdapter(mContext, mediaSet, DATA_CACHE_SIZE));
+        mAlbumSetView.setModel(
+                new AlbumSetDataAdapter(mContext, mediaSet, DATA_CACHE_SIZE));
     }
 
     private void initializeViews() {
@@ -130,10 +130,10 @@ public class GalleryPage extends ActivityState implements SlotView.SlotTapListen
 
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);
-        mGalleryView = new GalleryView(mContext, mSelectionManager);
-        mGalleryView.setSlotTapListener(this);
+        mAlbumSetView = new AlbumSetView(mContext, mSelectionManager);
+        mAlbumSetView.setSlotTapListener(this);
 
-        mRootPane.addComponent(mGalleryView);
+        mRootPane.addComponent(mAlbumSetView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
         mRootPane.addComponent(mHud);
 
