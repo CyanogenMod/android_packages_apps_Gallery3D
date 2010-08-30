@@ -25,8 +25,8 @@ import com.android.gallery3d.util.Utils;
 
 import java.util.Random;
 
-public class GalleryView extends SlotView {
-    private static final String TAG = "GalleryView";
+public class AlbumSetView extends SlotView {
+    private static final String TAG = "AlbumSetView";
     private static final int CACHE_SIZE = 32;
 
     static final int SLOT_WIDTH = 144;
@@ -40,7 +40,7 @@ public class GalleryView extends SlotView {
     private Random mRandom = new Random();
     private long mSeed = mRandom.nextLong();
 
-    private GallerySlidingWindow mDataWindow;
+    private AlbumSetSlidingWindow mDataWindow;
     private final GalleryContext mContext;
     private final SelectionManager mSelectionManager;
 
@@ -57,11 +57,11 @@ public class GalleryView extends SlotView {
         public void onSizeChanged(int size);
     }
 
-    public static class GalleryItem {
+    public static class AlbumSetItem {
         public DisplayItem[] covers;
     }
 
-    public GalleryView(GalleryContext context, SelectionManager selectionManager) {
+    public AlbumSetView(GalleryContext context, SelectionManager selectionManager) {
         super(context.getAndroidContext(), context.getPositionRepository());
         mContext = context;
         mSelectionManager = selectionManager;
@@ -69,7 +69,7 @@ public class GalleryView extends SlotView {
         setSlotGaps(HORIZONTAL_GAP, VERTICAL_GAP, false);
     }
 
-    public void setModel(GalleryView.Model model) {
+    public void setModel(AlbumSetView.Model model) {
 
         if (mDataWindow != null) {
             mDataWindow.setListener(null);
@@ -77,7 +77,7 @@ public class GalleryView extends SlotView {
             mDataWindow = null;
         }
         if (model != null) {
-            mDataWindow = new GallerySlidingWindow(
+            mDataWindow = new AlbumSetSlidingWindow(
                         mContext, mSelectionManager, model, CACHE_SIZE);
             mDataWindow.setListener(new MyCacheListener());
             setSlotCount(mDataWindow.size());
@@ -85,7 +85,7 @@ public class GalleryView extends SlotView {
         }
     }
 
-    private void putSlotContent(int slotIndex, GalleryItem entry) {
+    private void putSlotContent(int slotIndex, AlbumSetItem entry) {
         // Get displayItems from mItemsetMap or create them from MediaSet.
         Utils.Assert(entry != null);
         Rect rect = getSlotRect(slotIndex);
@@ -121,7 +121,7 @@ public class GalleryView extends SlotView {
         }
     }
 
-    private void freeSlotContent(int index, GalleryItem entry) {
+    private void freeSlotContent(int index, AlbumSetItem entry) {
         if (entry == null) return;
         for (DisplayItem item : entry.covers) {
             removeDisplayItem(item);
@@ -174,14 +174,14 @@ public class GalleryView extends SlotView {
         invalidate();
     }
 
-    private class MyCacheListener implements GallerySlidingWindow.Listener {
+    private class MyCacheListener implements AlbumSetSlidingWindow.Listener {
 
         public void onSizeChanged(int size) {
             setSlotCount(size);
             updateVisibleRange(getVisibleStart(), getVisibleEnd());
         }
 
-        public void onWindowContentChanged(int slot, GalleryItem old, GalleryItem update) {
+        public void onWindowContentChanged(int slot, AlbumSetItem old, AlbumSetItem update) {
             freeSlotContent(slot, old);
             putSlotContent(slot, update);
             invalidate();
