@@ -109,7 +109,7 @@ public class PhotoPage extends ActivityState {
         GLRoot root = mContext.getGLRoot();
         root.lockRenderThread();
         try {
-            mImageViewer.close();
+            mImageViewer.freeTextures();
         } finally {
             root.unlockRenderThread();
         }
@@ -118,6 +118,7 @@ public class PhotoPage extends ActivityState {
     @Override
     protected void onResume() {
         setContentPane(mRootPane);
+        mImageViewer.prepareTextures();
     }
 
     private class MyImageViewerModel implements ImageViewer.Model {

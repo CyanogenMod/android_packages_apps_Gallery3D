@@ -108,6 +108,8 @@ public class ImageViewer extends GLView {
 
     private Model mModel;
     private int mSwitchIndex;
+
+    private boolean isTextureFreed = false;
     /*private*/ boolean mInTransition = false;
 
     public ImageViewer(GalleryContext context) {
@@ -291,8 +293,6 @@ public class ImageViewer extends GLView {
         // We want to use a texture smaller than the display size to avoid
         // displaying artifacts.
         mLevel = Utils.clamp(ceilLog2(1f / scale), 0, mLevelCount);
-
-        ScreenNailEntry entry = mScreenNails[ENTRY_CURRENT];
 
         // We want to keep one more tile level as texture in addition to what
         // we use for display. So it can be faster when the scale moves to the
@@ -670,17 +670,26 @@ public class ImageViewer extends GLView {
         }
     }
 
-    public void close() {
+    public void freeTextures() {
+        isTextureFreed = true;
         mUploadIter = null;
         for (Tile texture : mActiveTiles.values()) {
             texture.recycle();
         }
+        mTileRange.set(0, 0, 0, 0);
         mActiveTiles.clear();
         freeRecycledTile();
 
         for (ScreenNailEntry nail : mScreenNails) {
             if (nail.mTexture != null) nail.mTexture.recycle();
             if (nail.mBitmap != null) nail.mBitmap.recycle();
+        }
+    }
+
+    public void prepareTextures() {
+        if (isTextureFreed) {
+            layoutTiles(mCenterX, mCenterY, mScale);
+            isTextureFreed = false;
         }
     }
 
