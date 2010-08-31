@@ -60,7 +60,6 @@ public class ImageViewer extends GLView {
     private final ScreenNailEntry mScreenNails[] = new ScreenNailEntry[3];
 
     private LargeBitmap mLargeBitmap;
-    private BitmapTexture mBackupTexture;
     private int mLevelCount;  // cache the value of mScaledBitmaps.length
 
 
@@ -138,9 +137,14 @@ public class ImageViewer extends GLView {
 
     public void notifyLargeBitmapInvalidated() {
         mLargeBitmap = mModel.getLargeBitmap();
+        Bitmap screennail = mScreenNails[ENTRY_CURRENT].mBitmap;
+        int minLength = THRESHOLD_TO_DOWNSCALE;
+        if (screennail != null) {
+            minLength = Math.max(screennail.getWidth(), screennail.getHeight());
+        }
         if (mLargeBitmap != null) {
             mLevelCount = calcuateLevelCount(mLargeBitmap.getWidth(),
-                    mLargeBitmap.getHeight(), THRESHOLD_TO_DOWNSCALE);
+                    mLargeBitmap.getHeight(), minLength);
             layoutTiles(mCenterX, mCenterY, mScale);
             invalidate();
         } else {
@@ -169,7 +173,6 @@ public class ImageViewer extends GLView {
 
     private void resetCurrentImagePosition() {
         ScreenNailEntry entry = mScreenNails[ENTRY_CURRENT];
-        mBackupTexture = entry.mTexture;
         mImageWidth = entry.mWidth;
         mImageHeight = entry.mHeight;
         mAnimationController.onNewImage(mImageWidth, mImageHeight);
@@ -927,7 +930,7 @@ public class ImageViewer extends GLView {
                 }
             }
             if (!ImageViewer.drawTile(this, canvas, source, target)) {
-                BitmapTexture backup = mBackupTexture;
+                BitmapTexture backup = mScreenNails[ENTRY_CURRENT].mTexture;
                 int width = mImageWidth;
                 int height = mImageHeight;
                 float scaleX = (float) backup.getWidth() / width;
