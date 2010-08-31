@@ -88,8 +88,8 @@ public interface GLCanvas {
     // Draws a texture to the specified rectangle.
     public void drawTexture(
             BasicTexture texture, int x, int y, int width, int height);
-    public void drawNinePatch(
-            NinePatchTexture tex, int x, int y, int width, int height);
+    public void drawMesh(BasicTexture tex, int x, int y, int xyBuffer,
+            int uvBuffer, int indexBuffer, int indexCount);
 
     // Draws a texture to the specified rectangle. The "alpha" parameter
     // overrides the current drawing alpha value.
@@ -118,7 +118,10 @@ public interface GLCanvas {
     // BasicTexture or its descendant
     public boolean unloadTexture(BasicTexture texture);
 
-    // Delete the textures in GL side. This function should only be called in
-    // GL thread.
-    public void deleteRecycledTextures();
+    // Delete the specified buffer object, similar to unloadTexture.
+    public void deleteBuffer(int bufferId);
+
+    // Delete the textures and buffers in GL side. This function should only be
+    // called in the GL thread.
+    public void deleteRecycledResources();
 }

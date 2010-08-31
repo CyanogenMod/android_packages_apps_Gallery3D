@@ -101,8 +101,8 @@ public class GLRootView extends GLSurfaceView
         setEGLConfigChooser(mEglConfigChooser);
         setRenderer(this);
 
-        // Remove this before release.
-        setDebugFlags(DEBUG_CHECK_GL_ERROR);
+        // Uncomment this to enable gl error check.
+        //setDebugFlags(DEBUG_CHECK_GL_ERROR);
     }
 
     public GalleryEGLConfigChooser getEGLConfigChooser() {
@@ -269,8 +269,8 @@ public class GLRootView extends GLSurfaceView
     private void onDrawFrameLocked(GL10 gl) {
         if (DEBUG_FPS) outputFps();
 
-        // release the unbound textures
-        mCanvas.deleteRecycledTextures();
+        // release the unbound textures and deleted buffers.
+        mCanvas.deleteRecycledResources();
 
         // reset texture upload limit
         UploadedTexture.resetUploadLimit();

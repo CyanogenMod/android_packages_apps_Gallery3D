@@ -34,8 +34,8 @@ public class GLCanvasStub implements GLCanvas {
     public void fillRect(float x, float y, float width, float height, int color) {}
     public void drawTexture(
             BasicTexture texture, int x, int y, int width, int height) {}
-    public void drawNinePatch(
-            NinePatchTexture tex, int x, int y, int width, int height) {}
+    public void drawMesh(BasicTexture tex, int x, int y, int xyBuffer,
+            int uvBuffer, int indexBuffer, int indexCount) {}
     public void drawTexture(BasicTexture texture,
             int x, int y, int width, int height, float alpha) {}
     public void drawTexture(BasicTexture texture, RectF source, RectF target) {}
@@ -52,5 +52,8 @@ public class GLCanvasStub implements GLCanvas {
     public boolean unloadTexture(BasicTexture texture) {
         throw new UnsupportedOperationException();
     }
-    public void deleteRecycledTextures() {}
+    public void deleteBuffer(int bufferId) {
+        throw new UnsupportedOperationException();
+    }
+    public void deleteRecycledResources() {}
 }

@@ -629,7 +629,7 @@ public class GLCanvasTest extends TestCase {
             assertTrue(texture.isLoaded(canvas));
             texture.recycle();
             assertFalse(texture.isLoaded(canvas));
-            canvas.deleteRecycledTextures();
+            canvas.deleteRecycledResources();
 
             assertTrue(texture_o.isLoaded(canvas));
             texture_o.recycle();
