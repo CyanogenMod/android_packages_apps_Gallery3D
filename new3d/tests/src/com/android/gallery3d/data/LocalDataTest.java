@@ -29,33 +29,28 @@ import android.test.mock.MockContentResolver;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.util.Log;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class LocalDataTest extends AndroidTestCase {
     private static final String TAG = "LocalDataTest";
     private static final int DUMMY_PARENT_ID = 0x777;
     private static final int KEY_LOCAL = 1;
+    private static final long DEFAULT_TIMEOUT = 1000; // one second
 
     @MediumTest
-    public void testLocalAlbum() {
-        run(new TestZeroImage());
-        run(new TestOneImage());
-        run(new TestMoreImages());
-        run(new TestZeroVideo());
-        run(new TestOneVideo());
-        run(new TestMoreVideos());
-        run(new TestDeleteOneImage());
-        run(new TestDeleteOneAlbum());
+    public void testLocalAlbum() throws Exception {
+        new TestZeroImage().run();
+        new TestOneImage().run();
+        new TestMoreImages().run();
+        new TestZeroVideo().run();
+        new TestOneVideo().run();
+        new TestMoreVideos().run();
+        new TestDeleteOneImage().run();
+        new TestDeleteOneAlbum().run();
     }
 
-    static void run(Thread t) {
-        t.start();
-        try {
-            t.join();
-        } catch (InterruptedException ex) {
-            fail();
-        }
-    }
-
-    abstract class TestLocalAlbumBase extends Thread implements MediaSet.MediaSetListener {
+    abstract class TestLocalAlbumBase {
         private boolean mIsImage;
         protected GalleryContextStub mContext;
         protected LocalAlbumSet mAlbumSet;
@@ -64,30 +59,17 @@ public class LocalDataTest extends AndroidTestCase {
             mIsImage = isImage;
         }
 
-        @Override
-        public void run() {
-            Looper.prepare();
+        public void run() throws Exception {
             SQLiteDatabase db = SQLiteDatabase.create(null);
-
             prepareData(db);
-
-            mContext = newGalleryContext(db, Looper.myLooper());
+            mContext = newGalleryContext(db, Looper.getMainLooper());
             mAlbumSet = new LocalAlbumSet(DUMMY_PARENT_ID, KEY_LOCAL, mContext, mIsImage);
-            mAlbumSet.setContentListener(this);
             mAlbumSet.reload();
-            Looper.loop();
+            verifyResult();
         }
 
         abstract void prepareData(SQLiteDatabase db);
-        abstract void verifyResult();
-
-        public void onContentChanged() {
-            verifyResult();
-            Looper.myLooper().quit();
-        }
-
-        public void onContentDirty() {
-        }
+        abstract void verifyResult() throws Exception;
     }
 
     abstract class TestLocalImageAlbum extends TestLocalAlbumBase {
@@ -188,6 +170,19 @@ public class LocalDataTest extends AndroidTestCase {
         }
     }
 
+    class OnContentDirtyLatch implements MediaSet.MediaSetListener {
+        private CountDownLatch mLatch = new CountDownLatch(1);
+
+        public void onContentDirty() {
+            mLatch.countDown();
+        }
+
+        public boolean isOnContentDirtyBeCalled(long timeout)
+                throws InterruptedException {
+            return mLatch.await(timeout, TimeUnit.MILLISECONDS);
+        }
+    }
+
     class TestDeleteOneAlbum extends TestLocalImageAlbum {
         @Override
         public void prepareData(SQLiteDatabase db) {
@@ -202,30 +197,23 @@ public class LocalDataTest extends AndroidTestCase {
         }
 
         @Override
-        public void verifyResult() {
+        public void verifyResult() throws Exception {
             MediaSet sub = mAlbumSet.getSubMediaSet(1);  // "second"
             assertEquals(2, mAlbumSet.getSubMediaSetCount());
+            OnContentDirtyLatch latch = new OnContentDirtyLatch();
+            sub.setContentListener(latch);
             long uid = sub.getUniqueId();
             assertTrue((sub.getSupportedOperations(uid) & MediaSet.SUPPORT_DELETE) != 0);
             mContext.getDataManager().delete(uid);
-            mAlbumSet.notifyContentDirty();
+            mAlbumSet.fakeChange();
+            latch.isOnContentDirtyBeCalled(DEFAULT_TIMEOUT);
             mAlbumSet.reload();
-        }
-
-        int mReloadCount;
-        @Override
-        public void onContentChanged() {
-            ++mReloadCount;
-            if (mReloadCount == 1) {
-                verifyResult();
-            } else {
-                assertEquals(1, mAlbumSet.getSubMediaSetCount());
-                Looper.myLooper().quit();
-            }
+            assertEquals(1, mAlbumSet.getSubMediaSetCount());
         }
     }
 
     class TestDeleteOneImage extends TestLocalImageAlbum {
+
         @Override
         public void prepareData(SQLiteDatabase db) {
             createImageTable(db);
@@ -240,6 +228,7 @@ public class LocalDataTest extends AndroidTestCase {
             long uid = item.getUniqueId();
             assertTrue((sub.getSupportedOperations(uid) & MediaSet.SUPPORT_DELETE) != 0);
             mContext.getDataManager().delete(uid);
+            sub.reload();
             assertEquals(0, sub.getMediaItemCount());
         }
     }

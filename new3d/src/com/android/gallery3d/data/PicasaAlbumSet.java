@@ -27,18 +27,22 @@ import com.android.gallery3d.picasa.PicasaContentProvider;
 import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // PicasaAlbumSet lists all albums in a Picasa account.
-public class PicasaAlbumSet extends DatabaseMediaSet {
+public class PicasaAlbumSet extends MediaSet {
     private static final String TAG = "PicasaAlbumSet";
     private final EntrySchema SCHEMA = AlbumEntry.SCHEMA;
 
     private ArrayList<PicasaAlbum> mAlbums = new ArrayList<PicasaAlbum>();
     private final ArrayList<AlbumEntry> mLoadBuffer = new ArrayList<AlbumEntry>();
     private final long mUniqueId;
+    private GalleryContext mContext;
+    private AtomicBoolean mContentDirty = new AtomicBoolean(true);
 
     public PicasaAlbumSet(int parentId, int childKey, GalleryContext context) {
-        super(context);
+        mContext = context;
         mUniqueId = context.getDataManager().obtainSetId(parentId, childKey, this);
         context.getContentResolver().registerContentObserver(
                 PicasaContentProvider.ALBUMS_URI, true, new MyContentObserver());
@@ -49,6 +53,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return mAlbums.get(index);
     }
 
+    @Override
     public int getSubMediaSetCount() {
         return mAlbums.size();
     }
@@ -63,6 +68,7 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return mUniqueId;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int totalCount = 0;
         for (PicasaAlbum album : mAlbums) {
@@ -71,10 +77,9 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         return totalCount;
     }
 
-    @Override
-    protected void onLoadFromDatabase() {
+    private ArrayList<PicasaAlbum> loadSubMediaSets() {
         Utils.assertNotInRenderThread();
-        Cursor cursor = mResolver.query(
+        Cursor cursor = mContext.getContentResolver().query(
                 PicasaContentProvider.ALBUMS_URI,
                 SCHEMA.getProjection(), null, null, null);
         try {
@@ -85,14 +90,11 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
         } finally {
             cursor.close();
         }
-    }
 
-    @Override
-    protected void onUpdateContent() {
         ArrayList<PicasaAlbum> newAlbums = new ArrayList<PicasaAlbum>();
-        int parentId = getMyId();
         DataManager dataManager = mContext.getDataManager();
 
+        int parentId = getMyId();
         for (int i = 0, n = mLoadBuffer.size(); i < n; i++) {
             AlbumEntry entry = mLoadBuffer.get(i);
             int childKey = (int) entry.id;
@@ -102,12 +104,12 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
             }
             newAlbums.add(album);
         }
-        mAlbums = newAlbums;
-        mLoadBuffer.clear();
 
-        for (int i = 0, n = mAlbums.size(); i < n; i++) {
+        for (int i = 0, n = mAlbums.size(); i < n; ++i) {
             mAlbums.get(i).reload();
         }
+        Collections.sort(newAlbums, PicasaAlbum.sEditDateComparator);
+        return newAlbums;
     }
 
     private class MyContentObserver extends ContentObserver {
@@ -117,7 +119,18 @@ public class PicasaAlbumSet extends DatabaseMediaSet {
 
         @Override
         public void onChange(boolean selfChange) {
-            notifyContentDirty();
+            if (mContentDirty.compareAndSet(false, true)) {
+                if (mListener != null) mListener.onContentDirty();
+            }
         }
+    }
+
+    @Override
+    public boolean reload() {
+        if (!mContentDirty.compareAndSet(true, false)) return false;
+        ArrayList<PicasaAlbum> album = loadSubMediaSets();
+        if (album.equals(mAlbums)) return false;
+        mAlbums = album;
+        return true;
     }
 }

@@ -14,11 +14,22 @@ import com.android.gallery3d.util.Utils;
 import java.util.ArrayList;
 
 public class AlbumDataAdapter implements AlbumView.Model {
+    private static final String TAG = "AlbumDataAdapter";
+
+    private static final long RELOAD_DELAY = 100; // 100ms
 
     private static final int MSG_UPDATE_DATA = 1;
     private static final int MSG_LOAD_DATA = 2;
 
-    private static int UPDATE_LIMIT = 32;
+    private static final int MIN_LOAD_COUNT = 32;
+    private static final int MAX_LOAD_COUNT = 64;
+
+    // Load the data because the source has been changed
+    private static final int LOAD_SOURCE = 1;
+    // Load the size for initial content
+    private static final int LOAD_SIZE = 2;
+    // Load the data for new content range
+    private static final int LOAD_RANGE = 4;
 
     private final MediaItem[] mData;
 
@@ -31,7 +42,7 @@ public class AlbumDataAdapter implements AlbumView.Model {
     private final MediaSet mSource;
     private final Handler mMainHandler;
     private final Handler mDataHandler;
-    private int mSize;
+    private int mSize = 0;
 
     private AlbumView.ModelListener mListener;
 
@@ -40,7 +51,6 @@ public class AlbumDataAdapter implements AlbumView.Model {
 
         mSource = albumSet;
         mData = new MediaItem[cacheSize];
-        mSize = albumSet.getMediaItemCount();
 
         mDataHandler = new Handler(context.getDataManager().getDataLooper()) {
             @Override
@@ -57,26 +67,8 @@ public class AlbumDataAdapter implements AlbumView.Model {
                 ((ReloadTask) message.obj).updateContent();
             }
         };
-    }
 
-    private void updateCacheData(ArrayList<MediaItem> update, int offset) {
-        int start = Math.max(offset, mContentStart);
-        int end = Math.min(offset + update.size(), mContentEnd);
-
-        MediaItem data[] = mData;
-        int size = data.length;
-        int dataIndex = start % size;
-        for (int i = start; i < end; ++i) {
-            MediaItem updateItem = update.get(i - offset);
-            MediaItem original = data[dataIndex];
-            if (original != updateItem) {
-                data[dataIndex] = updateItem;
-                if (mListener != null) {
-                    mListener.onWindowContentChanged(i, original, updateItem);
-                }
-            }
-            if (++dataIndex == size) dataIndex = 0;
-        }
+        reloadData(LOAD_SIZE, 0, 0, 0);
     }
 
     public MediaItem get(int index) {
@@ -103,7 +95,7 @@ public class AlbumDataAdapter implements AlbumView.Model {
             for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
                 data[i % length] = null;
             }
-            reloadData(contentStart, contentEnd, false);
+            reloadData(LOAD_RANGE, contentStart, contentEnd, 0);
         } else {
             for (int i = mContentStart; i < contentStart; ++i) {
                 data[i % length] = null;
@@ -111,11 +103,13 @@ public class AlbumDataAdapter implements AlbumView.Model {
             for (int i = contentEnd, n = mContentEnd; i < n; ++i) {
                 data[i % length] = null;
             }
-            reloadData(contentStart, mContentStart, false);
-            reloadData(mContentEnd, contentEnd, false);
+            reloadData(LOAD_RANGE, contentStart, mContentStart, 0);
+            reloadData(LOAD_RANGE, mContentEnd, contentEnd, 0);
         }
-        mContentStart = contentStart;
-        mContentEnd = contentEnd;
+        synchronized (this) {
+            mContentStart = contentStart;
+            mContentEnd = contentEnd;
+        }
     }
 
     public void setActiveWindow(int start, int end) {
@@ -138,27 +132,21 @@ public class AlbumDataAdapter implements AlbumView.Model {
                 0, Math.max(0, mSize - length));
         int contentEnd = Math.min(contentStart + length, mSize);
         if (mContentStart > start || mContentEnd < end
-                || Math.abs(contentStart - mContentStart) > UPDATE_LIMIT) {
+                || Math.abs(contentStart - mContentStart) > MIN_LOAD_COUNT) {
             setContentWindow(contentStart, contentEnd);
         }
     }
 
-    private void onSourceContentChanged() {
-        reloadData(mContentStart, mContentEnd, true);
-    }
-
-    private void reloadData(int start, int end, boolean reloadSize) {
-        if (start < end) {
-            new ReloadTask(start, end, reloadSize).execute();
+    private void reloadData(int loadBits, int start, int end, long delay) {
+        if (start >= end) loadBits &= ~LOAD_RANGE;
+        if (loadBits != 0) {
+            new ReloadTask(loadBits, start, end).execute(delay);
         }
     }
 
     private class MySourceListener implements MediaSet.MediaSetListener {
-        public void onContentChanged() {
-            onSourceContentChanged();
-        }
-
         public void onContentDirty() {
+            reloadData(LOAD_SOURCE, mContentStart, mContentEnd, RELOAD_DELAY);
         }
     }
 
@@ -166,39 +154,90 @@ public class AlbumDataAdapter implements AlbumView.Model {
         mListener = listener;
     }
 
+    // TODO: use only one ReloadTask to update content
     private class ReloadTask {
-        private final int mStart;
-        private final int mEnd;
-        private final boolean mReloadSize;
-        private int mUpdateSize;
+        private int mStart;
+        private int mEnd;
+        private int mLoadBits;
+        private int mUpdateSize = -1;
         private ArrayList<MediaItem> mUpdateItems;
 
-        public ReloadTask(int start, int end, boolean reloadSize) {
+        public ReloadTask(int loadBits, int start, int end) {
             mStart = start;
             mEnd = end;
-            mReloadSize = reloadSize;
+            mLoadBits = loadBits;
         }
 
-        public void execute() {
-            mDataHandler.sendMessage(
-                    mDataHandler.obtainMessage(MSG_LOAD_DATA, this));
+        public void execute(long delayed) {
+            mDataHandler.sendMessageDelayed(
+                    mDataHandler.obtainMessage(MSG_LOAD_DATA, this), delayed);
         }
 
         public void loadFromDatabase() {
-            if (mReloadSize) {
+            int loadBits = mLoadBits;
+
+            if ((loadBits & LOAD_SOURCE) != 0) {
+                if (!mSource.reload()) loadBits &= ~LOAD_SOURCE;
+            }
+
+            if ((loadBits & (LOAD_SOURCE | LOAD_SIZE)) != 0) {
                 mUpdateSize = mSource.getMediaItemCount();
             }
-            mUpdateItems = mSource.getMediaItem(mStart, mEnd - mStart);
-            mMainHandler.sendMessage(
-                    mMainHandler.obtainMessage(MSG_UPDATE_DATA, this));
+
+            if ((loadBits & LOAD_RANGE) != 0) {
+                synchronized (AlbumDataAdapter.this) {
+                    mStart = Math.max(mContentStart, mStart);
+                    mEnd = Math.min(mContentEnd, mEnd);
+                }
+
+                int count = Math.min(MAX_LOAD_COUNT, mEnd - mStart);
+                if (count > 0) {
+                    mUpdateItems = mSource.getMediaItem(mStart, count);
+                } else {
+                    loadBits &= ~LOAD_RANGE;
+                    mUpdateItems = null;
+                }
+            }
+
+            if (loadBits != 0) {
+                mMainHandler.sendMessage(
+                        mMainHandler.obtainMessage(MSG_UPDATE_DATA, this));
+            }
         }
 
         public void updateContent() {
-            if (mReloadSize && mSize != mUpdateSize) {
+            if (mUpdateSize >= 0 && mSize != mUpdateSize) {
                 mSize = mUpdateSize;
                 if (mListener != null) mListener.onSizeChanged(mSize);
             }
-            updateCacheData(mUpdateItems, mStart);
+            if (mUpdateItems == null) return;
+
+            int start = Math.max(mStart, mContentStart);
+            int end = Math.min(mStart + mUpdateItems.size(), mContentEnd);
+            MediaItem data[] = mData;
+            int size = data.length;
+            int dataIndex = start % size;
+            for (int i = start; i < end; ++i) {
+                MediaItem updateItem = mUpdateItems.get(i - mStart);
+                MediaItem original = data[dataIndex];
+                // TODO: we should implement equals() for MediaItem
+                //       to see if the item has been changed.
+                if (original != updateItem) {
+                    data[dataIndex] = updateItem;
+                    if (mListener != null && i >= mActiveStart && i < mActiveEnd) {
+                        mListener.onWindowContentChanged(i, original, updateItem);
+                    }
+                }
+                if (++dataIndex == size) dataIndex = 0;
+            }
+
+            mStart = Math.max(mContentStart, mStart + mUpdateItems.size());
+            mEnd = Math.min(mEnd, mContentEnd);
+            if (mStart < mEnd && mUpdateItems.size() == MAX_LOAD_COUNT) {
+                mLoadBits &= ~(LOAD_SOURCE | LOAD_SIZE);
+                mDataHandler.sendMessage(
+                        mDataHandler.obtainMessage(MSG_LOAD_DATA, this));
+            }
         }
     }
 }

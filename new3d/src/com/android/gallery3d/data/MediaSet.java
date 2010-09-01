@@ -35,7 +35,6 @@ public abstract class MediaSet {
 
     public interface MediaSetListener {
         public void onContentDirty();
-        public void onContentChanged();
     }
 
     public int getMediaItemCount() {
@@ -72,7 +71,10 @@ public abstract class MediaSet {
         mListener = listener;
     }
 
-    public abstract void reload();
+    // Reload the content. Return true if the content is changed; false otherwise.
+    // reload should be called in the same thread as getMediaItem(int, int) and
+    // getSubMediaSet(int).
+    public abstract boolean reload();
 
     public int getSupportedOperations(long uniqueId) {
         return 0;

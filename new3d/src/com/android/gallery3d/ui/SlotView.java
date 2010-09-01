@@ -343,7 +343,6 @@ public class SlotView extends GLView {
         @Override
         public boolean onFling(MotionEvent e1,
                 MotionEvent e2, float velocityX, float velocityY) {
-            Log.v(TAG, String.format("fling at speed %s", velocityX));
             int scrollLimit = mLayout.getScrollLimit();
             if (scrollLimit == 0) return false;
             velocityX = Utils.clamp(velocityX, -MAX_VELOCITY, MAX_VELOCITY);
