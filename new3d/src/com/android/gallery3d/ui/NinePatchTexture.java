@@ -146,8 +146,9 @@ class NinePatchInstance {
     // We need 16 vertices for a normal nine-patch image (the 4x4 vertices)
     private static final int VERTEX_BUFFER_SIZE = 16 * 2;
 
-    // We need 22 indices for a normal nine-patch image
-    private static final int INDEX_BUFFER_SIZE = 22;
+    // We need 22 indices for a normal nine-patch image, plus 2 for each
+    // transparent region. Current there are at most 1 transparent region.
+    private static final int INDEX_BUFFER_SIZE = 22 + 2;
 
     private FloatBuffer mXyBuffer;
     private FloatBuffer mUvBuffer;
@@ -187,7 +188,7 @@ class NinePatchInstance {
         int nx = stretch(divX, divU, chunk.mDivX, tex.getWidth(), width);
         int ny = stretch(divY, divV, chunk.mDivY, tex.getHeight(), height);
 
-        prepareVertexData(divX, divY, divU, divV, nx, ny);
+        prepareVertexData(divX, divY, divU, divV, nx, ny, chunk.mColor);
     }
 
     /**
@@ -269,8 +270,8 @@ class NinePatchInstance {
         return last + 1;
     }
 
-    private void prepareVertexData(
-            int x[], int y[], float u[], float v[], int nx, int ny) {
+    private void prepareVertexData(int x[], int y[], float u[], float v[],
+            int nx, int ny, int[] color) {
         /*
          * Given a 3x3 nine-patch image, the vertex order is defined as the
          * following graph:
@@ -305,24 +306,38 @@ class NinePatchInstance {
         }
 
         int idxCount = 1;
+        boolean isForward = false;
         byte index[] = new byte[INDEX_BUFFER_SIZE];
-        for (int i = 0, bound = nx * (ny - 1); true;) {
-            // normal direction
+        for (int row = 0; row < ny - 1; row++) {
             --idxCount;
-            for (int j = 0; j < nx; ++j, ++i) {
-                index[idxCount++] = (byte) i;
-                index[idxCount++] = (byte) (i + nx);
-            }
-            if (i >= bound) break;
+            isForward = !isForward;
 
-            // reverse direction
-            int sum = i + i + nx - 1;
-            --idxCount;
-            for (int j = 0; j < nx; ++j, ++i) {
-                index[idxCount++] = (byte) (sum - i);
-                index[idxCount++] = (byte) (sum - i + nx);
+            int start, end, inc;
+            if (isForward) {
+                start = 0;
+                end = nx;
+                inc = 1;
+            } else {
+                start = nx - 1;
+                end = -1;
+                inc = -1;
             }
-            if (i >= bound) break;
+
+            for (int col = start; col != end; col += inc) {
+                int k = row * nx + col;
+                if (col != start) {
+                    int colorIdx = row * (nx - 1) + col;
+                    if (isForward) colorIdx--;
+                    if (color[colorIdx] == NinePatchChunk.TRANSPARENT_COLOR) {
+                        index[idxCount] = index[idxCount - 1];
+                        ++idxCount;
+                        index[idxCount++] = (byte) k;
+                    }
+                }
+
+                index[idxCount++] = (byte) k;
+                index[idxCount++] = (byte) (k + nx);
+            }
         }
 
         mIdxCount = idxCount;
