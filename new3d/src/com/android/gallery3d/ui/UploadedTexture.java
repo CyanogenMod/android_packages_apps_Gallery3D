@@ -16,10 +16,10 @@
 
 package com.android.gallery3d.ui;
 
-import com.android.gallery3d.util.Utils;
-
 import android.graphics.Bitmap;
 import android.opengl.GLUtils;
+
+import com.android.gallery3d.util.Utils;
 
 import javax.microedition.khronos.opengles.GL11;
 import javax.microedition.khronos.opengles.GL11Ext;

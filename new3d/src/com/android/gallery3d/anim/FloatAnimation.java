@@ -9,6 +9,7 @@ public class FloatAnimation extends Animation {
     public FloatAnimation(float from, float to, int duration) {
         mFrom = from;
         mTo = to;
+        mCurrent = from;
         setDuration(duration);
     }
 
