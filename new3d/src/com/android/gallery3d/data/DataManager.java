@@ -28,6 +28,7 @@ import com.android.gallery3d.util.IdentityCache;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 // DataManager manages all media sets and media items in the system.
 //
@@ -211,5 +212,10 @@ public class DataManager {
         int parentId = DataManager.extractParentId(uniqueId);
         MediaSet parent = getMediaSet(parentId);
         return parent.getMediaType(uniqueId);
+    }
+
+    public Map<Integer, String> getDetails(long uniqueId) {
+        // TODO: implement get details
+        return null;
     }
 }

@@ -42,6 +42,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
 
     private AdaptiveBackground mBackground;
     private AlbumView mAlbumView;
+    private HudMenu mHudMenu;
     private HeadUpDisplay mHud;
     private SynchronizedHandler mHandler;
     private Bitmap mBgImages[];
@@ -116,6 +117,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     @Override
     public void onPause() {
         mHandler.removeMessages(CHANGE_BACKGROUND);
+        mHudMenu.onPause();
     }
 
     private void initializeViews() {
@@ -126,7 +128,8 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         mAlbumView = new AlbumView(mContext, mSelectionManager);
         mRootPane.addComponent(mAlbumView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
-        mHud.setMenu(new HudMenu(mContext, mSelectionManager));
+        mHudMenu = new HudMenu(mContext, mSelectionManager);
+        mHud.setMenu(mHudMenu);
         mRootPane.addComponent(mHud);
         mAlbumView.setSlotTapListener(this);
 

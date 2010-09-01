@@ -16,6 +16,7 @@
 
 package com.android.gallery3d.ui;
 
+import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -24,11 +25,14 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Handler;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.MediaSet;
+import com.android.gallery3d.ui.MenuExecutor.MediaOperation;
+import com.android.gallery3d.ui.MenuExecutor.OnProgressUpdateListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,9 +52,63 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
     NinePatchTexture mHighlight;
     SelectionManager mSelectionManager;
     MenuModel[] mMenuModels;
+    MenuExecutor mMenuExecutor;
     MenuItem mShare;
     MenuItem mDelete;
     MenuItem mMore;
+    ProgressUpdateDialog mDialog;
+
+    private class ProgressUpdateDialog extends ProgressDialog implements OnProgressUpdateListener {
+        Handler mUiHandler;
+        MediaOperation mOperation;
+        boolean mIsDead;
+
+        public ProgressUpdateDialog(int title, int total) {
+            super(mContext.getAndroidContext());
+            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            mUiHandler = new Handler();
+            setTitle(title);
+            setMax(total);
+            show();
+        }
+
+        /**
+         * The following two methods are callbacks from data thread.
+         */
+        public void onProgressUpdate(final int index, Object result) {
+            mUiHandler.post(new Runnable() {
+                public void run() {
+                    if (!mIsDead) setProgress(index);
+                }
+            });
+        }
+
+        public void onProgressComplete() {
+            // SourceMediaSet remains unchanged since SelectionManager is created so race condition
+            // between UI and data threads is not a concern here.
+            // reload has to be called from data thread.
+            mSelectionManager.getSourceMediaSet().reload();
+            // dismiss() can be called from any thread.
+            dismiss();
+        }
+
+        // This will be called when back is pressed or dismiss() is called.
+        protected void onStop() {
+            stop();
+            mSelectionManager.leaveSelectionMode();
+        }
+
+        public void stop() {
+            if (!mIsDead) {
+                mIsDead = true;
+                mOperation.cancel();
+            }
+        }
+
+        public void setOperation(MediaOperation operation) {
+            mOperation = operation;
+        }
+    }
 
     public HudMenu(GalleryContext context, SelectionManager manager) {
         mContext = context;
@@ -58,6 +116,14 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
         mHighlight = new NinePatchTexture(context.getAndroidContext(), R.drawable.menu_highlight);
         manager.setSelectionListener(this);
         mMenuModels = new MenuModel[TOTAL_MODEL_COUNT];
+        mMenuExecutor = new MenuExecutor(context.getDataManager());
+    }
+
+    public void onPause() {
+        if (mDialog != null) {
+            mDialog.stop();
+            mDialog = null;
+        }
     }
 
     public MenuBar getTopMenuBar() {
@@ -130,6 +196,31 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
          * Handle the menu operation here.
          */
         public void onItemSelected(int position) {
+            MenuItem item = (MenuItem) getView(position);
+            int title;
+            int action = item.getItemId();
+            switch (action) {
+                case MenuExecutor.ACTION_DELETE:
+                    title = R.string.delete;
+                    break;
+                case MenuExecutor.ACTION_ROTATE_CW:
+                    title = R.string.rotate_right;
+                    break;
+                case MenuExecutor.ACTION_ROTATE_CCW:
+                    title = R.string.rotate_left;
+                    break;
+                case MenuExecutor.ACTION_DETAILS:
+                    title = R.string.details;
+                    break;
+                default:
+                    return;
+            }
+
+            ArrayList<Long> ids = mSelectionManager.getSelected(false);
+            if (mDialog != null) mDialog.stop();
+            mDialog = new ProgressUpdateDialog(title, ids.size());
+            MediaOperation operation = mMenuExecutor.startMediaOperation(action, ids, mDialog);
+            mDialog.setOperation(operation);
         }
     }
 
@@ -182,7 +273,9 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
             ArrayList<Uri> uris = new ArrayList<Uri>(items.size());
             DataManager manager = mContext.getDataManager();
             for (Long id : items) {
-                uris.add(manager.getMediaItemUri(id));
+                if ((manager.getSupportedOperations(id) & MediaSet.SUPPORT_SHARE) != 0) {
+                    uris.add(manager.getMediaItemUri(id));
+                }
             }
 
             if (uris.isEmpty()) {
@@ -216,7 +309,7 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
                 , mHighlight);
         mMenuModels[DELETE_MODEL] = new MenuModel(new MenuItem[] {
                 new MenuItem(context, R.drawable.icon_delete, R.string.confirm_delete,
-                        mHighlight),
+                        mHighlight, MenuExecutor.ACTION_DELETE),
                 new MenuItem(context, R.drawable.icon_cancel, R.string.cancel,
                         mHighlight)
          });
@@ -226,11 +319,11 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
         mMore = new MenuItem(context, R.drawable.icon_more, R.string.more, mHighlight);
         mMenuModels[MORE_MODEL] = new MenuModel(new MenuItem[] {
                 new MenuItem(context, R.drawable.icon_details, R.string.details,
-                        mHighlight),
+                        mHighlight, MenuExecutor.ACTION_DETAILS),
                 new MenuItem(context, R.drawable.icon_details, R.string.rotate_right,
-                        mHighlight),
+                        mHighlight, MenuExecutor.ACTION_ROTATE_CW),
                 new MenuItem(context, R.drawable.icon_details, R.string.rotate_left,
-                        mHighlight),
+                        mHighlight, MenuExecutor.ACTION_ROTATE_CCW),
         });
         mBottomBar.addComponent(mMore);
     }

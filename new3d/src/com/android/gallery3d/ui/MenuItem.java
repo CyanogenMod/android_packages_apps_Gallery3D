@@ -20,16 +20,27 @@ import android.content.Context;
 import android.graphics.Rect;
 
 public class MenuItem extends IconLabel {
+    private static final int ACTION_NONE = 0;
     private boolean mSelected;
     private Texture mHighlight;
+    private int mItemId;
 
     public MenuItem(Context context, int icon, int label, Texture highlight) {
+        this(context, icon, label, highlight, ACTION_NONE);
+    }
+
+    public MenuItem(Context context, int icon, int label, Texture highlight, int itemId) {
         super(context, icon, label);
         mHighlight = highlight;
+        mItemId = itemId;
     }
 
     public MenuItem(Context context, BasicTexture texture, String label) {
         super(context, texture, label);
+    }
+
+    public int getItemId() {
+        return mItemId;
     }
 
     public void setHighlight(Texture texture) {
