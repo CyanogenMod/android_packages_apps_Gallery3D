@@ -16,6 +16,7 @@
 
 package com.android.gallery3d.data;
 
+import android.net.Uri;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
@@ -198,5 +199,17 @@ public class DataManager {
         int parentId = DataManager.extractParentId(uniqueId);
         MediaSet parent = getMediaSet(parentId);
         parent.rotate(uniqueId, degrees);
+    }
+
+    public Uri getMediaItemUri(long uniqueId) {
+        int parentId = DataManager.extractParentId(uniqueId);
+        MediaSet parent = getMediaSet(parentId);
+        return parent.getMediaItemUri(uniqueId);
+    }
+
+    public int getMediaType(long uniqueId) {
+        int parentId = DataManager.extractParentId(uniqueId);
+        MediaSet parent = getMediaSet(parentId);
+        return parent.getMediaType(uniqueId);
     }
 }

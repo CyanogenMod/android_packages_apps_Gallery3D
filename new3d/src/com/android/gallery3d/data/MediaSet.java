@@ -16,6 +16,8 @@
 
 package com.android.gallery3d.data;
 
+import android.net.Uri;
+
 import java.util.ArrayList;
 
 // MediaSet is a directory-like data structure.
@@ -32,6 +34,12 @@ public abstract class MediaSet {
     // Below are the bits returned from getSupportedOperations():
     public static final int SUPPORT_DELETE = 1;
     public static final int SUPPORT_ROTATE = 2;
+    public static final int SUPPORT_SHARE = 4;
+
+    public static final int MEDIA_TYPE_UNKNOWN = 1;
+    public static final int MEDIA_TYPE_IMAGE = 2;
+    public static final int MEDIA_TYPE_VIDEO = 4;
+    public static final int MEDIA_TYPE_ALL = MEDIA_TYPE_IMAGE | MEDIA_TYPE_VIDEO;
 
     public interface MediaSetListener {
         public void onContentDirty();
@@ -86,6 +94,14 @@ public abstract class MediaSet {
 
     public void rotate(long uniqueId, int degrees) {
         throw new UnsupportedOperationException();
+    }
+
+    public Uri getMediaItemUri(long uniqueId) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getMediaType(long uniqueId) {
+        return MEDIA_TYPE_UNKNOWN;
     }
 
     public int getMergeId() {

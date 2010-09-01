@@ -28,6 +28,10 @@ public class MenuItem extends IconLabel {
         mHighlight = highlight;
     }
 
+    public MenuItem(Context context, BasicTexture texture, String label) {
+        super(context, texture, label);
+    }
+
     public void setHighlight(Texture texture) {
         mHighlight = texture;
     }

@@ -197,9 +197,19 @@ public class LocalAlbum extends MediaSet {
         // TODO
     }
 
+    public Uri getMediaItemUri(long uniqueId) {
+        Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
+        int itemId = DataManager.extractSelfId(uniqueId);
+        return mBaseUri.buildUpon().appendPath(String.valueOf(itemId)).build();
+    }
+
     public void deleteSelf() {
         Utils.assertNotInRenderThread();
         mResolver.delete(mBaseUri, mWhereClause,
                 new String[]{String.valueOf(mBucketId)});
+    }
+
+    public int getMediaType(long uniqueId) {
+        return mIsImage ? MEDIA_TYPE_IMAGE : MEDIA_TYPE_VIDEO;
     }
 }
