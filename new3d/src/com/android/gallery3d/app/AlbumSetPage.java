@@ -25,8 +25,8 @@ import android.os.Message;
 import com.android.gallery3d.R;
 import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.AdaptiveBackground;
-import com.android.gallery3d.ui.GLView;
 import com.android.gallery3d.ui.AlbumSetView;
+import com.android.gallery3d.ui.GLView;
 import com.android.gallery3d.ui.HeadUpDisplay;
 import com.android.gallery3d.ui.SelectionManager;
 import com.android.gallery3d.ui.SlotView;
@@ -76,6 +76,8 @@ public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListe
         if (!mSelectionManager.isSelectionMode()) {
             Bundle data = new Bundle();
             data.putInt(AlbumPage.KEY_BUCKET_INDEX, slotIndex);
+            // uncomment the following line to test slideshow mode
+            // mContext.getStateManager().startState(SlideshowPage.class, data);
             mContext.getStateManager().startState(AlbumPage.class, data);
         } else {
             mSelectionManager.selectSlot(slotIndex);
