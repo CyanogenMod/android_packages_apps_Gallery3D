@@ -16,8 +16,17 @@ import java.util.ArrayList;
 public class AlbumSetDataAdapter implements AlbumSetView.Model {
     private static final String TAG = "AlbumSetDataAdapter";
 
-    private static final int UPDATE_LIMIT = 32;
+    private static final long RELOAD_DELAY = 100; // 100ms
+
+    private static final int MIN_LOAD_COUNT = 4;
     private static final int MAX_COVER_COUNT = 4;
+
+    // Load the data because the source has been changed
+    private static final int LOAD_SOURCE = 1;
+    // Load the initial content
+    private static final int LOAD_SIZE = 2;
+    // Load the data for new content range
+    private static final int LOAD_RANGE = 4;
 
     private static final int MSG_UPDATE_CONTENT = 1;
     private static final int MSG_LOAD_CONTENT = 2;
@@ -45,7 +54,6 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
 
         mSource = albumSet;
         mData = new MediaItem[cacheSize][];
-        mSize = albumSet.getMediaItemCount();
 
         mMainHandler = new SynchronizedHandler(context.getGLRoot()) {
             @Override
@@ -62,6 +70,8 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
                 ((ReloadTask) message.obj).loadFromDatabase();
             }
         };
+
+        reloadData(LOAD_SIZE, 0, 0, 0);
     }
 
     public MediaItem[] get(int index) {
@@ -87,7 +97,7 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
             for (int i = mContentStart, n = mContentEnd; i < n; ++i) {
                 mData[i % length] = null;
             }
-            reloadData(contentStart, contentEnd);
+            reloadData(LOAD_RANGE, contentStart, contentEnd, 0);
         } else {
             for (int i = mContentStart; i < contentStart; ++i) {
                 mData[i % length] = null;
@@ -95,21 +105,18 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
             for (int i = contentEnd, n = mContentEnd; i < n; ++i) {
                 mData[i % length] = null;
             }
-            reloadData(contentStart, mContentStart);
-            reloadData(mContentEnd, contentEnd);
+            reloadData(LOAD_RANGE, contentStart, mContentStart, 0);
+            reloadData(LOAD_RANGE, mContentEnd, contentEnd, 0);
         }
         mContentStart = contentStart;
         mContentEnd = contentEnd;
     }
 
-    private void reloadData(int start, int end) {
-        if (end <= start) return;
-
-        MediaSet[] sourceSets = new MediaSet[end - start];
-        for (int i = start; i < end; ++i) {
-            sourceSets[i - start] = mSource.getSubMediaSet(i);
+    private void reloadData(int loadBits, int start, int end, long delay) {
+        if (start >= end) loadBits &= ~LOAD_RANGE;
+        if (loadBits != 0) {
+            new ReloadTask(loadBits, start, end).execute(delay);
         }
-        new ReloadTask(sourceSets, start).execute();
     }
 
     public void setActiveWindow(int start, int end) {
@@ -132,28 +139,14 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
                 0, Math.max(0, mSize - length));
         int contentEnd = Math.min(contentStart + length, mSize);
         if (mContentStart > start || mContentEnd < end
-                || Math.abs(contentStart - mContentStart) > UPDATE_LIMIT) {
+                || Math.abs(contentStart - mContentStart) > MIN_LOAD_COUNT) {
             setContentWindow(contentStart, contentEnd);
         }
     }
 
-    private void onSourceContentChanged() {
-        int size = mSource.getSubMediaSetCount();
-        if (mSize != size) {
-            mSize = size;
-            if (mListener != null) mListener.onSizeChanged(size);
-        }
-        reloadData(mContentStart, mContentEnd);
-    }
-
     private class MySourceListener implements MediaSet.MediaSetListener {
-
         public void onContentDirty() {
-            mSource.reload();
-        }
-
-        public void onContentChanged() {
-            onSourceContentChanged();
+            reloadData(LOAD_SOURCE, mContentStart, mContentEnd, RELOAD_DELAY);
         }
     }
 
@@ -161,43 +154,78 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
         mListener = listener;
     }
 
+    // TODO: using only one task to update the content
     private class ReloadTask {
-        private final int mOffset;
-        private final MediaSet mSourceSets[];
-        private ArrayList<MediaItem[]> mLoadData = new ArrayList<MediaItem[]>();
+        private int mStart;
+        private int mEnd;
+        private final int mLoadBits;
 
-        public ReloadTask(MediaSet[] sourceSets, int offset) {
-            mSourceSets = sourceSets;
-            mOffset = offset;
+        private MediaItem[] mLoadData = null;
+        private int mUpdateSize = -1;
+
+        public ReloadTask(int loadBits, int start, int end) {
+            mStart = start;
+            mEnd = end;
+            mLoadBits = loadBits;
         }
 
-        public void execute() {
-            mDataHandler.sendMessage(
-                    mDataHandler.obtainMessage(MSG_LOAD_CONTENT, this));
+        public void execute(long delay) {
+            mDataHandler.sendMessageDelayed(
+                    mDataHandler.obtainMessage(MSG_LOAD_CONTENT, this), delay);
         }
 
         public void loadFromDatabase() {
-            for (MediaSet set : mSourceSets) {
-                ArrayList<MediaItem> items = set.getMediaItem(0, MAX_COVER_COUNT);
-                mLoadData.add(items.toArray(new MediaItem[items.size()]));
+            int loadBits = mLoadBits;
+            mLoadData = null;
+
+            if ((loadBits & LOAD_SOURCE) != 0) {
+                if (!mSource.reload()) loadBits &= ~LOAD_SOURCE;
             }
-            mMainHandler.sendMessage(
-                    mMainHandler.obtainMessage(MSG_UPDATE_CONTENT, this));
+
+            if ((loadBits & (LOAD_SOURCE | LOAD_SIZE)) != 0) {
+                mUpdateSize = mSource.getSubMediaSetCount();
+            }
+
+            if ((loadBits & LOAD_RANGE) != 0) {
+                int size = mSource.getSubMediaSetCount();
+                MediaSet subset = mSource.getSubMediaSet(mStart);
+                if (subset != null) {
+                    ArrayList<MediaItem> items =
+                            subset.getMediaItem(0, MAX_COVER_COUNT);
+                    mLoadData = items.toArray(new MediaItem[items.size()]);
+                }
+            }
+            if (loadBits != 0) {
+                mMainHandler.sendMessage(
+                        mMainHandler.obtainMessage(MSG_UPDATE_CONTENT, this));
+            }
         }
 
         public void updateContent() {
-            int start = Math.max(mOffset, mContentStart);
-            int end = Math.min(mOffset + mLoadData.size(), mContentEnd);
-            int offset = mOffset;
-            for (int i = start; i < end; ++i) {
-                MediaItem[] update = mLoadData.get(i - offset);
-                MediaItem[] original = mData[i];
+            if (mUpdateSize >= 0 && mUpdateSize != mSize) {
+                mSize = mUpdateSize;
+                if (mListener != null) mListener.onSizeChanged(mSize);
+            }
+            int index = mStart;
+            if (mLoadData != null
+                    && index >= mContentStart && index < mContentEnd) {
+                MediaItem[] update = mLoadData;
+                MediaItem[] original = mData[index];
+                // TODO: Fix it. Find a way to judge if we need to update content
                 if (!update.equals(original)) {
-                    mData[i] = update;
-                    if (mListener != null) {
-                        mListener.onWindowContentChanged(i, original, update);
+                    mData[index] = update;
+                    if (mListener != null
+                            && index >= mActiveStart && index < mActiveEnd) {
+                        mListener.onWindowContentChanged(index, original, update);
                     }
                 }
+            }
+            mStart = index + 1;
+            mStart = Math.max(mContentStart, mStart);
+            mEnd = Math.min(mContentEnd, mEnd);
+            if (mStart < mEnd) {
+                mDataHandler.sendMessage(
+                        mDataHandler.obtainMessage(MSG_LOAD_CONTENT, this));
             }
         }
     }

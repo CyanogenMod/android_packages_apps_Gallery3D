@@ -12,7 +12,9 @@ import com.android.gallery3d.util.Utils;
 
 public class AlbumSlidingWindow implements AlbumView.ModelListener {
     private static final String TAG = "AlbumSlidingWindow";
+
     private static final int MSG_UPDATE_IMAGE = 0;
+    private static final int MSG_UPDATE_SLOT = 1;
 
     public static interface Listener {
         public void onSizeChanged(int size);
@@ -54,8 +56,17 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
         mHandler = new SynchronizedHandler(context.getGLRoot()) {
             @Override
             public void handleMessage(Message message) {
-                Utils.Assert(message.what == MSG_UPDATE_IMAGE);
-                ((AlbumDisplayItem) message.obj).updateImage();
+                switch (message.what) {
+                    case MSG_UPDATE_IMAGE: {
+                        ((AlbumDisplayItem) message.obj).updateImage();
+                        break;
+                    }
+                    case MSG_UPDATE_SLOT: {
+                        updateSlotContent(message.arg1);
+                        break;
+                    }
+
+                }
             }
         };
     }
@@ -184,18 +195,29 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
     }
 
     private void updateSlotContent(final int slotIndex) {
-
         MediaItem item = mSource.get(slotIndex);
         AlbumDisplayItem data[] = mData;
         int index = slotIndex % data.length;
         AlbumDisplayItem original = data[index];
         AlbumDisplayItem update = new AlbumDisplayItem(slotIndex, item);
         data[index] = update;
-        if (mListener != null && isActiveSlot(slotIndex)) {
+        boolean isActive = isActiveSlot(slotIndex);
+        if (mListener != null && isActive) {
             mListener.onWindowContentChanged(slotIndex, original, update);
         }
-        if (original != null) original.recycle();
-        updateAllImageRequests();
+        if (original != null) {
+            if (isActive && original.isRequestInProgress()) {
+                --mActiveRequestCount;
+            }
+            original.recycle();
+        }
+        if (isActive) {
+            if (mActiveRequestCount == 0) cancelNonactiveImages();
+            ++mActiveRequestCount;
+            update.requestImage();
+        } else {
+            if (mActiveRequestCount == 0) update.requestImage();
+        }
     }
 
     private void updateAllImageRequests() {
@@ -226,7 +248,8 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
 
         @Override
         public void onBitmapAvailable(Bitmap bitmap) {
-            if (isActiveSlot(mSlotIndex)) {
+            boolean isActiveSlot = isActiveSlot(mSlotIndex);
+            if (isActiveSlot) {
                 --mActiveRequestCount;
                 if (mActiveRequestCount == 0) requestNonactiveImages();
             }
@@ -234,7 +257,9 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
                 BitmapTexture texture = new BitmapTexture(bitmap);
                 texture.setThrottled(true);
                 updateContent(texture);
-                if (mListener != null) mListener.onContentInvalidated();
+                if (mListener != null && isActiveSlot) {
+                    mListener.onContentInvalidated();
+                }
             }
         }
 

@@ -20,7 +20,6 @@ import com.android.gallery3d.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.TreeSet;
 
 // MergeAlbumSet merges two or more media sets into one.
@@ -65,7 +64,6 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
                 allIds.add(subId);
             }
         }
-
         // Update all existing albums.
         for (MergeAlbum album : mAlbums) {
             album.updateData();
@@ -105,27 +103,25 @@ public class MergeAlbumSet extends MediaSet implements MediaSet.MediaSetListener
     }
 
     @Override
-    public void reload() {
+    public boolean reload() {
+        boolean changed = false;
         for (MediaSet set : mSets) {
-            set.reload();
+            changed |= set.reload();
         }
-    }
-
-    public void onContentChanged() {
-        updateIds();
-        if (mListener != null) {
-            mListener.onContentChanged();
-        }
+        if (changed) updateIds();
+        return changed;
     }
 
     public void onContentDirty() {
         if (mListener != null) mListener.onContentDirty();
     }
 
+    @Override
     public int getSupportedOperations(long uniqueId) {
         return SUPPORT_DELETE;
     }
 
+    @Override
     public void delete(long uniqueId) {
         Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
 

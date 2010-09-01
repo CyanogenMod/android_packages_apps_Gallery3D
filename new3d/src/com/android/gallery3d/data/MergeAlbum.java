@@ -169,18 +169,16 @@ public class MergeAlbum extends MediaSet implements MediaSet.MediaSetListener {
     }
 
     @Override
-    public void reload() {
+    public boolean reload() {
+        boolean changed = false;
         for (MediaSet set : mSets) {
-            set.reload();
+            changed |= set.reload();
         }
-    }
-
-    public void onContentChanged() {
-        invalidateCache();
-        updateData();
-        if (mListener != null) {
-            mListener.onContentChanged();
+        if (changed) {
+            invalidateCache();
+            updateData();
         }
+        return changed;
     }
 
     public void onContentDirty() {

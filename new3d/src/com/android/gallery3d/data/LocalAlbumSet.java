@@ -32,9 +32,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 // LocalAlbumSet lists all image or video albums in the local storage.
-public class LocalAlbumSet extends DatabaseMediaSet {
+public class LocalAlbumSet extends MediaSet {
     private static final String TAG = "LocalAlbumSet";
 
     // The indices should match the following projections.
@@ -52,14 +53,16 @@ public class LocalAlbumSet extends DatabaseMediaSet {
     private final String[] mProjection;
     private final Uri mBaseUri;
 
+    private GalleryContext mContext;
     private boolean mIsImage;
     private long mUniqueId;
     private ArrayList<LocalAlbum> mAlbums = new ArrayList<LocalAlbum>();
-    private final HashMap<Integer, String> mLoadBuffer = new HashMap<Integer, String>();
+    private AtomicBoolean mContentDirty = new AtomicBoolean(true);
+    private final MyContentObserver mContentObserver;
 
     public LocalAlbumSet(int parentId, int childKey, GalleryContext context,
             boolean isImage) {
-        super(context);
+        mContext = context;
         mIsImage = isImage;
         if (isImage) {
             mProjection = PROJECTION_IMAGE_BUCKETS;
@@ -70,8 +73,9 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         }
 
         mUniqueId = context.getDataManager().obtainSetId(parentId, childKey, this);
+        mContentObserver = new MyContentObserver();
         context.getContentResolver().registerContentObserver(
-                mBaseUri, true, new MyContentObserver());
+                mBaseUri, true, mContentObserver);
     }
 
     @Override
@@ -79,11 +83,13 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         return mUniqueId;
     }
 
-    public synchronized MediaSet getSubMediaSet(int index) {
+    @Override
+    public MediaSet getSubMediaSet(int index) {
         return mAlbums.get(index);
     }
 
-    public synchronized int getSubMediaSetCount() {
+    @Override
+    public int getSubMediaSetCount() {
         return mAlbums.size();
     }
 
@@ -92,6 +98,7 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         return TAG;
     }
 
+    @Override
     public int getTotalMediaItemCount() {
         int total = 0;
         for (MediaSet album : mAlbums) {
@@ -100,49 +107,40 @@ public class LocalAlbumSet extends DatabaseMediaSet {
         return total;
     }
 
-    @Override
-    protected void onLoadFromDatabase() {
+    protected ArrayList<LocalAlbum> loadSubMediaSets() {
         Uri uri = mBaseUri.buildUpon().
                 appendQueryParameter("distinct", "true").build();
         Utils.assertNotInRenderThread();
-        Cursor cursor = mResolver.query(
+        Cursor cursor = mContext.getContentResolver().query(
                 uri, mProjection, null, null, null);
         if (cursor == null) throw new NullPointerException();
+        HashMap<Integer, String> buffer = new HashMap<Integer, String>();
         try {
             while (cursor.moveToNext()) {
-                mLoadBuffer.put(cursor.getInt(BUCKET_ID_INDEX),
+                buffer.put(cursor.getInt(BUCKET_ID_INDEX),
                         cursor.getString(BUCKET_NAME_INDEX));
             }
         } finally {
             cursor.close();
         }
-    }
 
-    @Override
-    protected void onUpdateContent() {
-        HashMap<Integer, String> map = mLoadBuffer;
-        ArrayList<LocalAlbum> newAlbums = new ArrayList<LocalAlbum>();
+        ArrayList<LocalAlbum> albums = new ArrayList<LocalAlbum>();
         DataManager dataManager = mContext.getDataManager();
-
         int parentId = getMyId();
-        for (Map.Entry<Integer, String> entry : map.entrySet()) {
+        for (Map.Entry<Integer, String> entry : buffer.entrySet()) {
             int childKey = entry.getKey();
             LocalAlbum album = (LocalAlbum) dataManager.getMediaSet(parentId, childKey);
             if (album == null) {
                 album = new LocalAlbum(parentId, mContext,
                         childKey, entry.getValue(), mIsImage);
             }
-            newAlbums.add(album);
+            albums.add(album);
         }
-
-        mAlbums = newAlbums;
-        mLoadBuffer.clear();
-
-        Collections.sort(mAlbums, LocalAlbum.sBucketNameComparator);
-
-        for (int i = 0, n = mAlbums.size(); i < n; i++) {
-            mAlbums.get(i).reload();
+        for (int i = 0, n = albums.size(); i < n; ++i) {
+            albums.get(i).reload();
         }
+        Collections.sort(albums, LocalAlbum.sBucketNameComparator);
+        return albums;
     }
 
     private class MyContentObserver extends ContentObserver {
@@ -152,19 +150,37 @@ public class LocalAlbumSet extends DatabaseMediaSet {
 
         @Override
         public void onChange(boolean selfChange) {
-            notifyContentDirty();
+            if (mContentDirty.compareAndSet(false, true)) {
+                if (mListener != null) mListener.onContentDirty();
+            }
         }
     }
 
+    @Override
     public int getSupportedOperations(long uniqueId) {
         return SUPPORT_DELETE;
     }
 
+    @Override
     public void delete(long uniqueId) {
         Utils.Assert(DataManager.extractParentId(uniqueId) == getMyId());
 
         int childId = DataManager.extractSelfId(uniqueId);
         LocalAlbum child = (LocalAlbum) mContext.getDataManager().getMediaSet(childId);
         child.deleteSelf();
+    }
+
+    @Override
+    public boolean reload() {
+        if (!mContentDirty.compareAndSet(true, false)) return false;
+        ArrayList<LocalAlbum> album = loadSubMediaSets();
+        if (album.equals(mAlbums)) return false;
+        mAlbums = album;
+        return true;
+    }
+
+    // For debug only. Fake there is a ContentObserver.onChange() event.
+    void fakeChange() {
+        mContentObserver.dispatchChange(true);
     }
 }
