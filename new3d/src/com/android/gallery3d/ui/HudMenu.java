@@ -22,7 +22,6 @@ import com.android.gallery3d.R;
 import com.android.gallery3d.app.GalleryContext;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
 
 public class HudMenu implements HudMenuInterface, SelectionManager.SelectionListener {
     private static final int DELETE_MODEL = 0;
@@ -66,12 +65,22 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
         // Select all
         MenuButton btn = new MenuButton(context, IconLabel.NULL_ID, R.string.select_all);
         btn.setHighlight(mHighlight);
+        btn.setOnClickListener(new MenuButton.OnClickedListener() {
+            public void onClicked(GLView source) {
+                mSelectionManager.selectAll();
+            }
+        });
         mTopBar.addComponent(btn);
 
         // Deselect all
         mTopBar.addComponent(new IconLabel(context, IconLabel.NULL_ID, R.string.items));
         btn = new MenuButton(context, IconLabel.NULL_ID, R.string.deselect_all);
         btn.setHighlight(mHighlight);
+        btn.setOnClickListener(new MenuButton.OnClickedListener() {
+            public void onClicked(GLView source) {
+                mSelectionManager.deSelectAll();
+            }
+        });
         mTopBar.addComponent(btn);
     }
 
