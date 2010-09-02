@@ -143,15 +143,17 @@ public class MediaSet {
     }
 
     public void clear() {
-        mItems.clear();
-        MediaItem item = new MediaItem();
-        item.mId = Shared.INVALID;
-        item.mParentMediaSet = this;
-        mItems.add(item);
-        mNumExpectedItems = 16;
-        refresh();
-        mItemsLookup.clear();
-        mItemsLookupVideo.clear();
+        synchronized(mItems) {
+            mItems.clear();
+            MediaItem item = new MediaItem();
+            item.mId = Shared.INVALID;
+            item.mParentMediaSet = this;
+            mItems.add(item);
+            mNumExpectedItems = 16;
+            refresh();
+            mItemsLookup.clear();
+            mItemsLookupVideo.clear();
+        }
     }
 
     /**
@@ -193,15 +195,17 @@ public class MediaSet {
         }
         final MediaItem item = (lookupItem == null) ? itemToAdd : lookupItem;
         item.mFlagForDelete = false;
-        if (mItems.size() == 0) {
-            mItems.add(item);
-        } else if (mItems.get(0).mId == -1L) {
-            mItems.set(0, item);
-        } else {
-            if (mItems.size() > mCurrentLocation) {
-                mItems.set(mCurrentLocation, item);
+        synchronized(mItems) {
+            if (mItems.size() == 0) {
+                mItems.add(item);
+            } else if (mItems.get(0).mId == -1L) {
+                mItems.set(0, item);
             } else {
-                mItems.add(mCurrentLocation, item);
+                if (mItems.size() > mCurrentLocation) {
+                    mItems.set(mCurrentLocation, item);
+                } else {
+                    mItems.add(mCurrentLocation, item);
+                }
             }
         }
         if (item.mId != Shared.INVALID) {
