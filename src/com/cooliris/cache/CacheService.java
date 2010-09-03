@@ -1054,8 +1054,8 @@ public final class CacheService extends IntentService {
         final String where = Images.ImageColumns.BUCKET_ID + "!=0) GROUP BY (" + Images.ImageColumns.BUCKET_ID + " ";
         ArrayList<Long> retVal = new ArrayList<Long>();
         try {
-            final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, where, null, null);
-            final Cursor cursorVideos = cr.query(uriVideos, SENSE_PROJECTION, where, null, null);
+           final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, where, null, Images.ImageColumns.BUCKET_ID + " DESC");
+           final Cursor cursorVideos = cr.query(uriVideos, SENSE_PROJECTION, where, null, Images.ImageColumns.BUCKET_ID + " DESC");
             Cursor[] cursors = new Cursor[2];
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
