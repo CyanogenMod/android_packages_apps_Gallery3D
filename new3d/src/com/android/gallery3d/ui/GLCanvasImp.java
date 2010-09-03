@@ -589,6 +589,9 @@ public class GLCanvasImp implements GLCanvas {
 
             gl.glEnable(GL11.GL_BLEND);
             gl.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+            // We use 565 or 8888 format, so set the alignment to 2 bytes/pixel.
+            gl.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 2);
         }
 
         public void setTexEnvMode(int mode) {
