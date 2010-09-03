@@ -26,8 +26,16 @@ public class MenuButton extends IconLabel {
     private Texture mHighlight;
     private OnClickedListener mOnClickListener;
 
+    public interface OnClickedListener {
+        public void onClicked(GLView source);
+    }
+
     public MenuButton(Context context, int icon, int label) {
         super(context, icon, label);
+    }
+
+    public void setOnClickListener(OnClickedListener listener) {
+        mOnClickListener = listener;
     }
 
     public void setHighlight(Texture texture) {

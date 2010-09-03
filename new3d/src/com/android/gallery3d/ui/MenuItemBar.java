@@ -16,10 +16,15 @@
 
 package com.android.gallery3d.ui;
 
+import android.content.Context;
 import android.view.MotionEvent;
 
 public class MenuItemBar extends MenuBar {
     public static final int INDEX_NONE = -1;
+
+    public MenuItemBar(int visibility) {
+        super(visibility);
+    }
 
     private OnSelectedListener mOnSelectedListener;
     private MenuItem mSelectedItem;

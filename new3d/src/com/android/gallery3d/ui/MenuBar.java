@@ -19,14 +19,15 @@ package com.android.gallery3d.ui;
 import android.graphics.Rect;
 import android.view.View.MeasureSpec;
 
-class MenuBar extends GLView {
+public class MenuBar extends GLView {
 
     private static final int BORDER_SIZE = 1; // 1 pixel on all devices
     private static final int BORDER_COLOR = 0x33FFFFFF;
 
     private NinePatchTexture mBackground;
 
-    public MenuBar() {
+    public MenuBar(int visibility) {
+        setVisibility(visibility);
     }
 
     public void setBackground(NinePatchTexture background) {

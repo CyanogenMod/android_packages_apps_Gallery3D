@@ -23,8 +23,9 @@ public class MenuItem extends IconLabel {
     private boolean mSelected;
     private Texture mHighlight;
 
-    public MenuItem(Context context, int icon, int label) {
+    public MenuItem(Context context, int icon, int label, Texture highlight) {
         super(context, icon, label);
+        mHighlight = highlight;
     }
 
     public void setHighlight(Texture texture) {
