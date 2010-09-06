@@ -19,6 +19,4 @@
     android:minHeight="146dip"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/photo_frame"
-    android:configure="com.cooliris.media.PhotoAppWidgetConfigure"
-    >
-</appwidget-provider>
+    android:configure="com.android.gallery3d.gadget.PhotoAppWidgetConfigure"/>
