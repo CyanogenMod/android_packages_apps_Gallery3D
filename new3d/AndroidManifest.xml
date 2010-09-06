@@ -4,7 +4,7 @@
     android:versionName="1.1.30682"
     xmlns:android="http://schemas.android.com/apk/res/android" package="com.android.gallery3d">
 
-    <original-package android:name="com.cooliris.media" />
+    <original-package android:name="com.android.gallery3d" />
 
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -97,17 +97,17 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.cooliris.media.action.REVIEW" />
+                <action android:name="com.android.gallery3d.action.REVIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="vnd.android.cursor.dir/image" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.cooliris.media.action.REVIEW" />
+                <action android:name="com.android.gallery3d.action.REVIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="image/*" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.cooliris.media.action.REVIEW" />
+                <action android:name="com.android.gallery3d.action.REVIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="video/*" />
              </intent-filter>
@@ -136,5 +136,20 @@
             </intent-filter>
             <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/syncadapter" />
         </service>
+
+        <receiver android:name="com.android.gallery3d.gadget.PhotoAppWidgetProvider"
+                android:label="@string/gadget_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/appwidget_info" />
+        </receiver>
+
+        <!-- We configure a widget by asking to pick a photo, then crop it, and store the config internally-->
+        <activity android:name="com.android.gallery3d.gadget.PhotoAppWidgetConfigure">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
