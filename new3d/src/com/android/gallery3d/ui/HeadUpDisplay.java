@@ -43,7 +43,6 @@ public class HeadUpDisplay extends GLView {
     private HudMenuInterface mMenu;
 
     private final Context mContext;
-    private final Pathbar mPathbar;
 
     private PopupWindow mPopupWindow;
     private GLListView mListView;
@@ -62,13 +61,7 @@ public class HeadUpDisplay extends GLView {
 
     public HeadUpDisplay(Context context) {
         initializeStaticVariables(context);
-
         mContext = context;
-        mPathbar = new Pathbar(context);
-
-        super.addComponent(mPathbar);
-
-        initialize();
     }
 
     @Override
@@ -78,13 +71,10 @@ public class HeadUpDisplay extends GLView {
         int height = bottom - top;
         int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
         int heightSpec = MeasureSpec.UNSPECIFIED;
-        mPathbar.measure(widthSpec, heightSpec);
         mTopBar.measure(widthSpec, heightSpec);
         mBottomBar.measure(widthSpec, heightSpec);
 
-        mPathbar.layout(0, 0, width, mPathbar.getMeasuredHeight());
-        int offset = mPathbar.getMeasuredHeight();
-        mTopBar.layout(0, offset, width, offset + mTopBar.getMeasuredHeight());
+        mTopBar.layout(0, 0, width, mTopBar.getMeasuredHeight());
         mBottomBar.layout(
                 0, height - mBottomBar.getMeasuredHeight(), width, height);
         if (mPopupWindow != null
@@ -102,24 +92,6 @@ public class HeadUpDisplay extends GLView {
         addComponent(mBottomBar);
 
         mBottomBar.setOnSelectedListener(new BottomBarSelectedListener());
-    }
-
-    private void initialize() {
-        Context context = mContext;
-
-        mPathIcons = new ResourceTexture[] {
-                new ResourceTexture(context, R.drawable.icon_home_small),
-                new ResourceTexture(context, R.drawable.icon_camera_small),
-                new ResourceTexture(context, R.drawable.icon_folder_small),
-                new ResourceTexture(context, R.drawable.icon_picasa_small)};
-
-        mPathTitle = new String[] {"Gallery", "Camera", "Folder", "Picasa"};
-
-        mPathbar.push(mPathIcons[0], mPathTitle[0]);
-        mPathbar.push(mPathIcons[1], mPathTitle[1]);
-        mPathbar.push(mPathIcons[2], mPathTitle[2]);
-
-        mPathbar.setOnClickedListener(new MyPathbarListener());
     }
 
     @Override
@@ -205,22 +177,6 @@ public class HeadUpDisplay extends GLView {
                 layoutPopupWindow(source);
                 if (mPopupWindow.getVisibility() != GLView.VISIBLE) {
                     mPopupWindow.popup();
-                }
-            }
-        }
-    }
-
-    private class MyPathbarListener implements Pathbar.OnClickedListener {
-        public void onClicked(Pathbar source, int index) {
-            int size = mPathbar.size();
-            if (index < size - 1) {
-                mPathbar.pop(size - index - 1);
-            } else {
-                // click on the last item
-                if (size == mPathIcons.length) {
-                    source.get(index).setTitle("No more item");
-                } else {
-                    source.push(mPathIcons[index + 1], mPathTitle[index + 1]);
                 }
             }
         }
