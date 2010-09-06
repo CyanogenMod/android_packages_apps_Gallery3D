@@ -74,7 +74,11 @@ public class AlbumSetDataAdapter implements AlbumSetView.Model {
         reloadData(LOAD_SIZE, 0, 0, 0);
     }
 
-    public MediaItem[] get(int index) {
+    public MediaSet getMediaSet(int index) {
+        return mSource.getSubMediaSet(index);
+    }
+
+    public MediaItem[] getMediaItems(int index) {
         if (index < mActiveStart && index >= mActiveEnd) {
             throw new IllegalArgumentException(String.format(
                     "%s not in (%s, %s)", index, mActiveStart, mActiveEnd));

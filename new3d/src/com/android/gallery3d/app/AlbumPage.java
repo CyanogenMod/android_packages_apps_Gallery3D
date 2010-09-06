@@ -47,6 +47,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     private Bitmap mBgImages[];
     private int mBgIndex = 0;
     private int mBucketIndex;
+    private AlbumDataAdapter mAlbumDataAdapter;
 
     protected SelectionManager mSelectionManager;
 
@@ -66,7 +67,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
 
     @Override
     public void onBackPressed() {
-        if (mSelectionManager.isSelectionMode()) {
+        if (mSelectionManager.inSelectionMode()) {
             mSelectionManager.leaveSelectionMode();
         } else {
             super.onBackPressed();
@@ -74,20 +75,22 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
     }
 
     public void onSingleTapUp(int slotIndex) {
-        if (!mSelectionManager.isSelectionMode()) {
+        if (!mSelectionManager.inSelectionMode()) {
             Bundle data = new Bundle();
             data.putInt(PhotoPage.KEY_SET_INDEX, mBucketIndex);
             data.putInt(PhotoPage.KEY_PHOTO_INDEX, slotIndex);
 
             mContext.getStateManager().startState(PhotoPage.class, data);
         } else {
-            mSelectionManager.selectSlot(slotIndex);
+            long id = mAlbumDataAdapter.get(slotIndex).getUniqueId();
+            mSelectionManager.toggle(id);
             mAlbumView.invalidate();
         }
     }
 
     public void onLongTap(int slotIndex) {
-        mSelectionManager.switchSelectionMode(slotIndex);
+        long id = mAlbumDataAdapter.get(slotIndex).getUniqueId();
+        mSelectionManager.toggle(id);
         mAlbumView.invalidate();
     }
 
@@ -119,7 +122,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);
 
-        mSelectionManager = new SelectionManager(mContext.getAndroidContext());
+        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), false);
         mAlbumView = new AlbumView(mContext, mSelectionManager);
         mRootPane.addComponent(mAlbumView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());
@@ -136,9 +139,10 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         mBucketIndex = data.getInt(KEY_BUCKET_INDEX);
         MediaSet mediaSet = mContext.getDataManager()
                 .getRootSet().getSubMediaSet(mBucketIndex);
-        AlbumDataAdapter dataAdapter =
+        mSelectionManager.setSourceMediaSet(mediaSet);
+        mAlbumDataAdapter =
                 new AlbumDataAdapter(mContext, mediaSet, DATA_CACHE_SIZE);
-        mAlbumView.setModel(dataAdapter);
+        mAlbumView.setModel(mAlbumDataAdapter);
     }
 
     private void changeBackground() {

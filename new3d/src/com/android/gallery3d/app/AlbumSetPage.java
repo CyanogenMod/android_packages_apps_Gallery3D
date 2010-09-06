@@ -48,6 +48,7 @@ public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListe
     private int mBgIndex = 0;
 
     protected SelectionManager mSelectionManager;
+    private AlbumSetDataAdapter mAlbumSetDataAdapter;
 
     private GLView mRootPane = new GLView() {
         @Override
@@ -66,7 +67,7 @@ public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListe
 
     @Override
     public void onBackPressed() {
-        if (mSelectionManager.isSelectionMode()) {
+        if (mSelectionManager.inSelectionMode()) {
             mSelectionManager.leaveSelectionMode();
         } else {
             super.onBackPressed();
@@ -74,20 +75,22 @@ public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListe
     }
 
     public void onSingleTapUp(int slotIndex) {
-        if (!mSelectionManager.isSelectionMode()) {
+        if (!mSelectionManager.inSelectionMode()) {
             Bundle data = new Bundle();
             data.putInt(AlbumPage.KEY_BUCKET_INDEX, slotIndex);
             // uncomment the following line to test slideshow mode
             // mContext.getStateManager().startState(SlideshowPage.class, data);
             mContext.getStateManager().startState(AlbumPage.class, data);
         } else {
-            mSelectionManager.selectSlot(slotIndex);
+            long id = mAlbumSetDataAdapter.getMediaSet(slotIndex).getUniqueId();
+            mSelectionManager.toggle(id);
             mAlbumSetView.invalidate();
         }
     }
 
     public void onLongTap(int slotIndex) {
-        mSelectionManager.switchSelectionMode(slotIndex);
+        long id = mAlbumSetDataAdapter.getMediaSet(slotIndex).getUniqueId();
+        mSelectionManager.toggle(id);
         mAlbumSetView.invalidate();
     }
 
@@ -124,12 +127,13 @@ public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListe
 
     private void intializeData() {
         MediaSet mediaSet = mContext.getDataManager().getRootSet();
-        mAlbumSetView.setModel(
-                new AlbumSetDataAdapter(mContext, mediaSet, DATA_CACHE_SIZE));
+        mSelectionManager.setSourceMediaSet(mediaSet);
+        mAlbumSetDataAdapter = new AlbumSetDataAdapter(mContext, mediaSet, DATA_CACHE_SIZE);
+        mAlbumSetView.setModel(mAlbumSetDataAdapter);
     }
 
     private void initializeViews() {
-        mSelectionManager = new SelectionManager(mContext.getAndroidContext());
+        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), true);
 
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);

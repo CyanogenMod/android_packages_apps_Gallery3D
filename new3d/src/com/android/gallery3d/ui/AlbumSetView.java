@@ -20,6 +20,7 @@ import android.graphics.Rect;
 
 import com.android.gallery3d.app.GalleryContext;
 import com.android.gallery3d.data.MediaItem;
+import com.android.gallery3d.data.MediaSet;
 import com.android.gallery3d.ui.PositionRepository.Position;
 import com.android.gallery3d.util.Utils;
 
@@ -45,7 +46,8 @@ public class AlbumSetView extends SlotView {
     private final SelectionManager mSelectionManager;
 
     public static interface Model {
-        public MediaItem[] get(int index);
+        public MediaItem[] getMediaItems(int index);
+        public MediaSet getMediaSet(int index);
         public int size();
         public void setActiveWindow(int start, int end);
         public void setListener(ModelListener listener);

@@ -19,72 +19,159 @@ package com.android.gallery3d.ui;
 import android.content.Context;
 import android.os.Vibrator;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.android.gallery3d.data.MediaItem;
+import com.android.gallery3d.data.MediaSet;
+
 public class SelectionManager {
-    private Set<Integer> mSelectedSet;
-    private Vibrator mVibrator;
+    private static final String TAG = "SelectionManager";
+    private Set<Long> mClickedSet;
+    private MediaSet mSourceMediaSet;
+    private final Vibrator mVibrator;
     private final SelectionDrawer mDrawer;
     private SelectionListener mListener;
+    private boolean mInverseSelection;
+    private boolean mIsAlbumSet;
+    private int mTotal;
 
     public interface SelectionListener {
         public void onSelectionModeChange(boolean inSelectionMode);
     }
 
-    public SelectionManager(Context context) {
+    public SelectionManager(Context context, boolean isAlbumSet) {
         mDrawer = new SelectionDrawer(context);
         mVibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        mClickedSet = new HashSet<Long>();
+        mIsAlbumSet = isAlbumSet;
+        mTotal = -1;
     }
 
     public void setSelectionListener(SelectionListener listener) {
         mListener = listener;
     }
 
+    public void selectAll() {
+        enterSelectionMode();
+        mInverseSelection = true;
+        mClickedSet.clear();
+    }
+
+    public void deSelectAll() {
+        leaveSelectionMode();
+        mInverseSelection = false;
+        mClickedSet.clear();
+    }
+
     public SelectionDrawer getSelectionDrawer() {
         return mDrawer;
     }
 
-    public boolean isSelectionMode() {
-        return mSelectedSet != null;
+    public boolean inSelectionMode() {
+        return mInverseSelection || (mClickedSet.size() > 0);
+    }
+
+    private void enterSelectionMode() {
+        if (inSelectionMode()) return;
+
+        mVibrator.vibrate(100);
+        mDrawer.setSelectionMode(true);
+        if (mListener != null) mListener.onSelectionModeChange(true);
     }
 
     public void leaveSelectionMode() {
-        mSelectedSet = null;
+        if (!inSelectionMode()) return;
+
+        mInverseSelection = false;
         mDrawer.setSelectionMode(false);
+        mClickedSet.clear();
         if (mListener != null) mListener.onSelectionModeChange(false);
     }
 
-    public void switchSelectionMode(int slotIndex) {
-        if (mSelectedSet == null) {
-            mSelectedSet = new HashSet<Integer>();
-            mVibrator.vibrate(100);
-            mSelectedSet.add(slotIndex);
-            mDrawer.setSelectionMode(true);
-            if (mListener != null) mListener.onSelectionModeChange(true);
-            return;
-        }
+    public boolean isItemSelected(long itemId) {
+        return mInverseSelection ^ mClickedSet.contains(itemId);
+    }
 
-        boolean selected = mSelectedSet.contains(slotIndex);
-        if (selected) {
-            mSelectedSet.remove(slotIndex);
+    public void toggle(long itemId) {
+        if (mClickedSet.contains(itemId)) {
+            mClickedSet.remove(itemId);
         } else {
-            mSelectedSet = null;
-            leaveSelectionMode();
+            enterSelectionMode();
+            mClickedSet.add(itemId);
         }
-    }
 
-    public boolean isSlotSelected(int slotIndex) {
-        return (mSelectedSet != null) && mSelectedSet.contains(slotIndex);
-    }
-
-    public void selectSlot(int slotIndex) {
-        if (mSelectedSet != null) {
-            if (mSelectedSet.contains(slotIndex)) {
-                mSelectedSet.remove(slotIndex);
-            } else {
-                mSelectedSet.add(slotIndex);
+        if (mInverseSelection) {
+            if (mTotal < 0) {
+                mTotal = mIsAlbumSet
+                        ? mSourceMediaSet.getSubMediaSetCount()
+                        : mSourceMediaSet.getMediaItemCount();
             }
+            if (mClickedSet.size() == mTotal) leaveSelectionMode();
+        } else {
+            if (mClickedSet.size() == 0) leaveSelectionMode();
         }
+    }
+
+    public Long[] getSelected() {
+        if (mIsAlbumSet) {
+            return getSelectedSet();
+        } else {
+            return getSelectedItems();
+        }
+    }
+
+    private Long[] getSelectedSet() {
+        Long[] items = null;
+
+        if (mInverseSelection) {
+            ArrayList<Long> invertSet = new ArrayList<Long>();
+            int max = mSourceMediaSet.getSubMediaSetCount();
+            for (int i = 0; i < max; i++) {
+                long id = mSourceMediaSet.getSubMediaSet(i).getUniqueId();
+                if (!mClickedSet.contains(id)) invertSet.add(id);
+            }
+            items = invertSet.toArray(new Long[invertSet.size()]);
+        } else {
+            items = mClickedSet.toArray(new Long[mClickedSet.size()]);
+        }
+        return items;
+    }
+
+    private Long[] getSelectedItems() {
+        Long[] items = null;
+        if (mInverseSelection) {
+            ArrayList<Long> invertSet = new ArrayList<Long>();
+
+            final int batch = 50;
+            int total = mSourceMediaSet.getMediaItemCount();
+            int index = 0;
+
+            while (index < total) {
+                int count = index + batch < total
+                        ? batch
+                        : total - index;
+                ArrayList<MediaItem> list = mSourceMediaSet.getMediaItem(index, count);
+                for (MediaItem item : list) {
+                    long id = item.getUniqueId();
+                    if (!mClickedSet.contains(id)) invertSet.add(id);
+                }
+                index += batch;
+            }
+            items = invertSet.toArray(new Long[invertSet.size()]);
+        } else {
+            items = mClickedSet.toArray(new Long[mClickedSet.size()]);
+        }
+        return items;
+    }
+
+    public void setSourceMediaSet(MediaSet set) {
+        mSourceMediaSet = set;
+        mTotal = -1;
+    }
+
+    public MediaSet getSourceMediaSet() {
+        return mSourceMediaSet;
     }
 }

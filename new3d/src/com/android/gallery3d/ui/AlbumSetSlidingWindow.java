@@ -22,6 +22,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.app.AlbumSetDataAdapter;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.ui.AlbumSetView.AlbumSetItem;
 import com.android.gallery3d.util.Future;
@@ -201,7 +202,7 @@ public class AlbumSetSlidingWindow implements AlbumSetView.ModelListener {
 
     private void prepareSlotContent(final int slotIndex) {
         AlbumSetItem item = new AlbumSetItem();
-        MediaItem[] coverItems = mSource.get(slotIndex);
+        MediaItem[] coverItems = mSource.getMediaItems(slotIndex);
         item.covers = new GalleryDisplayItem[coverItems.length];
         for (int i = 0; i < coverItems.length; ++i) {
             item.covers[i] = new GalleryDisplayItem(slotIndex, i, coverItems[i]);
@@ -217,7 +218,7 @@ public class AlbumSetSlidingWindow implements AlbumSetView.ModelListener {
         AlbumSetItem update = new AlbumSetItem();
         data[index] = update;
 
-        MediaItem[] coverItems = mSource.get(slotIndex);
+        MediaItem[] coverItems = mSource.getMediaItems(slotIndex);
         update.covers = new GalleryDisplayItem[coverItems.length];
         for (int i = 0; i < coverItems.length; ++i) {
             GalleryDisplayItem cover =
@@ -318,7 +319,13 @@ public class AlbumSetSlidingWindow implements AlbumSetView.ModelListener {
         public void render(GLCanvas canvas) {
             SelectionManager manager = mSelectionManager;
             boolean topItem = mCoverIndex == 0;
-            boolean checked = topItem && manager.isSlotSelected(mSlotIndex);
+            boolean checked = false;
+            if (topItem) {
+                // TODO: add support for batch mode to improve performance
+                long id = mSource.getMediaSet(mSlotIndex).getUniqueId();
+                checked = manager.isItemSelected(id);
+            }
+
             manager.getSelectionDrawer().draw(
                     canvas, mContent, mWidth, mHeight, checked, topItem);
         }

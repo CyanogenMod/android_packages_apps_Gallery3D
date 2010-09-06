@@ -282,7 +282,11 @@ public class AlbumSlidingWindow implements AlbumView.ModelListener {
         @Override
         public void render(GLCanvas canvas) {
             SelectionManager manager = mSelectionManager;
-            boolean checked = manager.isSlotSelected(mSlotIndex);
+            boolean checked = false;
+            if (mMediaItem != null) {
+                long id = mMediaItem.getUniqueId();
+                checked = manager.isItemSelected(id);
+            }
 
             manager.getSelectionDrawer().draw(
                     canvas, mContent, mWidth, mHeight, checked);
