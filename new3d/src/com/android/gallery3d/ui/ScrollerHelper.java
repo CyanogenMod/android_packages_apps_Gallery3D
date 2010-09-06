@@ -35,15 +35,18 @@ public class ScrollerHelper {
     private int mFinal;
     private int mPosition;
 
+    private int mMin;
+    private int mMax;
+
     private int mAnimationKind;
 
     // The fling duration when velocity is 1 pixel / second
     private float FLING_DURATION_PARAM = 200f; // 200ms
 
     /**
-     * Call this when you want to know the new location.  If it returns true,
-     * the animation is not yet finished.  loc will be altered to provide the
-     * new location.
+     * Call this when you want to know the new location. The position will be
+     * updated and can be obtained by getPosition(). Returns true if  the
+     * animation is not yet finished.
      */
     public boolean advanceAnimation(long currentTimeMillis) {
         if (mStartTime == NO_ANIMATION) return false;
@@ -58,8 +61,9 @@ public class ScrollerHelper {
             } else if (mAnimationKind == ANIM_KIND_FLING) {
                 f = 1 - (float) Math.pow(f, DECELERATED_FACTOR);
             }
-            mPosition = Math.round(mStart + (mFinal - mStart) * f);
-            if (mPosition == mFinal) {
+            mPosition = Utils.clamp(
+                    Math.round(mStart + (mFinal - mStart) * f), mMin, mMax);
+            if (mPosition == Utils.clamp(mFinal, mMin, mMax)) {
                 mStartTime = NO_ANIMATION;
                 return false;
             }
@@ -94,26 +98,17 @@ public class ScrollerHelper {
         mStartTime = START_ANIMATION;
         mAnimationKind = ANIM_KIND_FLING;
         mStart = mPosition;
+        mMin = min;
+        mMax = max;
 
         // Ta = T_ref * (Va / V_ref) ^ (1 / (d - 1)); V_ref = 1 pixel/second;
         mDuration = (int) Math.round(FLING_DURATION_PARAM
                     * Math.pow(Math.abs(velocity), 1.0 / (DECELERATED_FACTOR - 1)));
-        int distance = Math.round(
+        mFinal = mStart + Math.round(
                 velocity * mDuration / DECELERATED_FACTOR / 1000);
-        mFinal = Utils.clamp(mStart + distance, min, max);
-
-        // If the left space is not enough, get duration base on the left space
-        if (mFinal - mStart != distance && distance != 0) {
-            mDuration *= Math.pow(
-                    (double) (mFinal - mStart) / distance, 1.0 / (DECELERATED_FACTOR));
-        }
     }
 
     public void startScroll(int distance, int min, int max) {
-        mStartTime = START_ANIMATION;
-        mAnimationKind = ANIM_KIND_SCROLL;
-        mStart = mPosition;
-        mFinal = Utils.clamp(mFinal + distance, min, max);
-        mDuration = 0;
+        mPosition = Utils.clamp(mPosition + distance, min, max);
     }
 }
