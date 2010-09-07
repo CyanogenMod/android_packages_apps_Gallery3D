@@ -122,7 +122,7 @@ public class AlbumPage extends ActivityState implements SlotView.SlotTapListener
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);
 
-        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), false);
+        mSelectionManager = new SelectionManager(mContext, false);
         mAlbumView = new AlbumView(mContext, mSelectionManager);
         mRootPane.addComponent(mAlbumView);
         mHud = new HeadUpDisplay(mContext.getAndroidContext());

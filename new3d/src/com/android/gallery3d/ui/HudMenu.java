@@ -16,18 +16,31 @@
 
 package com.android.gallery3d.ui;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 
 import com.android.gallery3d.R;
 import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.data.DataManager;
+import com.android.gallery3d.data.MediaSet;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class HudMenu implements HudMenuInterface, SelectionManager.SelectionListener {
+    private static final String TAG = "HudMenu";
     private static final int DELETE_MODEL = 0;
     private static final int MORE_MODEL = 1;
-    private static final int SHARE_MODEL = 2;
-    private static final int TOTAL_MODEL_COUNT = 3;
+    private static final int SHARE_IMAGE_MODEL = 2;
+    private static final int SHARE_VIDEO_MODEL = 3;
+    private static final int SHARE_ALL_MODEL = 4;
+    private static final int TOTAL_MODEL_COUNT = 5;
 
     GalleryContext mContext;
     MenuBar mTopBar;
@@ -120,6 +133,74 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
         }
     }
 
+    private class ShareModel extends MenuModel {
+        List<ResolveInfo> mInfo;
+        Intent mIntent;
+
+        public ShareModel(int shareType) {
+            Context context = mContext.getAndroidContext();
+            mIntent = new Intent(Intent.ACTION_SEND);
+            switch (shareType) {
+                case SHARE_IMAGE_MODEL:
+                    mIntent.setType("image/*");
+                    break;
+                case SHARE_VIDEO_MODEL:
+                    mIntent.setType("video/*");
+                    break;
+                default:
+                    mIntent.setType("*/*");
+            }
+            PackageManager packageManager = context.getPackageManager();
+            mInfo = packageManager.queryIntentActivities(mIntent, 0);
+            for(ResolveInfo info : mInfo) {
+                String label = info.loadLabel(packageManager).toString();
+                Drawable icon = info.loadIcon(packageManager);
+                MenuItem item = createMenuItem(context, icon, label);
+                addItem(item);
+            }
+        }
+
+        private MenuItem createMenuItem(Context context, Drawable icon, String title) {
+            DrawableTexture iconTexture = null;
+            if (icon != null) {
+                iconTexture = new DrawableTexture(icon);
+                float target = 45;
+                int width = icon.getIntrinsicWidth();
+                int height = icon.getIntrinsicHeight();
+                float scale = target / Math.max(width, height);
+                iconTexture.setSize((int) (width * scale + .5f),
+                        (int) (height * scale + .5f));
+            }
+            MenuItem item = new MenuItem(context, iconTexture, title);
+            item.setHighlight(mHighlight);
+            return item;
+        }
+
+        public void onItemSelected(int position) {
+            ResolveInfo info = mInfo.get(position);
+            ArrayList<Long> items = mSelectionManager.getSelected(true);
+            ArrayList<Uri> uris = new ArrayList<Uri>(items.size());
+            DataManager manager = mContext.getDataManager();
+            for (Long id : items) {
+                uris.add(manager.getMediaItemUri(id));
+            }
+
+            if (uris.isEmpty()) {
+                // TODO: explain to user that some items can't be shared.
+                throw new UnsupportedOperationException();
+            } else if (uris.size() == 1) {
+                mIntent.setAction(Intent.ACTION_SEND);
+                mIntent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+            } else {
+                mIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
+                mIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+            }
+            ActivityInfo ai = info.activityInfo;
+            mIntent.setComponent(new ComponentName(ai.packageName, ai.name));
+            mContext.getAndroidContext().startActivity(mIntent);
+        }
+    }
+
     protected void createBottomMenuBar() {
         Context context = mContext.getAndroidContext();
         mBottomBar = new MenuItemBar(GLView.INVISIBLE);
@@ -128,7 +209,6 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
 
         // Share menu
         mShare = new MenuItem(context, R.drawable.icon_share, R.string.share, mHighlight);
-        mMenuModels[SHARE_MODEL] = new MenuModel();
         mBottomBar.addComponent(mShare);
 
         // Delete menu & its submenu
@@ -155,14 +235,36 @@ public class HudMenu implements HudMenuInterface, SelectionManager.SelectionList
         mBottomBar.addComponent(mMore);
     }
 
+    private int getShareType() {
+        ArrayList<Long> items = mSelectionManager.getSelected(false);
+        DataManager manager = mContext.getDataManager();
+        int type = 0;
+
+        for (long id : items) {
+            type |= manager.getMediaType(id);
+        }
+
+        switch (type) {
+            case MediaSet.MEDIA_TYPE_IMAGE:
+                return SHARE_IMAGE_MODEL;
+            case MediaSet.MEDIA_TYPE_VIDEO:
+                return SHARE_VIDEO_MODEL;
+            default:
+                return SHARE_ALL_MODEL;
+        }
+    }
+
     public GLListView.Model getMenuModel(GLView item) {
          if (item == mDelete) {
             return mMenuModels[DELETE_MODEL];
         } else if (item == mMore) {
             return mMenuModels[MORE_MODEL];
         } else if (item == mShare) {
-            // TODO: generate the right model
-            return mMenuModels[SHARE_MODEL];
+            int shareType = getShareType();
+            if (mMenuModels[shareType] == null) {
+                mMenuModels[shareType] = new ShareModel(shareType);
+            }
+            return mMenuModels[shareType];
         }
 
         return null;

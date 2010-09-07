@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.android.gallery3d.app.GalleryContext;
+import com.android.gallery3d.data.DataManager;
 import com.android.gallery3d.data.MediaItem;
 import com.android.gallery3d.data.MediaSet;
 
@@ -33,6 +35,7 @@ public class SelectionManager {
     private final Vibrator mVibrator;
     private final SelectionDrawer mDrawer;
     private SelectionListener mListener;
+    private DataManager mDataManager;
     private boolean mInverseSelection;
     private boolean mIsAlbumSet;
     private int mTotal;
@@ -41,8 +44,10 @@ public class SelectionManager {
         public void onSelectionModeChange(boolean inSelectionMode);
     }
 
-    public SelectionManager(Context context, boolean isAlbumSet) {
+    public SelectionManager(GalleryContext galleryContext, boolean isAlbumSet) {
+        Context context = galleryContext.getAndroidContext();
         mDrawer = new SelectionDrawer(context);
+        mDataManager = galleryContext.getDataManager();
         mVibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
         mClickedSet = new HashSet<Long>();
         mIsAlbumSet = isAlbumSet;
@@ -114,56 +119,77 @@ public class SelectionManager {
         }
     }
 
-    public Long[] getSelected() {
+    private static void expandMediaSet(ArrayList<Long> items, MediaSet set) {
+        int subCount = set.getSubMediaSetCount();
+        for (int i = 0; i < subCount; i++) {
+            expandMediaSet(items, set.getSubMediaSet(i));
+        }
+        int total = set.getMediaItemCount();
+        int batch = 50;
+        int index = 0;
+
+        while (index < total) {
+            int count = index + batch < total
+                    ? batch
+                    : total - index;
+            ArrayList<MediaItem> list = set.getMediaItem(index, count);
+            for (MediaItem item : list) {
+                items.add(item.getUniqueId());
+            }
+            index += batch;
+        }
+    }
+
+    public ArrayList<Long> getSelected(boolean expandSet) {
+        ArrayList<Long> selected = new ArrayList<Long>();
         if (mIsAlbumSet) {
-            return getSelectedSet();
-        } else {
-            return getSelectedItems();
-        }
-    }
-
-    private Long[] getSelectedSet() {
-        Long[] items = null;
-
-        if (mInverseSelection) {
-            ArrayList<Long> invertSet = new ArrayList<Long>();
-            int max = mSourceMediaSet.getSubMediaSetCount();
-            for (int i = 0; i < max; i++) {
-                long id = mSourceMediaSet.getSubMediaSet(i).getUniqueId();
-                if (!mClickedSet.contains(id)) invertSet.add(id);
-            }
-            items = invertSet.toArray(new Long[invertSet.size()]);
-        } else {
-            items = mClickedSet.toArray(new Long[mClickedSet.size()]);
-        }
-        return items;
-    }
-
-    private Long[] getSelectedItems() {
-        Long[] items = null;
-        if (mInverseSelection) {
-            ArrayList<Long> invertSet = new ArrayList<Long>();
-
-            final int batch = 50;
-            int total = mSourceMediaSet.getMediaItemCount();
-            int index = 0;
-
-            while (index < total) {
-                int count = index + batch < total
-                        ? batch
-                        : total - index;
-                ArrayList<MediaItem> list = mSourceMediaSet.getMediaItem(index, count);
-                for (MediaItem item : list) {
-                    long id = item.getUniqueId();
-                    if (!mClickedSet.contains(id)) invertSet.add(id);
+            if (mInverseSelection) {
+                int max = mSourceMediaSet.getSubMediaSetCount();
+                for (int i = 0; i < max; i++) {
+                    MediaSet set = mSourceMediaSet.getSubMediaSet(i);
+                    long id = set.getUniqueId();
+                    if (!mClickedSet.contains(id)) {
+                        if (expandSet) {
+                            expandMediaSet(selected, set);
+                        } else {
+                            selected.add(id);
+                        }
+                    }
                 }
-                index += batch;
+            } else {
+                for (long id : mClickedSet) {
+                    if (expandSet) {
+                        expandMediaSet(selected,
+                                mDataManager.getMediaSet(DataManager.extractSelfId(id)));
+                    } else {
+                        selected.add(id);
+                    }
+                }
             }
-            items = invertSet.toArray(new Long[invertSet.size()]);
         } else {
-            items = mClickedSet.toArray(new Long[mClickedSet.size()]);
+            if (mInverseSelection) {
+                int batch = 50;
+                int total = mSourceMediaSet.getMediaItemCount();
+                int index = 0;
+
+                while (index < total) {
+                    int count = index + batch < total
+                            ? batch
+                            : total - index;
+                    ArrayList<MediaItem> list = mSourceMediaSet.getMediaItem(index, count);
+                    for (MediaItem item : list) {
+                        long id = item.getUniqueId();
+                        if (!mClickedSet.contains(id)) selected.add(id);
+                    }
+                    index += batch;
+                }
+            } else {
+                for (long id : mClickedSet) {
+                    selected.add(id);
+                }
+            }
         }
-        return items;
+        return selected;
     }
 
     public void setSourceMediaSet(MediaSet set) {

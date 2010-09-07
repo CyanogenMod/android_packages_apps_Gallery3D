@@ -133,7 +133,7 @@ public class AlbumSetPage extends ActivityState implements SlotView.SlotTapListe
     }
 
     private void initializeViews() {
-        mSelectionManager = new SelectionManager(mContext.getAndroidContext(), true);
+        mSelectionManager = new SelectionManager(mContext, true);
 
         mBackground = new AdaptiveBackground();
         mRootPane.addComponent(mBackground);
