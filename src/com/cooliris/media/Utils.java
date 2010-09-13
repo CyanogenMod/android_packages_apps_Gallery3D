@@ -326,7 +326,8 @@ public class Utils {
             roundedSize = (initialSize + 7);
         }
         int respatchQualityFactor = 2; // Increase the resolution how many times?
-        return roundedSize/respatchQualityFactor;
+       // return roundedSize/respatchQualityFactor;
+        return 1;
     }
 
     public static int computeInitialSampleSize(BitmapFactory.Options options,

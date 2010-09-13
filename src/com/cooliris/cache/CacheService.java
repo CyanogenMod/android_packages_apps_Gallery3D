@@ -85,7 +85,7 @@ public final class CacheService extends IntentService {
 
     // Wait 0.5 seconds to start the thumbnailer so that the application can load
     // without any overheads.
-    private static final int THUMBNAILER_WAIT_IN_MS = 500;
+    private static final int THUMBNAILER_WAIT_IN_MS = 250;
     private static final int DEFAULT_THUMBNAIL_WIDTH = 128;
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 96;
 
