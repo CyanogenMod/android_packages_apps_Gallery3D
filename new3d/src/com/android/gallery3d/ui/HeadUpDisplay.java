@@ -17,11 +17,7 @@
 package com.android.gallery3d.ui;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.view.MotionEvent;
 import android.view.View.MeasureSpec;
 
