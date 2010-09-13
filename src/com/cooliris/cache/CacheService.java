@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.text.DateFormat;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.IntentService;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -61,14 +59,13 @@ import com.cooliris.app.Res;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
 import com.cooliris.media.Gallery;
+import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.LongSparseArray;
 import com.cooliris.media.MediaFeed;
 import com.cooliris.media.MediaItem;
 import com.cooliris.media.MediaSet;
 import com.cooliris.media.Shared;
-import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.SortCursor;
-import com.cooliris.media.UriTexture;
 import com.cooliris.media.Utils;
 
 public final class CacheService extends IntentService {
