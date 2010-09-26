@@ -280,6 +280,7 @@ public final class Gallery extends Activity {
         if (mRenderView != null) {
             if (getResources().getBoolean(R.bool.reload_on_orientation_change)) {
                 // FILTHY, DIRTY, UGLY HACK.
+                mRenderView.unloadAllTextures();
                 mRenderView.shutdown();
                 mRenderView = new RenderView(this);
                 mRenderView.setRootLayer(mGridLayer);

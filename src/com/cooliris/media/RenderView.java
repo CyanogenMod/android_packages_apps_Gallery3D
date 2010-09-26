@@ -290,6 +290,30 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         return false;
     }
 
+    public void unloadAllTextures() {
+        int unloaded = 0;
+        if (!mActiveTextureList.isEmpty()) {
+            int[] textureId = new int[1];
+            DirectLinkedList.Entry<TextureReference> iter = mActiveTextureList.getHead();
+            while (iter != null) {
+                final TextureReference textureRef = iter.value;
+                final Texture texture = textureRef.get();
+                final GL11 gl = textureRef.gl;
+                if (texture != null) {
+                    texture.mState = Texture.STATE_UNLOADED;
+                    if (gl != null && gl == mGL) {
+                        textureId[0] = textureRef.textureId;
+                        gl.glDeleteTextures(1, textureId, 0);
+                        unloaded++;
+                    }
+                }
+                iter = iter.next;
+            }
+        }
+        mActiveTextureList.clear();
+        Log.i(TAG, unloaded + " textures unloaded");
+    }
+
     public void setAlpha(float alpha) {
         GL11 gl = mGL;
         gl.glTexEnvf(GL11.GL_TEXTURE_ENV, GL11.GL_TEXTURE_ENV_MODE, GL11.GL_MODULATE);
