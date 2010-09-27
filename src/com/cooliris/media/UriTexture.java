@@ -110,8 +110,8 @@ public class UriTexture extends Texture {
             ClientConnectionManager connectionManager) throws IOException, URISyntaxException, OutOfMemoryError {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
-        options.inDither = true;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inDither = false;
         long crc64 = 0;
         Bitmap bitmap = null;
         if (uri.startsWith(ContentResolver.SCHEME_CONTENT)) {
@@ -264,8 +264,8 @@ public class UriTexture extends Texture {
             Bitmap bitmap = null;
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
-            options.inDither = true;
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            options.inDither = false;
             if (crc64 != 0) {
                 file = createFilePathFromCrc64(crc64, maxResolution);
                 bitmap = BitmapFactory.decodeFile(file, options);
