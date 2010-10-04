@@ -55,12 +55,10 @@ import android.util.Log;
 import com.cooliris.cache.CacheService;
 
 public class UriTexture extends Texture {
-    public static final int MAX_RESOLUTION = 1024;
     private static final String TAG = "UriTexture";
     protected String mUri;
     protected long mCacheId;
-    private static final int MAX_RESOLUTION_A = MAX_RESOLUTION;
-    private static final int MAX_RESOLUTION_B = MAX_RESOLUTION;
+
     public static final String URI_CACHE = CacheService.getCachePath("hires-image-cache");
     private static final String USER_AGENT = "Cooliris-ImageDownload";
     private static final int CONNECTION_TIMEOUT = 20000; // ms.
@@ -101,9 +99,12 @@ public class UriTexture extends Texture {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeStream(stream, null, options);
-        int maxNumOfPixels = maxResolutionX * maxResolutionY;
-        int minSideLength = Math.min(maxResolutionX, maxResolutionY) / 2;
-        return Utils.computeSampleSize(options, minSideLength, maxNumOfPixels);
+
+        double w = options.outWidth;
+        double h = options.outHeight;
+
+        int sampleSize = (int) Math.ceil(Math.max(w/maxResolutionX,h/maxResolutionY)); 
+        return sampleSize;
     }
 
     public static final Bitmap createFromUri(Context context, String uri, int maxResolutionX, int maxResolutionY, long cacheId,
@@ -161,6 +162,7 @@ public class UriTexture extends Texture {
         if (bufferedInput != null) {
             options.inDither = false;
             options.inJustDecodeBounds = false;
+            options.inPurgeable = true;
             Thread timeoutThread = new Thread("BitmapTimeoutThread") {
                 public void run() {
                     try {
@@ -175,8 +177,11 @@ public class UriTexture extends Texture {
             bitmap = BitmapFactory.decodeStream(bufferedInput, null, options);
         }
 
+        if (bitmap != null) {
+            bitmap = Utils.resizeBitmap(bitmap, maxResolutionX);
+        }
         if ((options.inSampleSize > 1 || !local) && bitmap != null) {
-            writeToCache(crc64, bitmap, maxResolutionX / options.inSampleSize);
+            writeToCache(crc64, bitmap, maxResolutionX);
         }
         return bitmap;
     }
@@ -227,12 +232,23 @@ public class UriTexture extends Texture {
         if (mUri == null)
             return bitmap;
         try {
+            Context context = view.getContext();
+            int max_resolution = context.getResources().getInteger(R.integer.max_resolution);
+            int max_resolution_screennail =
+                    context.getResources().getInteger(R.integer.max_resolution_screennail);
             if (mUri.startsWith("http://")) {
-                if (!isCached(Utils.Crc64Long(mUri), MAX_RESOLUTION_A)) {
+                if (!isCached(Utils.Crc64Long(mUri), max_resolution)) {
                     mConnectionManager = new SingleClientConnManager(HTTP_PARAMS, SCHEME_REGISTRY);
                 }
             }
-            bitmap = createFromUri(view.getContext(), mUri, MAX_RESOLUTION_A, MAX_RESOLUTION_B, mCacheId, mConnectionManager);
+            if (mIsScreennail) {
+                bitmap = createFromUri(context, mUri, max_resolution_screennail,
+                        max_resolution_screennail, mCacheId, mConnectionManager);
+            }
+            if (mIsHiRes) {
+                bitmap = createFromUri(context, mUri, max_resolution, max_resolution,
+                        mCacheId, mConnectionManager);
+            }
         } catch (Exception e2) {
             Log.e(TAG, "Unable to load image from URI " + mUri);
             e2.printStackTrace();
@@ -266,6 +282,8 @@ public class UriTexture extends Texture {
             options.inScaled = false;
             options.inPreferredConfig = Bitmap.Config.RGB_565;
             options.inDither = true;
+            options.inSampleSize = 1;
+            options.inPurgeable = true;
             if (crc64 != 0) {
                 file = createFilePathFromCrc64(crc64, maxResolution);
                 bitmap = BitmapFactory.decodeFile(file, options);

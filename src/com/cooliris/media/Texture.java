@@ -34,6 +34,10 @@ public abstract class Texture {
     float mNormalizedHeight;
     Bitmap mBitmap;
 
+    boolean mIsThumbnail = false;
+    boolean mIsScreennail = false;
+    boolean mIsHiRes = false;
+
     public boolean isCached() {
         return false;
     }
@@ -45,6 +49,9 @@ public abstract class Texture {
         mHeight = 0;
         mNormalizedWidth = 0;
         mNormalizedHeight = 0;
+        mIsThumbnail = false;
+        mIsScreennail = false;
+        mIsHiRes = false;
         if (mBitmap != null) {
             mBitmap.recycle();
             mBitmap = null;

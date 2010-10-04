@@ -129,6 +129,9 @@ public final class DisplayItem {
             if (mItemRef.mId != Shared.INVALID) {
                 texture = new MediaItemTexture(context, config, mItemRef);
             }
+            if (texture != null) {
+                texture.mIsScreennail = true;
+            }
             mThumbnailImage = texture;
         }
         return texture;
@@ -147,6 +150,9 @@ public final class DisplayItem {
             } else {
                 texture = new UriTexture(mItemRef.mScreennailUri);
                 ((UriTexture) texture).setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
+            }
+            if (texture != null) {
+                texture.mIsScreennail = true;
             }
             mScreennailImage = texture;
         }
@@ -336,6 +342,7 @@ public final class DisplayItem {
         if (texture == null) {
             texture = new UriTexture(mItemRef.mContentUri);
             texture.setCacheId(Utils.Crc64Long(mItemRef.mFilePath));
+            texture.mIsHiRes = true;
             mHiResImage = texture;
         }
         return texture;

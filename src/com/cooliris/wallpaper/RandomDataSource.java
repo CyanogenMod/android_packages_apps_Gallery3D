@@ -42,7 +42,10 @@ public class RandomDataSource implements Slideshow.DataSource {
         final String uri = CacheService.BASE_CONTENT_STRING_IMAGES + list.ids[index];
         Bitmap retVal = null;
         try {
-            retVal = UriTexture.createFromUri(context, uri, UriTexture.MAX_RESOLUTION, UriTexture.MAX_RESOLUTION, cacheId, null);
+            int max_resolution =
+                    context.getResources().getInteger(com.cooliris.media.R.integer.max_resolution);
+            retVal = UriTexture.createFromUri(context, uri,
+                    max_resolution, max_resolution, cacheId, null);
             if (retVal != null) {
                 retVal = Util.rotate(retVal, list.orientation[index]);
             }
