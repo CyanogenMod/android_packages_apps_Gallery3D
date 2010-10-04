@@ -45,9 +45,28 @@ public class App {
     public static float PIXEL_DENSITY = 0.0f;
     public static int PIXEL_DENSITY_DPI = 0;
 
+    /*
+     * The upscaling factor used for the respatch.
+     * This is the value that is used to change the scaling of the Bitmap loader.
+     * Values :
+     * 		0 -> Determine automatically
+     * 		1 -> Disable respatch
+     * 		n -> Custom value to use (note : most devices can't handle more than 2 by default)
+     */
+    public static int RESPATCH_FACTOR = 0;
+    /*
+     * The divisor for adaptive respatch
+     * Defines the number that is used to divide the heap size in order to obtain the
+     * respatch factor.
+     * Most devices should be able to handle 9 memory-wise, but the images returned
+     * might be somewhat CPU-intensive. Adjust accordingly.
+     */
+    public static final int RESPATCH_DIVISOR = 9;
+
     private final Context mContext;
 
     private final Handler mHandler;	
+    
     private ReverseGeocoder mReverseGeocoder = null;
     
     private boolean mPaused = false;
@@ -64,6 +83,19 @@ public class App {
 			((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(metrics);
 			PIXEL_DENSITY = metrics.density;
 			PIXEL_DENSITY_DPI = metrics.densityDpi;
+		}
+		
+		/*
+		 *  Adaptive ResPatch by Petar Šegina <psegina@ymail.com>
+		 *  By default, Gallery3D is made to load very low resolution images in
+		 *  order to avoid running into outOfMemory situations. Since some devices come with enormous
+		 *  amounts of memory and processing power, it is pointless not to use those resources. So, 
+		 *  depending on the maximum heap size available, we want to determine the highest
+		 *  possible upscale factor. This is calculated from the heap size and then used in
+		 *  com.cooliris.media.Utils.java to return higher resolution images.
+		 */
+		if(RESPATCH_FACTOR == 0){
+			RESPATCH_FACTOR = (int) (Runtime.getRuntime().maxMemory()/1048576) / RESPATCH_DIVISOR;
 		}
 
         mHandler = new Handler(Looper.getMainLooper());

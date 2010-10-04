@@ -83,9 +83,9 @@ public final class CacheService extends IntentService {
     private static ImageList vList = null;
     private static final boolean DEBUG = true;
 
-    // Wait 2 seconds to start the thumbnailer so that the application can load
+    // Wait 0.5 seconds to start the thumbnailer so that the application can load
     // without any overheads.
-    private static final int THUMBNAILER_WAIT_IN_MS = 2000;
+    private static final int THUMBNAILER_WAIT_IN_MS = 250;
     private static final int DEFAULT_THUMBNAIL_WIDTH = 128;
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 96;
 
@@ -764,7 +764,10 @@ public final class CacheService extends IntentService {
             scaleFactor = (float) thumbnailHeight / height;
         } else {
             // Horizontally constrained.
-            cropHeight = thumbnailHeight * width / thumbnailWidth;
+        	if(thumbnailWidth != 0)
+        		cropHeight = thumbnailHeight * width / thumbnailWidth;
+        	else
+        		cropHeight = thumbnailHeight * width;
             cropY = Math.max(0, Math.min(focusY - cropHeight / 2, height - cropHeight));
             cropX = 0;
             cropWidth = width;

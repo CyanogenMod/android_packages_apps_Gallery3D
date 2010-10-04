@@ -287,7 +287,9 @@ public class Utils {
             roundedSize = (initialSize + 7) / 8 * 8;
         }
 
-        return roundedSize;
+        int result = roundedSize/App.RESPATCH_FACTOR;
+        if(result<=1) return 1;
+        else return result;
     }
 
     public static int computeInitialSampleSize(BitmapFactory.Options options,
