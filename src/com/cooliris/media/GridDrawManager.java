@@ -347,18 +347,12 @@ public final class GridDrawManager {
                     MediaItem item = displayItem.mItemRef;
                     final Texture thumbnailTexture = displayItem.getThumbnailImage(view.getContext(), sThumbnailConfig);
                     Texture texture = displayItem.getScreennailImage(view.getContext());
-                    if (isCameraZAnimating && (texture == null || !texture.isLoaded())) {
-                        texture = thumbnailTexture;
-                        mSelectedMixRatio.setValue(0f);
-                        mSelectedMixRatio.animateValue(1f, 0.75f, view.getFrameTime());
-                    }
+
                     Texture hiRes = (zoomValue != 1.0f && i == 0 && item.getMediaType() != MediaItem.MEDIA_TYPE_VIDEO) ? displayItem
                             .getHiResImage(view.getContext())
                             : null;
-                    if (App.PIXEL_DENSITY > 1.0f) {
-                        hiRes = texture;
-                    }
-                    if (i != 0) {
+
+                    if (i != 0 || zoomValue == 1.0f) {
                         displayItem.clearHiResImage();
                     }
                     if (hiRes != null) {
@@ -371,7 +365,7 @@ public final class GridDrawManager {
                     }
                     final Texture fsTexture = texture;
                     if (texture == null || !texture.isLoaded()) {
-                        if (Math.abs(centerTranslateX - camX) < 0.1f) {
+
                             if (focusItemTextureLoaded && i != 0) {
                                 view.bind(texture);
                             }
@@ -379,7 +373,7 @@ public final class GridDrawManager {
                                 view.bind(texture);
                                 view.prime(texture, true);
                             }
-                        }
+
                         texture = thumbnailTexture;
                         if (i == 0) {
                             mSelectedMixRatio.setValue(0f);

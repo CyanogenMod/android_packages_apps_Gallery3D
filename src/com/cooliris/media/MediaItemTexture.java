@@ -124,6 +124,10 @@ public final class MediaItemTexture extends Texture {
                         // We first dirty the cache if the timestamp has changed
                         DiskCache cache = null;
                         MediaSet parentMediaSet = item.mParentMediaSet;
+                        Context context = view.getContext();
+                        int max_resolution = context.getResources().getInteger(R.integer.max_resolution);
+                        int max_resolution_screennail =
+                                context.getResources().getInteger(R.integer.max_resolution_screennail);
                         if (parentMediaSet != null && parentMediaSet.mDataSource != null) {
                             cache = parentMediaSet.mDataSource.getThumbnailCache();
                             if (cache == LocalDataSource.sThumbnailCache) {
@@ -132,12 +136,20 @@ public final class MediaItemTexture extends Texture {
                                 }
                                 final long crc64 = Utils.Crc64Long(item.mFilePath);
                                 if (!cache.isDataAvailable(crc64, item.mDateModifiedInSec * 1000)) {
-                                    UriTexture.invalidateCache(crc64, UriTexture.MAX_RESOLUTION);
+                                    UriTexture.invalidateCache(crc64, max_resolution);
+                                    UriTexture.invalidateCache(crc64, max_resolution_screennail);
                                 }
                             }
                         }
-                        retVal = UriTexture.createFromUri(mContext, mItem.mContentUri, UriTexture.MAX_RESOLUTION,
-                                UriTexture.MAX_RESOLUTION, Utils.Crc64Long(item.mFilePath), null);
+                        if (mIsScreennail) {
+                            retVal = UriTexture.createFromUri(mContext, mItem.mContentUri, 
+                                    max_resolution_screennail, max_resolution_screennail,
+                                    Utils.Crc64Long(item.mFilePath), null);
+                        } else if (mIsHiRes) {
+                            retVal = UriTexture.createFromUri(mContext, mItem.mContentUri, 
+                                    max_resolution, max_resolution,
+                                    Utils.Crc64Long(item.mFilePath), null);
+                        }
                     } catch (IOException e) {
                         ;
                     } catch (URISyntaxException e) {

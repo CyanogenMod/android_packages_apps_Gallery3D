@@ -227,7 +227,6 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         try {
             Bitmap bitmap = texture.load(this);
             if (bitmap != null) {
-                bitmap = Utils.resizeBitmap(bitmap, 1024);
                 int width = bitmap.getWidth();
                 int height = bitmap.getHeight();
                 texture.mWidth = width;
