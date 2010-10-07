@@ -62,8 +62,8 @@
     <string name="share" msgid="3619042788254195341">"Weitergeben"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-Karte wurde entfernt oder ist nicht vorhanden."</string>
     <string name="more" msgid="1526449516720792387">"Mehr"</string>
-    <string name="select_all" msgid="8623593677101437957">"Alles auswählen"</string>
-    <string name="deselect_all" msgid="7397531298370285581">"Auswahl für alle aufheben"</string>
+    <string name="select_all" msgid="8623593677101437957">"Alle ausw."</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Keine ausw."</string>
     <string name="slideshow" msgid="4355906903247112975">"Diashow"</string>
     <string name="menu" msgid="1819649153380636719">"Menü"</string>
     <string name="details" msgid="8415120088556445230">"Details"</string>
