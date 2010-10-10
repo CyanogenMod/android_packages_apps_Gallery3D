@@ -125,4 +125,11 @@
     <string name="around">Around</string>
     <string name="date_unknown">Date unknown</string>
     <string name="video_err">Unable to play video</string>
+
+    <string name="menu_open_url">Open URL</string>
+    <string name="video_set_url_pos">Open</string>
+    <string name="video_set_url_neg">Cancel</string>
+    <string name="video_set_url_title">Open URL</string>
+    <string name="video_set_url_msg">Movie URL:</string>
+    <string name="video_set_url_hint">rtsp://server/file</string>
 </resources>
