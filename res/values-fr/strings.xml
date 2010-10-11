@@ -77,6 +77,12 @@
     <string name="location" msgid="3432705876921618314">"Lieu"</string>
     <string name="location_unknown" msgid="6310139243003315255">"Lieu inconnu"</string>
     <string name="title" msgid="7622928349908052569">"Titre"</string>
+    <string name="file_size">"Taille"</string>
+    <string name="file_size_unknown">"Taille inconnue"</string>
+    <string name="size">"Dimensions"</string>
+    <string name="size_unknown">"Dimensions inconnues"</string>
+    <string name="cam">"Appareil photo"</string>
+    <string name="cam_unknown">"Inconnu"</string>
     <string name="type" msgid="4329478642546287192">"Type"</string>
     <string name="taken_on" msgid="3269486910757192479">"Prise"</string>
     <string name="added_on" msgid="5194321063173381814">"Ajoutée le"</string>

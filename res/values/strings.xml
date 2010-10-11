@@ -108,6 +108,12 @@
     <string name="location_unknown">Unknown location</string>
     <string name="title">Title</string>
     <string name="type">Type</string>
+    <string name="file_size">File size</string>
+    <string name="file_size_unknown">Unknown</string>
+    <string name="size">Size</string>
+    <string name="size_unknown">Unknown</string>
+    <string name="cam">Camera</string>
+    <string name="cam_unknown">Unknown</string>
 
     <!-- String indicating timestamp of photo or video -->
     <string name="taken_on">Taken on</string>
