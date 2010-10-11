@@ -22,6 +22,7 @@ import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.io.File;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -141,7 +142,7 @@ public final class DetailMode {
             return null;
         }
         Resources resources = context.getResources();
-        CharSequence[] strings = new CharSequence[5];
+        CharSequence[] strings = new CharSequence[8];
         strings[0] = resources.getString(Res.string.title) + ": " + item.mCaption;
         strings[1] = resources.getString(Res.string.type) + ": " + item.getDisplayMimeType();
 
@@ -197,6 +198,52 @@ public final class DetailMode {
             locationString = context.getResources().getString(Res.string.location_unknown);
         }
         strings[4] = resources.getString(Res.string.location) + ": " + locationString;
+
+        String fileSize;
+        if (item.mFilePath == null) {
+            fileSize = context.getResources().getString(Res.string.file_size_unknown);
+        } else {
+            File file = new File(item.mFilePath);
+            long lenght = file.length()/1024;
+            fileSize = Long.toString(lenght) + " KB";
+        }
+
+        strings[5] = resources.getString(Res.string.file_size) + ": " + fileSize;
+        String imageSize;
+        String camera;
+        if (item.mFilePath == null) {
+            imageSize = context.getResources().getString(Res.string.size_unknown);
+            camera = context.getResources().getString(Res.string.cam_unknown);
+        } else {
+            try {
+                ExifInterface exif = new ExifInterface(item.mFilePath);
+                String length = exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH);
+                String width = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH);
+                String maker = exif.getAttribute(ExifInterface.TAG_MAKE);
+                String model = exif.getAttribute(ExifInterface.TAG_MODEL);
+                camera = exif.getAttribute(ExifInterface.TAG_MAKE) + " " + exif.getAttribute(ExifInterface.TAG_MODEL);
+                if (width.contentEquals("0") || length.contentEquals("0")) {
+                    imageSize = context.getResources().getString(Res.string.size_unknown);
+                } else {
+                    imageSize = width + " x " + length;
+                }
+                if (maker == null || model == null)
+                {
+                    camera = context.getResources().getString(Res.string.cam_unknown);
+                } else {
+                    camera = maker + " " + model;
+                }
+
+            } catch (IOException ex) {
+                // ignore it.
+                imageSize = context.getResources().getString(Res.string.size_unknown);
+                camera = context.getResources().getString(Res.string.cam_unknown);
+            }
+        }
+        strings[6] = resources.getString(Res.string.size) + ": " + imageSize;
+        strings[7] = resources.getString(Res.string.cam) + ": " + camera;
+
+
         return strings;
     }
 }
