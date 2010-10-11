@@ -38,12 +38,12 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
 
     static {
         MENU_TITLE_STYLE.fontSize = 17 * App.PIXEL_DENSITY;
-        MENU_TITLE_STYLE.sizeMode = StringTexture.Config.SIZE_EXACT;
+        MENU_TITLE_STYLE.sizeMode = StringTexture.Config.SIZE_TEXT_TO_BOUNDS;
         MENU_TITLE_STYLE.overflowMode = StringTexture.Config.OVERFLOW_FADE;
 
         MENU_TITLE_STYLE_TEXT.fontSize = 15 * App.PIXEL_DENSITY;
         MENU_TITLE_STYLE_TEXT.xalignment = StringTexture.Config.ALIGN_HCENTER;
-        MENU_TITLE_STYLE_TEXT.sizeMode = StringTexture.Config.SIZE_EXACT;
+        MENU_TITLE_STYLE_TEXT.sizeMode = StringTexture.Config.SIZE_TEXT_TO_BOUNDS;
         MENU_TITLE_STYLE_TEXT.overflowMode = StringTexture.Config.OVERFLOW_FADE;
     }
 
@@ -149,13 +149,19 @@ public final class MenuBar extends Layer implements PopupMenu.Listener {
             StringTexture titleTexture = (StringTexture) mTextureMap.get(menu.title);
             if (titleTexture == null) {
                 titleTexture = new StringTexture(menu.title, menu.config, menu.titleWidth, MENU_TITLE_STYLE.height);
+                if (icon == null) {
+                    menu.config.xalignment=StringTexture.Config.ALIGN_HCENTER;
+                } else {
+                    menu.config.xalignment=StringTexture.Config.ALIGN_LEFT;
+                }
+                titleTexture = new StringTexture(menu.title, menu.config, menu.titleWidth+25, MENU_TITLE_STYLE.height);
                 view.loadTexture(titleTexture);
                 menu.titleTexture = titleTexture;
                 mTextureMap.put(menu.title, titleTexture);
             }
             int iconWidth = icon != null ? icon.getWidth() : 0;
             int width = iconWidth + menu.titleWidth;
-            int offset = (menu.mWidth - width) / 2;
+            int offset = (menu.mWidth - width) / 2 - 15;
             if (icon != null) {
                 float iconY = y + (height - icon.getHeight()) / 2;
                 view.draw2D(icon, menu.x + offset, iconY);
