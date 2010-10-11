@@ -238,7 +238,7 @@ public final class PathBarLayer extends Layer {
                     float iconWidth = component.getIconWidth();
                     if (texture.computeTextWidth() <= (width - iconWidth)) {
                         float textOffset = (iconWidth == 0) ? 8 * App.PIXEL_DENSITY : iconWidth;
-                        view.draw2D(texture, x + textOffset, y + 5);
+                        view.draw2D(texture, x + textOffset, y);
                     }
                 }
                 x += (int) (width + (21 * App.PIXEL_DENSITY + 0.5f));
