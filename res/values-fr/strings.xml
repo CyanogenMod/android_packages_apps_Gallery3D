@@ -97,4 +97,11 @@
     <string name="around" msgid="2223906282110417412">"À proximité de"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Date inconnue"</string>
     <string name="video_err" msgid="7917736494827857757">"Impossible de lire la vidéo."</string>
+
+    <string name="menu_open_url">Ouvrir l\'URL</string>
+    <string name="video_set_url_pos">Ouvrir</string>
+    <string name="video_set_url_neg">Annuler</string>
+    <string name="video_set_url_title">Ouvrir l\'URL</string>
+    <string name="video_set_url_msg">URL de la vidéo :</string>
+    <string name="video_set_url_hint">rtsp://serveur/fichier</string>
 </resources>
