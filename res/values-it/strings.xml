@@ -91,4 +91,11 @@
     <string name="around" msgid="2223906282110417412">"Nei pressi di"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Data sconosciuta"</string>
     <string name="video_err" msgid="7917736494827857757">"Impossibile riprodurre il video"</string>
+
+    <string name="menu_open_url">Apri URL</string>
+    <string name="video_set_url_pos">Apri</string>
+    <string name="video_set_url_neg">Cancella</string>
+    <string name="video_set_url_title">Apri URL</string>
+    <string name="video_set_url_msg">URL Film:</string>
+    <string name="video_set_url_hint">rtsp://server/file</string>
 </resources>
