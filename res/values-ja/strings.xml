@@ -77,6 +77,13 @@
     <string name="location" msgid="3432705876921618314">"場所"</string>
     <string name="location_unknown" msgid="6310139243003315255">"不明な場所"</string>
     <string name="title" msgid="7622928349908052569">"タイトル"</string>
+    <string name="file_size">ファイルサイズ</string>
+    <string name="file_size_unknown">不明</string>
+    <string name="size">サイズ</string>
+    <string name="size_unknown">不明</string>
+    <string name="cam">カメラ</string>
+    <string name="cam_unknown">不明</string>
+
     <string name="type" msgid="4329478642546287192">"種類"</string>
     <string name="taken_on" msgid="3269486910757192479">"撮影"</string>
     <string name="added_on" msgid="5194321063173381814">"追加日:"</string>
@@ -91,4 +98,11 @@
     <string name="around" msgid="2223906282110417412">"エリア:"</string>
     <string name="date_unknown" msgid="4277113471036917386">"日付が不明"</string>
     <string name="video_err" msgid="7917736494827857757">"動画を再生できません"</string>
+    <string name="menu_open_url">URLを開く</string>
+    <string name="video_set_url_pos">開く</string>
+    <string name="video_set_url_neg">キャンセル</string>
+    <string name="video_set_url_title">URLを開く</string>
+    <string name="video_set_url_msg">動画URL:</string>
+    <string name="video_set_url_hint">rtsp://server/file</string>
+
 </resources>
