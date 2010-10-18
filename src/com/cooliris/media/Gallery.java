@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -81,7 +82,15 @@ public final class Gallery extends Activity {
         mImageManagerHasStorageAfterDelay = ImageManager.hasStorage();
         if (!mImageManagerHasStorageAfterDelay && mNumRetries < NUM_STORAGE_CHECKS) {
             if (mNumRetries == 1) {
-                mApp.showToast(getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG);
+                int res;
+
+                if (Environment.isExternalStorageRemovable()) {
+                    res = Res.string.no_sd_card;
+                } else {
+                    res = Res.string.no_usb_storage;
+                }
+
+                mApp.showToast(getResources().getString(res), Toast.LENGTH_LONG);
             }
             handler.sendEmptyMessageDelayed(CHECK_STORAGE, 200);
         } else {
@@ -103,7 +112,15 @@ public final class Gallery extends Activity {
         }
         if (isViewIntent() && getIntent().getData().equals(Images.Media.EXTERNAL_CONTENT_URI) && slideshowIntent) {
             if (!imageManagerHasStorage) {
-                Toast.makeText(this, getResources().getString(Res.string.no_sd_card), Toast.LENGTH_LONG).show();
+                int res;
+
+                if (Environment.isExternalStorageRemovable()) {
+                    res = Res.string.no_sd_card;
+                } else {
+                    res = Res.string.no_usb_storage;
+                }
+
+                Toast.makeText(this, getResources().getString(res), Toast.LENGTH_LONG).show();
                 finish();
             } else {
                 Slideshow slideshow = new Slideshow(this);
