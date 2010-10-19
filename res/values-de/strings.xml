@@ -61,6 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"Abbrechen"</string>
     <string name="share" msgid="3619042788254195341">"Weitergeben"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-Karte wurde entfernt oder ist nicht vorhanden."</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"SD-Karte wurde entfernt oder ist nicht vorhanden."</string>
     <string name="more" msgid="1526449516720792387">"Mehr"</string>
     <string name="select_all" msgid="8623593677101437957">"Alle ausw."</string>
     <string name="deselect_all" msgid="7397531298370285581">"Keine ausw."</string>

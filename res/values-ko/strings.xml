@@ -61,6 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"취소"</string>
     <string name="share" msgid="3619042788254195341">"공유"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD 카드가 마운트 해제되지 않았거나 없습니다."</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"SD 카드가 마운트 해제되지 않았거나 없습니다."</string>
     <string name="more" msgid="1526449516720792387">"추가 작업"</string>
     <string name="select_all" msgid="8623593677101437957">"모두 선택"</string>
     <string name="deselect_all" msgid="7397531298370285581">"모두 선택취소"</string>

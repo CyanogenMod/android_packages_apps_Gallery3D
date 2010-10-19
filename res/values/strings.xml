@@ -85,7 +85,7 @@
     <string name="cancel">Cancel</string>
     <string name="share">Share</string>
     <string name="no_sd_card">SD Card unmounted or not present</string>
-    <string name="no_usb_storage">USB storage unmounted</string>
+    <string name="no_usb_storage" msgid="2666880203366429182">USB storage unmounted</string>
 
 	<!-- String indicating more actions are available -->
     <string name="more">More</string>
