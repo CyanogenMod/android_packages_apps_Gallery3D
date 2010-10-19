@@ -61,6 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"Annulla"</string>
     <string name="share" msgid="3619042788254195341">"Condividi"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"Scheda SD non montata o non presente"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"Scheda SD non montata o non presente"</string>
     <string name="more" msgid="1526449516720792387">"Altro"</string>
     <string name="select_all" msgid="8623593677101437957">"Seleziona tutto"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Deseleziona tutto"</string>

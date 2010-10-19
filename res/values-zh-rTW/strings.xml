@@ -61,6 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"取消"</string>
     <string name="share" msgid="3619042788254195341">"分享"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"已取出或未插入 SD 卡"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"已取出或未插入 SD 卡"</string>
     <string name="more" msgid="1526449516720792387">"更多"</string>
     <string name="select_all" msgid="8623593677101437957">"全選"</string>
     <string name="deselect_all" msgid="7397531298370285581">"取消選取全部"</string>
