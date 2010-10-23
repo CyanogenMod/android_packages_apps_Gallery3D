@@ -1,3 +1,7 @@
+# Exclude Gallery3D from GPU-less devices so that 
+# Gallery can be built
+ifneq ($(BOARD_HAS_LIMITED_EGL),true)
+
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
@@ -16,3 +20,5 @@ include $(BUILD_PACKAGE)
 
 # Use the following include to make our test apk.
 include $(call all-makefiles-under,$(LOCAL_PATH))
+
+endif
