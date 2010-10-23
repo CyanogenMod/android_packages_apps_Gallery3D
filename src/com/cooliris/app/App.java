@@ -41,10 +41,11 @@ public class App {
 	
     public static final TimeZone CURRENT_TIME_ZONE = TimeZone.getDefault();
     public static float PIXEL_DENSITY = 0.0f;
-    
+    public static int PIXEL_DENSITY_DPI = 0;
+
 	private final Context mContext;
     private final HandlerThread mHandlerThread = new HandlerThread("AppHandlerThread");
-    private final Handler mHandler;	
+    private final Handler mHandler;
     private ReverseGeocoder mReverseGeocoder = null;
     
     private boolean mPaused = false;
@@ -59,10 +60,11 @@ public class App {
 			DisplayMetrics metrics = new DisplayMetrics();
 			((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(metrics);
 			PIXEL_DENSITY = metrics.density;
+			PIXEL_DENSITY_DPI = metrics.densityDpi;
 		}
 
         mHandlerThread.start();
-        mHandler = new Handler(mHandlerThread.getLooper());		
+        mHandler = new Handler(mHandlerThread.getLooper());
 		
 	    mReverseGeocoder = new ReverseGeocoder(mContext);					
 	}
