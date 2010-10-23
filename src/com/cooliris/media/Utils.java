@@ -323,7 +323,7 @@ public class Utils {
                 roundedSize <<= 1;
             }
         } else {
-            roundedSize = (initialSize + 7) / 8 * 8;
+            roundedSize = (initialSize + 7);
         }
 
         return roundedSize;
