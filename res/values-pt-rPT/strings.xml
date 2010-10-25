@@ -61,7 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"Cancelar"</string>
     <string name="share" msgid="3619042788254195341">"Partilhar"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"Cartão SD desmontado ou ausente"</string>
-    <string name="no_usb_storage" msgid="9156805088935882242">"Cartão SD desmontado ou ausente"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"Armazenamento USB não montado"</string>
     <string name="more" msgid="1526449516720792387">"Mais"</string>
     <string name="select_all" msgid="8623593677101437957">"Seleccionar tudo"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Desmarcar tudo"</string>

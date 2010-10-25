@@ -61,7 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"Ακύρωση"</string>
     <string name="share" msgid="3619042788254195341">"Κοινή χρήση"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"Λείπει ή δεν έχει εισαχθεί η κάρτα SD"</string>
-    <string name="no_usb_storage" msgid="9156805088935882242">"Λείπει ή δεν έχει εισαχθεί η κάρτα SD"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"Ο χώρος αποθήκευσης USB έχει αποπροσαρτηθεί"</string>
     <string name="more" msgid="1526449516720792387">"Περισσότερα"</string>
     <string name="select_all" msgid="8623593677101437957">"Επιλογή όλων"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Κατάργηση επιλογής όλων"</string>

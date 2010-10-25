@@ -61,7 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"キャンセル"</string>
     <string name="share" msgid="3619042788254195341">"共有"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SDカードがマウントされていないか挿入されていません"</string>
-    <string name="no_usb_storage" msgid="9156805088935882242">"SDカードがマウントされていないか挿入されていません"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"USBストレージのマウントを解除しました"</string>
     <string name="more" msgid="1526449516720792387">"その他"</string>
     <string name="select_all" msgid="8623593677101437957">"すべて選択"</string>
     <string name="deselect_all" msgid="7397531298370285581">"選択をすべて解除"</string>
