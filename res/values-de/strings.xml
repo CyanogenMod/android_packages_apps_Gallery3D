@@ -61,7 +61,7 @@
     <string name="cancel" msgid="3637516880917356226">"Abbrechen"</string>
     <string name="share" msgid="3619042788254195341">"Weitergeben"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SD-Karte wurde entfernt oder ist nicht vorhanden."</string>
-    <string name="no_usb_storage" msgid="9156805088935882242">"SD-Karte wurde entfernt oder ist nicht vorhanden."</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"USB-Speicher getrennt"</string>
     <string name="more" msgid="1526449516720792387">"Mehr"</string>
     <string name="select_all" msgid="8623593677101437957">"Alle ausw."</string>
     <string name="deselect_all" msgid="7397531298370285581">"Keine ausw."</string>
@@ -73,8 +73,8 @@
     <string name="albums_selected" msgid="1815225920157190983">"Alben ausgewählt"</string>
     <string name="items_selected" msgid="8548754404879264861">"Elemente ausgewählt"</string>
     <string name="album" msgid="5198388817734336004">"Album"</string>
-    <string name="start" msgid="4316892252528232165">"Starten"</string>
-    <string name="end" msgid="3645506196012005500">"Ende"</string>
+    <string name="start" msgid="4316892252528232165">"Von"</string>
+    <string name="end" msgid="3645506196012005500">"Bis"</string>
     <string name="location" msgid="3432705876921618314">"Ort"</string>
     <string name="location_unknown" msgid="6310139243003315255">"Unbekannter Standort"</string>
     <string name="title" msgid="7622928349908052569">"Titel"</string>
