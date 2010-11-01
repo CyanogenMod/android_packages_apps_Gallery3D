@@ -286,9 +286,7 @@ public class Utils {
         } else {
             roundedSize = (initialSize + 7);
         }
-        int vmHeapSizeMB = (int) Runtime.getRuntime().maxMemory()/1048576; // Get the VM heapsize in mBytes
-        int respatchQualityFactor = vmHeapSizeMB/12; // Double the quality for 24mB devices and quadruple it for 36mB devices
-        int result = roundedSize/respatchQualityFactor;
+        int result = roundedSize/App.RESPATCH_FACTOR;
         if(result<=1) return 1;
         	else return result;
     }

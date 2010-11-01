@@ -43,6 +43,9 @@ public class App {
     public static float PIXEL_DENSITY = 0.0f;
     public static int PIXEL_DENSITY_DPI = 0;
 
+    public static int RESPATCH_FACTOR = 0;
+    public static final int RESPATCH_DIVISOR = 12;
+    
 	private final Context mContext;
     private final HandlerThread mHandlerThread = new HandlerThread("AppHandlerThread");
     private final Handler mHandler;
@@ -61,6 +64,19 @@ public class App {
 			((Activity)mContext).getWindowManager().getDefaultDisplay().getMetrics(metrics);
 			PIXEL_DENSITY = metrics.density;
 			PIXEL_DENSITY_DPI = metrics.densityDpi;
+		}
+		
+		/*
+		 *  Adaptive ResPatch by Petar Šegina <psegina@ymail.com>
+		 *  By default, Gallery3D is made to load very low resolution images in
+		 *  order to avoid running into outOfMemory situations. Since some devices come with enormous
+		 *  amounts of memory and processing power, it is pointless not to use those resources. So, 
+		 *  depending on the maximum heap size available, we want to determine the highest
+		 *  possible upscale factor. This is calculated from the heap size and then used in
+		 *  com.cooliris.media.Utils.java to return higher resolution images.
+		 */
+		if(RESPATCH_FACTOR == 0){
+			RESPATCH_FACTOR = (int) (Runtime.getRuntime().maxMemory()/1048576) / RESPATCH_DIVISOR;
 		}
 
         mHandlerThread.start();
