@@ -43,8 +43,23 @@ public class App {
     public static float PIXEL_DENSITY = 0.0f;
     public static int PIXEL_DENSITY_DPI = 0;
 
+    /*
+     * The upscaling factor used for the respatch.
+     * This is the value that is used to change the scaling of the Bitmap loader.
+     * Values :
+     * 		0 -> Determine automatically
+     * 		1 -> Disable respatch
+     * 		n -> Custom value to use (note : most devices can't handle more than 2 by default)
+     */
     public static int RESPATCH_FACTOR = 0;
-    public static final int RESPATCH_DIVISOR = 12;
+    /*
+     * The divisor for adaptive respatch
+     * Defines the number that is used to divide the heap size in order to obtain the
+     * respatch factor.
+     * Most devices should be able to handle 9 memory-wise, but the images returned
+     * might be somewhat CPU-intensive. Adjust accordingly.
+     */
+    public static final int RESPATCH_DIVISOR = 9;
     
 	private final Context mContext;
     private final HandlerThread mHandlerThread = new HandlerThread("AppHandlerThread");
