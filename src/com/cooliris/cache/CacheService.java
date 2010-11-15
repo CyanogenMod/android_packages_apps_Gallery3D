@@ -760,7 +760,10 @@ public final class CacheService extends IntentService {
             scaleFactor = (float) thumbnailHeight / height;
         } else {
             // Horizontally constrained.
-            cropHeight = thumbnailHeight * width / thumbnailWidth;
+        	if(thumbnailWidth != 0)
+        		cropHeight = thumbnailHeight * width / thumbnailWidth;
+        	else
+        		cropHeight = thumbnailHeight * width;
             cropY = Math.max(0, Math.min(focusY - cropHeight / 2, height - cropHeight));
             cropX = 0;
             cropWidth = width;
