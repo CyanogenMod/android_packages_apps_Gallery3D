@@ -82,6 +82,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     private final LayoutInterface mLayoutInterface;
     private static final LayoutInterface sfullScreenLayoutInterface = new GridLayoutInterface(1);
+    private static final float DEPTH_POSITION = 0.5f;
 
     private MediaFeed mMediaFeed;
     private boolean mInAlbum = false;
@@ -678,6 +679,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                                         displayItem.set(position, j, false);
                                         displayItem.commit();
                                     } else {
+                                        boolean isTouchPressed = mInputProcessor.touchPressed();
+                                        boolean isBarDragged = mHud.getTimeBar().isDragged();
+                                        if (mState == STATE_GRID_VIEW
+                                                && !isTouchPressed
+                                                && !isBarDragged) {
+                                            displayItem.mAnimatedPosition.add(
+                                                0.0f, 0.0f, i * DEPTH_POSITION);
+                                        }
                                         displayList.setPositionAndStackIndex(displayItem, position, j, true);
                                     }
                                     displayItems[baseIndex + j] = displayItem;
