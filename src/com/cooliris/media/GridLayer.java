@@ -82,6 +82,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     private final LayoutInterface mLayoutInterface;
     private static final LayoutInterface sfullScreenLayoutInterface = new GridLayoutInterface(1);
+    private static final float DEPTH_POSITION = 0.55f;
 
     private MediaFeed mMediaFeed;
     private boolean mInAlbum = false;
@@ -116,6 +117,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private String mRequestFocusContentUri;
     private int mFrameCount;
     private boolean mRequestToEnterSelection;
+    private boolean mLayoutChanged = false;
 
     // private ArrayList<Integer> mBreakSlots = new ArrayList<Integer>();
     // private ArrayList<Integer> mOldBreakSlots;
@@ -678,6 +680,13 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                                         displayItem.set(position, j, false);
                                         displayItem.commit();
                                     } else {
+                                        boolean isTouchPressed = mInputProcessor.touchPressed();
+                                        boolean isBarDragged = mHud.getTimeBar().isDragged();
+                                        if (mState == STATE_GRID_VIEW
+                                                && mLayoutChanged) {
+                                            displayItem.mAnimatedPosition.add(
+                                                0.0f, 0.0f, (i % 5) * DEPTH_POSITION);
+                                        }
                                         displayList.setPositionAndStackIndex(displayItem, position, j, true);
                                     }
                                     displayItems[baseIndex + j] = displayItem;
@@ -690,6 +699,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                         bestItems.clear();
                     }
                 }
+                mLayoutChanged = false;
                 if (mFeedChanged) {
                     mFeedChanged = false;
                     if (mInputProcessor != null && mState == STATE_FULL_SCREEN && mRequestFocusContentUri == null) {
@@ -872,6 +882,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 deltaAnchorPosition.subtract(currentSlotPosition);
                 deltaAnchorPosition.y = 0;
                 deltaAnchorPosition.z = 0;
+                mLayoutChanged = true;
             }
             mDeltaAnchorPositionUncommited.set(deltaAnchorPosition);
         } finally {
