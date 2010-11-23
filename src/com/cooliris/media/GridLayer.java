@@ -680,8 +680,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                                         displayItem.set(position, j, false);
                                         displayItem.commit();
                                     } else {
-                                        boolean isTouchPressed = mInputProcessor.touchPressed();
-                                        boolean isBarDragged = mHud.getTimeBar().isDragged();
                                         if (mState == STATE_GRID_VIEW
                                                 && mLayoutChanged) {
                                             displayItem.mAnimatedPosition.add(
