@@ -292,8 +292,10 @@ public final class PathBarLayer extends Layer {
             int numComponents = mComponents.size();
             for (int i = 0; i < numComponents; i++) {
                 Component component = mComponents.get(i);
-                width -= (component.getIconWidth() + 20.0f * App.PIXEL_DENSITY);
-                component.computeLabel(width);
+                if (component != null) {
+                    width -= (component.getIconWidth() + 20.0f * App.PIXEL_DENSITY);
+                    component.computeLabel(width);
+                }
             }
         }
     }
