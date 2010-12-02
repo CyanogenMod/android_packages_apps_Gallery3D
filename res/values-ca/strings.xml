@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Galeria</string>
+  <string name="gadget_title">Marc de fotos</string>
+  <string name="details_ms">%1$02d:%2$02d</string>
+  <string name="details_hms">%1$d:%2$02d:%3$02d</string>
+  <string name="movie_view_label">Pel·lícules</string>
+  <string name="loading_video">S\'està carregant el vídeo\u2026</string>
+  <string name="resume_playing_title">Reprèn el vídeo</string>
+  <string name="resume_playing_message">Reprendre la reproducció des de %s?</string>
+  <string name="resume_playing_resume">Reprendre la reproducció</string>
+  <string name="resume_playing_restart">Començar de nou</string>
+  <string name="camera">Càmera</string>
+  <string name="crop_save_text">Desa</string>
+  <string name="crop_discard_text">Descarta</string>
+  <string name="multiface_crop_help">Toca una cara per començar.</string>
+  <string name="saving_image">S\'està desant la foto\u2026</string>
+  <string name="crop_label">Retalla la imatge</string>
+  <string name="running_face_detection">Sisplau espera...</string>
+  <string name="set_image">Estableix imatge com</string>
+  <string name="wallpaper">Establint fons, sisplau espera...</string>
+  <string name="camera_setas_wallpaper">Fons</string>
+  <string name="details_ok">Accepta</string>
+  <string name="loading_new">Carregant nous àlbums i fotos</string>
+  <string name="initializing">Carregant</string>
+  <string name="pick_prompt">Tria un element de la teva col·lecció</string>
+  <string name="no_items">No hi ha cap element en la teva col·lecció</string>
+  <string name="pick">Tria</string>
+  <string name="delete">Esborra</string>
+  <string name="confirm_delete">Confirma</string>
+  <string name="cancel">Cancel·la</string>
+  <string name="share">Comparteix</string>
+  <string name="no_sd_card">Tarja SD sense muntar o no introduïda</string>
+  <string name="more">Més</string>
+  <string name="select_all">Selecciona-ho tot</string>
+  <string name="deselect_all">Desselecciona-ho tot</string>
+  <string name="slideshow">Diapositives</string>
+  <string name="menu">Menú</string>
+  <string name="details">Detalls</string>
+  <string name="album_selected">Àlbum seleccionat</string>
+  <string name="item_selected">Element seleccionat</string>
+  <string name="albums_selected">Àlbums seleccionats</string>
+  <string name="items_selected">Elements seleccionats</string>
+  <string name="album">Àlbum</string>
+  <string name="start">Comença</string>
+  <string name="end">Acaba</string>
+  <string name="location">Ubicació</string>
+  <string name="location_unknown">Ubicació desconeguda</string>
+  <string name="title">Títol</string>
+  <string name="type">Tipus</string>
+  <string name="file_size">Mida del fitxer</string>
+  <string name="file_size_unknown">Desconegut</string>
+  <string name="size">Mida</string>
+  <string name="size_unknown">Desconegut</string>
+  <string name="cam">Càmera</string>
+  <string name="cam_unknown">Desconegut</string>
+  <string name="taken_on">Fet el</string>
+  <string name="added_on">Afegit el</string>
+  <string name="show_on_map">Mostra al mapa</string>
+  <string name="rotate_left">Gira a l\'esquerra</string>
+  <string name="rotate_right">Gira a la dreta</string>
+  <string name="crop">Retalla</string>
+  <string name="set_as">Estableix com a</string>
+  <string name="set_as_wallpaper">Estableix com fons</string>
+  <string name="item">Element</string>
+  <string name="items">Elements</string>
+  <string name="around">Al voltant</string>
+  <string name="date_unknown">Data desconeguda</string>
+  <string name="video_err">No es pot visualitzar el vídeo</string>
+  <string name="menu_open_url">Obre l\'URL</string>
+  <string name="video_set_url_pos">Obre</string>
+  <string name="video_set_url_neg">Cancel·la</string>
+  <string name="video_set_url_title">Obre l\'URL</string>
+  <string name="video_set_url_msg">URL de la pel·lícula:</string>
+  <string name="video_set_url_hint">rtsp://servidor/fitxer</string>
+  <string-array name="months_abbreviated">
+                <item>Gen</item>
+                <item>Feb</item>
+                <item>Mar</item>
+                <item>Abr</item>
+                <item>Mai</item>
+                <item>Jun</item>
+                <item>Jul</item>
+                <item>Ago</item>
+                <item>Set</item>
+                <item>Oct</item>
+                <item>Nov</item>
+                <item>Des</item>
+  </string-array>
+</resources>
