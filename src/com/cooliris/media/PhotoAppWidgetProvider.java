@@ -155,8 +155,9 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
             Bitmap bitmap = null;
             try {
                 SQLiteDatabase db = getReadableDatabase();
-                String selection = String.format("%s=%d", FIELD_APPWIDGET_ID, appWidgetId);
-                c = db.query(TABLE_PHOTOS, PHOTOS_PROJECTION, selection, null, null, null, null, null);
+                String[] selectionArgs = { String.valueOf(appWidgetId) };
+                c = db.query(TABLE_PHOTOS, PHOTOS_PROJECTION, FIELD_APPWIDGET_ID + "=?",
+                        selectionArgs, null, null, null, null);
 
                 if (c != null && LOGD) {
                     Log.d(TAG, "getPhoto query count=" + c.getCount());
@@ -184,8 +185,8 @@ public class PhotoAppWidgetProvider extends AppWidgetProvider {
         public void deletePhoto(int appWidgetId) {
             try {
                 SQLiteDatabase db = getWritableDatabase();
-                String whereClause = String.format("%s=%d", FIELD_APPWIDGET_ID, appWidgetId);
-                db.delete(TABLE_PHOTOS, whereClause, null);
+                String[] selectionArgs = { String.valueOf(appWidgetId) };
+                db.delete(TABLE_PHOTOS, FIELD_APPWIDGET_ID + "=?", selectionArgs);
             } catch (SQLiteException e) {
                 Log.e(TAG, "Could not delete photo from database", e);
             }
