@@ -66,7 +66,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     private final StringTexture[] mMonthLabels = new StringTexture[12];
     private final StringTexture[] mDayLabels = new StringTexture[32];
     private final StringTexture[] mOpaqueDayLabels = new StringTexture[32];
-    private final StringTexture mDot = new StringTexture("�");
+    private final StringTexture mDot = new StringTexture("\u2022");
     private final HashMap<MediaItem, Marker> mTracker = new HashMap<MediaItem, Marker>(1024);
     private int mState;
     private float mTextAlpha = 0.0f;
