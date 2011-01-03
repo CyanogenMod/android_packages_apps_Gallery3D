@@ -71,9 +71,10 @@ public class App {
 		
 	public void shutdown() {
         mReverseGeocoder.shutdown();
+        mHandlerThread.quit();
         
         // unregister
-        mMap.put(mContext, null);
+        mMap.remove(mContext);
 	}
 	
     public Context getContext() {
