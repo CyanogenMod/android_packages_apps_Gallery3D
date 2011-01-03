@@ -324,7 +324,7 @@ public final class HudLayer extends Layer {
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
-                            if (item == null) {
+                            if (item == null || item.mContentUri == null) {
                                 return;
                             }
                             mGridLayer.deselectAll();
@@ -345,7 +345,7 @@ public final class HudLayer extends Layer {
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
-                            if (item == null) {
+                            if (item == null || item.mContentUri == null) {
                                 return;
                             }
                             mGridLayer.deselectAll();
@@ -368,7 +368,7 @@ public final class HudLayer extends Layer {
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
-                            if (item == null) {
+                            if (item == null || item.mContentUri == null) {
                                 return;
                             }
                             mGridLayer.deselectAll();
