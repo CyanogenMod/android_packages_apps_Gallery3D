@@ -281,16 +281,25 @@ public class LocalDataSource implements DataSource {
 
     public boolean performOperation(int operation, ArrayList<MediaBucket> mediaBuckets, Object data) {
         int numBuckets = mediaBuckets.size();
+        int unselectedItems;
         ContentResolver cr = mContext.getContentResolver();
         switch (operation) {
         case MediaFeed.OPERATION_DELETE:
             for (int i = 0; i < numBuckets; ++i) {
+                unselectedItems = -1;
                 MediaBucket bucket = mediaBuckets.get(i);
                 MediaSet set = bucket.mediaSet;
                 ArrayList<MediaItem> items = bucket.mediaItems;
-                if (set != null && items == null) {
-                    // TODO bulk delete
-                    // remove the entire bucket
+
+                // MediaSet.mItem holds all the items that
+                // are not selected and not to be deleted.
+                if (set != null && set.getItems() != null)
+                    unselectedItems = set.getItems().size();
+
+                //If there are no unselected Items, then delete the entire bucket.
+                if ((set != null && items == null)
+                    || (set != null && items != null && unselectedItems  == 0) ) {
+
                     final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
                     final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
                     final String whereImages = Images.ImageColumns.BUCKET_ID + "=" + Long.toString(set.mId);
