@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"Galeri"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"Jan"</item>
+    <item msgid="4680813504147866612">"Feb"</item>
+    <item msgid="1934595560893153574">"Mar"</item>
+    <item msgid="9020107212348500338">"Apr"</item>
+    <item msgid="5734859077892484949">"Mei"</item>
+    <item msgid="8546985030184126468">"Jun"</item>
+    <item msgid="3639654472839533748">"Jul"</item>
+    <item msgid="8434242278630875235">"Agt"</item>
+    <item msgid="8493511009771049442">"Sep"</item>
+    <item msgid="685181459001441496">"Okt"</item>
+    <item msgid="6662413035764778250">"Nov"</item>
+    <item msgid="3784870986696899313">"Des"</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"Bingkai gambar"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"Film"</string>
+    <string name="loading_video" msgid="4013492720121891585">"Memuat video..."</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"Lanjutkan video"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"Lanjutkan pemutaran dari %s ?"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"Lanjutkan pemutaran"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"Memulai"</string>
+    <string name="camera" msgid="2730811566218090802">"Kamera"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"Simpan"</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"Buang"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"Ketuk wajah untuk memulai."</string>
+    <string name="saving_image" msgid="7270334453636349407">"Menyimpan gambar…"</string>
+    <string name="crop_label" msgid="521114301871349328">"Pangkas gambar"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"Harap tunggu…"</string>
+    <string name="set_image" msgid="2331476809308010401">"Setel gambar sebagai"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Menyetel wallpaper, harap tunggu..."</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Wallpaper"</string>
+    <string name="details_ok" msgid="6848594369924424312">"OK"</string>
+    <string name="loading_new" msgid="7893793767294787579">"Memuat album dan foto baru"</string>
+    <string name="initializing" msgid="2374228157398540466">"Memuat"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"Pilih item dari koleksi Anda"</string>
+    <string name="no_items" msgid="3117870234034732172">"Tidak ada item dalam koleksi Anda"</string>
+    <string name="pick" msgid="7248789132035843128">"Pilih"</string>
+    <string name="delete" msgid="2839695998251824487">"Hapus"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"Konfirmasi Hapus"</string>
+    <string name="cancel" msgid="3637516880917356226">"Batal"</string>
+    <string name="share" msgid="3619042788254195341">"Bagikan"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"Kartu SD tidak terpasang atau tidak ada"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"Penyimpanan USB dilepas"</string>
+    <string name="more" msgid="1526449516720792387">"Lainnya"</string>
+    <string name="select_all" msgid="8623593677101437957">"Pilih Semua"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Batalkan semua pilihan"</string>
+    <string name="slideshow" msgid="4355906903247112975">"Rangkai salindia"</string>
+    <string name="menu" msgid="1819649153380636719">"Menu"</string>
+    <string name="details" msgid="8415120088556445230">"Detail"</string>
+    <string name="album_selected" msgid="3441280740465738452">"album dipilih"</string>
+    <string name="item_selected" msgid="6137767503817908841">"item yang dipilih"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"album dipilih"</string>
+    <string name="items_selected" msgid="8548754404879264861">"item yang dipilih"</string>
+    <string name="album" msgid="5198388817734336004">"Album"</string>
+    <string name="start" msgid="4316892252528232165">"Mulai"</string>
+    <string name="end" msgid="3645506196012005500">"Akhiri"</string>
+    <string name="location" msgid="3432705876921618314">"Lokasi"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"Lokasi tak diketahui"</string>
+    <string name="title" msgid="7622928349908052569">"Judul"</string>
+    <string name="type" msgid="4329478642546287192">"Jenis"</string>
+    <string name="taken_on" msgid="3269486910757192479">"Diambil pada"</string>
+    <string name="added_on" msgid="5194321063173381814">"Ditambahkan pada"</string>
+    <string name="show_on_map" msgid="6157544221201750980">"Tampilkan pada peta"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"Putar ke Kiri"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"Putar ke Kanan"</string>
+    <string name="crop" msgid="7970750655414797277">"Pangkas"</string>
+    <string name="set_as" msgid="3636764710790507868">"Setel sebagai"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"Setel sebagai wallpaper"</string>
+    <string name="item" msgid="636303673288563698">"item"</string>
+    <string name="items" msgid="6403254716052150916">"item"</string>
+    <string name="around" msgid="2223906282110417412">"Sekitar"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"Tanggal tidak diketahui"</string>
+    <string name="video_err" msgid="7917736494827857757">"Tidak dapat memutar video"</string>
+</resources>

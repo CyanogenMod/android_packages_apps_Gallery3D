@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"Галерија"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"јан"</item>
+    <item msgid="4680813504147866612">"феб"</item>
+    <item msgid="1934595560893153574">"мар"</item>
+    <item msgid="9020107212348500338">"апр"</item>
+    <item msgid="5734859077892484949">"мај"</item>
+    <item msgid="8546985030184126468">"јун"</item>
+    <item msgid="3639654472839533748">"јул"</item>
+    <item msgid="8434242278630875235">"авг"</item>
+    <item msgid="8493511009771049442">"сеп"</item>
+    <item msgid="685181459001441496">"окт"</item>
+    <item msgid="6662413035764778250">"нов"</item>
+    <item msgid="3784870986696899313">"дец"</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"Оквир слике"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"Филмови"</string>
+    <string name="loading_video" msgid="4013492720121891585">"Учитавање видео снимка…"</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"Наставак видео снимка"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"Желите ли да наставите репродукцију од %s ?"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"Настави репродукцију"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"Започни поново"</string>
+    <string name="camera" msgid="2730811566218090802">"Камера"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"Сачувај"</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"Одбаци"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"За почетак додирните неко лице."</string>
+    <string name="saving_image" msgid="7270334453636349407">"Чување слике…"</string>
+    <string name="crop_label" msgid="521114301871349328">"Опсеци слику"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"Сачекајте…"</string>
+    <string name="set_image" msgid="2331476809308010401">"Постављање слике као"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Постављање позадине. Сачекајте…"</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Позадина"</string>
+    <string name="details_ok" msgid="6848594369924424312">"Потврди"</string>
+    <string name="loading_new" msgid="7893793767294787579">"Учитавање нових албума и слика"</string>
+    <string name="initializing" msgid="2374228157398540466">"Учитавање"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"Изаберите неку ставку из колекције"</string>
+    <string name="no_items" msgid="3117870234034732172">"Нема ставки у колекцији"</string>
+    <string name="pick" msgid="7248789132035843128">"Изабери"</string>
+    <string name="delete" msgid="2839695998251824487">"Избриши"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"Потврдите брисање"</string>
+    <string name="cancel" msgid="3637516880917356226">"Откажи"</string>
+    <string name="share" msgid="3619042788254195341">"Дели"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"SD картица је деинсталирана или није присутна"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"Није прикључена USB меморија"</string>
+    <string name="more" msgid="1526449516720792387">"Још"</string>
+    <string name="select_all" msgid="8623593677101437957">"Изабери све"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Опозови све изборе"</string>
+    <string name="slideshow" msgid="4355906903247112975">"Пројекција слајдова"</string>
+    <string name="menu" msgid="1819649153380636719">"Мени"</string>
+    <string name="details" msgid="8415120088556445230">"Детаљи"</string>
+    <string name="album_selected" msgid="3441280740465738452">"изабрани албум"</string>
+    <string name="item_selected" msgid="6137767503817908841">"изабрана ставка"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"изабрани албуми"</string>
+    <string name="items_selected" msgid="8548754404879264861">"изабране ставке"</string>
+    <string name="album" msgid="5198388817734336004">"Албум"</string>
+    <string name="start" msgid="4316892252528232165">"Покрени"</string>
+    <string name="end" msgid="3645506196012005500">"Заврши"</string>
+    <string name="location" msgid="3432705876921618314">"Локација"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"Непозната локација"</string>
+    <string name="title" msgid="7622928349908052569">"Наслов"</string>
+    <string name="type" msgid="4329478642546287192">"Тип"</string>
+    <string name="taken_on" msgid="3269486910757192479">"Снимљено дана"</string>
+    <string name="added_on" msgid="5194321063173381814">"Додато дана"</string>
+    <string name="show_on_map" msgid="6157544221201750980">"Прикажи на мапи"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"Ротирај улево"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"Ротирај удесно"</string>
+    <string name="crop" msgid="7970750655414797277">"Опсеци"</string>
+    <string name="set_as" msgid="3636764710790507868">"Постави као"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"Постави као позадину"</string>
+    <string name="item" msgid="636303673288563698">"ставка"</string>
+    <string name="items" msgid="6403254716052150916">"ставке(и)"</string>
+    <string name="around" msgid="2223906282110417412">"Приближно"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"Непознат датум"</string>
+    <string name="video_err" msgid="7917736494827857757">"Није могуће пустити видео"</string>
+</resources>

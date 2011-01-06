@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"گالری"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"ژانویه"</item>
+    <item msgid="4680813504147866612">"فوریه"</item>
+    <item msgid="1934595560893153574">"مارس"</item>
+    <item msgid="9020107212348500338">"آوریل"</item>
+    <item msgid="5734859077892484949">"مه"</item>
+    <item msgid="8546985030184126468">"ژوئن"</item>
+    <item msgid="3639654472839533748">"ژوئیه"</item>
+    <item msgid="8434242278630875235">"اوت"</item>
+    <item msgid="8493511009771049442">"سپتامبر"</item>
+    <item msgid="685181459001441496">"اکتبر"</item>
+    <item msgid="6662413035764778250">"نوامبر"</item>
+    <item msgid="3784870986696899313">"دسامبر"</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"قاب عکس"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"فیلم ها"</string>
+    <string name="loading_video" msgid="4013492720121891585">"در حال بارگیری ویدیو..."</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"از سرگیری ویدیو"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"ادامه پخش از %s ؟"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"از سرگیری پخش"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"شروع مجدد"</string>
+    <string name="camera" msgid="2730811566218090802">"دوربین"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"ذخیره"</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"صرفنظر"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"چهره ای را برای شروع ضربه بزنید."</string>
+    <string name="saving_image" msgid="7270334453636349407">"در حال ذخیره عکس..."</string>
+    <string name="crop_label" msgid="521114301871349328">"برش تصویر"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"لطفاً منتظر بمانید…"</string>
+    <string name="set_image" msgid="2331476809308010401">"تنظیم تصویر بعنوان"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"تنظیم تصویر زمینه، لطفاً منتظر بمانید..."</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"تصویر زمینه"</string>
+    <string name="details_ok" msgid="6848594369924424312">"تأیید"</string>
+    <string name="loading_new" msgid="7893793767294787579">"بارگیری آلبوم ها و عکس های جدید"</string>
+    <string name="initializing" msgid="2374228157398540466">"بارگیری"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"انتخاب یک مورد از مجموعه خود"</string>
+    <string name="no_items" msgid="3117870234034732172">"هیچ موردی در مجموعه شما موجود نیست"</string>
+    <string name="pick" msgid="7248789132035843128">"انتخاب"</string>
+    <string name="delete" msgid="2839695998251824487">"حذف"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"تأیید حذف"</string>
+    <string name="cancel" msgid="3637516880917356226">"لغو"</string>
+    <string name="share" msgid="3619042788254195341">"اشتراک گذاری"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"کارت SD نصب نشده یا موجود نیست"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"حافظه USB در دسترس نیست"</string>
+    <string name="more" msgid="1526449516720792387">"بیشتر"</string>
+    <string name="select_all" msgid="8623593677101437957">"انتخاب همه"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"لغو انتخاب همه"</string>
+    <string name="slideshow" msgid="4355906903247112975">"نمایش اسلاید"</string>
+    <string name="menu" msgid="1819649153380636719">"منو"</string>
+    <string name="details" msgid="8415120088556445230">"جزئیات"</string>
+    <string name="album_selected" msgid="3441280740465738452">"آلبوم انتخاب شده"</string>
+    <string name="item_selected" msgid="6137767503817908841">"مورد انتخابی"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"آلبوم های انتخابی"</string>
+    <string name="items_selected" msgid="8548754404879264861">"موارد انتخابی"</string>
+    <string name="album" msgid="5198388817734336004">"آلبوم"</string>
+    <string name="start" msgid="4316892252528232165">"شروع"</string>
+    <string name="end" msgid="3645506196012005500">"پایان"</string>
+    <string name="location" msgid="3432705876921618314">"موقعیت مکانی"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"موقعیت مکانی ناشناس"</string>
+    <string name="title" msgid="7622928349908052569">"عنوان"</string>
+    <string name="type" msgid="4329478642546287192">"نوع"</string>
+    <string name="taken_on" msgid="3269486910757192479">"گرفته شده در"</string>
+    <string name="added_on" msgid="5194321063173381814">"افزوده شد در"</string>
+    <string name="show_on_map" msgid="6157544221201750980">"نمایش در نقشه"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"چرخش به چپ"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"چرخش به راست"</string>
+    <string name="crop" msgid="7970750655414797277">"برش"</string>
+    <string name="set_as" msgid="3636764710790507868">"تنظیم بعنوان"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"تنظیم بعنوان تصویر زمینه"</string>
+    <string name="item" msgid="636303673288563698">"مورد"</string>
+    <string name="items" msgid="6403254716052150916">"موارد"</string>
+    <string name="around" msgid="2223906282110417412">"اطراف"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"تاریخ ناشناخته"</string>
+    <string name="video_err" msgid="7917736494827857757">"پخش ویدیو امکان پذیر نیست"</string>
+</resources>

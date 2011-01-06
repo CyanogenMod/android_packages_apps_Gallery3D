@@ -45,7 +45,7 @@
     <string name="crop_discard_text" msgid="5303657888280340603">"Eliminar"</string>
     <string name="multiface_crop_help" msgid="3127018992717032779">"Golpea una cara para comenzar."</string>
     <string name="saving_image" msgid="7270334453636349407">"Guardando imagen..."</string>
-    <string name="crop_label" msgid="521114301871349328">"Cortar la imagen"</string>
+    <string name="crop_label" msgid="521114301871349328">"Recortar imagen"</string>
     <string name="running_face_detection" msgid="4094707964259463039">"Por favor, espera..."</string>
     <string name="set_image" msgid="2331476809308010401">"Definir imagen como"</string>
     <string name="wallpaper" msgid="9222901738515471972">"Configurando papel tapiz. Espera, por favor..."</string>
@@ -57,7 +57,7 @@
     <string name="no_items" msgid="3117870234034732172">"No hay artículos en tu colección."</string>
     <string name="pick" msgid="7248789132035843128">"Seleccionar"</string>
     <string name="delete" msgid="2839695998251824487">"Eliminar"</string>
-    <string name="confirm_delete" msgid="5731757674837098707">"Confirmar supresión"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"Confirmar eliminación"</string>
     <string name="cancel" msgid="3637516880917356226">"Cancelar"</string>
     <string name="share" msgid="3619042788254195341">"Compartir"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"No se encuentra la tarjeta SD o está desactivada"</string>
@@ -84,7 +84,7 @@
     <string name="show_on_map" msgid="6157544221201750980">"Mostrar mapa"</string>
     <string name="rotate_left" msgid="7412075232752726934">"Rotar hacia la izquierda"</string>
     <string name="rotate_right" msgid="7340681085011826618">"Rotar hacia la derecha"</string>
-    <string name="crop" msgid="7970750655414797277">"Cortar"</string>
+    <string name="crop" msgid="7970750655414797277">"Recortar"</string>
     <string name="set_as" msgid="3636764710790507868">"Definir como"</string>
     <string name="set_as_wallpaper" msgid="5704970402417438945">"Establecer como fondo de pantalla"</string>
     <string name="item" msgid="636303673288563698">"elemento"</string>
