@@ -500,17 +500,7 @@ public final class MediaFeed implements Runnable {
 
     private void showToast(final String string, final int duration, final boolean centered) {
         if (mContext != null && App.get(mContext) != null && !App.get(mContext).isPaused()) {
-            App.get(mContext).getHandler().post(new Runnable() {
-                public void run() {
-                    if (mContext != null) {
-                        Toast toast = Toast.makeText(mContext, string, duration);
-                        if (centered) {
-                            toast.setGravity(Gravity.CENTER, 0, 0);
-                        }
-                        toast.show();
-                    }
-                }
-            });
+            App.get(mContext).showToast(string, Toast.LENGTH_LONG, centered);
         }
     }
 

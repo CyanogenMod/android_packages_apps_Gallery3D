@@ -384,7 +384,8 @@ public final class CacheService extends IntentService {
         if (!isCacheReady(true)) {
             // In this case, we should try to show a toast
             if (context instanceof Gallery) {
-                App.get(context).showToast(context.getResources().getString(Res.string.loading_new), Toast.LENGTH_SHORT);
+                App.get(context).showToast(context.getResources().getString(Res.string.loading_new),
+                        Toast.LENGTH_SHORT, false);
             }
             if (DEBUG)
                 Log.d(TAG, "Refreshing Cache for all items");

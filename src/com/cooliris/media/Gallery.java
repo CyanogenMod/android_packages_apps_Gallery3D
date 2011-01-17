@@ -90,7 +90,7 @@ public final class Gallery extends Activity {
                     res = Res.string.no_usb_storage;
                 }
 
-                mApp.showToast(getResources().getString(res), Toast.LENGTH_LONG);
+                mApp.showToast(getResources().getString(res), Toast.LENGTH_LONG, false);
             }
             handler.sendEmptyMessageDelayed(CHECK_STORAGE, 200);
         } else {
@@ -262,7 +262,7 @@ public final class Gallery extends Activity {
     public void onDestroy() {
         // Force GLThread to exit.
         setContentView(Res.layout.main);
-
+        mApp.shutdown();
         // Remove any post messages.
         handler.removeMessages(CHECK_STORAGE);
         handler.removeMessages(HANDLE_INTENT);
@@ -283,7 +283,6 @@ public final class Gallery extends Activity {
             mRenderView = null;
         }
         mGridLayer = null;
-        mApp.shutdown();
         super.onDestroy();
         Log.i(TAG, "onDestroy");
     }
@@ -399,7 +398,8 @@ public final class Gallery extends Activity {
                 }
                 mGridLayer.setPickIntent(true);
                 if (hasStorage) {
-                    mApp.showToast(getResources().getString(Res.string.pick_prompt), Toast.LENGTH_LONG);
+                    mApp.showToast(getResources().getString(Res.string.pick_prompt),
+                            Toast.LENGTH_LONG, false);
                 }
             }
         } else { // view intent for images and review intent for images and videos

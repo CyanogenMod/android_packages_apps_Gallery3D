@@ -20,7 +20,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -43,12 +45,13 @@ public class App {
     public static float PIXEL_DENSITY = 0.0f;
     public static int PIXEL_DENSITY_DPI = 0;
 
-	private final Context mContext;
-    private final HandlerThread mHandlerThread = new HandlerThread("AppHandlerThread");
-    private final Handler mHandler;
+    private final Context mContext;
+
+    private final Handler mHandler;	
     private ReverseGeocoder mReverseGeocoder = null;
     
     private boolean mPaused = false;
+    private Toast mToast;
     
 	public App(Context context) {
 		// register
@@ -63,15 +66,14 @@ public class App {
 			PIXEL_DENSITY_DPI = metrics.densityDpi;
 		}
 
-        mHandlerThread.start();
-        mHandler = new Handler(mHandlerThread.getLooper());
+        mHandler = new Handler(Looper.getMainLooper());
 		
 	    mReverseGeocoder = new ReverseGeocoder(mContext);					
 	}
 		
 	public void shutdown() {
+        dismissToast();
         mReverseGeocoder.shutdown();
-        mHandlerThread.quit();
         
         // unregister
         mMap.remove(mContext);
@@ -121,11 +123,28 @@ public class App {
 //
 //    public void onDestroy() {
 //    }
-    
-    public void showToast(final String string, final int duration) {
+
+    public void showToast(final String string, final int duration, final boolean centered) {
         mHandler.post(new Runnable() {
             public void run() {
-                Toast.makeText(mContext, string, duration).show();
+                if (mToast != null) {
+                    mToast.cancel();
+                }
+                mToast = Toast.makeText(mContext, string, duration);
+                if (centered) {
+                    mToast.setGravity(Gravity.CENTER, 0, 0);
+                }
+                mToast.show();
+            }
+       });
+    }
+
+    public void dismissToast() {
+        mHandler.post(new Runnable() {
+            public void run() {
+                if (mToast != null) {
+                    mToast.cancel();
+                }
             }
         });
     }
