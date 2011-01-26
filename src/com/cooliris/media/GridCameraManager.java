@@ -107,25 +107,35 @@ public final class GridCameraManager {
                     imgBottomRight.set(position.x + width, position.y + height, 0);
                     camera.convertToCameraSpace(0, 0, 0, topLeft);
                     camera.convertToCameraSpace(camera.mWidth, camera.mHeight, 0, bottomRight);
-                    float leftExtent = topLeft.x - imgTopLeft.x;
-                    float rightExtent = bottomRight.x - imgBottomRight.x;
                     camera.mConvergenceSpeed = 2.0f;
                     camera.mFriction = 0.0f;
-                    if (leftExtent < 0) {
-                        retVal = true;
-                        camera.moveBy(-leftExtent, 0, 0);
+                    if ((bottomRight.x - topLeft.x) > (imgBottomRight.x - imgTopLeft.x)) {
+                        final float hCenterExtent= (bottomRight.x + topLeft.x)/2 - (imgBottomRight.x + imgTopLeft.x)/2;
+                        camera.moveBy(-hCenterExtent, 0, 0);
+                    } else {
+                        float leftExtent = topLeft.x - imgTopLeft.x;
+                        float rightExtent = bottomRight.x - imgBottomRight.x;
+                        if (leftExtent < 0) {
+                            retVal = true;
+                            camera.moveBy(-leftExtent, 0, 0);
+                        }
+                        if (rightExtent > 0) {
+                            retVal = true;
+                            camera.moveBy(-rightExtent, 0, 0);
+                        }
                     }
-                    if (rightExtent > 0) {
-                        retVal = true;
-                        camera.moveBy(-rightExtent, 0, 0);
-                    }
-                    float topExtent = topLeft.y - imgTopLeft.y;
-                    float bottomExtent = bottomRight.y - imgBottomRight.y;
-                    if (topExtent < 0) {
-                        camera.moveBy(0, -topExtent, 0);
-                    }
-                    if (bottomExtent > 0) {
-                        camera.moveBy(0, -bottomExtent, 0);
+                    if ((bottomRight.y - topLeft.y) > (imgBottomRight.y - imgTopLeft.y)) {
+                        final float vCenterExtent= (bottomRight.y + topLeft.y)/2 - (imgBottomRight.y + imgTopLeft.y)/2;
+                        camera.moveBy(0, -vCenterExtent, 0);
+                    } else {
+                        float topExtent = topLeft.y - imgTopLeft.y;
+                        float bottomExtent = bottomRight.y - imgBottomRight.y;
+                        if (topExtent < 0) {
+                            camera.moveBy(0, -topExtent, 0);
+                        }
+                        if (bottomExtent > 0) {
+                            camera.moveBy(0, -bottomExtent, 0);
+                        }
                     }
                 }
             } finally {

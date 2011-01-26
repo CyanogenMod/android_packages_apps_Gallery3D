@@ -28,6 +28,7 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import com.cooliris.app.App;
+import com.cooliris.media.Vector3f;
 
 public final class GridInputProcessor implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener,
         ScaleGestureDetector.OnScaleGestureListener {
@@ -756,12 +757,29 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         if (Float.isInfinite(scale) || Float.isNaN(scale))
             return true;
         mScale = scale * mScale;
-        boolean performTranslation = Math.abs(scale - 1.0f) < 0.001f ? false : true;
+        boolean performTranslation = true;
         if (layer.getState() == GridLayer.STATE_FULL_SCREEN) {
             float currentScale = layer.getZoomValue();
             if (currentScale <= 1.0f)
                 performTranslation = false;
             final Vector3f retVal = new Vector3f();
+            final Vector3f retValCenter = new Vector3f();
+            final Vector3f retValPrev = new Vector3f();
+            if (performTranslation) {
+                float posX = detector.getFocusX();
+                float posY = detector.getFocusY();
+                posX -= (mCamera.mWidth / 2);
+                posY -= (mCamera.mHeight / 2);
+                mCamera.convertToRelativeCameraSpace(posX, posY, 0, retVal);
+                mCamera.convertToRelativeCameraSpace(0, 0, 0, retValCenter);
+
+                // For support two-finger panning
+                float posPrevX = detector.getPrevFocusX();
+                float posPrevY = detector.getPrevFocusY();
+                posPrevX -= (mCamera.mWidth / 2);
+                posPrevY -= (mCamera.mHeight / 2);
+                mCamera.convertToRelativeCameraSpace(posPrevX, posPrevY, 0, retValPrev);
+            }
             if (performTranslation) {
                 float posX = detector.getFocusX();
                 float posY = detector.getFocusY();
@@ -778,8 +796,11 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             layer.setZoomValue(currentScale * scale);
             if (performTranslation) {
                 mCamera.update(0.001f);
+                // Calculate amount of translation for moving zoom center
+                retVal.x= (retVal.x - retValCenter.x)*(1.0f-1.0f/scale) + (retValPrev.x-retVal.x);
+                retVal.y= (retVal.y - retValCenter.y)*(1.0f-1.0f/scale) + (retValPrev.y-retVal.y);
                 mCamera.moveBy(retVal.x, retVal.y, 0);
-                layer.constrainCameraForSlot(mCurrentSelectedSlot);
+                //layer.constrainCameraForSlot(mCurrentSelectedSlot);
             }
         }
         if (mLayer.getState() == GridLayer.STATE_GRID_VIEW) {

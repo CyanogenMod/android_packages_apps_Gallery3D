@@ -131,6 +131,10 @@ public class ScaleGestureDetector {
     private MotionEvent mPrevEvent;
     private MotionEvent mCurrEvent;
 
+    // Added for supporting moving pinch zoom center
+    private float mPrevFocusX;
+    private float mPrevFocusY;
+
     private float mFocusX;
     private float mFocusY;
     private float mPrevFingerDiffX;
@@ -300,6 +304,10 @@ public class ScaleGestureDetector {
         mCurrFingerDiffX = cvx;
         mCurrFingerDiffY = cvy;
 
+        // Added for supporting moving pinch zoom center
+        mPrevFocusX = mFocusX;
+        mPrevFocusY = mFocusY;
+        
         mFocusX = cx0 + cvx * 0.5f;
         mFocusY = cy0 + cvy * 0.5f;
         mTimeDelta = curr.getEventTime() - prev.getEventTime();
@@ -332,6 +340,15 @@ public class ScaleGestureDetector {
      */
     public boolean isInProgress() {
         return mGestureInProgress;
+    }
+
+    // Added for supporting moving pinch zoom center
+    public float getPrevFocusX() {
+        return mPrevFocusX;
+    }
+
+    public float getPrevFocusY() {
+        return mPrevFocusY;
     }
 
     /**
