@@ -308,7 +308,7 @@ public class LocalDataSource implements DataSource {
                     cr.delete(uriVideos, whereVideos, null);
                     CacheService.markDirty();
                 }
-                if (set != null && items != null) {
+                else if (set != null && items != null) {
                     // We need to remove these items from the set.
                     int numItems = items.size();
                     try {
