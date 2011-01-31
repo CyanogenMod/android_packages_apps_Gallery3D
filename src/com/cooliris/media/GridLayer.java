@@ -1011,7 +1011,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mFeedAboutToChange = false;
         mFeedChanged = true;
         if (feed != null) {
-            if (mState == STATE_GRID_VIEW || mState == STATE_FULL_SCREEN)
+            if (mState == STATE_GRID_VIEW ||
+                mState == STATE_FULL_SCREEN ||
+                mState == STATE_MEDIA_SETS)
                 mHud.setFeed(feed, mState, needsLayout);
         }
         if (mView != null) {
@@ -1192,6 +1194,37 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mCompleteRange.isEmpty()) {
             goBack(); // TODO(venkat): This does not work most of the time, can
             // you take a look?
+        }
+    }
+
+    public void afterDeleteReflush() {
+        if (getState() == GridLayer.STATE_GRID_VIEW && mMediaFeed.getCurrentSet() != null &&
+                       (mBufferedVisibleRange.end - mBufferedVisibleRange.begin) >
+                                mMediaFeed.getCurrentSet().getNumItems() - 1 &&
+                                mMediaFeed.getCurrentSet().getNumItems() >= 1 &&
+                                mMediaFeed.getCurrentSet().getNumItems() < 5) {
+            int mStartRange = mBufferedVisibleRange.end;
+            int mMargin = mStartRange / 10;
+
+            for (int i = mStartRange; i + mMargin >=
+                        mMediaFeed.getCurrentSet().getNumItems(); i--) {
+                int start = i - 20;
+
+                mBufferedVisibleRange.set(start < 0 ? 0 : start,
+                        i < mMediaFeed.getCurrentSet().getNumItems() ?
+                        mMediaFeed.getCurrentSet().getNumItems() : i);
+                mVisibleRange.set(start < 0 ? 0 : start,
+                        i < mMediaFeed.getCurrentSet().getNumItems() ?
+                        mMediaFeed.getCurrentSet().getNumItems() : i);
+                Log.i("Log0914_onFeedChanged","GridLayer 3041");
+                onFeedChanged(mMediaFeed, true);
+            }
+        }
+
+        if(getState() == GridLayer.STATE_MEDIA_SETS) {
+            mBufferedVisibleRange.set(0, 0);
+            mVisibleRange.set(0, 0);
+            onFeedChanged(mMediaFeed, true);
         }
     }
 

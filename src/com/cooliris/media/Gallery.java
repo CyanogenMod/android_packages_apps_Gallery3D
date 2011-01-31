@@ -33,6 +33,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.StatFs;
 import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore.Images;
 import android.util.Log;
@@ -171,6 +172,10 @@ public final class Gallery extends Activity {
         handler.removeMessages(HANDLE_INTENT);
 
         sendInitialMessage();
+    }
+
+    public GridLayer getGridLayer() {
+        return mGridLayer;
     }
 
     @Override

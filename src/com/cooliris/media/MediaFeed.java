@@ -244,6 +244,7 @@ public final class MediaFeed implements Runnable {
     public void performOperation(final int operation, final ArrayList<MediaBucket> mediaBuckets, final Object data) {
         int numBuckets = mediaBuckets.size();
         final ArrayList<MediaBucket> copyMediaBuckets = new ArrayList<MediaBucket>(numBuckets);
+        final GridLayer mGridLayer = ((Gallery) mContext).getGridLayer();
         for (int i = 0; i < numBuckets; ++i) {
             copyMediaBuckets.add(mediaBuckets.get(i));
         }
@@ -255,6 +256,7 @@ public final class MediaFeed implements Runnable {
                 ArrayList<MediaBucket> mediaBuckets = copyMediaBuckets;
                 if (operation == OPERATION_DELETE) {
                     int numBuckets = mediaBuckets.size();
+                    boolean allDelete = false;
                     for (int i = 0; i < numBuckets; ++i) {
                         MediaBucket bucket = mediaBuckets.get(i);
                         MediaSet set = bucket.mediaSet;
@@ -275,17 +277,26 @@ public final class MediaFeed implements Runnable {
                                     clustering.removeItemFromClustering(item);
                                 }
                             }
-                            set.updateNumExpectedItems();
-                            set.generateTitle(true);
+                            if(set.getNumItems() == 0)
+                                allDelete = true;
                         }
                     }
-                    updateListener(true);
-                    mMediaFeedNeedsToRun = true;
+
                     if (mDataSource != null) {
                         mDataSource.performOperation(OPERATION_DELETE, mediaBuckets, null);
                     }
+
+                    mGridLayer.deselectAll();
+                    if (mGridLayer.getState() != GridLayer.STATE_MEDIA_SETS && allDelete)
+                        mGridLayer.setState(GridLayer.STATE_MEDIA_SETS);
+
+                    updateListener(true);
+                    mMediaFeedNeedsToRun = true;
+                    mGridLayer.afterDeleteReflush();
                 } else {
-                    mDataSource.performOperation(operation, mediaBuckets, data);
+                    if (mDataSource != null) {
+                        mDataSource.performOperation(operation, mediaBuckets, data);
+                    }
                 }
             }
         });
@@ -866,12 +877,25 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet replaceMediaSet(long setId, DataSource dataSource) {
-        Log.i(TAG, "Replacing media set " + setId);
-        final MediaSet set = getMediaSet(setId);
-        if (set != null)
-            set.refresh();
-        return set;
+    Log.i(TAG, "Replacing media set " + setId);
+    MediaSet mediaSet = new MediaSet(dataSource);
+    mediaSet.mId = setId;
+    ArrayList<MediaSet> mediaSets = mMediaSets;
+
+    int numSets = mediaSets.size();
+    for (int i = 0; i < numSets; ++i) {
+        final MediaSet thisSet = mediaSets.get(i);
+        if (thisSet.mId == setId) {
+            mediaSet.mName = thisSet.mName;
+            mediaSet.mHasImages = thisSet.mHasImages;
+            mediaSet.mHasVideos = thisSet.mHasVideos;
+            mediaSets.set(i, mediaSet);
+            break;
+        }
     }
+    mMediaFeedNeedsToRun = true;
+    return mediaSet;
+}
 
     public void setSingleImageMode(boolean singleImageMode) {
         mSingleImageMode = singleImageMode;
