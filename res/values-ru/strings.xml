@@ -63,8 +63,8 @@
     <string name="no_sd_card" msgid="2666880203366429182">"SD-карта извлечена или не вставлена"</string>
     <string name="no_usb_storage" msgid="9156805088935882242">"USB-накопитель отключен"</string>
     <string name="more" msgid="1526449516720792387">"Ещё"</string>
-    <string name="select_all" msgid="8623593677101437957">"Выбрать все"</string>
-    <string name="deselect_all" msgid="7397531298370285581">"Снять все выделения"</string>
+    <string name="select_all" msgid="8623593677101437957">"Все"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Ни одного"</string>
     <string name="slideshow" msgid="4355906903247112975">"Слайд-шоу"</string>
     <string name="menu" msgid="1819649153380636719">"Меню"</string>
     <string name="details" msgid="8415120088556445230">"Сведения"</string>
