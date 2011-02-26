@@ -171,7 +171,9 @@ public final class MediaBucketList {
                         boolean foundIndex = false;
                         for (int j = 0; j < numPresentItems; ++j) {
                             final MediaItem selectedItem = selectedItems.get(j);
-                            if (selectedItem != null && item != null && selectedItem.mId == item.mId) {
+                            if (selectedItem != null && item != null
+                                    && selectedItem.mId == item.mId
+                                    && selectedItem.mFilePath.equalsIgnoreCase(item.mFilePath)) {
                                 // This index was already present, we need to
                                 // remove it.
                                 foundIndex = true;
