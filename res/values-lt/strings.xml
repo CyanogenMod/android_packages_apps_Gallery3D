@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"Galerija"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"Sau."</item>
+    <item msgid="4680813504147866612">"Vas."</item>
+    <item msgid="1934595560893153574">"Kov."</item>
+    <item msgid="9020107212348500338">"Bal."</item>
+    <item msgid="5734859077892484949">"Gegužė"</item>
+    <item msgid="8546985030184126468">"Brž."</item>
+    <item msgid="3639654472839533748">"Liep."</item>
+    <item msgid="8434242278630875235">"Rugp."</item>
+    <item msgid="8493511009771049442">"Rugs."</item>
+    <item msgid="685181459001441496">"Spal."</item>
+    <item msgid="6662413035764778250">"Lap."</item>
+    <item msgid="3784870986696899313">"Grd."</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"Paveikslėlio rėmelis"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"Filmai"</string>
+    <string name="loading_video" msgid="4013492720121891585">"Įkeliamas vaizdo įrašas..."</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"Atnaujinti vaizdo įrašą"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"Atnaujinti leidimą nuo %s?"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"Atnaujinti grojimą"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"Pradėti iš naujo"</string>
+    <string name="camera" msgid="2730811566218090802">"Fotoaparatas"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"Išsaugoti"</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"Atmesti"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"Bakstelėkite veidą, jei norite pradėti."</string>
+    <string name="saving_image" msgid="7270334453636349407">"Išsaugomas paveikslėlis..."</string>
+    <string name="crop_label" msgid="521114301871349328">"Apkarpyti paveikslėlį"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"Palaukite..."</string>
+    <string name="set_image" msgid="2331476809308010401">"Nustatyti paveikslėlį kaip"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Nustatomas darbalaukio fonas, palaukite..."</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Darbalaukio fonas"</string>
+    <string name="details_ok" msgid="6848594369924424312">"Gerai"</string>
+    <string name="loading_new" msgid="7893793767294787579">"Įkeliami nauji albumai ir nuotraukos"</string>
+    <string name="initializing" msgid="2374228157398540466">"Įkeliama"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"Pasirinkite elementą iš savo kolekcijos"</string>
+    <string name="no_items" msgid="3117870234034732172">"Jūsų kolekcijoje nėra elementų"</string>
+    <string name="pick" msgid="7248789132035843128">"Pasirinkti"</string>
+    <string name="delete" msgid="2839695998251824487">"Ištrinti"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"Patvirtinti ištrynimą"</string>
+    <string name="cancel" msgid="3637516880917356226">"Atšaukti"</string>
+    <string name="share" msgid="3619042788254195341">"Bendrinti"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"SD kortelė neįstatyta arba jos nėra"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"USB atmintinė atjungta"</string>
+    <string name="more" msgid="1526449516720792387">"Daugiau"</string>
+    <string name="select_all" msgid="8623593677101437957">"Pasirinkti viską"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Panaikinti visus žymėjimus"</string>
+    <string name="slideshow" msgid="4355906903247112975">"Skaidrių demonstracija"</string>
+    <string name="menu" msgid="1819649153380636719">"Meniu"</string>
+    <string name="details" msgid="8415120088556445230">"Išsami informacija"</string>
+    <string name="album_selected" msgid="3441280740465738452">"pasirinktas albumas"</string>
+    <string name="item_selected" msgid="6137767503817908841">"pasirinktas elementas"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"pasirinkti albumai"</string>
+    <string name="items_selected" msgid="8548754404879264861">"pasirinkti elementai"</string>
+    <string name="album" msgid="5198388817734336004">"Albumas"</string>
+    <string name="start" msgid="4316892252528232165">"Pradėti"</string>
+    <string name="end" msgid="3645506196012005500">"Pabaiga"</string>
+    <string name="location" msgid="3432705876921618314">"Vieta"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"Nežinoma vieta"</string>
+    <string name="title" msgid="7622928349908052569">"Pareigos"</string>
+    <string name="type" msgid="4329478642546287192">"Tipas"</string>
+    <string name="taken_on" msgid="3269486910757192479">"Nufotografuota"</string>
+    <string name="added_on" msgid="5194321063173381814">"Pridėta"</string>
+    <string name="show_on_map" msgid="6157544221201750980">"Rodyti žemėlapyje"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"Sukti į kairę"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"Sukti į dešinę"</string>
+    <string name="crop" msgid="7970750655414797277">"Apkarpyti"</string>
+    <string name="set_as" msgid="3636764710790507868">"Nustatyti kaip"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"Nustatyti kaip darbalaukio foną"</string>
+    <string name="item" msgid="636303673288563698">"elementas"</string>
+    <string name="items" msgid="6403254716052150916">"elementai"</string>
+    <string name="around" msgid="2223906282110417412">"Netoli"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"Nežinoma data"</string>
+    <string name="video_err" msgid="7917736494827857757">"Neįmanoma paleisti vaizdo įrašo"</string>
+</resources>

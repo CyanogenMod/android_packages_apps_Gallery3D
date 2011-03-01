@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Copyright (C) 2007 The Android Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+ -->
+
+<resources xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name" msgid="1928079047368929634">"Галерея"</string>
+  <string-array name="months_abbreviated">
+    <item msgid="9066537518640988368">"січ."</item>
+    <item msgid="4680813504147866612">"лют."</item>
+    <item msgid="1934595560893153574">"бер."</item>
+    <item msgid="9020107212348500338">"квіт."</item>
+    <item msgid="5734859077892484949">"трав."</item>
+    <item msgid="8546985030184126468">"черв."</item>
+    <item msgid="3639654472839533748">"лип."</item>
+    <item msgid="8434242278630875235">"серп."</item>
+    <item msgid="8493511009771049442">"вер."</item>
+    <item msgid="685181459001441496">"жовт."</item>
+    <item msgid="6662413035764778250">"лист."</item>
+    <item msgid="3784870986696899313">"груд."</item>
+  </string-array>
+    <string name="gadget_title" msgid="259405922673466798">"Фото-рамка"</string>
+    <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
+    <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
+    <string name="movie_view_label" msgid="3697303290960009886">"Фільми"</string>
+    <string name="loading_video" msgid="4013492720121891585">"Завантаж. відео…"</string>
+    <string name="resume_playing_title" msgid="8996677350649355013">"Відновити відео"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"Продовж. відтворення з %s ?"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"Віднов. відтвор."</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"Почати знову"</string>
+    <string name="camera" msgid="2730811566218090802">"Камера"</string>
+    <string name="crop_save_text" msgid="8140440041190264400">"Зберег."</string>
+    <string name="crop_discard_text" msgid="5303657888280340603">"Відхилити"</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"Натисн. лице, щоб поч."</string>
+    <string name="saving_image" msgid="7270334453636349407">"Зберіг-ня фото…"</string>
+    <string name="crop_label" msgid="521114301871349328">"Обрізати фото"</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"Зачекайте…"</string>
+    <string name="set_image" msgid="2331476809308010401">"Устан. фото як"</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Встановл. фон. малюнка, зачекайте…"</string>
+    <string name="camera_setas_wallpaper" msgid="797463183863414289">"Фоновий мал."</string>
+    <string name="details_ok" msgid="6848594369924424312">"OK"</string>
+    <string name="loading_new" msgid="7893793767294787579">"Завантаж. нових альбомів і фото"</string>
+    <string name="initializing" msgid="2374228157398540466">"Завант-ня"</string>
+    <string name="pick_prompt" msgid="576608096149718121">"Виберіть елемент зі своєї колекції"</string>
+    <string name="no_items" msgid="3117870234034732172">"У вашій колекції немає елементів"</string>
+    <string name="pick" msgid="7248789132035843128">"Вибр."</string>
+    <string name="delete" msgid="2839695998251824487">"Видалити"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"Підтверд. видал."</string>
+    <string name="cancel" msgid="3637516880917356226">"Скасувати"</string>
+    <string name="share" msgid="3619042788254195341">"Надісл."</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"Карта SD відключена чи відсутня"</string>
+    <string name="no_usb_storage" msgid="9156805088935882242">"USB носій відключено"</string>
+    <string name="more" msgid="1526449516720792387">"Більше"</string>
+    <string name="select_all" msgid="8623593677101437957">"Вибрати все"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Відмінити всі"</string>
+    <string name="slideshow" msgid="4355906903247112975">"Слайд-шоу"</string>
+    <string name="menu" msgid="1819649153380636719">"Меню"</string>
+    <string name="details" msgid="8415120088556445230">"Деталі"</string>
+    <string name="album_selected" msgid="3441280740465738452">"альбом вибрано"</string>
+    <string name="item_selected" msgid="6137767503817908841">"елем. вибрано"</string>
+    <string name="albums_selected" msgid="1815225920157190983">"альб. вибрано"</string>
+    <string name="items_selected" msgid="8548754404879264861">"елем. вибрано"</string>
+    <string name="album" msgid="5198388817734336004">"Альбом"</string>
+    <string name="start" msgid="4316892252528232165">"Пуск"</string>
+    <string name="end" msgid="3645506196012005500">"Кінець"</string>
+    <string name="location" msgid="3432705876921618314">"Місце"</string>
+    <string name="location_unknown" msgid="6310139243003315255">"Невідоме місцезн."</string>
+    <string name="title" msgid="7622928349908052569">"Назва"</string>
+    <string name="type" msgid="4329478642546287192">"Тип"</string>
+    <string name="taken_on" msgid="3269486910757192479">"Час зйомки"</string>
+    <string name="added_on" msgid="5194321063173381814">"Додано"</string>
+    <string name="show_on_map" msgid="6157544221201750980">"Показ. на карті"</string>
+    <string name="rotate_left" msgid="7412075232752726934">"Поверн. вліво"</string>
+    <string name="rotate_right" msgid="7340681085011826618">"Поверн. вправо"</string>
+    <string name="crop" msgid="7970750655414797277">"Обріз."</string>
+    <string name="set_as" msgid="3636764710790507868">"Устан. як"</string>
+    <string name="set_as_wallpaper" msgid="5704970402417438945">"Устан. як фон. мал."</string>
+    <string name="item" msgid="636303673288563698">"елемент"</string>
+    <string name="items" msgid="6403254716052150916">"елем."</string>
+    <string name="around" msgid="2223906282110417412">"Біля"</string>
+    <string name="date_unknown" msgid="4277113471036917386">"Дата невідома"</string>
+    <string name="video_err" msgid="7917736494827857757">"Неможл. відтвор. відео"</string>
+</resources>

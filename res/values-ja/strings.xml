@@ -57,7 +57,7 @@
     <string name="no_items" msgid="3117870234034732172">"コレクションにアイテムがありません"</string>
     <string name="pick" msgid="7248789132035843128">"選択"</string>
     <string name="delete" msgid="2839695998251824487">"削除"</string>
-    <string name="confirm_delete" msgid="5731757674837098707">"削除の確認"</string>
+    <string name="confirm_delete" msgid="5731757674837098707">"削除"</string>
     <string name="cancel" msgid="3637516880917356226">"キャンセル"</string>
     <string name="share" msgid="3619042788254195341">"共有"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"SDカードがマウントされていないか挿入されていません"</string>
