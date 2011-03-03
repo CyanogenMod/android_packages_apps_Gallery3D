@@ -92,4 +92,17 @@
     <string name="around" msgid="2223906282110417412">"Ennek a környékén"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Ismeretlen dátum"</string>
     <string name="video_err" msgid="7917736494827857757">"Nem lehet lejátszani a videót"</string>
+
+    <string name="file_size">Fájlméret</string>
+    <string name="file_size_unknown">Ismeretlen</string>
+    <string name="size">Méret</string>
+    <string name="size_unknown">Ismeretlen</string>
+    <string name="cam">Fényképezőgép</string>
+    <string name="cam_unknown">Ismeretlen</string>
+    <string name="menu_open_url">URL megnyitása</string>
+    <string name="video_set_url_pos">Megnyitás</string>
+    <string name="video_set_url_neg">Mégse</string>
+    <string name="video_set_url_title">URL megnyitása</string>
+    <string name="video_set_url_msg">Film címe:</string>
+    <string name="video_set_url_hint">rtsp://szerver/fájl</string>
 </resources>
