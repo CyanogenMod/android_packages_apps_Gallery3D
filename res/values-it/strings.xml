@@ -79,6 +79,12 @@
     <string name="location_unknown" msgid="6310139243003315255">"Luogo sconosciuto"</string>
     <string name="title" msgid="7622928349908052569">"Titolo"</string>
     <string name="type" msgid="4329478642546287192">"Tipo"</string>
+    <string name="file_size">Dimensione file</string>
+    <string name="file_size_unknown">Sconosciuta</string>
+    <string name="size">Dimensione</string>
+    <string name="size_unknown">Sconosciuta</string>
+    <string name="cam">Camera</string>
+    <string name="cam_unknown">Sconosciuta</string>
     <string name="taken_on" msgid="3269486910757192479">"Foto scattata/Video girato in data"</string>
     <string name="added_on" msgid="5194321063173381814">"Data di aggiunta:"</string>
     <string name="show_on_map" msgid="6157544221201750980">"Mostra sulla mappa"</string>
