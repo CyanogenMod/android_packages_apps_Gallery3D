@@ -79,6 +79,12 @@
     <string name="location_unknown" msgid="6310139243003315255">"Okänd plats"</string>
     <string name="title" msgid="7622928349908052569">"Titel"</string>
     <string name="type" msgid="4329478642546287192">"Typ"</string>
+    <string name="file_size">Filstorlek</string>
+    <string name="file_size_unknown">Okänd</string>
+    <string name="size">Storlek</string>
+    <string name="size_unknown">Okänd</string>
+    <string name="cam">Kamera</string>
+    <string name="cam_unknown">Okänd</string>
     <string name="taken_on" msgid="3269486910757192479">"Skapat den"</string>
     <string name="added_on" msgid="5194321063173381814">"Tillagt den"</string>
     <string name="show_on_map" msgid="6157544221201750980">"Visa på karta"</string>
@@ -92,4 +98,10 @@
     <string name="around" msgid="2223906282110417412">"Vid"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Datum okänt"</string>
     <string name="video_err" msgid="7917736494827857757">"Det gick inte att spela videon"</string>
+    <string name="menu_open_url">Öppna URL</string>
+    <string name="video_set_url_pos">Öppna</string>
+    <string name="video_set_url_neg">Avbryt</string>
+    <string name="video_set_url_title">Öppna URL</string>
+    <string name="video_set_url_msg">Film-URL:</string>
+    <string name="video_set_url_hint">rtsp://server/fil</string>
 </resources>
