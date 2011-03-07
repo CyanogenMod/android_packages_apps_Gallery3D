@@ -92,4 +92,15 @@
     <string name="around" msgid="2223906282110417412">"Perto de"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Data desconhecida"</string>
     <string name="video_err" msgid="7917736494827857757">"Não é possível reproduzir o vídeo"</string>
+    <string name="file_size">Tamanho do arquivo</string>
+    <string name="file_size_unknown">Desconhecido</string>
+    <string name="size">Tamanho</string>
+    <string name="size_unknown">Desconhecido</string>
+    <string name="cam">Câmera</string>
+    <string name="cam_unknown">Desconhecido</string>
+    <string name="menu_open_url">Abrir URL</string>
+    <string name="video_set_url_pos">Abrir</string>
+    <string name="video_set_url_neg">Cancelar</string>
+    <string name="video_set_url_title">Abrir URL</string>
+    <string name="video_set_url_msg">URL de vídeo:</string>
 </resources>
