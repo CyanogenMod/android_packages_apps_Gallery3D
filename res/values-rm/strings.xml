@@ -61,7 +61,9 @@
     <string name="cancel" msgid="3637516880917356226">"Interrumper"</string>
     <string name="share" msgid="3619042788254195341">"Cundivider"</string>
     <string name="no_sd_card" msgid="2666880203366429182">"La carta SD è vegnida demontada u n\'è betg inserida."</string>
-    <string name="no_usb_storage" msgid="9156805088935882242">"La carta SD è vegnida demontada u n\'è betg inserida."</string>
+    <!-- no translation found for no_usb_storage (9156805088935882242) -->
+    <!-- no translation found for no_usb_storage (2666880203366429182) -->
+    <skip />
     <string name="more" msgid="1526449516720792387">"Dapli"</string>
     <string name="select_all" msgid="8623593677101437957">"Selecziunar tut"</string>
     <string name="deselect_all" msgid="7397531298370285581">"Deselecziunar tut"</string>

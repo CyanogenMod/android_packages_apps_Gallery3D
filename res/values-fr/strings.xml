@@ -60,7 +60,7 @@
     <string name="confirm_delete" msgid="5731757674837098707">"Confirmer la suppression"</string>
     <string name="cancel" msgid="3637516880917356226">"Annuler"</string>
     <string name="share" msgid="3619042788254195341">"Partager"</string>
-    <string name="no_sd_card" msgid="2666880203366429182">"Carte SD désactivée ou non connectée"</string>
+    <string name="no_sd_card" msgid="2666880203366429182">"Carte SD désinstallée ou non connectée"</string>
     <string name="no_usb_storage" msgid="9156805088935882242">"Mémoire de stockage USB désinstallée"</string>
     <string name="more" msgid="1526449516720792387">"Plus"</string>
     <string name="select_all" msgid="8623593677101437957">"Tout sélectionner"</string>
