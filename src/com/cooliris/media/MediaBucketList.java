@@ -130,7 +130,8 @@ public final class MediaBucketList {
         // Search for the bucket for this media set
         for (int i = 0; i < numSelectedBuckets; ++i) {
             final MediaBucket bucketCompare = selectedBuckets.get(i);
-            if (bucketCompare.mediaSet != null && mediaSetToAdd != null && bucketCompare.mediaSet.mId == mediaSetToAdd.mId) {
+            if (bucketCompare != null && bucketCompare.mediaSet != null
+                && mediaSetToAdd != null && bucketCompare.mediaSet == mediaSetToAdd) {
                 // We found the MediaSet.
                 if (!hasExpandedMediaSet) {
                     // Remove this bucket from the list since this bucket was
@@ -171,7 +172,7 @@ public final class MediaBucketList {
                         boolean foundIndex = false;
                         for (int j = 0; j < numPresentItems; ++j) {
                             final MediaItem selectedItem = selectedItems.get(j);
-                            if (selectedItem != null && item != null && selectedItem.mId == item.mId) {
+                            if (selectedItem != null && item != null && selectedItem == item) {
                                 // This index was already present, we need to
                                 // remove it.
                                 foundIndex = true;
