@@ -43,7 +43,7 @@
     <string name="camera" msgid="2730811566218090802">"Câmera"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"Salvar"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Descartar"</string>
-    <string name="multiface_crop_help" msgid="3127018992717032779">"Toque em uma face para começar."</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"Toque em um rosto para começar."</string>
     <string name="saving_image" msgid="7270334453636349407">"Salvando imagem…"</string>
     <string name="crop_label" msgid="521114301871349328">"Cortar imagem"</string>
     <string name="running_face_detection" msgid="4094707964259463039">"Aguarde..."</string>

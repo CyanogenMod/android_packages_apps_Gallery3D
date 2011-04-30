@@ -43,7 +43,7 @@
     <string name="camera" msgid="2730811566218090802">"Kamera"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"Spara"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Ignorera"</string>
-    <string name="multiface_crop_help" msgid="3127018992717032779">"Peka på ett ansikte när du vill börja."</string>
+    <string name="multiface_crop_help" msgid="3127018992717032779">"Knacka lätt på ett ansikte när du vill börja."</string>
     <string name="saving_image" msgid="7270334453636349407">"Sparar bild…"</string>
     <string name="crop_label" msgid="521114301871349328">"Beskär bild"</string>
     <string name="running_face_detection" msgid="4094707964259463039">"Vänta…"</string>

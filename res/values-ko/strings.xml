@@ -37,9 +37,9 @@
     <string name="movie_view_label" msgid="3697303290960009886">"영화"</string>
     <string name="loading_video" msgid="4013492720121891585">"동영상 로드 중..."</string>
     <string name="resume_playing_title" msgid="8996677350649355013">"동영상 다시 시작"</string>
-    <string name="resume_playing_message" msgid="5184414518126703481">"%s에서 재생을 다시 시작하시겠습니까?"</string>
-    <string name="resume_playing_resume" msgid="3847915469173852416">"재생 다시 시작"</string>
-    <string name="resume_playing_restart" msgid="5471008499835769292">"시작"</string>
+    <string name="resume_playing_message" msgid="5184414518126703481">"%s부터 이어서 보시겠습니까?"</string>
+    <string name="resume_playing_resume" msgid="3847915469173852416">"이어서 보기"</string>
+    <string name="resume_playing_restart" msgid="5471008499835769292">"처음부터 보기"</string>
     <string name="camera" msgid="2730811566218090802">"카메라"</string>
     <string name="crop_save_text" msgid="8140440041190264400">"저장"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"취소"</string>

@@ -64,7 +64,7 @@
     <string name="no_usb_storage" msgid="9156805088935882242">"Đã ngắt kết nối bộ nhớ USB"</string>
     <string name="more" msgid="1526449516720792387">"Tác vụ khác"</string>
     <string name="select_all" msgid="8623593677101437957">"Chọn Tất cả"</string>
-    <string name="deselect_all" msgid="7397531298370285581">"Bỏ chọn Tất cả"</string>
+    <string name="deselect_all" msgid="7397531298370285581">"Bỏ chọn tất cả"</string>
     <string name="slideshow" msgid="4355906903247112975">"Trình chiếu"</string>
     <string name="menu" msgid="1819649153380636719">"Trình đơn"</string>
     <string name="details" msgid="8415120088556445230">"Chi tiết"</string>
