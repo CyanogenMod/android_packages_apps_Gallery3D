@@ -28,10 +28,12 @@ import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SyncResult;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.Xml;
 
@@ -41,7 +43,8 @@ public final class PicasaApi {
     public static final int RESULT_ERROR = 2;
 
     private static final String TAG = "PicasaAPI";
-    private static final String BASE_URL = "http://picasaweb.google.com/data/feed/api/";
+    private static final String SETTINGS_PICASA_GDATA_BASE_URL_KEY = "picasa_gdata_base_url";
+    private static final String DEFAULT_BASE_URL = "https://picasaweb.google.com/data/feed/api/";
     private static final String BASE_QUERY_STRING;
 
     static {
@@ -54,6 +57,7 @@ public final class PicasaApi {
         BASE_QUERY_STRING = query.toString() + "&visibility=visible";
     }
 
+    private final ContentResolver mContentResolver;
     private final GDataClient mClient;
     private final GDataClient.Operation mOperation = new GDataClient.Operation();
     private final GDataParser mParser = new GDataParser();
@@ -151,7 +155,8 @@ public final class PicasaApi {
         return username;
     }
 
-    public PicasaApi() {
+    public PicasaApi(ContentResolver cr) {
+        mContentResolver = cr;
         mClient = new GDataClient();
     }
 
@@ -164,7 +169,9 @@ public final class PicasaApi {
 
     public int getAlbums(AccountManager accountManager, SyncResult syncResult, UserEntry user, GDataParser.EntryHandler handler) {
         // Construct the query URL for user albums.
-        StringBuilder builder = new StringBuilder(BASE_URL);
+        String baseUrl = Settings.Secure.getString(mContentResolver,
+                SETTINGS_PICASA_GDATA_BASE_URL_KEY);
+        StringBuilder builder = new StringBuilder(baseUrl != null ? baseUrl : DEFAULT_BASE_URL);
         builder.append("user/");
         builder.append(Uri.encode(mAuth.user));
         builder.append(BASE_QUERY_STRING);
@@ -237,7 +244,9 @@ public final class PicasaApi {
     public int getAlbumPhotos(AccountManager accountManager, SyncResult syncResult, AlbumEntry album,
             GDataParser.EntryHandler handler) {
         // Construct the query URL for user albums.
-        StringBuilder builder = new StringBuilder(BASE_URL);
+        String baseUrl = Settings.Secure.getString(mContentResolver,
+                SETTINGS_PICASA_GDATA_BASE_URL_KEY);
+        StringBuilder builder = new StringBuilder(baseUrl != null ? baseUrl : DEFAULT_BASE_URL);
         builder.append("user/");
         builder.append(Uri.encode(mAuth.user));
         builder.append("/albumid/");
