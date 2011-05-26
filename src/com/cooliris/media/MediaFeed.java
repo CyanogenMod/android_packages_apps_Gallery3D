@@ -191,6 +191,18 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet addMediaSet(final long setId, DataSource dataSource) {
+        int numSets = mMediaSets.size();
+        for (int i = 0; i < numSets; i++) {
+            MediaSet set = mMediaSets.get(i);
+            if ((set.mId == setId) && (set.mDataSource == dataSource)) {
+                // The mediaset already exists, but might be out-dated.
+                // To avoid the same mediaset being added twice, we delete
+                // the old one first, then add the new one below.
+                mMediaSets.remove(i);
+                break;
+            }
+        }
+
         MediaSet mediaSet = new MediaSet(dataSource);
         mediaSet.mId = setId;
         mMediaSets.add(mediaSet);
