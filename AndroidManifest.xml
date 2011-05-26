@@ -28,6 +28,7 @@
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:configChanges="keyboardHidden|orientation"
             android:clearTaskOnLaunch="true" android:noHistory="false"
+            android:screenOrientation="sensor"
             android:stateNotNeeded="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -83,6 +84,7 @@
              </intent-filter>
         </activity>
         <activity android:name="com.cooliris.media.CropImage"
+            android:screenOrientation="sensor"
             android:configChanges="orientation|keyboardHidden" android:label="@string/crop_label">
             <intent-filter android:label="@string/crop_label">
                 <action android:name="com.android.camera.action.CROP" />
@@ -95,6 +97,7 @@
         <activity android:name="com.cooliris.media.MovieView"
             android:label="@string/movie_view_label"
             android:configChanges="orientation|keyboardHidden"
+            android:screenOrientation="sensor"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -121,7 +124,8 @@
              </intent-filter>
         </activity>
 
-        <activity android:name="com.cooliris.media.Photographs" android:icon="@drawable/icon">
+        <activity android:name="com.cooliris.media.Photographs" android:icon="@drawable/icon"
+            android:screenOrientation="sensor">
             <intent-filter android:label="@string/camera_setas_wallpaper">
                 <action android:name="android.intent.action.ATTACH_DATA" />
                 <data android:mimeType="image/*" />
