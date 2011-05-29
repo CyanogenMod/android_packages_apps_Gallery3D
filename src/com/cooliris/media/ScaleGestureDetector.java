@@ -305,7 +305,7 @@ public class ScaleGestureDetector {
         mTimeDelta = curr.getEventTime() - prev.getEventTime();
         mCurrPressure = curr.getPressure(0) + curr.getPressure(1);
         mPrevPressure = prev.getPressure(0) + prev.getPressure(1);
-        
+
         // Update the correct finger.
         mBottomFingerCurrX = cx0;
         mBottomFingerCurrY = cy0;
