@@ -1473,7 +1473,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void setZoomValue(float f) {
         mZoomValue = f;
-        centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 10.0f);
+        centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
     }
 
     public void setPickIntent(boolean b) {
