@@ -90,7 +90,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mZoomGesture = false;
         mScale = 1.0f;
         mSupportPanAndZoom = context.getPackageManager().hasSystemFeature(
-            PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT);
+            PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH);
         {
             WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             mDisplay = windowManager.getDefaultDisplay();
