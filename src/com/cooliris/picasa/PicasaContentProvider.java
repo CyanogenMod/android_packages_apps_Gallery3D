@@ -516,7 +516,7 @@ public final class PicasaContentProvider extends TableContentProvider {
 
         // A connection to the Picasa API for a specific user account. Initially
         // null.
-        public PicasaApi api = new PicasaApi();
+        public PicasaApi api = new PicasaApi(getContext().getContentResolver());
 
         // A handle to the Picasa databse.
         public SQLiteDatabase db;
