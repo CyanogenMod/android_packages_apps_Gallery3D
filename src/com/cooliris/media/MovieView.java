@@ -72,7 +72,9 @@ public class MovieView extends Activity {
         mFinishOnCompletion = intent.getBooleanExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, true);
         Window win = getWindow();
         WindowManager.LayoutParams winParams = win.getAttributes();
-        winParams.buttonBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF;
+        if (getResources().getBoolean(R.bool.button_brightness_override)) {
+            winParams.buttonBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF;
+        }
         win.setAttributes(winParams);
     }
 
