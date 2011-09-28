@@ -61,7 +61,7 @@ public final class PopupMenu extends Layer {
     private RenderView mView;
     private float mInitialY;
     private boolean mScroll = false;
-    private static final float SCROLL_ANIM_SPEED = .035f;
+    private static final float SCROLL_ANIM_SPEED = .03f;
 
     static {
         TextPaint paint = new TextPaint();
