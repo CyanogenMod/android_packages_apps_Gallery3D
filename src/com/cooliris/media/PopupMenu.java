@@ -53,11 +53,15 @@ public final class PopupMenu extends Layer {
     private Option[] mOptions = {};
     private boolean mNeedsLayout = false;
     private boolean mShow = false;
+    private final FloatAnim mScrollAnim = new FloatAnim(0f);
     private final FloatAnim mShowAnim = new FloatAnim(0f);
     private int mRowHeight = 36;
     private int mSelectedItem = -1;
+
     private RenderView mView;
     private float mInitialY;
+    private boolean mScroll = false;
+    private static final float SCROLL_ANIM_SPEED = .035f;
 
     static {
         TextPaint paint = new TextPaint();
@@ -157,7 +161,10 @@ public final class PopupMenu extends Layer {
             setSelectedItem(hit);
             if (isSelectedOptionTop(hit)) {
                 if (mY < 0) {
-                    setPosition(mX, mY + mRowHeight * App.PIXEL_DENSITY);
+                    mScroll = true;
+                    mScrollAnim.setValue(mY);
+                    mScrollAnim.animateValue(mY + mRowHeight * App.PIXEL_DENSITY, SCROLL_ANIM_SPEED,
+                            SystemClock.uptimeMillis());
                 }
             } else if (isSelectedOptionBottom(hit)) {
                 if (mY + mHeight > mView.getViewHeight()) {
@@ -165,7 +172,9 @@ public final class PopupMenu extends Layer {
                     if (hit == mOptions.length - 1) {
                         newY = mInitialY;
                     }
-                    setPosition(mX, newY);
+                    mScroll = true;
+                    mScrollAnim.setValue(mY);
+                    mScrollAnim.animateValue(newY, SCROLL_ANIM_SPEED, SystemClock.uptimeMillis());
                 }
             }
             break;
@@ -195,7 +204,8 @@ public final class PopupMenu extends Layer {
 
     @Override
     public boolean update(RenderView view, float timeElapsed) {
-        return (mShowAnim.getTimeRemaining(SystemClock.uptimeMillis()) > 0);
+        return (mShowAnim.getTimeRemaining(SystemClock.uptimeMillis()) > 0)
+                || (mScrollAnim.getTimeRemaining(SystemClock.uptimeMillis()) > 0);
     }
 
     @Override
@@ -227,6 +237,14 @@ public final class PopupMenu extends Layer {
             mPopupTexture.draw(view, gl, x, y);
             if (showRatio < 1f) {
                 view.resetColor();
+            }
+        }
+
+        if (mScroll) {
+            float scrollPos = mScrollAnim.getValue(SystemClock.uptimeMillis());
+            setPosition(mX, scrollPos);
+            if (!mScrollAnim.isAnimating()) {
+                mScroll = false;
             }
         }
 
@@ -299,6 +317,15 @@ public final class PopupMenu extends Layer {
             if (menuTop >= top) {
                 return true;
             }
+
+            // If less than 75% of the previous item (if there is a previous
+            // item) is showing, call this one the top
+            if (selectedOption > 0) {
+                top = options[selectedOption - 1].mBottom - (mRowHeight * App.PIXEL_DENSITY * 0.75f) + mY;
+                if (menuTop >= top) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -316,6 +343,15 @@ public final class PopupMenu extends Layer {
 
             if (menuBottom <= bottom) {
                 return true;
+            }
+
+            // If less than 75% of the next item (if there is a next item) is
+            // showing, call this one the top
+            if (selectedOption > 0) {
+                bottom = options[selectedOption].mBottom + mY + (mRowHeight * App.PIXEL_DENSITY * 0.75f);
+                if (menuBottom <= bottom) {
+                    return true;
+                }
             }
         }
         return false;

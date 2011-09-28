@@ -1068,11 +1068,11 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         return sLists;
     }
 
-    public int getViewWidth() {
-        return mViewWidth;
-    }
+	public int getViewWidth() {
+		return mViewWidth;
+	}
 
-    public int getViewHeight() {
-        return mViewHeight;
-    }
+	public int getViewHeight() {
+		return mViewHeight;
+	}
 }
