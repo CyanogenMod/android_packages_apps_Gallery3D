@@ -56,6 +56,8 @@ public final class PopupMenu extends Layer {
     private final FloatAnim mShowAnim = new FloatAnim(0f);
     private int mRowHeight = 36;
     private int mSelectedItem = -1;
+    private RenderView mView;
+    private float mInitialY;
 
     static {
         TextPaint paint = new TextPaint();
@@ -99,6 +101,7 @@ public final class PopupMenu extends Layer {
                 - POPUP_TRIANGLE_X_MARGIN * 2);
         mPopupTexture.setNeedsDraw();
         setPosition(clampedX, y);
+        mInitialY = y;
 
         // Fade in the menu if it is not already visible, otherwise snap to the
         // new location.
@@ -129,6 +132,7 @@ public final class PopupMenu extends Layer {
         lists.hitTestList.add(this);
         lists.systemList.add(this);
         lists.updateList.add(this);
+        mView = view;
     }
 
     @Override
@@ -147,8 +151,23 @@ public final class PopupMenu extends Layer {
         int hit = hitTestOptions((int) event.getX(), (int) event.getY());
         switch (event.getAction()) {
         case MotionEvent.ACTION_DOWN:
+            setSelectedItem(hit);
+            break;
         case MotionEvent.ACTION_MOVE:
             setSelectedItem(hit);
+            if (isSelectedOptionTop(hit)) {
+                if (mY < 0) {
+                    setPosition(mX, mY + mRowHeight * App.PIXEL_DENSITY);
+                }
+            } else if (isSelectedOptionBottom(hit)) {
+                if (mY + mHeight > mView.getViewHeight()) {
+                    float newY = mY - mRowHeight * App.PIXEL_DENSITY;
+                    if (hit == mOptions.length - 1) {
+                        newY = mInitialY;
+                    }
+                    setPosition(mX, newY);
+                }
+            }
             break;
         case MotionEvent.ACTION_UP:
             if (hit != -1 && mSelectedItem == hit) {
@@ -265,6 +284,41 @@ public final class PopupMenu extends Layer {
             }
         }
         return -1;
+    }
+
+    private boolean isSelectedOptionTop(int selectedOption) {
+        Option[] options = mOptions;
+
+        if (selectedOption >= 0) {
+            float top = options[selectedOption].mBottom - (mRowHeight * App.PIXEL_DENSITY) + mY;
+            float menuTop = mY + (PADDING_TOP * App.PIXEL_DENSITY);
+            if (mY < 0) {
+                menuTop = 0;
+            }
+
+            if (menuTop >= top) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSelectedOptionBottom(int selectedOption) {
+        Option[] options = mOptions;
+
+        if (selectedOption >= 0) {
+            float bottom = options[selectedOption].mBottom + mY;
+            float menuBottom = mY + mHeight - (PADDING_BOTTOM * App.PIXEL_DENSITY);
+
+            if (mY + mHeight > mView.getViewHeight()) {
+                menuBottom = mView.getViewHeight();
+            }
+
+            if (menuBottom <= bottom) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public interface Listener {
