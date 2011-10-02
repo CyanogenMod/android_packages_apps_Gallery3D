@@ -36,8 +36,11 @@ import android.os.PowerManager;
 import android.os.StatFs;
 import android.os.PowerManager.WakeLock;
 import android.provider.MediaStore.Images;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -63,6 +66,10 @@ public final class Gallery extends Activity {
     private static final int CHECK_STORAGE = 0;
     private static final int HANDLE_INTENT = 1;
     private static final int NUM_STORAGE_CHECKS = 25;
+
+    // The brightness settings used when it is set to automatic in the system.
+    // The reason why it is set to 0.7 is just because 1.0 is too bright.
+    private static final float DEFAULT_GALLERY_BRIGHTNESS = 0.7f;
 
     private final Handler handler = new Handler() {
         @Override
@@ -137,6 +144,8 @@ public final class Gallery extends Activity {
         mRenderView.setRootLayer(mGridLayer);
         setContentView(mRenderView);
 
+        initializeScreenBrightness();
+
         mPicasaAccountThread.start();
         mPicasaHandler = new Handler(mPicasaAccountThread.getLooper()) {
 
@@ -156,6 +165,20 @@ public final class Gallery extends Activity {
         sendInitialMessage();
 
         Log.i(TAG, "onCreate");
+    }
+
+    private void initializeScreenBrightness() {
+        Window win = getWindow();
+        // Overright the brightness settings if it is automatic
+        int mode = Settings.System.getInt(
+                getContentResolver(),
+                Settings.System.SCREEN_BRIGHTNESS_MODE,
+                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+        if (mode == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC) {
+            WindowManager.LayoutParams winParams = win.getAttributes();
+            winParams.screenBrightness = DEFAULT_GALLERY_BRIGHTNESS;
+            win.setAttributes(winParams);
+        }
     }
 
     private void sendInitialMessage() {
