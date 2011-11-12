@@ -86,7 +86,7 @@ public class App {
 		}
 		
 		/*
-		 *  Adaptive ResPatch by Petar Šegina <psegina@ymail.com>
+		 *  Adaptive ResPatch by Petar Segina <psegina@ymail.com>
 		 *  By default, Gallery3D is made to load very low resolution images in
 		 *  order to avoid running into outOfMemory situations. Since some devices come with enormous
 		 *  amounts of memory and processing power, it is pointless not to use those resources. So, 
