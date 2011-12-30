@@ -92,4 +92,10 @@
     <string name="around" msgid="2223906282110417412">"大概位置："</string>
     <string name="date_unknown" msgid="4277113471036917386">"日期未知"</string>
     <string name="video_err" msgid="7917736494827857757">"无法播放视频"</string>
+
+    <string name="menu_open_url">打开 URL</string>
+    <string name="video_set_url_pos">打开</string>
+    <string name="video_set_url_neg">取消</string>
+    <string name="video_set_url_title">打开 URL</string>
+    <string name="video_set_url_msg">电影 URL:</string>
 </resources>
