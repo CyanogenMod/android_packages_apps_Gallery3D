@@ -367,7 +367,7 @@ public class CropImage extends MonitoredActivity {
 
         // If we are circle cropping, we want alpha channel, which is the
         // third param here.
-        Bitmap croppedImage = Bitmap.createBitmap(width, height, mCircleCrop ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
+        Bitmap croppedImage = Bitmap.createBitmap(width, height, mCircleCrop ? Bitmap.Config.ARGB_8888 : mBitmap.getConfig());
         {
             Canvas canvas = new Canvas(croppedImage);
             Rect dstRect = new Rect(0, 0, width, height);
@@ -406,7 +406,7 @@ public class CropImage extends MonitoredActivity {
 
                 // Don't scale the image but instead fill it so it's the
                 // required dimension
-                Bitmap b = Bitmap.createBitmap(mOutputX, mOutputY, Bitmap.Config.RGB_565);
+                Bitmap b = Bitmap.createBitmap(mOutputX, mOutputY, croppedImage.getConfig());
                 Canvas canvas = new Canvas(b);
 
                 Rect srcRect = mCrop.getCropRect();

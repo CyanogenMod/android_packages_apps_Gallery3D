@@ -111,7 +111,7 @@ public class UriTexture extends Texture {
             ClientConnectionManager connectionManager) throws IOException, URISyntaxException, OutOfMemoryError {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
-        options.inPreferredConfig = Bitmap.Config.RGB_565;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         options.inDither = true;
         long crc64 = 0;
         Bitmap bitmap = null;
@@ -280,7 +280,7 @@ public class UriTexture extends Texture {
             Bitmap bitmap = null;
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inScaled = false;
-            options.inPreferredConfig = Bitmap.Config.RGB_565;
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
             options.inDither = true;
             options.inSampleSize = 1;
             options.inPurgeable = true;
