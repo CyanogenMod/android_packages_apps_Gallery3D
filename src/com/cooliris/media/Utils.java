@@ -103,19 +103,19 @@ public class Utils {
             final float sy = height / (float)srcHeight;
             m.setScale(sx, sy);
 
-            Rect srcR = new Rect(0, 0, width, height);
-            RectF dstR = new RectF(0, 0, width, height);
+            Rect srcR = new Rect(0, 0, srcWidth, srcHeight);
+            RectF dstR = new RectF(0, 0, srcWidth, srcHeight);
             Bitmap.Config config = bitmap.getConfig();
-            if (config == null)
+            if (config == null) {
                 config = Bitmap.Config.ARGB_8888;
+            }
 
             Canvas canvas = new Canvas();
             Paint paint;
             if (m == null || m.isIdentity()) {
                 retVal = Bitmap.createBitmap(width, height, config);
                 paint = null;
-            }
-            else {
+            } else {
                 RectF deviceR = new RectF();
                 m.mapRect(deviceR, dstR);
                 width = Math.round(deviceR.width());
