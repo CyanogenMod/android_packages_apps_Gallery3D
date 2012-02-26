@@ -178,7 +178,7 @@ public class UriTexture extends Texture {
         }
 
         if (bitmap != null) {
-            bitmap = Utils.resizeBitmap(bitmap, maxResolutionX);
+            bitmap = Utils.resizeBitmap(context, bitmap, maxResolutionX);
         }
         if ((options.inSampleSize > 1 || !local) && bitmap != null) {
             writeToCache(crc64, bitmap, maxResolutionX);
