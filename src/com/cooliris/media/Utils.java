@@ -79,7 +79,7 @@ public class Utils {
         return retVal;
     }
 
-    public static final Bitmap resizeBitmap(Bitmap bitmap, int maxSize) {
+    public static final Bitmap resizeBitmap(Context context, Bitmap bitmap, int maxSize) {
         int srcWidth = bitmap.getWidth();
         int srcHeight = bitmap.getHeight();
         int width = maxSize;
@@ -96,7 +96,7 @@ public class Utils {
                 width = ((maxSize * srcWidth) / srcHeight);
             }
         }
-        if (needsResize) {
+        if (needsResize && context != null && context.getResources().getBoolean(R.bool.use_32bpp_display)) {
             Bitmap retVal;
             Matrix m = new Matrix();
             final float sx = width / (float)srcWidth;
@@ -130,6 +130,9 @@ public class Utils {
             retVal.setDensity(bitmap.getDensity());
             canvas.setBitmap(retVal);
             canvas.drawBitmap(bitmap, srcR, dstR, paint);
+            return retVal;
+        } else if (needsResize) {
+            Bitmap retVal = Bitmap.createScaledBitmap(bitmap, width, height, true);
             return retVal;
         } else {
             return bitmap;

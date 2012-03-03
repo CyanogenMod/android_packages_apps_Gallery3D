@@ -88,7 +88,7 @@ public final class AdaptiveBackgroundTexture extends Texture {
                 return null;
             }
         }
-        source = Utils.resizeBitmap(source, THUMBNAIL_MAX_X);
+        source = Utils.resizeBitmap(null, source, THUMBNAIL_MAX_X);
         int sourceWidth = source.getWidth();
         int sourceHeight = source.getHeight();
         int destWidth = mWidth;
