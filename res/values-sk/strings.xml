@@ -79,6 +79,12 @@
     <string name="location_unknown" msgid="6310139243003315255">"Neznáma poloha"</string>
     <string name="title" msgid="7622928349908052569">"Titul"</string>
     <string name="type" msgid="4329478642546287192">"Typ"</string>
+    <string name="file_size">Veľkosť súboru</string>
+    <string name="file_size_unknown">Neznáma</string>
+    <string name="size">Veľkosť</string>
+    <string name="size_unknown">Neznáma</string>
+    <string name="cam">Fotoaparát</string>
+    <string name="cam_unknown">Neznámy</string>
     <string name="taken_on" msgid="3269486910757192479">"Nasnímané dňa"</string>
     <string name="added_on" msgid="5194321063173381814">"Pridané dňa"</string>
     <string name="show_on_map" msgid="6157544221201750980">"Zobraziť na mape"</string>
@@ -92,4 +98,10 @@
     <string name="around" msgid="2223906282110417412">"Blízko miesta"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Neznámy dátum"</string>
     <string name="video_err" msgid="7917736494827857757">"Video nie je možné prehrať"</string>
+    <string name="menu_open_url">Otvoriť URL</string>
+    <string name="video_set_url_pos">Otvoriť</string>
+    <string name="video_set_url_neg">Zrušiť</string>
+    <string name="video_set_url_title">Otvoriť URL</string>
+    <string name="video_set_url_msg">URL filmu:</string>
+    <string name="video_set_url_hint">rtsp://server/súbor</string>
 </resources>
