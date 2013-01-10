@@ -35,7 +35,7 @@
     <string name="details_ms" msgid="940634969189855292">"%1$02d:%2$02d"</string>
     <string name="details_hms" msgid="3215779248094151255">"%1$d:%2$02d:%3$02d"</string>
     <string name="movie_view_label" msgid="3697303290960009886">"Ταινίες"</string>
-    <string name="loading_video" msgid="4013492720121891585">"Φόρτωση βίντεο..."</string>
+    <string name="loading_video" msgid="4013492720121891585">"Φόρτωση βίντεο\u2026"</string>
     <string name="resume_playing_title" msgid="8996677350649355013">"Συνέχιση βίντεο"</string>
     <string name="resume_playing_message" msgid="5184414518126703481">"Συνέχιση αναπαραγωγής από το %s;"</string>
     <string name="resume_playing_resume" msgid="3847915469173852416">"Συνέχιση αναπαραγωγής"</string>
@@ -44,11 +44,11 @@
     <string name="crop_save_text" msgid="8140440041190264400">"Αποθήκευση"</string>
     <string name="crop_discard_text" msgid="5303657888280340603">"Απόρριψη"</string>
     <string name="multiface_crop_help" msgid="3127018992717032779">"Πατήστε σε ένα πρόσωπο για να ξεκινήσετε."</string>
-    <string name="saving_image" msgid="7270334453636349407">"Αποθήκευση εικόνας..."</string>
+    <string name="saving_image" msgid="7270334453636349407">"Αποθήκευση εικόνας\u2026"</string>
     <string name="crop_label" msgid="521114301871349328">"Περικοπή εικόνας"</string>
-    <string name="running_face_detection" msgid="4094707964259463039">"Περιμένετε..."</string>
+    <string name="running_face_detection" msgid="4094707964259463039">"Περιμένετε\u2026"</string>
     <string name="set_image" msgid="2331476809308010401">"Ορισμός εικόνας ως"</string>
-    <string name="wallpaper" msgid="9222901738515471972">"Ρύθμιση ταπετσαρίας, περιμένετε..."</string>
+    <string name="wallpaper" msgid="9222901738515471972">"Ρύθμιση ταπετσαρίας, περιμένετε\u2026"</string>
     <string name="camera_setas_wallpaper" msgid="797463183863414289">"Ταπετσαρία"</string>
     <string name="details_ok" msgid="6848594369924424312">"OK"</string>
     <string name="loading_new" msgid="7893793767294787579">"Φόρτωση νέων λευκωμάτων και φωτογραφιών"</string>
@@ -79,6 +79,12 @@
     <string name="location_unknown" msgid="6310139243003315255">"Άγνωστη τοποθεσία"</string>
     <string name="title" msgid="7622928349908052569">"Τίτλος"</string>
     <string name="type" msgid="4329478642546287192">"Τύπος"</string>
+    <string name="file_size">Μέγεθος αρχείου</string>
+    <string name="file_size_unknown">Άγνωστο</string>
+    <string name="size">Μέγεθος</string>
+    <string name="size_unknown">Άγνωστο</string>
+    <string name="cam">Φωτογραφική μηχανή</string>
+    <string name="cam_unknown">Άγνωστη</string>
     <string name="taken_on" msgid="3269486910757192479">"Ελήφθη την"</string>
     <string name="added_on" msgid="5194321063173381814">"Προστέθηκε στις"</string>
     <string name="show_on_map" msgid="6157544221201750980">"Εμφάνιση στον χάρτη"</string>
@@ -92,4 +98,11 @@
     <string name="around" msgid="2223906282110417412">"Κάπου στην/στο"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Άγνωστη ημερομηνία"</string>
     <string name="video_err" msgid="7917736494827857757">"Δεν είναι δυνατή η αναπαραγωγή του βίντεο"</string>
+
+    <string name="menu_open_url">Άνοιγμα URL</string>
+    <string name="video_set_url_pos">Άνοιγμα</string>
+    <string name="video_set_url_neg">Ακύρωση</string>
+    <string name="video_set_url_title">Άνοιγμα URL</string>
+    <string name="video_set_url_msg">URL ταινίας:</string>
+    <string name="video_set_url_hint">rtsp://server/file</string>
 </resources>
