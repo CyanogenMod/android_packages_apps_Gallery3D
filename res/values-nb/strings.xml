@@ -79,6 +79,12 @@
     <string name="location_unknown" msgid="6310139243003315255">"Ukjent sted"</string>
     <string name="title" msgid="7622928349908052569">"Tittel"</string>
     <string name="type" msgid="4329478642546287192">"Type"</string>
+    <string name="file_size">Fil størrelse</string>
+    <string name="file_size_unknown">Ukjent</string>
+    <string name="size">Størrelse</string>
+    <string name="size_unknown">Ukjent</string>
+    <string name="cam">Kamera</string>
+    <string name="cam_unknown">Ukjent</string>    
     <string name="taken_on" msgid="3269486910757192479">"Fra"</string>
     <string name="added_on" msgid="5194321063173381814">"Lagt til den"</string>
     <string name="show_on_map" msgid="6157544221201750980">"Vis på kartet"</string>
@@ -92,4 +98,9 @@
     <string name="around" msgid="2223906282110417412">"Rundt"</string>
     <string name="date_unknown" msgid="4277113471036917386">"Dato ukjent"</string>
     <string name="video_err" msgid="7917736494827857757">"Kunne ikke spille av videoen"</string>
+    <string name="menu_open_url">Åpne URL</string>
+    <string name="video_set_url_pos">Åpne</string>
+    <string name="video_set_url_neg">Avbryt</string>
+    <string name="video_set_url_title">Åpne URL</string>
+    <string name="video_set_url_msg">Film URL:</string>
 </resources>
